@@ -257,10 +257,9 @@ export class GuestRegistrationService{
 
     if(claimed.alreadyConfirmed)return {caseId:claimed.caseId,status:"confirmed",idempotentReplay:true};
 
-    const vault=this.providers.vault(claimed.vaultId);
-    const provider=this.providers.guestRegistration(claimed.provider);
-
     try{
+      const vault=this.providers.vault(claimed.vaultId);
+      const provider=this.providers.guestRegistration(claimed.provider);
       const document=await vault.readDocument(claimed.documentRecordId);
       const submission={
         idempotencyKey:"registration:"+claimed.caseId,
