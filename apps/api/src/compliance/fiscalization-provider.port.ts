@@ -1,4 +1,5 @@
 export type FiscalizationSubmission={
+  idempotencyKey:string;
   requestId:string;
   receiptType:"sale"|"refund";
   amountMinor:bigint;
