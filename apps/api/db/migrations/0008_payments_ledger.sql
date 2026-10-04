@@ -1,7 +1,7 @@
 BEGIN;
 
 CREATE TYPE payment_intent_status AS ENUM (
-  'requires_payment','pending_provider','authorized','captured','partially_refunded','refunded','failed','cancelled'
+  'requires_payment','pending_provider','authorized','captured','refund_pending','partially_refunded','refunded','failed','cancelled'
 );
 CREATE TYPE payment_attempt_status AS ENUM (
   'created','redirected','authorized','captured','failed','cancelled'
@@ -62,6 +62,28 @@ CREATE TABLE payment_webhook_inbox (
   processing_error text,
   UNIQUE(provider,external_event_id)
 );
+
+CREATE TABLE payment_refund_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES organizations(id),
+  payment_intent_id uuid NOT NULL REFERENCES payment_intents(id),
+  provider text NOT NULL,
+  amount_minor bigint NOT NULL CHECK (amount_minor > 0),
+  currency char(3) NOT NULL,
+  reason text NOT NULL,
+  idempotency_key text NOT NULL,
+  status text NOT NULL DEFAULT 'pending',
+  external_refund_id text,
+  attempt_count integer NOT NULL DEFAULT 0,
+  next_attempt_at timestamptz NOT NULL DEFAULT now(),
+  last_error text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  completed_at timestamptz,
+  UNIQUE(organization_id,idempotency_key)
+);
+CREATE INDEX payment_refund_requests_due_idx
+  ON payment_refund_requests(status,next_attempt_at)
+  WHERE status='pending';
 
 CREATE TABLE provider_transactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -182,8 +204,25 @@ CREATE TRIGGER ledger_entries_immutable_after_post
 BEFORE UPDATE OR DELETE ON ledger_entries
 FOR EACH ROW EXECUTE FUNCTION app.prevent_posted_ledger_mutation();
 
+CREATE OR REPLACE FUNCTION app.prevent_posted_journal_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $
+BEGIN
+  IF OLD.status='posted' THEN
+    RAISE EXCEPTION 'posted journal is immutable';
+  END IF;
+  RETURN COALESCE(NEW,OLD);
+END
+$;
+
+CREATE TRIGGER ledger_journal_immutable_after_post
+BEFORE UPDATE OR DELETE ON ledger_journals
+FOR EACH ROW EXECUTE FUNCTION app.prevent_posted_journal_mutation();
+
 ALTER TABLE payment_intents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payment_refund_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE provider_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ledger_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ledger_journals ENABLE ROW LEVEL SECURITY;
@@ -191,6 +230,7 @@ ALTER TABLE ledger_entries ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE payment_intents FORCE ROW LEVEL SECURITY;
 ALTER TABLE payment_attempts FORCE ROW LEVEL SECURITY;
+ALTER TABLE payment_refund_requests FORCE ROW LEVEL SECURITY;
 ALTER TABLE provider_transactions FORCE ROW LEVEL SECURITY;
 ALTER TABLE ledger_accounts FORCE ROW LEVEL SECURITY;
 ALTER TABLE ledger_journals FORCE ROW LEVEL SECURITY;
@@ -211,6 +251,10 @@ WITH CHECK (EXISTS(
   WHERE pi.id=payment_attempts.payment_intent_id
     AND pi.organization_id=app.current_organization_id()
 ));
+
+CREATE POLICY payment_refund_requests_tenant ON payment_refund_requests
+USING (organization_id=app.current_organization_id())
+WITH CHECK (organization_id=app.current_organization_id());
 
 CREATE POLICY provider_transactions_tenant ON provider_transactions
 USING (organization_id=app.current_organization_id())
