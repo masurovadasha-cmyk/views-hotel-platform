@@ -120,4 +120,116 @@ export class GuestDocumentService{
       requiredHeaders:upload.requiredHeaders??{},storageRegion:upload.storageRegion
     };
   }
+  async finalizeUpload(actor:RequestActorContext,documentRecordId:string){
+    const context=await this.db.withActor(actor,async client=>{
+      await assertComplianceRole(client,actor.membershipId,["host","owner","manager","front_desk"]);
+      const row=(await client.query<{
+        property_id:string;object_key:string|null;storage_region:string;vault_id:string;
+        verification_status:string;data_residency_policy_id:string|null;
+      }>(
+        `SELECT r.property_id,d.object_key,d.storage_region,d.vault_id,
+                d.verification_status,d.data_residency_policy_id
+           FROM guest_document_records d
+           JOIN reservation_guests rg ON rg.id=d.reservation_guest_id
+           JOIN reservations r ON r.id=rg.reservation_id
+          WHERE d.id=$1`,
+        [documentRecordId]
+      )).rows[0];
+      if(!row)throw new Error("DOCUMENT_RECORD_NOT_FOUND");
+      const access=(await client.query<{allowed:boolean}>(
+        "SELECT app.can_access_property($1::uuid) AS allowed",[row.property_id]
+      )).rows[0]?.allowed;
+      if(!access)throw new Error("PROPERTY_FORBIDDEN");
+      if(!row.object_key)throw new Error("DOCUMENT_OBJECT_KEY_MISSING");
+      if(!row.data_residency_policy_id)throw new Error("DATA_RESIDENCY_POLICY_NOT_SNAPSHOTTED");
+      if(row.verification_status==="verified")throw new Error("DOCUMENT_ALREADY_VERIFIED");
+      return row;
+    });
+
+    const vault=this.providers.vault(context.vault_id);
+    if(!supportsDocumentUpload(vault))throw new Error("DOCUMENT_UPLOAD_NOT_SUPPORTED");
+    const finalized=await vault.finalizeUpload({
+      documentRecordId,objectKey:context.object_key,storageRegion:context.storage_region
+    });
+    if(finalized.objectKey!==context.object_key)throw new Error("DOCUMENT_OBJECT_KEY_MISMATCH");
+    if(!/^[a-f0-9]{64}$/i.test(finalized.checksumSha256))throw new Error("INVALID_DOCUMENT_CHECKSUM");
+
+    await this.db.withActor(actor,async client=>{
+      await client.query(
+        `UPDATE guest_document_records
+            SET object_checksum_sha256=$1,
+                encryption_key_ref=COALESCE($2,encryption_key_ref),
+                document_number_hash=COALESCE($3,document_number_hash),
+                updated_at=now()
+          WHERE id=$4`,
+        [
+          finalized.checksumSha256,finalized.encryptionKeyRef??null,
+          finalized.documentNumberHash??null,documentRecordId
+        ]
+      );
+      await client.query(
+        `INSERT INTO outbox_events(
+           id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload
+         )
+         VALUES(gen_random_uuid(),$1,'guest_document',$2,'compliance.document_upload_finalized',$3,$4::jsonb)
+         ON CONFLICT(idempotency_key) DO NOTHING`,
+        [
+          actor.organizationId,documentRecordId,
+          "compliance:document-finalized:"+documentRecordId+":"+finalized.checksumSha256,
+          JSON.stringify({documentRecordId,checksumSha256:finalized.checksumSha256})
+        ]
+      );
+    });
+
+    return {
+      documentRecordId,status:"pending_verification" as const,
+      checksumSha256:finalized.checksumSha256
+    };
+  }
+
+  async verify(actor:RequestActorContext,documentRecordId:string){
+    return this.db.withActor(actor,async client=>{
+      await assertComplianceRole(client,actor.membershipId,["owner","manager","front_desk"]);
+      const row=(await client.query<{
+        property_id:string;verification_status:string;object_checksum_sha256:string|null;
+      }>(
+        `SELECT r.property_id,d.verification_status,d.object_checksum_sha256
+           FROM guest_document_records d
+           JOIN reservation_guests rg ON rg.id=d.reservation_guest_id
+           JOIN reservations r ON r.id=rg.reservation_id
+          WHERE d.id=$1
+          FOR UPDATE OF d`,
+        [documentRecordId]
+      )).rows[0];
+      if(!row)throw new Error("DOCUMENT_RECORD_NOT_FOUND");
+      const access=(await client.query<{allowed:boolean}>(
+        "SELECT app.can_access_property($1::uuid) AS allowed",[row.property_id]
+      )).rows[0]?.allowed;
+      if(!access)throw new Error("PROPERTY_FORBIDDEN");
+      if(!row.object_checksum_sha256)throw new Error("DOCUMENT_UPLOAD_NOT_FINALIZED");
+      if(row.verification_status==="verified"){
+        return {documentRecordId,status:"verified" as const,idempotentReplay:true};
+      }
+
+      await client.query(
+        `UPDATE guest_document_records
+            SET verification_status='verified',verified_at=now(),verified_by=$1,updated_at=now()
+          WHERE id=$2`,
+        [actor.userId,documentRecordId]
+      );
+      await client.query(
+        `INSERT INTO outbox_events(
+           id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload
+         )
+         VALUES(gen_random_uuid(),$1,'guest_document',$2,'compliance.document_verified',$3,$4::jsonb)
+         ON CONFLICT(idempotency_key) DO NOTHING`,
+        [
+          actor.organizationId,documentRecordId,
+          "compliance:document-verified:"+documentRecordId,
+          JSON.stringify({documentRecordId,verifiedBy:actor.userId})
+        ]
+      );
+      return {documentRecordId,status:"verified" as const,idempotentReplay:false};
+    });
+  }
 }
