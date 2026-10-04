@@ -167,11 +167,11 @@ export class GuestRegistrationService{
 
       const rowResult=await client.query<{
         id:string;property_id:string;reservation_id:string;reservation_guest_id:string;provider:string;status:string;
-        policy_snapshot:{config:RegistrationPolicyConfig};attempt_count:number;
+        country_code:string;policy_snapshot:{config:RegistrationPolicyConfig};attempt_count:number;
         check_in_at:Date;check_out_at:Date;first_name:string;last_name:string;date_of_birth:string;
         nationality_country_code:string;residency_country_code:string|null;
       }>(
-        `SELECT c.id,c.property_id,c.reservation_id,c.reservation_guest_id,c.provider,c.status,c.policy_snapshot,c.attempt_count,
+        `SELECT c.id,c.property_id,c.reservation_id,c.reservation_guest_id,c.provider,c.status,c.country_code,c.policy_snapshot,c.attempt_count,
                 r.check_in_at,r.check_out_at,
                 g.first_name,g.last_name,g.date_of_birth::text,g.nationality_country_code,g.residency_country_code
            FROM guest_registration_cases c
@@ -216,18 +216,26 @@ export class GuestRegistrationService{
         `SELECT required_storage_region,cross_border_allowed
            FROM data_residency_policies
           WHERE organization_id=$1
-            AND country_code='UZ'
+            AND country_code=$2
             AND data_category='guest_identity_document'
             AND active=true
             AND effective_from<=current_date
             AND (effective_to IS NULL OR effective_to>=current_date)
           ORDER BY effective_from DESC
           LIMIT 1`,
-        [actor.organizationId]
+        [actor.organizationId,row.country_code]
       );
       const storage=residencyPolicy.rows[0];
-      if(storage?.required_storage_region&&document.storage_region!==storage.required_storage_region){
+      if(!storage)throw new Error("DATA_RESIDENCY_POLICY_NOT_CONFIGURED");
+      if(
+        storage.required_storage_region &&
+        document.storage_region!==storage.required_storage_region &&
+        !storage.cross_border_allowed
+      ){
         throw new Error("DOCUMENT_STORAGE_REGION_VIOLATION");
+      }
+      if(!storage.required_storage_region&&!storage.cross_border_allowed){
+        throw new Error("INVALID_DATA_RESIDENCY_POLICY");
       }
 
       const leaseUntil=new Date(Date.now()+120000);
