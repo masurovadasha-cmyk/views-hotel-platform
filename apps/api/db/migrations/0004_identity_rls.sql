@@ -39,6 +39,16 @@ ALTER TABLE membership_property_scopes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE guest_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE organizations FORCE ROW LEVEL SECURITY;
+ALTER TABLE properties FORCE ROW LEVEL SECURITY;
+ALTER TABLE reservations FORCE ROW LEVEL SECURITY;
+ALTER TABLE inventory_periods FORCE ROW LEVEL SECURITY;
+ALTER TABLE outbox_events FORCE ROW LEVEL SECURITY;
+ALTER TABLE organization_memberships FORCE ROW LEVEL SECURITY;
+ALTER TABLE membership_property_scopes FORCE ROW LEVEL SECURITY;
+ALTER TABLE guest_profiles FORCE ROW LEVEL SECURITY;
+ALTER TABLE audit_log FORCE ROW LEVEL SECURITY;
+
 CREATE POLICY memberships_tenant_read ON organization_memberships
   FOR SELECT USING (
     organization_id=app.current_organization_id()
