@@ -87,6 +87,7 @@ export class BookingLifecycleService{
       if(!access.rows[0]?.allowed)throw new Error("PROPERTY_FORBIDDEN");
       if(reservation.status!=="hold")throw new Error("RESERVATION_NOT_ON_HOLD");
 
+      await this.queueRefundsForReservation(client,actor.organizationId,reservationId,"manual_hold_release");
       await client.query("DELETE FROM inventory_periods WHERE reservation_id=$1 AND kind='payment_hold'",[reservationId]);
       await client.query("UPDATE reservations SET status='cancelled',cancelled_at=now(),hold_expires_at=NULL,updated_at=now(),version=version+1 WHERE id=$1",[reservationId]);
       await client.query(
@@ -107,6 +108,84 @@ export class BookingLifecycleService{
     });
   }
 
+  private async queueRefundsForReservation(
+    client:any,
+    organizationId:string,
+    reservationId:string,
+    reason:string
+  ){
+    const intents=await client.query<{
+      id:string;provider:string;currency:string;captured_minor:string;refunded_minor:string;
+    }>(
+      `SELECT id,provider,currency,captured_minor::text,refunded_minor::text
+         FROM payment_intents
+        WHERE reservation_id=$1 AND captured_minor>refunded_minor
+        FOR UPDATE`,
+      [reservationId]
+    );
+
+    for(const intent of intents.rows){
+      let remaining=BigInt(intent.captured_minor)-BigInt(intent.refunded_minor);
+      if(remaining<=0n)continue;
+
+      const captures=await client.query<{
+        external_transaction_id:string;amount_minor:string;refunded_for_capture:string;
+      }>(
+        `SELECT c.external_transaction_id,
+                c.amount_minor::text,
+                COALESCE((
+                  SELECT SUM(r.amount_minor)
+                    FROM provider_transactions r
+                   WHERE r.payment_intent_id=c.payment_intent_id
+                     AND r.kind='refund'
+                     AND r.related_external_transaction_id=c.external_transaction_id
+                ),0)::text AS refunded_for_capture
+           FROM provider_transactions c
+          WHERE c.payment_intent_id=$1 AND c.kind='capture'
+          ORDER BY c.occurred_at,c.id`,
+        [intent.id]
+      );
+
+      for(const capture of captures.rows){
+        if(remaining<=0n)break;
+        const captureAvailable=BigInt(capture.amount_minor)-BigInt(capture.refunded_for_capture);
+        if(captureAvailable<=0n)continue;
+        const amount=captureAvailable<remaining?captureAvailable:remaining;
+        const key=`${reason}:${intent.provider}:${capture.external_transaction_id}`;
+        await client.query(
+          `INSERT INTO payment_refund_requests(
+             id,organization_id,payment_intent_id,provider,amount_minor,currency,reason,
+             idempotency_key,external_capture_id
+           )
+           VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,$7,$8)
+           ON CONFLICT(organization_id,idempotency_key) DO NOTHING`,
+          [
+            organizationId,intent.id,intent.provider,amount.toString(),intent.currency,
+            reason,key,capture.external_transaction_id
+          ]
+        );
+        await client.query(
+          `INSERT INTO outbox_events(
+             id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload
+           )
+           VALUES(gen_random_uuid(),$1,'payment_intent',$2,'payment.refund_required',$3,$4::jsonb)
+           ON CONFLICT(idempotency_key) DO NOTHING`,
+          [
+            organizationId,intent.id,`outbox:${key}`,
+            JSON.stringify({paymentIntentId:intent.id,reservationId,reason,amountMinor:amount.toString()})
+          ]
+        );
+        remaining-=amount;
+      }
+
+      if(remaining>0n)throw new Error("CAPTURE_LEDGER_GAP");
+      await client.query(
+        "UPDATE payment_intents SET status='refund_pending',updated_at=now(),version=version+1 WHERE id=$1",
+        [intent.id]
+      );
+    }
+  }
+
   async expireTenantBatch(organizationId:string,limit=100){
     if(!Number.isInteger(limit)||limit<1||limit>500)throw new Error("INVALID_BATCH_LIMIT");
     return this.db.withOrganization(organizationId,async client=>{
@@ -120,6 +199,7 @@ export class BookingLifecycleService{
       );
       for(const reservation of rows.rows){
         const eventKey="expire:"+reservation.id+":"+reservation.hold_expires_at.toISOString();
+        await this.queueRefundsForReservation(client,organizationId,reservation.id,"hold_expired");
         await client.query("DELETE FROM inventory_periods WHERE reservation_id=$1 AND kind='payment_hold'",[reservation.id]);
         await client.query("UPDATE reservations SET status='cancelled',cancelled_at=now(),hold_expires_at=NULL,updated_at=now(),version=version+1 WHERE id=$1",[reservation.id]);
         await client.query(
