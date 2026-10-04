@@ -61,3 +61,29 @@ Source designs:
 
 ## Visual language
 Near-black / graphite shell, white and warm ivory surfaces, champagne-gold primary actions, compact premium hospitality typography, role-aware navigation, mobile-first guest flow.
+
+
+## Additional latest Canva sources integrated
+- VIEWS Implementation Map — DAHW-Pmy-dM
+- VIEWS Implementation Handoff — DAHW8jK49GQ
+- VIEWS Service Catalog — DAHW8tA0U7U
+- VIEWS Hospitality ERD — DAHW8jr5KtY
+- VIEWS RBAC Matrix — DAHW8jtVpo0
+- VIEWS Design Pack — All Latest Canva Images — DAHW-mOxAoo
+
+## Additional operational parity
+- Unified Inbox with SLA/status/assignee filtering foundation
+- Shift Handover
+- Team Workload / assignment rules
+- Stay Card
+- Apartment Timeline
+- Lost & Found
+- Damage Reports
+- Minimum Inventory Alerts
+- SLA breach/escalation states
+- DND / Service Declined
+- Housekeeping proof & inspection
+- Maintenance ticket detail
+- Explicit loading / empty / error / offline / read-only system states
+- Spa & Wellness service
+- Service Catalog SLA/owner/status-flow metadata
