@@ -43,6 +43,8 @@ export type ChargeRule={
   currency:string|null;
   residency:"all"|"resident"|"nonresident";
   minAge:number|null;
+  compliancePolicyId?:string|null;
+  ruleMetadata?:Record<string,unknown>;
 };
 
 export type PricingInput={
