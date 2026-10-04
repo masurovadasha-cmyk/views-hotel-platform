@@ -93,7 +93,7 @@ export class FiscalizationService{
            id,organization_id,reservation_id,payment_intent_id,provider_transaction_id,ledger_journal_id,
            provider,receipt_type,amount_minor,currency,status,idempotency_key,payload_snapshot
          ) VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,$7,$8,$9,'pending',$10,$11::jsonb)
-         ON CONFLICT(provider_transaction_id) DO NOTHING
+         ON CONFLICT(provider_transaction_id) WHERE provider_transaction_id IS NOT NULL DO NOTHING
          RETURNING id,status,amount_minor::text,currency,provider`,
         [
           actor.organizationId,tx.reservation_id,tx.payment_intent_id,tx.id,journal.rows[0]?.id??null,
@@ -184,9 +184,9 @@ export class FiscalizationService{
       return this.db.withActor(actor,async client=>{
         await client.query(
           `UPDATE fiscalization_requests
-              SET status=$2,external_receipt_id=$3,fiscal_sign=$4,receipt_url=$5,
+              SET status=$2::fiscalization_status,external_receipt_id=$3,fiscal_sign=$4,receipt_url=$5,
                   submitted_at=COALESCE(submitted_at,now()),
-                  confirmed_at=CASE WHEN $2='confirmed' THEN now() ELSE confirmed_at END,
+                  confirmed_at=CASE WHEN $2::text='confirmed' THEN now() ELSE confirmed_at END,
                   lease_until=NULL,locked_by=NULL,last_error=NULL,updated_at=now()
             WHERE id=$1 AND locked_by=$6`,
           [
