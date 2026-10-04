@@ -1,4 +1,4 @@
-import {createHash,randomBytes} from "node:crypto";
+import {createHash,randomBytes,randomUUID} from "node:crypto";
 import {Injectable} from "@nestjs/common";
 import type {PoolClient} from "pg";
 import {DatabaseService} from "../database/database.service";
@@ -156,5 +156,5 @@ export class BookingHoldService{
   }
 }
 
-function randomUuid(){return crypto.randomUUID()}
+function randomUuid(){return randomUUID()}
 function isPgCode(error:unknown,code:string){return typeof error==="object"&&error!==null&&"code" in error&&(error as {code?:string}).code===code}
