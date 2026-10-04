@@ -6,6 +6,7 @@ import {QuoteService} from "../rates/quote.service";
 import {LedgerService} from "./ledger.service";
 import {PaymentIntentService} from "./payment-intent.service";
 import {PaymentProviderRegistry} from "./payment-provider.registry";
+import {PaymentRecoveryService} from "./payment-recovery.service";
 import type {
   HostedCheckoutRequest,HostedCheckoutResult,PaymentProviderPort,RefundRequest,RefundResult,VerifiedWebhookEvent
 } from "./payment-provider.port";
@@ -57,9 +58,10 @@ const ledger=new LedgerService();
 const registry=new PaymentProviderRegistry();
 const provider=new TestPaymeProvider();
 registry.register(provider);
+const recovery=new PaymentRecoveryService(db,ledger);
 const intents=new PaymentIntentService(db,registry);
-const webhooks=new PaymentWebhookService(db,registry,ledger);
-const refunds=new PaymentRefundWorkerService(db,registry);
+const webhooks=new PaymentWebhookService(db,registry,ledger,recovery);
+const refunds=new PaymentRefundWorkerService(db,registry,recovery);
 
 beforeAll(async()=>{
   await db.withActor(actor,async client=>{
