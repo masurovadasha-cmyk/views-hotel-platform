@@ -63,7 +63,8 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
 
   const content=()=>{
     if(current==="overview")return <Dashboard orders={visible} role={role}/>;
-    if(current==="my-tasks"||current==="inbox")return <><div className="sectionHead"><div><small>OPERATIONS QUEUE</small><h2>{current==="my-tasks"?"My Tasks":"Inbox"}</h2></div></div>{liveError&&<div className="notice">{liveError}</div>}<Orders orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/></>;
+    if(current==="my-tasks")return <><div className="sectionHead"><div><small>OPERATIONS QUEUE</small><h2>My Tasks</h2></div></div>{liveError&&<div className="notice">{liveError}</div>}<Orders orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/></>;
+    if(current==="inbox")return <UnifiedInbox orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/>;
     if(current==="front-desk")return <FrontDesk/>;
     if(current==="guests")return <Guest360/>;
     if(current==="housekeeping")return <Housekeeping/>;
@@ -76,7 +77,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="finance")return <Finance/>;
     if(current==="admin")return <AdminPanel orders={orders} act={act}/>;
     if(current==="integrations")return <IntegrationHub/>;
-    if(current==="team")return <TeamPanel/>;
+    if(current==="team")return <TeamPanel orders={orders}/>;
     return <Panel title={labels[current]??current}><div className="notice">Module foundation ready for the next backend slice.</div></Panel>;
   };
 
@@ -176,8 +177,16 @@ function IntegrationHub(){
   return <Panel title="Integration Hub"><div className="integrationGrid">{integrationCatalog.map(item=><article className="integrationCard" key={item.provider}><div><b>{item.label}</b><span>{item.capabilities.join(" · ")}</span></div><span className={"status "+(item.status==="configured"?"done":"assigned")}>{item.status.replaceAll("_"," ")}</span></article>)}</div><div className="notice">Credentials are never stored in this UI, browser storage or GitHub. Live secrets are added only to the deployment secret store.</div></Panel>;
 }
 
-function TeamPanel(){
-  return <Panel title="Team & RBAC"><div className="compactRows">{["Cleaner","Concierge","Technician","Front Desk","General Manager"].map((r,i)=><div key={r}><span>Role</span><b>{r}</b><small>Property-scoped permissions</small><i className="status done">active</i></div>)}</div></Panel>;
+function TeamPanel({orders}:{orders:ServiceOrder[]}){
+  const staff=[["Nargiza","Housekeeping",3,5],["Rustam","Maintenance",2,3],["Malika","Concierge",4,7],["Bekzod","Front Desk",2,6]];
+  return <div className="teamWorkload"><section className="kpis"><article><span>On shift</span><b>{staff.length}</b></article><article><span>Active tasks</span><b>{orders.filter(o=>o.status!=="done").length}</b></article><article><span>Unassigned</span><b>{orders.filter(o=>!o.assigneeUserId).length}</b></article><article><span>Overdue SLA</span><b>0</b></article></section><Panel title="Staff Workload"><div className="workloadGrid">{staff.map(([name,role,active,done])=><article key={String(name)}><div><b>{name}</b><small>{role}</small></div><span>Active <strong>{active}</strong></span><span>Done <strong>{done}</strong></span><i className={Number(active)>=4?"busy":"available"}>{Number(active)>=4?"busy":"available"}</i><button>Reassign</button></article>)}</div></Panel></div>;
+}
+
+function UnifiedInbox({orders,act,onOpen}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;onOpen:(o:ServiceOrder)=>void}){
+  const open=orders.filter(o=>!["done","closed","cancelled"].includes(o.status));
+  const progress=open.filter(o=>["accepted","assigned","in_progress"].includes(o.status));
+  const resolved=orders.filter(o=>["done","closed"].includes(o.status));
+  return <div className="unifiedInbox"><div className="inboxTabs"><button className="active">Open Requests <b>{open.length}</b></button><button>In Progress <b>{progress.length}</b></button><button>Resolved Today <b>{resolved.length}</b></button></div><div className="inboxFilters"><button>Status</button><button>Category</button><button>SLA</button><button>Apartment</button><button>Guest</button><button>Assignee</button><span>Sort: Priority · Due Time</span></div><Orders orders={open} act={act} onOpen={onOpen}/></div>;
 }
 
 function Orders({orders,act,onOpen}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;onOpen?:(o:ServiceOrder)=>void}){
