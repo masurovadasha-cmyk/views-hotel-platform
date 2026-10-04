@@ -137,13 +137,17 @@ CREATE TABLE fiscalization_requests (
   submitted_at timestamptz,
   confirmed_at timestamptz,
   last_error text,
+  attempt_count integer NOT NULL DEFAULT 0,
+  next_attempt_at timestamptz NOT NULL DEFAULT now(),
+  lease_until timestamptz,
+  locked_by text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(organization_id,idempotency_key)
 );
 CREATE INDEX fiscalization_due_idx
-  ON fiscalization_requests(organization_id,status,created_at)
-  WHERE status IN ('pending','failed');
+  ON fiscalization_requests(organization_id,status,next_attempt_at,lease_until)
+  WHERE status IN ('pending','failed','submitted');
 
 CREATE TABLE fiscalization_attempts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
