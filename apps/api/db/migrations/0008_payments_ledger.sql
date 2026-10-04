@@ -52,16 +52,21 @@ CREATE INDEX payment_attempts_intent_idx ON payment_attempts(payment_intent_id,c
 
 CREATE TABLE payment_webhook_inbox (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES organizations(id),
+  payment_intent_id uuid REFERENCES payment_intents(id),
   provider text NOT NULL,
   external_event_id text NOT NULL,
   event_type text NOT NULL,
+  payload_hash text NOT NULL,
   payload jsonb NOT NULL,
   signature_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   received_at timestamptz NOT NULL DEFAULT now(),
   processed_at timestamptz,
   processing_error text,
+  result jsonb,
   UNIQUE(provider,external_event_id)
 );
+CREATE INDEX payment_webhook_inbox_intent_idx ON payment_webhook_inbox(payment_intent_id,received_at);
 
 CREATE TABLE payment_refund_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -226,6 +231,7 @@ FOR EACH ROW EXECUTE FUNCTION app.prevent_posted_journal_mutation();
 
 ALTER TABLE payment_intents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payment_webhook_inbox ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_refund_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE provider_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ledger_accounts ENABLE ROW LEVEL SECURITY;
@@ -234,6 +240,7 @@ ALTER TABLE ledger_entries ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE payment_intents FORCE ROW LEVEL SECURITY;
 ALTER TABLE payment_attempts FORCE ROW LEVEL SECURITY;
+ALTER TABLE payment_webhook_inbox FORCE ROW LEVEL SECURITY;
 ALTER TABLE payment_refund_requests FORCE ROW LEVEL SECURITY;
 ALTER TABLE provider_transactions FORCE ROW LEVEL SECURITY;
 ALTER TABLE ledger_accounts FORCE ROW LEVEL SECURITY;
@@ -255,6 +262,10 @@ WITH CHECK (EXISTS(
   WHERE pi.id=payment_attempts.payment_intent_id
     AND pi.organization_id=app.current_organization_id()
 ));
+
+CREATE POLICY payment_webhook_inbox_tenant ON payment_webhook_inbox
+USING (organization_id=app.current_organization_id())
+WITH CHECK (organization_id=app.current_organization_id());
 
 CREATE POLICY payment_refund_requests_tenant ON payment_refund_requests
 USING (organization_id=app.current_organization_id())
