@@ -263,6 +263,7 @@ export class GuestRegistrationService{
     try{
       const document=await vault.readDocument(claimed.documentRecordId);
       const submission={
+        idempotencyKey:"registration:"+claimed.caseId,
         caseId:claimed.caseId,reservationId:claimed.reservationId,propertyId:claimed.propertyId,
         checkInAt:claimed.checkInAt,checkOutAt:claimed.checkOutAt,guest:claimed.guest,document
       };
