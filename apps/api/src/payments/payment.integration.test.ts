@@ -275,6 +275,97 @@ describe.sequential("payments and ledger integration",()=>{
     })).rejects.toThrow(/unbalanced journal/i);
   });
 
+  it("recovers a partial capture when the booking hold expires before full payment",async()=>{
+    const {quote,hold}=await quoteAndHold(
+      "2028-03-01T14:00:00+05:00","2028-03-03T12:00:00+05:00","pay-hold-partial-expire"
+    );
+    const payment=await paymentFor(
+      hold.reservationId,quote.quoteId,"payment-intent-partial-expire"
+    );
+    const partialAmount=quote.totalMinor/2n;
+
+    const partial=await webhooks.processVerified("payme",event({
+      eventId:"evt-partial-expire-capture",
+      txId:"cap-partial-expire",
+      type:"captured",
+      paymentIntentId:payment.paymentIntentId,
+      amountMinor:partialAmount
+    }),"{\"event\":\"partial-expire\"}");
+    expect(partial.status).toBe("partially_captured");
+
+    await db.withActor(actor,async client=>{
+      await client.query(
+        "UPDATE reservations SET hold_expires_at=now()-interval '1 second' WHERE id=$1",
+        [hold.reservationId]
+      );
+      await client.query(
+        "UPDATE inventory_periods SET expires_at=now()-interval '1 second' WHERE reservation_id=$1",
+        [hold.reservationId]
+      );
+    });
+    await lifecycle.expireTenantBatch(ORG,10);
+
+    const worker=await refunds.processTenantBatch(ORG,10);
+    expect(worker.submitted).toBeGreaterThanOrEqual(1);
+    expect(provider.refundCalls.some(x=>
+      x.paymentIntentId===payment.paymentIntentId &&
+      x.externalCaptureId==="cap-partial-expire" &&
+      x.amountMinor===partialAmount
+    )).toBe(true);
+
+    const recoveryState=await db.withActor(actor,async client=>{
+      const intent=(await client.query<{status:string}>(
+        "SELECT status FROM payment_intents WHERE id=$1",[payment.paymentIntentId]
+      )).rows[0];
+      const request=(await client.query<{status:string;liability_account_code:string}>(
+        `SELECT status,liability_account_code
+           FROM payment_refund_requests
+          WHERE payment_intent_id=$1 AND external_capture_id='cap-partial-expire'`,
+        [payment.paymentIntentId]
+      )).rows[0];
+      const entries=(await client.query<{code:string;side:string}>(
+        `SELECT a.code,e.side
+           FROM ledger_entries e
+           JOIN ledger_accounts a ON a.id=e.account_id
+           JOIN ledger_journals j ON j.id=e.journal_id
+          WHERE j.organization_id=$1
+            AND j.idempotency_key='refund-reclassify:payme:cap-partial-expire'`,
+        [ORG]
+      )).rows;
+      return {intent,request,entries};
+    });
+    expect(recoveryState.intent.status).toBe("refund_pending");
+    expect(recoveryState.request.liability_account_code).toBe("refunds_payable");
+    expect(recoveryState.entries).toEqual(expect.arrayContaining([
+      expect.objectContaining({code:"guest_deposits",side:"debit"}),
+      expect.objectContaining({code:"refunds_payable",side:"credit"})
+    ]));
+
+    const refunded=await webhooks.processVerified("payme",event({
+      eventId:"evt-partial-expire-refund",
+      txId:"refund-partial-expire",
+      related:"cap-partial-expire",
+      type:"refunded",
+      paymentIntentId:payment.paymentIntentId,
+      amountMinor:partialAmount
+    }),"{\"event\":\"partial-expire-refund\"}");
+    expect(refunded.status).toBe("refunded");
+
+    const final=await db.withActor(actor,async client=>{
+      const intent=(await client.query<{status:string;captured_minor:string;refunded_minor:string}>(
+        "SELECT status,captured_minor::text,refunded_minor::text FROM payment_intents WHERE id=$1",
+        [payment.paymentIntentId]
+      )).rows[0];
+      const reservation=(await client.query<{status:string}>(
+        "SELECT status FROM reservations WHERE id=$1",[hold.reservationId]
+      )).rows[0];
+      return {intent,reservation};
+    });
+    expect(final.reservation.status).toBe("cancelled");
+    expect(final.intent.status).toBe("refunded");
+    expect(BigInt(final.intent.refunded_minor)).toBe(BigInt(final.intent.captured_minor));
+  });
+
   it("turns a late capture into a durable refund and reverses ledger after verified refund",async()=>{
     const {quote,hold}=await quoteAndHold(
       "2028-03-10T14:00:00+05:00","2028-03-12T12:00:00+05:00","pay-hold-late"
