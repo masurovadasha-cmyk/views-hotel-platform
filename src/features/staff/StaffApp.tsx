@@ -1,20 +1,37 @@
-import { useEffect, useMemo, useState } from "react";
-import { Bell, Building2, CalendarDays, ClipboardList, Gauge, ShieldCheck, Sparkles, Users, WalletCards, Wrench } from "lucide-react";
-import type { HospitalityRole, ServiceOrder } from "../../domain/types";
-import { initialOrders } from "../../data/demo";
-import { canSeeServiceOrder, roleNavigation } from "../../domain/rbac";
-import { transitionServiceOrder } from "../../domain/workflows";
-import { integrationCatalog } from "../../domain/integrations";
-import { api } from "../../api/client";
+import {useEffect,useMemo,useState} from "react";
+import {
+  Bell,Building2,CalendarDays,Camera,CheckCircle2,ClipboardList,FileText,Gauge,Image as ImageIcon,
+  Plus,RefreshCw,ShieldCheck,Sparkles,Users,WalletCards,Wrench
+} from "lucide-react";
+import type {HospitalityRole,ServiceOrder} from "../../domain/types";
+import {initialOrders} from "../../data/demo";
+import {canSeeServiceOrder,roleNavigation} from "../../domain/rbac";
+import {transitionServiceOrder} from "../../domain/workflows";
+import {integrationCatalog} from "../../domain/integrations";
+import {api} from "../../api/client";
 
 const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","general_manager","super_admin"];
-const labels:Record<string,string>={overview:"Overview","my-tasks":"My Tasks",inbox:"Inbox",operations:"Operations","front-desk":"Front Desk",guests:"Guests CRM",housekeeping:"Housekeeping",maintenance:"Maintenance",host:"Host Desk",finance:"Finance",admin:"Admin",integrations:"Integrations",team:"Team",messages:"Messages"};
+const labels:Record<string,string>={
+  overview:"Overview","my-tasks":"My Tasks",inbox:"Inbox",operations:"Operations","front-desk":"Front Desk",guests:"Guests CRM",
+  housekeeping:"Housekeeping",maintenance:"Maintenance",host:"Host Desk",finance:"Finance",admin:"Admin",integrations:"Integrations",
+  team:"Team",messages:"Messages"
+};
 const iconFor=(id:string)=>id.includes("maintenance")?Wrench:id.includes("housekeeping")?Sparkles:id.includes("front")?CalendarDays:id==="guests"?Users:id==="finance"?WalletCards:id==="host"?Building2:id==="admin"||id==="integrations"?ShieldCheck:id==="inbox"?Bell:id==="overview"?Gauge:ClipboardList;
 
 export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{role:HospitalityRole;onRoleChange:(r:HospitalityRole)=>void;allowRoleSwitch?:boolean;live?:boolean}){
   const [active,setActive]=useState(roleNavigation[role][0]);
   const [orders,setOrders]=useState<ServiceOrder[]>(live?[]:initialOrders);
   const [liveError,setLiveError]=useState("");
+  const [mobileTab,setMobileTab]=useState<"tasks"|"detail"|"proof"|"create"|"notifications">("tasks");
+  const [selectedOrder,setSelectedOrder]=useState<ServiceOrder|null>(null);
+  const [proofBefore,setProofBefore]=useState(false);
+  const [proofAfter,setProofAfter]=useState(false);
+  const [hostStep,setHostStep]=useState(1);
+
+  const userId=role==="cleaner"?"u-cleaner":role==="technician"?"u-tech":"u-manager";
+  const visible=useMemo(()=>orders.filter(o=>canSeeServiceOrder(role,userId,o)),[orders,role,userId]);
+  const nav=roleNavigation[role];
+  const current=nav.includes(active)?active:nav[0];
 
   async function loadLiveOrders(){
     if(!live)return;
@@ -23,52 +40,125 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
       setOrders(result.items.map(o=>({
         id:o.id,title:o.title,category:o.category as ServiceOrder["category"],status:o.status as ServiceOrder["status"],
         priority:o.priority as ServiceOrder["priority"],assigneeUserId:o.assigned_user_id,unit:o.unit_id,
-        guestName:o.guest_id,reservationId:o.reservation_id,slaMinutes:0,history:[],version:o.version
-      } as ServiceOrder & {reservationId?:string|null})));
+        guestName:o.guest_id,slaMinutes:0,history:[],version:o.version
+      })));
       setLiveError("");
     }catch(error){setLiveError(error instanceof Error?error.message:"Failed to load live tasks")}
   }
   useEffect(()=>{void loadLiveOrders()},[live,role]);
-  const userId=role==="cleaner"?"u-cleaner":role==="technician"?"u-tech":"u-manager";
-  const visible=useMemo(()=>orders.filter(o=>canSeeServiceOrder(role,userId,o)),[orders,role,userId]);
-  const nav=roleNavigation[role];
-  const current=nav.includes(active)?active:nav[0];
 
   const act=async(id:string,action:"accept"|"start"|"complete")=>{
     if(live){
-      const order=orders.find(o=>o.id===id); if(!order)return;
+      const order=orders.find(o=>o.id===id);if(!order)return;
       try{await api.serviceOrderAction({id,action,version:order.version??1});await loadLiveOrders()}
       catch(error){setLiveError(error instanceof Error?error.message:"Action failed")}
       return;
     }
     setOrders(currentOrders=>currentOrders.map(o=>{
       if(o.id!==id)return o;
-      try{
-        const status=transitionServiceOrder(o.status,action);
-        return {...o,status,assigneeUserId:o.assigneeUserId??userId,history:[...o.history,action]};
-      }catch{return o}
+      try{const status=transitionServiceOrder(o.status,action);return {...o,status,assigneeUserId:o.assigneeUserId??userId,history:[...o.history,action]}}catch{return o}
     }));
   };
 
   const content=()=>{
-    if(current==="overview"||current==="my-tasks"||current==="inbox")return <>{liveError&&<div className="notice">{liveError}</div>}<section className="kpis"><article><span>Visible tasks</span><b>{visible.length}</b></article><article><span>Overdue SLA</span><b>0</b></article><article><span>Property</span><b>NRG</b></article><article><span>Role</span><b>{role.replaceAll("_"," ")}</b></article></section><Orders orders={visible} act={act}/></>;
-    if(current==="front-desk")return <Panel title="Reservations"><div className="notice">Front Desk workflow shell is isolated to front-office roles. Live reservation data will come from the transactional store.</div></Panel>;
-    if(current==="guests")return <Panel title="Guest 360"><div className="notice">Guest profile, stay history and service interactions share one hospitality identity. No real personal data is seeded.</div></Panel>;
-    if(current==="housekeeping")return <Panel title="Housekeeping"><Workflow text="occupied → checkout_due → dirty → cleaning → inspection → ready"/><div className="notice">DND and service-declined remain explicit branches.</div></Panel>;
-    if(current==="maintenance")return <Panel title="Maintenance"><Workflow text="open → assigned/in_progress → waiting/blocked → resolved → inspection/verified → closed"/></Panel>;
-    if(current==="host")return <Panel title="Host Desk"><div className="notice">Listings, booking readiness and integrations are shown truthfully. No OTA/iCal connector is marked active until connected.</div></Panel>;
-    if(current==="finance")return <Panel title="Finance"><div className="notice">No financial KPIs are invented. Revenue, ADR and RevPAR stay unavailable until backed by captured transactional data.</div></Panel>;
-    if(current==="admin")return <><section className="kpis"><article><span>Listings</span><b>4</b></article><article><span>Roles</span><b>13</b></article><article><span>Service orders</span><b>{orders.length}</b></article><article><span>Integrations</span><b>{integrationCatalog.length}</b></article></section><Orders orders={orders} act={act}/></>;
-    if(current==="integrations")return <Panel title="Integration Hub"><div className="integrationGrid">{integrationCatalog.map(item=><article className="integrationCard" key={item.provider}><div><b>{item.label}</b><span>{item.capabilities.join(" · ")}</span></div><span className={"status "+(item.status==="configured"?"done":"assigned")}>{item.status.replaceAll("_"," ")}</span></article>)}</div><div className="notice">Credentials are never stored in this UI, browser storage or GitHub. Live secrets are added only to the deployment secret store.</div></Panel>;
+    if(current==="overview")return <Dashboard orders={visible} role={role}/>;
+    if(current==="my-tasks"||current==="inbox")return <><div className="sectionHead"><div><small>OPERATIONS QUEUE</small><h2>{current==="my-tasks"?"My Tasks":"Inbox"}</h2></div></div>{liveError&&<div className="notice">{liveError}</div>}<Orders orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/></>;
+    if(current==="front-desk")return <FrontDesk/>;
+    if(current==="guests")return <Guest360/>;
+    if(current==="housekeeping")return <Housekeeping/>;
+    if(current==="maintenance")return <Maintenance/>;
+    if(current==="host")return <HostDesk step={hostStep} setStep={setHostStep}/>;
+    if(current==="finance")return <Finance/>;
+    if(current==="admin")return <AdminPanel orders={orders} act={act}/>;
+    if(current==="integrations")return <IntegrationHub/>;
+    if(current==="team")return <TeamPanel/>;
     return <Panel title={labels[current]??current}><div className="notice">Module foundation ready for the next backend slice.</div></Panel>;
   };
 
-  return <div className="staffLayout"><aside className="sidebar"><div className="sideBrand">VIEWS <small>OPERATIONS</small></div><nav>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} onClick={()=>setActive(id)}><Icon size={17}/><span>{labels[id]??id}</span></button>})}</nav></aside>
-    <main className="staffMain"><header className="staffHead"><div><small>VIEWS OPERATIONS</small><h1>{labels[current]??current}</h1></div>{allowRoleSwitch?<select value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{r.replaceAll("_"," ")}</option>)}</select>:<span className="roleLock">{role.replaceAll("_"," ")}</span>}</header>{content()}</main></div>
+  return <div className="staffLayout">
+    <aside className="sidebar"><div className="sideBrand">VIEWS <small>OPERATIONS</small></div><nav>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} onClick={()=>setActive(id)}><Icon size={17}/><span>{labels[id]??id}</span></button>})}</nav></aside>
+    <main className="staffMain">
+      <header className="staffHead"><div><small>VIEWS OPERATIONS</small><h1>{labels[current]??current}</h1></div>{allowRoleSwitch?<select value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{r.replaceAll("_"," ")}</option>)}</select>:<span className="roleLock">{role.replaceAll("_"," ")}</span>}</header>
+      {content()}
+    </main>
+    <StaffMobileDock tab={mobileTab} setTab={setMobileTab}/>
+    <StaffMobileSheet tab={mobileTab} setTab={setMobileTab} orders={visible} selected={selectedOrder} setSelected={setSelectedOrder} act={act} proofBefore={proofBefore} proofAfter={proofAfter} setProofBefore={setProofBefore} setProofAfter={setProofAfter}/>
+  </div>;
 }
 
-function Orders({orders,act}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>}){
-  return <Panel title="Service Orders">{orders.length===0?<div className="emptyLine">No requests in this queue.</div>:<div className="orderList">{orders.map(o=><article className="order" key={o.id}><div><b>{o.title}</b><span>Apt {o.unit??"—"} · {o.category.replaceAll("_"," ")} · {o.guestName??"No guest"}</span></div><span className={"status "+o.status}>{o.status.replaceAll("_"," ")}</span><div className="orderActions"><button onClick={()=>act(o.id,"accept")}>Accept</button><button className="primary" onClick={()=>act(o.id,"start")}>Start</button><button onClick={()=>act(o.id,"complete")}>Complete</button></div></article>)}</div>}</Panel>
+function Dashboard({orders,role}:{orders:ServiceOrder[];role:HospitalityRole}){
+  return <>
+    <section className="kpis"><article><span>Tasks today</span><b>{orders.length}</b></article><article><span>Check-ins</span><b>0</b></article><article><span>Open SLA</span><b>{orders.filter(o=>o.status!=="done").length}</b></article><article><span>Role</span><b>{role.replaceAll("_"," ")}</b></article></section>
+    <div className="staffBoard">
+      <Panel title="Today's tasks"><div className="compactRows">{orders.slice(0,5).map(o=><div key={o.id}><span>10:00</span><b>{o.title}</b><small>{o.unit?"Apt "+o.unit:"Operational task"}</small><i className={"status "+o.status}>{o.status.replaceAll("_"," ")}</i></div>)}</div></Panel>
+      <Panel title="Schedule / Calendar"><div className="timelineBoard"><div className="timelineHeader"><span>12 Oct</span><span>13 Oct</span><span>14 Oct</span><span>15 Oct</span></div><div className="timelineRow"><b>U-Tower #235</b><i className="bar guest">Guest stay</i></div><div className="timelineRow"><b>Nest One #12</b><i className="bar cleaning">Cleaning</i></div><div className="timelineRow"><b>Gardens #14</b><i className="bar maintenance">Maintenance</i></div></div></Panel>
+    </div>
+  </>;
 }
+
+function FrontDesk(){
+  return <div className="staffBoard">
+    <Panel title="Reservations"><div className="compactRows">{["Alex Johnson","Sarah Miller","David Kim"].map((n,i)=><div key={n}><span>{i===0?"12–15 Oct":"Upcoming"}</span><b>{n}</b><small>{i===0?"U-Tower #235":"VIEWS apartment"}</small><i className={"status "+(i===0?"confirmed":"assigned")}>{i===0?"confirmed":"request"}</i></div>)}</div></Panel>
+    <Panel title="Immigration registration queue"><div className="compactRows">{["John Smith (USA)","Maria Garcia (Spain)","Chen Wei (China)"].map((n,i)=><div key={n}><span>{i===0?"New":"Pending"}</span><b>{n}</b><small>Passport data + stay details</small><i className={"status "+(i===2?"done":"assigned")}>{i===2?"sent":"waiting"}</i></div>)}</div></Panel>
+  </div>;
+}
+
+function Guest360(){
+  return <div className="guest360"><div className="guestCard"><div className="avatarBig">AJ</div><div><small>GUEST360</small><h2>Alex Johnson</h2><p>alex.johnson@email.com · +998 90 123 45 67</p></div></div><div className="guest360Grid"><Panel title="Documents"><div className="detailRows"><span>Passport<b>Verified</b></span><span>Registration<b>Ready for submission</b></span><span>Nationality<b>USA</b></span></div></Panel><Panel title="Stay history"><div className="compactRows"><div><span>Current</span><b>U-Tower #235</b><small>12–15 Oct</small></div><div><span>Previous</span><b>VIEWS apartment</b><small>Completed</small></div></div></Panel></div></div>;
+}
+
+function Housekeeping(){
+  return <Panel title="Housekeeping workflow"><div className="workflow"><span><b>occupied</b></span><span><i>→</i><b>checkout_due</b></span><span><i>→</i><b>dirty</b></span><span><i>→</i><b>cleaning</b></span><span><i>→</i><b>inspection</b></span><span><i>→</i><b>ready</b></span></div><div className="proofGrid"><article><Camera/><b>Before photo</b><small>Proof placeholder</small></article><article><CheckCircle2/><b>Inspection</b><small>Supervisor verification</small></article><article><ImageIcon/><b>After photo</b><small>Proof placeholder</small></article></div></Panel>;
+}
+
+function Maintenance(){
+  return <Panel title="Maintenance"><div className="workflow"><span><b>open</b></span><span><i>→</i><b>in_progress</b></span><span><i>→</i><b>waiting / blocked</b></span><span><i>→</i><b>inspection</b></span><span><i>→</i><b>closed</b></span></div><div className="notice">Technician sees only assigned maintenance work; managers see the full queue and exceptions.</div></Panel>;
+}
+
+function HostDesk({step,setStep}:{step:number;setStep:(n:number)=>void}){
+  return <div className="hostDesk">
+    <div className="hostTabs">{["Listing wizard","Calendar & pricing","Bookings","Calendar sync","Host finance"].map((x,i)=><button className={step===i+1?"active":""} key={x} onClick={()=>setStep(i+1)}>{x}</button>)}</div>
+    {step===1&&<Panel title="Listing wizard"><div className="wizardSteps"><span className="on">1 Basics</span><span>2 Photos</span><span>3 Amenities</span><span>4 Prices</span><span>5 Rules</span></div><div className="hostForm"><label>Property name<input placeholder="VIEWS apartment"/></label><label>Address<input value="Tashkent, NRG U-Tower" readOnly/></label><label>Type<select><option>Apartment</option></select></label><button className="primary">Next</button></div></Panel>}
+    {step===2&&<Panel title="Calendar & pricing"><div className="calendarGrid">{Array.from({length:31},(_,i)=><span key={i} className={[5,6,12,13,14].includes(i)?"booked":[19,20].includes(i)?"blocked":""}>{i+1}</span>)}</div><div className="calendarLegend"><span className="available">Available</span><span className="booked">Booked</span><span className="blocked">Blocked</span></div></Panel>}
+    {step===3&&<Panel title="Bookings"><div className="compactRows">{["Alex Johnson","Sarah Miller","David Kim"].map((n,i)=><div key={n}><span>{i===0?"12–15 Oct":"Upcoming"}</span><b>{n}</b><small>Live amount comes from booking source</small><i className={"status "+(i===2?"cancelled":"confirmed")}>{i===2?"cancelled":"confirmed"}</i></div>)}</div></Panel>}
+    {step===4&&<Panel title="Calendar sync"><div className="syncCard"><RefreshCw/><div><b>iCal / OTA synchronization</b><p>Airbnb / Booking.com connectors appear here after partner authorization. No sync state is fabricated.</p></div><span className="status assigned">not connected</span></div></Panel>}
+    {step===5&&<Panel title="Host finance"><section className="kpis"><article><span>Gross revenue</span><b>—</b></article><article><span>Paid out</span><b>—</b></article><article><span>Commission</span><b>—</b></article><article><span>Pending</span><b>—</b></article></section><div className="notice">Financial values remain unavailable until backed by live captured transactions.</div></Panel>}
+  </div>;
+}
+
+function Finance(){
+  return <div className="staffBoard"><Panel title="Finance & invoices"><div className="compactRows"><div><span>Payment</span><b>Booking invoice</b><small>Live data required</small><i className="status assigned">pending</i></div><div><span>Refund</span><b>Cancellation refund</b><small>Exact policy calculation required</small><i className="status assigned">review</i></div></div></Panel><Panel title="Financial controls"><div className="notice">No financial KPIs are invented. Revenue, ADR, RevPAR and balances are rendered only from persisted transactions.</div></Panel></div>;
+}
+
+function AdminPanel({orders,act}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>}){
+  return <div className="adminGrid"><Panel title="Object moderation"><div className="compactRows">{["Sunrise Apartments","City Loft","Urban Garden"].map((n,i)=><div key={n}><span>{i===0?"Pending":"Published"}</span><b>{n}</b><small>Listing quality / content check</small><i className={"status "+(i===0?"assigned":"done")}>{i===0?"review":"active"}</i></div>)}</div></Panel><Panel title="Disputes & refunds"><div className="compactRows"><div><span>Case</span><b>Cancellation dispute</b><small>Awaiting evidence</small><i className="status assigned">open</i></div><div><span>Refund</span><b>Booking adjustment</b><small>Provider-backed calculation required</small><i className="status assigned">review</i></div></div></Panel><Panel title="All service orders"><Orders orders={orders} act={act}/></Panel></div>;
+}
+
+function IntegrationHub(){
+  return <Panel title="Integration Hub"><div className="integrationGrid">{integrationCatalog.map(item=><article className="integrationCard" key={item.provider}><div><b>{item.label}</b><span>{item.capabilities.join(" · ")}</span></div><span className={"status "+(item.status==="configured"?"done":"assigned")}>{item.status.replaceAll("_"," ")}</span></article>)}</div><div className="notice">Credentials are never stored in this UI, browser storage or GitHub. Live secrets are added only to the deployment secret store.</div></Panel>;
+}
+
+function TeamPanel(){
+  return <Panel title="Team & RBAC"><div className="compactRows">{["Cleaner","Concierge","Technician","Front Desk","General Manager"].map((r,i)=><div key={r}><span>Role</span><b>{r}</b><small>Property-scoped permissions</small><i className="status done">active</i></div>)}</div></Panel>;
+}
+
+function Orders({orders,act,onOpen}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;onOpen?:(o:ServiceOrder)=>void}){
+  return <Panel title="Service Orders">{orders.length===0?<div className="emptyLine">No requests in this queue.</div>:<div className="orderList">{orders.map(o=><article className="order" key={o.id}><div onClick={()=>onOpen?.(o)}><b>{o.title}</b><span>Apt {o.unit??"—"} · {o.category.replaceAll("_"," ")} · {o.guestName??"No guest"}</span></div><span className={"status "+o.status}>{o.status.replaceAll("_"," ")}</span><div className="orderActions"><button onClick={()=>act(o.id,"accept")}>Accept</button><button className="primary" onClick={()=>act(o.id,"start")}>Start</button><button onClick={()=>act(o.id,"complete")}>Complete</button></div></article>)}</div>}</Panel>;
+}
+
 function Panel({title,children}:{title:string;children:React.ReactNode}){return <section className="panel"><header><small>VIEWS CRM</small><h2>{title}</h2></header>{children}</section>}
-function Workflow({text}:{text:string}){return <div className="workflow">{text.split(" → ").map((x,i)=><span key={x}>{i>0&&<i>→</i>}<b>{x}</b></span>)}</div>}
+
+function StaffMobileDock({tab,setTab}:{tab:string;setTab:(t:any)=>void}){
+  const items:[string,React.ComponentType<{size?:number}>][]=[["tasks",ClipboardList],["detail",FileText],["proof",Camera],["create",Plus],["notifications",Bell]];
+  return <nav className="staffMobileDock">{items.map(([id,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><Icon size={17}/><span>{id}</span></button>)}</nav>;
+}
+
+function StaffMobileSheet({tab,setTab,orders,selected,setSelected,act,proofBefore,proofAfter,setProofBefore,setProofAfter}:{tab:string;setTab:(t:any)=>void;orders:ServiceOrder[];selected:ServiceOrder|null;setSelected:(o:ServiceOrder|null)=>void;act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;proofBefore:boolean;proofAfter:boolean;setProofBefore:(v:boolean)=>void;setProofAfter:(v:boolean)=>void}){
+  return <div className="staffMobileSheet">
+    {tab==="tasks"&&<div><h3>My Tasks</h3>{orders.slice(0,4).map(o=><button className="mobileTask" key={o.id} onClick={()=>{setSelected(o);setTab("detail")}}><span>{o.title}</span><i className={"status "+o.status}>{o.status}</i></button>)}</div>}
+    {tab==="detail"&&<div><h3>Task detail</h3>{selected?<><div className="mobileDetail"><b>{selected.title}</b><span>Apt {selected.unit??"—"}</span><span>{selected.category}</span><span>SLA {selected.slaMinutes||"—"} min</span></div><div className="orderActions"><button onClick={()=>act(selected.id,"accept")}>Accept</button><button className="primary" onClick={()=>act(selected.id,"start")}>Start</button><button onClick={()=>act(selected.id,"complete")}>Complete</button></div></>:<p>Select a task.</p>}</div>}
+    {tab==="proof"&&<div><h3>Before / after proof</h3><div className="mobileProof"><button className={proofBefore?"done":""} onClick={()=>setProofBefore(true)}><Camera/><b>Before</b><small>{proofBefore?"Captured":"Capture photo"}</small></button><button className={proofAfter?"done":""} onClick={()=>setProofAfter(true)}><ImageIcon/><b>After</b><small>{proofAfter?"Captured":"Capture photo"}</small></button></div></div>}
+    {tab==="create"&&<div><h3>Create task</h3><div className="mobileCreate"><label>Type<select><option>Cleaning</option><option>Maintenance</option><option>Concierge</option></select></label><label>Description<textarea placeholder="What needs to be done?"/></label><label>Apartment<input placeholder="235"/></label><button className="primary">Create</button></div></div>}
+    {tab==="notifications"&&<div><h3>Notifications</h3><div className="compactRows"><div><span>Now</span><b>New task assigned</b><small>Apartment #235</small></div><div><span>5 min</span><b>Booking confirmed</b><small>Guest arrival updated</small></div><div><span>10 min</span><b>Message</b><small>Concierge request waiting</small></div></div></div>}
+  </div>;
+}
