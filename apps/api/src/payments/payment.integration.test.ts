@@ -226,6 +226,21 @@ describe.sequential("payments and ledger integration",()=>{
     expect(duplicateTx.status).toBe("duplicate_transaction");
   });
 
+  it("rejects a reused webhook event id with a different payload",async()=>{
+    const paymentIntentId=await db.withActor(actor,async client=>
+      (await client.query<{id:string}>(
+        "SELECT id FROM payment_intents WHERE idempotency_key='payment-intent-2'"
+      )).rows[0].id
+    );
+    await expect(webhooks.processVerified("payme",event({
+      eventId:"evt-capture-part-2",
+      txId:"cap-part-2",
+      type:"captured",
+      paymentIntentId,
+      amountMinor:999n
+    }),"{\"changed\":true}")).rejects.toThrow("WEBHOOK_EVENT_PAYLOAD_MISMATCH");
+  });
+
   it("keeps posted ledger immutable",async()=>{
     const journal=await db.withActor(actor,async client=>
       (await client.query<{id:string}>(
@@ -297,6 +312,23 @@ describe.sequential("payments and ledger integration",()=>{
     expect(refundRequest.status).toBe("pending");
     expect(BigInt(refundRequest.amount_minor)).toBe(quote.totalMinor);
     expect(refundRequest.external_capture_id).toBe("cap-late-1");
+    const lateLedger=await db.withActor(actor,async client=>{
+      const row=await client.query<{code:string;side:string}>(
+        `SELECT a.code,e.side
+           FROM ledger_entries e
+           JOIN ledger_accounts a ON a.id=e.account_id
+           JOIN ledger_journals j ON j.id=e.journal_id
+          WHERE j.reference_id=$1 AND j.description='Late capture pending refund'
+          ORDER BY e.side`,
+        [payment.paymentIntentId]
+      );
+      return row.rows;
+    });
+    expect(lateLedger).toEqual(expect.arrayContaining([
+      expect.objectContaining({code:"provider_clearing",side:"debit"}),
+      expect.objectContaining({code:"refunds_payable",side:"credit"})
+    ]));
+
 
     const worker=await refunds.processTenantBatch(ORG,10);
     expect(worker.submitted).toBe(1);
