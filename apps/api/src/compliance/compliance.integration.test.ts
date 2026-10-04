@@ -1,7 +1,8 @@
 import {afterAll,beforeAll,describe,expect,it} from "vitest";
 import {DatabaseService} from "../database/database.service";
-import type {DocumentVaultPort} from "./document-vault.port";
+import type {DocumentUploadVaultPort} from "./document-upload-vault.port";
 import {FiscalizationService} from "./fiscalization.service";
+import {GuestDocumentService} from "./guest-document.service";
 import type {FiscalizationProviderPort} from "./fiscalization-provider.port";
 import {GuestRegistrationService} from "./guest-registration.service";
 import {RegistrationDeadlineService} from "./registration-deadline.service";
@@ -29,10 +30,30 @@ const actor={
   organizationId:ORG,userId:USER,membershipId:MEMBERSHIP,requestId:"compliance-integration-test"
 };
 
-class TestVault implements DocumentVaultPort{
+class TestVault implements DocumentUploadVaultPort{
   readonly vaultId="vault-test";
-  async readDocument(documentRecordId:string){
-    expect(documentRecordId).toBe(DOCUMENT);
+
+  async createUpload(input:Parameters<DocumentUploadVaultPort["createUpload"]>[0]){
+    return {
+      objectKey:"uz-test/guest-documents/"+input.documentRecordId+".bin",
+      storageRegion:input.storageRegion,
+      uploadUrl:"https://upload.invalid/"+input.documentRecordId,
+      expiresAt:"2030-01-01T00:00:00.000Z",
+      requiredHeaders:{"content-type":input.contentType},
+      encryptionKeyRef:"kms-test"
+    };
+  }
+
+  async finalizeUpload(input:Parameters<DocumentUploadVaultPort["finalizeUpload"]>[0]){
+    return {
+      objectKey:input.objectKey,
+      checksumSha256:"a".repeat(64),
+      encryptionKeyRef:"kms-test-finalized",
+      documentNumberHash:"document-hash-"+input.documentRecordId
+    };
+  }
+
+  async readDocument(_documentRecordId:string){
     return {
       documentType:"passport",documentNumber:"TEST-PASSPORT-001",
       issuingCountryCode:"DE",expiresOn:"2030-01-01"
@@ -74,6 +95,7 @@ const registry=new ComplianceProviderRegistry();
 registry.registerVault(new TestVault());
 registry.registerGuestRegistration(new TestRegistrationProvider());
 registry.registerFiscalization(new TestFiscalizationProvider());
+const documents=new GuestDocumentService(db,registry);
 const registrations=new GuestRegistrationService(db,registry);
 const deadlines=new RegistrationDeadlineService(db);
 const fiscalization=new FiscalizationService(db,registry);
@@ -145,12 +167,14 @@ beforeAll(async()=>{
     await client.query(
       `INSERT INTO guest_document_records(
          id,organization_id,reservation_guest_id,document_type,issuing_country_code,expires_on,
-         document_number_hash,encrypted_fields,storage_region,encryption_key_ref,verification_status,verified_at,verified_by
+         document_number_hash,encrypted_fields,storage_region,vault_id,encryption_key_ref,
+         verification_status,verified_at,verified_by,data_residency_policy_id
        ) VALUES(
          $1,$2,$3,'passport','DE','2030-01-01',
-         'test-document-hash',decode('00','hex'),'UZ','kms-test','verified',now(),$4
+         'test-document-hash',decode('00','hex'),'UZ','vault-test','kms-test',
+         'verified',now(),$4,$5
        ) ON CONFLICT DO NOTHING`,
-      [DOCUMENT,ORG,RES_GUEST,USER]
+      [DOCUMENT,ORG,RES_GUEST,USER,RESIDENCY_POLICY]
     );
 
     await client.query(
@@ -230,6 +254,46 @@ describe.sequential("Uzbekistan compliance integration",()=>{
 
     const queue=await registrations.listQueue(actor,PROPERTY,"confirmed");
     expect(queue.some(x=>x.id===prepared.cases[0].id)).toBe(true);
+  });
+
+  it("uses policy-selected regional direct upload, finalizes checksum and verifies document idempotently",async()=>{
+    const upload=await documents.beginUpload(actor,RES_GUEST,{
+      documentType:"passport",
+      contentType:"image/jpeg",
+      issuingCountryCode:"DE",
+      expiresOn:"2031-01-01"
+    });
+    expect(upload.storageRegion).toBe("UZ");
+    expect(upload.uploadUrl).toBe("https://upload.invalid/"+upload.documentRecordId);
+    expect(upload.requiredHeaders["content-type"]).toBe("image/jpeg");
+
+    const finalized=await documents.finalizeUpload(actor,upload.documentRecordId);
+    expect(finalized.status).toBe("pending_verification");
+    expect(finalized.checksumSha256).toBe("a".repeat(64));
+
+    const verified=await documents.verify(actor,upload.documentRecordId);
+    expect(verified.status).toBe("verified");
+    expect(verified.idempotentReplay).toBe(false);
+
+    const replay=await documents.verify(actor,upload.documentRecordId);
+    expect(replay.idempotentReplay).toBe(true);
+
+    const stored=await db.withActor(actor,async client=>{
+      return (await client.query<{
+        storage_region:string;vault_id:string;object_checksum_sha256:string;
+        verification_status:string;data_residency_policy_id:string;
+      }>(
+        `SELECT storage_region,vault_id,object_checksum_sha256,
+                verification_status,data_residency_policy_id
+           FROM guest_document_records WHERE id=$1`,
+        [upload.documentRecordId]
+      )).rows[0];
+    });
+    expect(stored.storage_region).toBe("UZ");
+    expect(stored.vault_id).toBe("vault-test");
+    expect(stored.object_checksum_sha256).toBe("a".repeat(64));
+    expect(stored.verification_status).toBe("verified");
+    expect(stored.data_residency_policy_id).toBe(RESIDENCY_POLICY);
   });
 
   it("creates fiscalization once per provider transaction and confirms the receipt",async()=>{
