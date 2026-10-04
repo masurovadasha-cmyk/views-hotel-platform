@@ -15,7 +15,7 @@ const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","
 const labels:Record<string,string>={
   overview:"Overview","my-tasks":"My Tasks",inbox:"Inbox",operations:"Operations","front-desk":"Front Desk",guests:"Guests CRM",
   housekeeping:"Housekeeping",maintenance:"Maintenance",host:"Host Desk",finance:"Finance",admin:"Admin",integrations:"Integrations",
-  team:"Team",messages:"Messages"
+  team:"Team",messages:"Messages",handover:"Shift Handover",exceptions:"Exceptions","stay-card":"Stay Card",timeline:"Apartment Timeline"
 };
 const iconFor=(id:string)=>id.includes("maintenance")?Wrench:id.includes("housekeeping")?Sparkles:id.includes("front")?CalendarDays:id==="guests"?Users:id==="finance"?WalletCards:id==="host"?Building2:id==="admin"||id==="integrations"?ShieldCheck:id==="inbox"?Bell:id==="overview"?Gauge:ClipboardList;
 
@@ -68,6 +68,10 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="guests")return <Guest360/>;
     if(current==="housekeeping")return <Housekeeping/>;
     if(current==="maintenance")return <Maintenance/>;
+    if(current==="handover")return <ShiftHandover/>;
+    if(current==="exceptions")return <ExceptionsPanel/>;
+    if(current==="stay-card")return <StayCard/>;
+    if(current==="timeline")return <ApartmentTimeline/>;
     if(current==="host")return <HostDesk step={hostStep} setStep={setHostStep}/>;
     if(current==="finance")return <Finance/>;
     if(current==="admin")return <AdminPanel orders={orders} act={act}/>;
@@ -114,6 +118,39 @@ function Housekeeping(){
 
 function Maintenance(){
   return <Panel title="Maintenance"><div className="workflow"><span><b>open</b></span><span><i>→</i><b>in_progress</b></span><span><i>→</i><b>waiting / blocked</b></span><span><i>→</i><b>inspection</b></span><span><i>→</i><b>closed</b></span></div><div className="notice">Technician sees only assigned maintenance work; managers see the full queue and exceptions.</div></Panel>;
+}
+
+function ShiftHandover(){
+  return <div className="handoverGrid">
+    <Panel title="Unresolved Requests"><div className="riskList"><article><b>Late check-out approval</b><span>Room 412 · pending assignment</span></article><article><b>Laundry pickup overdue</b><span>Unit 208 · 45 min overdue</span></article><article><b>Maintenance unacknowledged</b><span>Suite 305 · since 14:30</span></article></div></Panel>
+    <Panel title="Overdue SLAs"><div className="riskList"><article className="dangerRow"><b>Concierge taxi booking</b><span>SLA 30 min · elapsed 52 min</span></article><article className="dangerRow"><b>Housekeeping inspection</b><span>Unit 110 · SLA breached</span></article></div></Panel>
+    <Panel title="Risky Operational Items"><div className="riskList"><article><b>VIP noise complaint</b><span>Apt 501 · unresolved</span></article><article><b>DND active</b><span>Unit 307 · cleaning not completed</span></article><article><b>Early arrival</b><span>Booking #8821 · room not ready</span></article></div></Panel>
+    <Panel title="Required Follow-Up"><div className="riskList"><article><b>Minibar restock</b><span>Apt 202</span></article><article><b>Lost phone charger</b><span>Apt 318</span></article><article><b>Late checkout authorization</b><span>Unit 415</span></article></div></Panel>
+  </div>;
+}
+
+function ExceptionsPanel(){
+  return <div className="exceptionsGrid">
+    <section className="kpis"><article><span>Lost & Found</span><b>2</b></article><article><span>Damage reports</span><b>1</b></article><article><span>Low-stock SKUs</span><b>4</b></article><article><span>SLA breaches</span><b>2</b></article></section>
+    <Panel title="Lost & Found"><div className="compactRows"><div><span>Pending</span><b>Phone charger</b><small>Apt 318 · found after checkout</small><i className="status assigned">pending</i></div><div><span>Claimed</span><b>Black scarf</b><small>Lobby</small><i className="status done">claimed</i></div></div></Panel>
+    <Panel title="Damage Reports"><div className="compactRows"><div><span>High</span><b>Door lock damage</b><small>Apt 207 · estimate pending</small><i className="status assigned">review</i></div></div></Panel>
+    <Panel title="Minimum Inventory Alerts"><div className="compactRows"><div><span>12 / 30</span><b>Toiletries</b><small>Below par level</small><i className="status assigned">reorder</i></div><div><span>8 / 20</span><b>Bed linen</b><small>Below par level</small><i className="status assigned">reorder</i></div></div></Panel>
+  </div>;
+}
+
+function StayCard(){
+  return <div className="stayCard">
+    <header><div className="avatarBig">MS</div><div><small>STAY CARD</small><h2>Maria Santos · VIP Gold</h2><p>Apt 304 · Studio Deluxe · active stay</p></div><span className="status done">cleared</span></header>
+    <div className="stayGrid">
+      <Panel title="Guest & Booking"><div className="detailRows"><span>Check-in<b>14 Jan</b></span><span>Check-out<b>21 Jan</b></span><span>Booking<b>#VW-2024-0841</b></span><span>Rate<b>Live booking data</b></span><span>Balance<b>Provider-backed</b></span></div></Panel>
+      <Panel title="Services & Operations"><div className="detailRows"><span>Housekeeping<b>Cleaned 13:42</b></span><span>DND<b>No</b></span><span>Maintenance<b>1 open ticket</b></span><span>Service Orders<b>2 active</b></span><span>Last interaction<b>Front Desk 09:15</b></span></div></Panel>
+    </div>
+  </div>;
+}
+
+function ApartmentTimeline(){
+  const events=[["09:15","Front Desk","Guest interaction"],["10:00","Housekeeping","Cleaning started"],["11:22","Maintenance","AC ticket opened"],["13:42","Housekeeping","Cleaning completed"],["14:05","Inspection","Room ready"]];
+  return <Panel title="Apartment Timeline"><div className="apartmentTimeline">{events.map(([time,type,text])=><article key={time+type}><time>{time}</time><span/><div><b>{type}</b><small>{text}</small></div></article>)}</div><div className="notice">Timeline unifies bookings, check-in/out, housekeeping, maintenance and service orders for one apartment.</div></Panel>;
 }
 
 function HostDesk({step,setStep}:{step:number;setStep:(n:number)=>void}){
