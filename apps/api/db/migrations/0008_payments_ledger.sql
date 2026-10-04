@@ -1,7 +1,7 @@
 BEGIN;
 
 CREATE TYPE payment_intent_status AS ENUM (
-  'requires_payment','pending_provider','authorized','captured','refund_pending','partially_refunded','refunded','failed','cancelled'
+  'requires_payment','pending_provider','authorized','partially_captured','captured','refund_pending','partially_refunded','refunded','failed','cancelled'
 );
 CREATE TYPE payment_attempt_status AS ENUM (
   'created','redirected','authorized','captured','failed','cancelled'
