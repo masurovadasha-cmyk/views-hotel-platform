@@ -3,6 +3,7 @@ import {Injectable} from "@nestjs/common";
 import {DatabaseService} from "../database/database.service";
 import type {RequestActorContext} from "../identity/actor-context";
 import {ComplianceProviderRegistry} from "./provider.registry";
+import {assertComplianceRole} from "./compliance-authorization";
 import {registrationDueAt} from "./uzbekistan-policy";
 
 type RegistrationPolicyConfig={
@@ -20,7 +21,7 @@ export class GuestRegistrationService{
 
   async prepareReservation(actor:RequestActorContext,reservationId:string){
     return this.db.withActor(actor,async client=>{
-      await assertRole(client,actor.membershipId,["host","owner","manager","front_desk"]);
+      await assertComplianceRole(client,actor.membershipId,["host","owner","manager","front_desk"]);
 
       const reservationResult=await client.query<{
         property_id:string;country_code:string;check_in_at:Date;check_out_at:Date;timezone:string;status:string;
@@ -131,7 +132,7 @@ export class GuestRegistrationService{
 
   async listQueue(actor:RequestActorContext,propertyId:string,status?:string){
     return this.db.withActor(actor,async client=>{
-      await assertRole(client,actor.membershipId,["host","owner","manager","front_desk"]);
+      await assertComplianceRole(client,actor.membershipId,["host","owner","manager","front_desk"]);
       const access=await client.query<{allowed:boolean}>(
         "SELECT app.can_access_property($1::uuid) AS allowed",[propertyId]
       );
@@ -162,7 +163,7 @@ export class GuestRegistrationService{
 
   async submitNow(actor:RequestActorContext,caseId:string){
     const claimed=await this.db.withActor(actor,async client=>{
-      await assertRole(client,actor.membershipId,["host","owner","manager","front_desk"]);
+      await assertComplianceRole(client,actor.membershipId,["host","owner","manager","front_desk"]);
 
       const rowResult=await client.query<{
         id:string;property_id:string;reservation_id:string;reservation_guest_id:string;provider:string;status:string;
@@ -330,13 +331,3 @@ export class GuestRegistrationService{
   }
 }
 
-async function assertRole(client:{query:<T>(sql:string,params?:unknown[])=>Promise<{rows:T[]}>},membershipId:string,allowed:string[]){
-  const result=await client.query<{code:string}>(
-    `SELECT r.code
-       FROM organization_memberships m
-       JOIN roles r ON r.id=m.role_id
-      WHERE m.id=$1 AND m.status='active'`,
-    [membershipId]
-  );
-  if(!result.rows[0]||!allowed.includes(result.rows[0].code))throw new Error("COMPLIANCE_ROLE_FORBIDDEN");
-}
