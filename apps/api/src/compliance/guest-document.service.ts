@@ -143,7 +143,7 @@ export class GuestDocumentService{
       if(!row.object_key)throw new Error("DOCUMENT_OBJECT_KEY_MISSING");
       if(!row.data_residency_policy_id)throw new Error("DATA_RESIDENCY_POLICY_NOT_SNAPSHOTTED");
       if(row.verification_status==="verified")throw new Error("DOCUMENT_ALREADY_VERIFIED");
-      return row;
+      return {...row,object_key:row.object_key};
     });
 
     const vault=this.providers.vault(context.vault_id);
