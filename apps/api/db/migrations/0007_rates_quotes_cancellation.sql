@@ -105,6 +105,11 @@ CREATE TABLE cancellation_policy_templates (
 ALTER TABLE rate_plans
   ADD COLUMN cancellation_policy_id uuid REFERENCES cancellation_policy_templates(id);
 
+ALTER TABLE reservation_price_lines
+  ADD COLUMN code text,
+  ADD COLUMN refundable boolean NOT NULL DEFAULT true,
+  ADD COLUMN metadata jsonb NOT NULL DEFAULT '{}'::jsonb;
+
 CREATE TABLE booking_quotes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES organizations(id),
