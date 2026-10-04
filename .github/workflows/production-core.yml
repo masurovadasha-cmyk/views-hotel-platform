@@ -35,17 +35,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Enable extensions
-        run: psql -h localhost -U views -d views -f infra/postgres/init/001_extensions.sql
+        run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f infra/postgres/init/001_extensions.sql
       - name: Apply production migrations
         run: |
-          psql -h localhost -U views -d views -f apps/api/db/migrations/0001_core_inventory.sql
-          psql -h localhost -U views -d views -f apps/api/db/migrations/0002_tenant_rls.sql
-          psql -h localhost -U views -d views -f apps/api/db/migrations/0003_identity_access.sql
-          psql -h localhost -U views -d views -f apps/api/db/migrations/0004_identity_rls.sql
-          psql -h localhost -U views -d views -f apps/api/db/migrations/0005_booking_hold_engine.sql
-          psql -h localhost -U views -d views -f apps/api/db/migrations/0006_inventory_rls.sql
-          psql -h localhost -U views -d views -f apps/api/db/migrations/0007_rates_quotes_cancellation.sql
-          psql -h localhost -U views -d views -f apps/api/db/migrations/0008_payments_ledger.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0001_core_inventory.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0002_tenant_rls.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0003_identity_access.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0004_identity_rls.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0005_booking_hold_engine.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0006_inventory_rls.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0007_rates_quotes_cancellation.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0008_payments_ledger.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
