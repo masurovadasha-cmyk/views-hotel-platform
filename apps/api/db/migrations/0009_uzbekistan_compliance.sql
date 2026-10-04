@@ -66,6 +66,7 @@ CREATE TABLE guest_document_records (
   object_key text,
   object_checksum_sha256 text,
   storage_region text NOT NULL,
+  vault_id text NOT NULL,
   encryption_key_ref text,
   verification_status document_verification_status NOT NULL DEFAULT 'pending',
   verified_at timestamptz,
