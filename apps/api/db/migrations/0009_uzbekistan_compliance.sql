@@ -123,6 +123,7 @@ CREATE TABLE fiscalization_requests (
   organization_id uuid NOT NULL REFERENCES organizations(id),
   reservation_id uuid REFERENCES reservations(id),
   payment_intent_id uuid REFERENCES payment_intents(id),
+  provider_transaction_id uuid REFERENCES provider_transactions(id),
   ledger_journal_id uuid REFERENCES ledger_journals(id),
   provider text NOT NULL,
   receipt_type fiscal_receipt_type NOT NULL,
@@ -145,6 +146,10 @@ CREATE TABLE fiscalization_requests (
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(organization_id,idempotency_key)
 );
+CREATE UNIQUE INDEX fiscalization_provider_transaction_unique
+  ON fiscalization_requests(provider_transaction_id)
+  WHERE provider_transaction_id IS NOT NULL;
+
 CREATE INDEX fiscalization_due_idx
   ON fiscalization_requests(organization_id,status,next_attempt_at,lease_until)
   WHERE status IN ('pending','failed','submitted');
