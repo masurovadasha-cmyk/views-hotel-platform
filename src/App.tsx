@@ -34,8 +34,8 @@ export function App(){
   const content=()=>{
     if(live&&loading)return <main className="authShell"><div className="notice">Checking secure session…</div></main>;
     if(live&&!session)return <main className="authShell"><AuthPanel onDone={refreshSession}/></main>;
-    if(live&&session?.mode==="guest")return <GuestApp/>;
-    if(live&&session?.mode==="staff")return <StaffApp role={session.role} onRoleChange={()=>{}} allowRoleSwitch={false}/>;
+    if(live&&session?.mode==="guest")return <GuestApp live/>;
+    if(live&&session?.mode==="staff")return <StaffApp role={session.role} onRoleChange={()=>{}} allowRoleSwitch={false} live/>;
     return demoMode==="guest"?<GuestApp/>:<StaffApp role={demoRole} onRoleChange={setDemoRole} allowRoleSwitch/>;
   };
 
