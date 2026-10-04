@@ -6,6 +6,7 @@ export type DecryptedGuestDocument={
 };
 
 export type GuestRegistrationSubmission={
+  idempotencyKey:string;
   caseId:string;
   reservationId:string;
   propertyId:string;
