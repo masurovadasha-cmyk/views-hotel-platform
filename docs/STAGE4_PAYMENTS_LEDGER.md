@@ -1,251 +1,194 @@
 # Stage 4 — Payments & Double-Entry Ledger
 
-Status: implemented and verified in VIEWS Production Core.
+Status: payment core implemented and verified. Real provider adapters are NOT CONNECTED until official merchant credentials/documentation are supplied.
 
-## Delivered
+## Production flow
 
-- Payment intents derived from server-side reservation totals
-- Hosted-checkout provider contract
-- Provider registry that reports only actually connected adapters
-- Payment attempts
-- Verified webhook inbox
-- Provider transaction ledger
-- Partial capture support
-- Full capture confirmation of booking
-- Failed/cancelled provider events
-- Refund requests
-- Refund worker with lease, retry and exponential backoff
-- Late-capture recovery
-- Partial-capture recovery after booking hold expiry
-- Double-entry accounting journals and entries
-- Database-enforced journal balance
-- Posted-ledger immutability
-- Tenant RLS across payment and ledger tables
-- Outbox events for payment and booking state changes
-- Raw webhook body preservation for signature verification
-
-## Critical payment flow
-
-Quote -> Booking Hold -> Payment Intent -> Hosted Provider Checkout ->
-Verified Provider Webhook -> Provider Transaction -> Balanced Ledger Journal ->
-Booking Confirmation
-
-The browser never provides authoritative payment amounts.
-PaymentIntentService reads the reservation amount and currency from PostgreSQL.
-
-## Card-data boundary
+Quote -> Booking Hold -> Payment Intent -> Provider-hosted Checkout -> Signed Webhook -> Provider Transaction -> Double-entry Ledger -> Booking Confirmation
 
 VIEWS does not accept or persist PAN/CVV.
 
-PaymentProviderPort accepts:
-- paymentIntentId
-- amountMinor
-- currency
-- returnUrl
-- metadata
+## Implemented
 
-and returns a provider-hosted checkout URL / provider reference.
+- Payment intents
+- Hosted-checkout provider port
+- Provider registry
+- Payme / Click / Uzum / Octo / Multicard / Stripe provider identifiers
+- Explicit not-connected behavior when no adapter is registered
+- Payment attempts
+- Idempotent payment-intent creation
+- Webhook raw-body boundary
+- Provider signature-verification contract
+- Unique webhook event IDs
+- Payload-hash collision detection
+- Unique provider transactions
+- Partial captures
+- Full capture confirms booking
+- Failed/cancelled payment states
+- Partial/full refunds
+- Durable refund requests
+- Retry/lease refund worker
+- Late-capture recovery after booking hold expiry
+- Double-entry ledger
+- Posted journal balance assertion
+- Immutable posted ledger entries/journals
+- Outbox events for captured/refunded/booking-confirmed/refund-required
 
-This is intended to minimize PCI scope. Final PCI classification must still be verified with the acquiring/payment provider.
+## Provider adapter contract
 
-## Provider status
+Each adapter must implement:
 
-Provider codes supported by the contract:
-- payme
-- click
-- uzum
-- octo
-- multicard
-- stripe
+- createHostedCheckout()
+- verifyAndParseWebhook()
+- refund()
 
-No provider is reported as connected unless an adapter is explicitly registered.
+No provider endpoint, signature algorithm, split-payment behavior or secret name is guessed.
 
-The production core intentionally throws PAYMENT_PROVIDER_NOT_CONNECTED instead of pretending a provider works.
-
-## Webhook safety
-
-Adapters must cryptographically verify the raw webhook body before producing VerifiedWebhookEvent.
-
-The payment core:
-- preserves the raw HTTP body for adapter verification
-- stores only canonical/sanitized event data plus payload hash
-- rejects duplicate event IDs with changed payload
-- ignores exact duplicate events
-- ignores duplicate provider transactions
-- processes events inside tenant-scoped PostgreSQL transactions
-
-## Payment states
-
-Payment intent states include:
-- requires_payment
-- pending_provider
-- authorized
-- partially_captured
-- captured
-- refund_pending
-- partially_refunded
-- refunded
-- failed
-- cancelled
-
-A reservation is confirmed only when captured_minor reaches amount_minor.
-
-## Late and partial capture recovery
-
-If funds arrive after the booking hold is no longer valid:
-
-1. the booking is not restored automatically;
-2. inventory stays released;
-3. the payment intent becomes refund_pending;
-4. capture funds are classified as refunds_payable;
-5. an idempotent refund request is created;
-6. the refund worker submits it through the provider adapter;
-7. verified refund webhook settles refunds_payable.
-
-If a partial capture happened before hold expiry and the remaining payment never arrived:
-
-1. booking expiry cancels the hold;
-2. PaymentRecoveryService finds captured but unrefunded funds;
-3. guest_deposits is reclassified to refunds_payable;
-4. a refund request is created for every outstanding provider capture;
-5. retry-safe worker processing continues until provider submission succeeds.
-
-Correctness does not depend on an in-memory job.
+CHECK with provider before implementing each live adapter:
+- official merchant API version
+- signature verification algorithm
+- raw-body requirements
+- webhook retry semantics
+- transaction identifiers
+- authorize vs capture support
+- refund and partial-refund support
+- split/marketplace settlement support
+- currency/minor-unit convention
+- checkout expiration behavior
 
 ## Ledger model
 
-Core accounts currently used:
+Core accounts currently used by the payment slice:
 
 - provider_clearing — asset
 - guest_deposits — liability
 - refunds_payable — liability
 
-Normal capture:
-- Dr provider_clearing
-- Cr guest_deposits
+Capture:
+- Debit provider_clearing
+- Credit guest_deposits
 
-Late capture:
-- Dr provider_clearing
-- Cr refunds_payable
+Late capture where booking is no longer available:
+- Debit provider_clearing
+- Credit refunds_payable
 
-Reclassification after expired partially paid booking:
-- Dr guest_deposits
-- Cr refunds_payable
+Refund of a normal captured guest deposit:
+- Debit guest_deposits
+- Credit provider_clearing
 
-Refund:
-- Dr guest_deposits OR refunds_payable
-- Cr provider_clearing
+Refund of late-capture payable:
+- Debit refunds_payable
+- Credit provider_clearing
 
-Revenue recognition is intentionally not performed at payment capture.
-Accommodation/service revenue recognition belongs to Folio/Night Audit accounting stages.
+Marketplace commission, host payable, taxes payable and revenue recognition are deliberately NOT booked yet. They belong to the marketplace/folio/accounting stages and must not be fabricated prematurely.
 
-## Database guarantees
+## Webhook idempotency
 
-Migration:
-- apps/api/db/migrations/0008_payments_ledger.sql
+payment_webhook_inbox has UNIQUE(provider, external_event_id).
 
-PostgreSQL enforces:
-- unique provider event IDs
-- unique provider transactions
-- idempotent payment intent creation
-- idempotent refund requests
-- balanced posted journals
-- single-currency journals
-- posted ledger immutability
-- RLS tenant isolation
+If the same event ID arrives with the same payload hash:
+- response is duplicate
+- no second financial effect occurs
 
-## API
+If the same event ID arrives with a different payload:
+- processing fails with WEBHOOK_EVENT_PAYLOAD_MISMATCH
 
-GET /v1/payments/providers
+provider_transactions additionally enforce uniqueness by provider transaction identity.
 
-Returns only connected provider adapters.
+## Late payment success
 
-POST /v1/payments/intents
+A provider may report capture after the booking hold has expired.
 
-Requires:
-- reservationId
-- quoteId
-- provider
-- returnUrl
-- Idempotency-Key
+Implemented recovery:
 
-The amount is loaded server-side.
+1. Record capture transaction.
+2. Do NOT resurrect unavailable booking dates.
+3. Mark payment refund_pending.
+4. Recognize refunds_payable liability.
+5. Create durable payment_refund_request.
+6. Refund worker calls provider adapter with idempotency key.
+7. Verified refund webhook posts reversing ledger entries.
+8. Payment becomes refunded/partially_refunded.
 
-POST /v1/payments/webhooks/:provider
-
-The adapter must verify provider signature before the event reaches payment state transitions.
+This protects inventory correctness even if provider notifications are delayed.
 
 ## Refund worker
 
-PaymentRefundWorkerService:
-- performs recovery before processing
-- claims rows using FOR UPDATE SKIP LOCKED
-- uses a lease
-- retries failed provider calls
-- exponential backoff is bounded
-- provider refund request has its own idempotency key
+payment_refund_requests supports:
 
-## Local run
+- pending
+- processing lease
+- submitted
+- completed
+- retry after error
+- exponential retry delay
+- FOR UPDATE SKIP LOCKED claiming
 
-1. docker compose -f docker-compose.production-dev.yml up -d
-2. Apply migrations 0001 through current production migration chain.
-3. Create restricted views_app role per ADR 0002.
-4. cd apps/api
-5. npm install
-6. DATABASE_URL=postgresql://views_app:<password>@localhost:5432/views npm test
-7. npm run typecheck
-8. npm run build
-9. npm run start:dev
+PostgreSQL is the durable source of truth. Redis/BullMQ may later trigger workers but is not required for correctness.
+
+## Database
+
+Migration:
+apps/api/db/migrations/0008_payments_ledger.sql
+
+Main tables:
+- payment_intents
+- payment_attempts
+- payment_webhook_inbox
+- payment_refund_requests
+- provider_transactions
+- ledger_accounts
+- ledger_journals
+- ledger_entries
+
+All tenant-owned payment/ledger tables are protected by RLS and tested using the restricted views_app role.
 
 ## Automated verification
 
-The PostgreSQL 16 integration suite proves:
+VIEWS Production Core currently proves:
 
-- no-overbooking still works
-- tenant/property RLS still works
-- hosted checkout never needs card fields
-- payment amount comes from reservation
-- payment intent idempotency
-- partial capture does not confirm booking
+- migration chain applies on PostgreSQL 16
+- no-overbooking still holds
+- tenant/property RLS still holds
+- payment intent derives amount from reservation/quote
+- hosted checkout receives no card data
+- payment-intent idempotency
+- partial capture keeps reservation on hold
 - full capture confirms booking
-- exact duplicate webhook is ignored
-- reused webhook event ID with changed payload is rejected
-- duplicate provider transaction is ignored
-- ledger journals balance
-- unbalanced posted journal is rejected by PostgreSQL
-- posted entries are immutable
-- late capture creates durable refund liability
-- partial capture followed by hold expiry is recovered
-- refund worker submits outstanding captures
-- verified refund settles captured amount
-- NestJS typecheck passes
-- NestJS production build passes
+- duplicate webhook does not double-book
+- webhook payload mismatch is rejected
+- duplicate provider transaction does not double-post
+- journals balance debit == credit
+- unbalanced posted journal is rejected
+- posted ledger is immutable
+- partial capture + expired hold creates refund recovery
+- late full capture creates refunds_payable
+- refund worker uses durable requests
+- verified refund reverses ledger liability
+- NestJS typecheck/build pass
 
-## CHECK before real provider launch
+## Local run
 
-Payme / Click / Uzum / Octo / Multicard:
-- official merchant API version
-- webhook signature/authentication scheme
-- exact amount unit expected by provider
-- timeout/retry semantics
-- provider-side idempotency guarantees
-- refund API and refund status callbacks
-- authorization vs immediate capture support
-- split-payment capabilities
-- settlement timing
-- reconciliation/export API
-- merchant account requirements
-- fiscal receipt interaction
+1. Start PostgreSQL/Redis:
+   docker compose -f docker-compose.production-dev.yml up -d
+2. Apply production migrations through 0008.
+3. Use restricted views_app DATABASE_URL.
+4. cd apps/api
+5. npm install
+6. npm test
+7. npm run typecheck
+8. npm run build
 
-Do not hard-code assumptions until official provider documentation and merchant credentials are available.
+## Manual checks before live money
 
-## Security checks before public launch
+- CHECK: legal acquiring/agent model in Uzbekistan.
+- CHECK: marketplace host-payout legal structure before split payments.
+- CHECK: fiscal receipt integration.
+- CHECK: provider-specific minor units.
+- CHECK: provider webhook signature and replay window.
+- CHECK: refund SLA and provider retry behavior.
+- CHECK: chargeback/dispute API availability.
+- CHECK: PCI scope with each hosted-checkout integration.
+- CHECK: reconciliation against provider settlement reports.
 
-- Replace development identity headers with production authenticated server-derived actor context.
-- Store payment provider secrets only in deployment secret storage.
-- Rotate webhook secrets.
-- Rate-limit payment intent and webhook endpoints.
-- Add provider-specific replay windows/timestamp validation.
-- Confirm log redaction of provider payloads.
-- Confirm Sentry/observability does not receive payment secrets or document PII.
-- Complete PCI/acquirer review for hosted checkout architecture.
+Do not enable live money until these are confirmed.
