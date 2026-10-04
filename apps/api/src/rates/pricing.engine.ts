@@ -109,7 +109,11 @@ export function priceStay(input:PricingInput):PricingResult{
     charges+=amount;
     lines.push({
       lineType:"charge",code:rule.code,label:rule.label,amountMinor:amount,
-      refundable:false,metadata:{ruleKind:rule.ruleKind,residency:rule.residency,minAge:rule.minAge},sortOrder:200+index
+      refundable:false,metadata:{
+        ruleKind:rule.ruleKind,residency:rule.residency,minAge:rule.minAge,
+        compliancePolicyId:rule.compliancePolicyId??null,
+        ruleMetadata:rule.ruleMetadata??{}
+      },sortOrder:200+index
     });
   });
 
