@@ -1,13 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bath, BedDouble, CalendarDays, Car, ConciergeBell, Heart, MapPin, MessageCircle, Search, Shirt, ShoppingBag, Sparkles, UserRound, Users, UtensilsCrossed, Wine } from "lucide-react";
 import { apartments } from "../../data/demo";
 import { bookingQuote } from "../../domain/bookingQuote";
 import type { Apartment } from "../../domain/types";
+import { api } from "../../api/client";
+import type { LiveBooking } from "../../api/types";
 
 type Tab="explore"|"bookings"|"services"|"messages"|"profile";
-const services=[["Concierge",ConciergeBell],["Cleaning",Sparkles],["Laundry",Shirt],["Mini-market",ShoppingBag],["Restaurant",UtensilsCrossed],["Bar",Wine],["Rent Car",Car]] as const;
+const services=[["Concierge",ConciergeBell,"concierge"],["Cleaning",Sparkles,"cleaning"],["Laundry",Shirt,"laundry"],["Mini-market",ShoppingBag,"minimart"],["Restaurant",UtensilsCrossed,"restaurant"],["Bar",Wine,"bar"],["Rent Car",Car,"rent_car"]] as const;
 
-export function GuestApp(){
+export function GuestApp({live=false}:{live?:boolean}){
   const [tab,setTab]=useState<Tab>("explore");
   const [checkIn,setCheckIn]=useState("");
   const [checkOut,setCheckOut]=useState("");
@@ -15,6 +17,21 @@ export function GuestApp(){
   const [selected,setSelected]=useState<Apartment|null>(null);
   const [step,setStep]=useState(1);
   const [favorites,setFavorites]=useState<string[]>([]);
+  const [liveBookings,setLiveBookings]=useState<LiveBooking[]>([]);
+  const [serviceBookingId,setServiceBookingId]=useState("");
+  const [serviceCategory,setServiceCategory]=useState("concierge");
+  const [serviceDetails,setServiceDetails]=useState("");
+  const [serviceMessage,setServiceMessage]=useState("");
+
+  async function loadBookings(){
+    if(!live)return;
+    try{
+      const result=await api.bookings();
+      setLiveBookings(result.items);
+      if(!serviceBookingId&&result.items[0])setServiceBookingId(result.items[0].id);
+    }catch{setLiveBookings([])}
+  }
+  useEffect(()=>{void loadBookings()},[live]);
   const filtered=useMemo(()=>apartments.filter(a=>a.capacity>=guests),[guests]);
   const quote=selected?bookingQuote({nightlyRate:selected.nightlyRate,checkIn,checkOut,capacity:selected.capacity,guests,paymentProviderConnected:false}):null;
   const open=(a:Apartment)=>{setSelected(a);setStep(1)};
@@ -40,8 +57,8 @@ export function GuestApp(){
       </section>
       <section className="servicesSection"><div className="sectionHead"><div><small>ONE ECOSYSTEM</small><h2>Everything around your stay</h2></div></div><div className="serviceGrid">{services.map(([name,Icon])=><button key={name} onClick={()=>setTab("services")}><Icon/><b>{name}</b><small>Request in app</small></button>)}</div></section>
     </>}
-    {tab==="bookings"&&<section className="contentPage"><div className="sectionHead"><div><small>MY BOOKINGS</small><h2>Trips & stays</h2></div></div><div className="emptyCard"><CalendarDays/><h3>No live bookings seeded</h3><p>Production bookings will appear only when linked to the authenticated guest.</p></div></section>}
-    {tab==="services"&&<section className="contentPage"><div className="sectionHead"><div><small>VIEWS SERVICES</small><h2>Everything for your stay</h2></div></div><div className="serviceGrid large">{services.map(([name,Icon])=><button key={name}><Icon/><b>{name}</b><small>Requires an active booking</small></button>)}</div><div className="notice">Service requests become tracked Service Orders with assignee, SLA, timeline and audit history.</div></section>}
+    {tab==="bookings"&&<section className="contentPage"><div className="sectionHead"><div><small>MY BOOKINGS</small><h2>Trips & stays</h2></div></div>{live&&liveBookings.length?<div className="orderList">{liveBookings.map(b=><article className="order" key={b.id}><div><b>{b.property_name}{b.unit_code?" · #"+b.unit_code:""}</b><span>{b.confirmation_code} · {b.check_in_date} → {b.check_out_date}</span></div><span className={"status "+b.status}>{b.status.replaceAll("_"," ")}</span><div>{b.total_amount===null?"Live total unavailable":b.currency+" "+b.total_amount}</div></article>)}</div>:<div className="emptyCard"><CalendarDays/><h3>{live?"No bookings found":"No live bookings seeded"}</h3><p>{live?"Only bookings linked to this authenticated guest are shown.":"Production bookings will appear only when linked to the authenticated guest."}</p></div>}</section>}
+    {tab==="services"&&<section className="contentPage"><div className="sectionHead"><div><small>VIEWS SERVICES</small><h2>Everything for your stay</h2></div></div><div className="serviceGrid large">{services.map(([name,Icon,value])=><button key={name} className={serviceCategory===value?"selectedService":""} onClick={()=>setServiceCategory(value)}><Icon/><b>{name}</b><small>Tracked Service Order</small></button>)}</div>{live?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category:serviceCategory,title:services.find(x=>x[2]===serviceCategory)?.[0]+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch(err){setServiceMessage(err instanceof Error?err.message:"Request failed")}}}><label>Booking<select value={serviceBookingId} onChange={e=>setServiceBookingId(e.target.value)}>{liveBookings.map(b=><option key={b.id} value={b.id}>{b.confirmation_code} · {b.property_name}</option>)}</select></label><label>Details<textarea value={serviceDetails} onChange={e=>setServiceDetails(e.target.value)} placeholder="Tell us what you need…"/></label><button className="primary" disabled={!serviceBookingId||serviceDetails.trim().length<2}>Send request</button>{serviceMessage&&<div className="notice">{serviceMessage}</div>}</form>:<div className="notice">Service requests become tracked Service Orders with assignee, SLA, timeline and audit history.</div>}</section>}
     {tab==="messages"&&<section className="contentPage"><div className="sectionHead"><div><small>CONCIERGE</small><h2>Messages & requests</h2></div></div><div className="chat"><div className="bubble">VIEWS Concierge is ready when an active booking exists.</div></div></section>}
     {tab==="profile"&&<section className="contentPage"><div className="profileHero"><UserRound/><div><small>VIEWS PROFILE</small><h2>Guest profile</h2><p>Payments use provider-hosted checkout. VIEWS never collects raw card details.</p></div></div></section>}
     <nav className="guestNav">{[["explore",Search],["bookings",CalendarDays],["services",ConciergeBell],["messages",MessageCircle],["profile",UserRound]].map(([id,Icon])=><button className={tab===id?"active":""} key={id as string} onClick={()=>setTab(id as Tab)}><Icon size={18}/><span>{id as string}</span></button>)}</nav>
