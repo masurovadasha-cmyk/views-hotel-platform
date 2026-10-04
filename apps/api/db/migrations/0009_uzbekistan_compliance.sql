@@ -28,6 +28,12 @@ CREATE INDEX compliance_policy_active_idx
   ON compliance_policy_versions(organization_id,country_code,code,effective_from,effective_to)
   WHERE active=true;
 
+ALTER TABLE charge_rules
+  ADD COLUMN compliance_policy_id uuid REFERENCES compliance_policy_versions(id);
+CREATE INDEX charge_rules_compliance_policy_idx
+  ON charge_rules(compliance_policy_id)
+  WHERE compliance_policy_id IS NOT NULL;
+
 CREATE TABLE reservation_guests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES organizations(id),
