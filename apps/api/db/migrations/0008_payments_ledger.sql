@@ -94,6 +94,7 @@ CREATE TABLE provider_transactions (
   payment_intent_id uuid NOT NULL REFERENCES payment_intents(id),
   provider text NOT NULL,
   external_transaction_id text NOT NULL,
+  related_external_transaction_id text,
   kind provider_transaction_kind NOT NULL,
   amount_minor bigint NOT NULL CHECK (amount_minor > 0),
   currency char(3) NOT NULL,
