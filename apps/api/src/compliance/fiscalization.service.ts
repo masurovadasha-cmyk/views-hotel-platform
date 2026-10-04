@@ -169,8 +169,8 @@ export class FiscalizationService{
 
     if(claimed.alreadyConfirmed)return {requestId:claimed.requestId,status:"confirmed",idempotentReplay:true};
 
-    const provider=this.providers.fiscalizationProvider(claimed.provider);
     try{
+      const provider=this.providers.fiscalizationProvider(claimed.provider);
       const submission={
         idempotencyKey:claimed.idempotencyKey,requestId:claimed.requestId,
         receiptType:claimed.receiptType,amountMinor:claimed.amountMinor,
