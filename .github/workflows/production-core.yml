@@ -67,6 +67,13 @@ jobs:
       - name: Verify tenant and property isolation
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE views_app LOGIN PASSWORD 'views_app_test' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+          GRANT CONNECT ON DATABASE views TO views_app;
+          GRANT USAGE ON SCHEMA public,app TO views_app;
+          GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO views_app;
+          GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app;
+          SQL
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
           INSERT INTO organizations(id,type,legal_name,display_name,country_code,default_currency,timezone)
           VALUES('10000000-0000-4000-8000-000000000001','host','Host B','{"en":"Host B"}','UZ','UZS','Asia/Tashkent');
           INSERT INTO properties(id,organization_id,name,country_code,city,timezone)
@@ -88,14 +95,14 @@ jobs:
           VALUES('30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000002');
           SQL
 
-          OWN=$(psql -h localhost -U views -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='00000000-0000-0000-0000-000000000002'; ROLLBACK;" | tail -2 | head -1)
-          FOREIGN=$(psql -h localhost -U views -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='10000000-0000-4000-8000-000000000002'; ROLLBACK;" | tail -2 | head -1)
-          ACCESS=$(psql -h localhost -U views -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT app.can_access_property('00000000-0000-0000-0000-000000000002'); ROLLBACK;" | tail -2 | head -1)
+          OWN=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='00000000-0000-0000-0000-000000000002'; ROLLBACK;" | tail -2 | head -1)
+          FOREIGN=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='10000000-0000-4000-8000-000000000002'; ROLLBACK;" | tail -2 | head -1)
+          ACCESS=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT app.can_access_property('00000000-0000-0000-0000-000000000002'); ROLLBACK;" | tail -2 | head -1)
           test "$OWN" = "1"
           test "$FOREIGN" = "0"
           test "$ACCESS" = "t"
 
-          SCOPED=$(psql -h localhost -U views -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000002',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000002',true); SELECT app.can_access_property('00000000-0000-0000-0000-000000000002'); ROLLBACK;" | tail -2 | head -1)
+          SCOPED=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000002',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000002',true); SELECT app.can_access_property('00000000-0000-0000-0000-000000000002'); ROLLBACK;" | tail -2 | head -1)
           test "$SCOPED" = "t"
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
