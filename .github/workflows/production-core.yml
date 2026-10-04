@@ -40,6 +40,8 @@ jobs:
         run: |
           psql -h localhost -U views -d views -f apps/api/db/migrations/0001_core_inventory.sql
           psql -h localhost -U views -d views -f apps/api/db/migrations/0002_tenant_rls.sql
+          psql -h localhost -U views -d views -f apps/api/db/migrations/0003_identity_access.sql
+          psql -h localhost -U views -d views -f apps/api/db/migrations/0004_identity_rls.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
@@ -62,6 +64,59 @@ jobs:
           else
             echo "PASS: overlap rejected by PostgreSQL"
           fi
+      - name: Verify tenant and property isolation
+        run: |
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO organizations(id,type,legal_name,display_name,country_code,default_currency,timezone)
+          VALUES('10000000-0000-4000-8000-000000000001','host','Host B','{"en":"Host B"}','UZ','UZS','Asia/Tashkent');
+          INSERT INTO properties(id,organization_id,name,country_code,city,timezone)
+          VALUES('10000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000001','{"en":"Other Property"}','UZ','Tashkent','Asia/Tashkent');
+
+          INSERT INTO users(id,email,display_name)
+          VALUES('20000000-0000-4000-8000-000000000001','manager@views.test','Manager A'),
+                ('20000000-0000-4000-8000-000000000002','frontdesk@views.test','Front Desk A');
+
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000001',id,'active',now()
+          FROM roles WHERE code='manager';
+
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000002',id,'active',now()
+          FROM roles WHERE code='front_desk';
+
+          INSERT INTO membership_property_scopes(membership_id,property_id)
+          VALUES('30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000002');
+          SQL
+
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true);
+          SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true);
+          SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true);
+          DO $
+          DECLARE own_count int; foreign_count int; allowed boolean;
+          BEGIN
+            SELECT count(*) INTO own_count FROM properties WHERE id='00000000-0000-0000-0000-000000000002';
+            SELECT count(*) INTO foreign_count FROM properties WHERE id='10000000-0000-4000-8000-000000000002';
+            SELECT app.can_access_property('00000000-0000-0000-0000-000000000002') INTO allowed;
+            IF own_count<>1 OR foreign_count<>0 OR NOT allowed THEN RAISE EXCEPTION 'tenant isolation failed'; END IF;
+          END $;
+          ROLLBACK;
+          SQL
+
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true);
+          SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000002',true);
+          SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000002',true);
+          DO $
+          DECLARE allowed boolean;
+          BEGIN
+            SELECT app.can_access_property('00000000-0000-0000-0000-000000000002') INTO allowed;
+            IF NOT allowed THEN RAISE EXCEPTION 'property scope failed'; END IF;
+          END $;
+          ROLLBACK;
+          SQL
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - name: Install API dependencies
