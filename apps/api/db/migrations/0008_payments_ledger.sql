@@ -73,6 +73,7 @@ CREATE TABLE payment_refund_requests (
   reason text NOT NULL,
   idempotency_key text NOT NULL,
   status text NOT NULL DEFAULT 'pending',
+  external_capture_id text NOT NULL,
   external_refund_id text,
   attempt_count integer NOT NULL DEFAULT 0,
   next_attempt_at timestamptz NOT NULL DEFAULT now(),
