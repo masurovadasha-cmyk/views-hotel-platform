@@ -13,10 +13,10 @@ export class BookingLifecycleService{
     return this.db.withActor(actor,async client=>{
       const command=await client.query<{request_hash:string;result_snapshot:unknown}>(
         `INSERT INTO booking_commands(id,organization_id,idempotency_key,command_type,reservation_id,request_hash)
-         VALUES(gen_random_uuid(),$1,$2,'confirm_hold',$3,$3)
+         VALUES(gen_random_uuid(),$1,$2,'confirm_hold',$3,$4)
          ON CONFLICT(organization_id,idempotency_key,command_type) DO NOTHING
          RETURNING request_hash,result_snapshot`,
-        [actor.organizationId,idempotencyKey,reservationId]
+        [actor.organizationId,idempotencyKey,reservationId,reservationId]
       );
       if(!command.rowCount){
         const existing=await client.query<{request_hash:string;result_snapshot:{reservationId?:string;status?:string}|null}>(
@@ -63,9 +63,9 @@ export class BookingLifecycleService{
     return this.db.withActor(actor,async client=>{
       const inserted=await client.query(
         `INSERT INTO booking_commands(id,organization_id,idempotency_key,command_type,reservation_id,request_hash)
-         VALUES(gen_random_uuid(),$1,$2,'release_hold',$3,$3)
+         VALUES(gen_random_uuid(),$1,$2,'release_hold',$3,$4)
          ON CONFLICT(organization_id,idempotency_key,command_type) DO NOTHING RETURNING id`,
-        [actor.organizationId,idempotencyKey,reservationId]
+        [actor.organizationId,idempotencyKey,reservationId,reservationId]
       );
       if(!inserted.rowCount){
         const existing=await client.query<{request_hash:string;result_snapshot:{status?:string}|null}>(
