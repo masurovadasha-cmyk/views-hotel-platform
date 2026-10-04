@@ -1,0 +1,30 @@
+name: VIEWS Published Smoke
+on:
+  workflow_run:
+    workflows: ["VIEWS Staging Preview"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Pages edge propagation
+        run: sleep 10
+      - name: Verify published VIEWS shell
+        run: |
+          set -euo pipefail
+          URL="https://masurovadasha-cmyk.github.io/views-hotel-platform/"
+          HTML="$(curl --fail --silent --show-error --location --retry 5 --retry-delay 3 "$URL")"
+          echo "$HTML" | grep -q '<div id="root"></div>'
+          echo "$HTML" | grep -q 'VIEWS Hotel & Apartments'
+          JS="$(echo "$HTML" | grep -oE 'src="[^"]+\.js"' | head -1 | cut -d'"' -f2)"
+          CSS="$(echo "$HTML" | grep -oE 'href="[^"]+\.css"' | head -1 | cut -d'"' -f2)"
+          test -n "$JS"
+          test -n "$CSS"
+          case "$JS" in http*) JS_URL="$JS";; *) JS_URL="https://masurovadasha-cmyk.github.io$JS";; esac
+          case "$CSS" in http*) CSS_URL="$CSS";; *) CSS_URL="https://masurovadasha-cmyk.github.io$CSS";; esac
+          curl --fail --silent --show-error --head --retry 3 "$JS_URL" >/dev/null
+          curl --fail --silent --show-error --head --retry 3 "$CSS_URL" >/dev/null
+          echo "Published VIEWS smoke passed"
