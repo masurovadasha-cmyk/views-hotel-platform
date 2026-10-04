@@ -9,15 +9,22 @@ on:
     branches: [main]
     paths:
       - "migrations/**"
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate D1-compatible SQLite schema
+      - name: Validate all D1-compatible migrations
         run: |
-          sqlite3 /tmp/views.db < migrations/0001_core.sql
+          set -e
+          rm -f /tmp/views.db
+          for migration in migrations/*.sql; do
+            echo "Applying $migration"
+            sqlite3 /tmp/views.db < "$migration"
+          done
           sqlite3 /tmp/views.db ".tables"
           sqlite3 /tmp/views.db "PRAGMA foreign_key_check;"
           sqlite3 /tmp/views.db "SELECT id,name,slug FROM organizations;"
           sqlite3 /tmp/views.db "SELECT id,name,city FROM properties;"
+          sqlite3 /tmp/views.db "SELECT provider,status FROM integrations ORDER BY provider;"
