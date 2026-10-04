@@ -76,6 +76,8 @@ CREATE TABLE payment_refund_requests (
   amount_minor bigint NOT NULL CHECK (amount_minor > 0),
   currency char(3) NOT NULL,
   reason text NOT NULL,
+  liability_account_code text NOT NULL DEFAULT 'guest_deposits'
+    CHECK (liability_account_code IN ('guest_deposits','refunds_payable')),
   idempotency_key text NOT NULL,
   status text NOT NULL DEFAULT 'pending',
   external_capture_id text NOT NULL,
