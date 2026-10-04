@@ -6,7 +6,7 @@ export type HospitalityRole =
 
 export type ServiceCategory =
   | "concierge" | "cleaning" | "laundry" | "minimart"
-  | "restaurant" | "bar" | "rent_car" | "maintenance" | "reservation_front_desk";
+  | "restaurant" | "bar" | "rent_car" | "spa" | "maintenance" | "reservation_front_desk";
 
 export type ServiceOrderStatus =
   | "new" | "assigned" | "accepted" | "in_progress" | "waiting"
