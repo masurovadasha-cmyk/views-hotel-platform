@@ -26,6 +26,9 @@ CREATE TABLE rate_weekday_rules (
   nightly_minor bigint CHECK (nightly_minor IS NULL OR nightly_minor >= 0),
   price_delta_bps integer CHECK (price_delta_bps IS NULL OR price_delta_bps BETWEEN -10000 AND 100000),
   min_stay smallint CHECK (min_stay IS NULL OR min_stay > 0),
+  closed boolean NOT NULL DEFAULT false,
+  closed_to_arrival boolean NOT NULL DEFAULT false,
+  closed_to_departure boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(rate_plan_id,iso_weekday)
 );
@@ -54,7 +57,7 @@ CREATE TABLE rate_adjustments (
     (adjustment_kind='fixed' AND amount_minor IS NOT NULL AND amount_bps IS NULL)
   ),
   CHECK (amount_minor IS NULL OR amount_minor >= 0),
-  CHECK (amount_bps IS NULL OR amount_bps BETWEEN -10000 AND 10000),
+  CHECK (amount_bps IS NULL OR amount_bps BETWEEN 0 AND 10000),
   UNIQUE(rate_plan_id,code)
 );
 
