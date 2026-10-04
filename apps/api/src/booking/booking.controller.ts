@@ -6,10 +6,7 @@ import {BookingConflictError,HoldExpiredError,IdempotencyConflictError} from "./
 import {BookingHoldService} from "./booking-hold.service";
 import {BookingLifecycleService} from "./booking-lifecycle.service";
 
-type HoldBody={
-  propertyId?:string;unitId?:string;ratePlanId?:string;checkInAt?:string;checkOutAt?:string;currency?:string;
-  priceLines?:Array<{type?:string;label?:Record<string,string>;amountMinor?:string;currency?:string;taxMetadata?:Record<string,unknown>;sortOrder?:number}>;
-};
+type HoldBody={quoteId?:string;ttlSeconds?:number};
 
 @Controller("v1/bookings")
 export class BookingController{
@@ -27,17 +24,12 @@ export class BookingController{
     try{
       const actor=this.actor(organizationId,userId,membershipId,requestId);
       if(!idempotencyKey)throw new BadRequestException("Idempotency-Key is required");
-      if(!body.propertyId||!body.unitId||!body.ratePlanId||!body.checkInAt||!body.checkOutAt||!body.currency||!body.priceLines){
-        throw new BadRequestException("Incomplete hold request");
-      }
+      if(!body.quoteId)throw new BadRequestException("quoteId is required");
       const result=await this.holds.createHold({
-        actor,propertyId:requireUuid(body.propertyId,"property_id"),unitId:requireUuid(body.unitId,"unit_id"),
-        ratePlanId:requireUuid(body.ratePlanId,"rate_plan_id"),checkInAt:body.checkInAt,checkOutAt:body.checkOutAt,
-        currency:body.currency.toUpperCase(),idempotencyKey,
-        priceLines:body.priceLines.map((x,index)=>({
-          type:String(x.type||""),label:x.label||{},amountMinor:parseMinor(x.amountMinor),
-          currency:String(x.currency||body.currency).toUpperCase(),taxMetadata:x.taxMetadata,sortOrder:x.sortOrder??index
-        }))
+        actor,
+        quoteId:requireUuid(body.quoteId,"quote_id"),
+        idempotencyKey,
+        ttlSeconds:body.ttlSeconds
       });
       return serialize(result);
     }catch(error){throw mapError(error)}
@@ -87,10 +79,6 @@ export class BookingController{
   }
 }
 
-function parseMinor(value:string|undefined){
-  if(!value||!/^\d+$/.test(value))throw new BadRequestException("amountMinor must be a non-negative integer string");
-  return BigInt(value);
-}
 function serialize<T>(value:T):T{return JSON.parse(JSON.stringify(value,(_,v)=>typeof v==="bigint"?v.toString():v)) as T}
 function mapError(error:unknown){
   if(error instanceof BadRequestException||error instanceof UnauthorizedException)return error;
@@ -98,7 +86,8 @@ function mapError(error:unknown){
   if(error instanceof IdempotencyConflictError)return new ConflictException(error.message);
   if(error instanceof HoldExpiredError)return new ConflictException(error.message);
   if(error instanceof Error&&error.message==="PROPERTY_FORBIDDEN")return new ForbiddenException(error.message);
-  if(error instanceof Error&&error.message==="UNIT_OR_RATE_NOT_FOUND")return new NotFoundException(error.message);
+  if(error instanceof Error&&["UNIT_OR_RATE_NOT_FOUND","QUOTE_NOT_FOUND"].includes(error.message))return new NotFoundException(error.message);
+  if(error instanceof Error&&error.message==="QUOTE_EXPIRED")return new ConflictException(error.message);
   if(error instanceof Error&&error.message.startsWith("INVALID_"))return new BadRequestException(error.message);
   return error;
 }
