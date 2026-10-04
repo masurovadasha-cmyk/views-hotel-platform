@@ -14,11 +14,15 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
   if(!login)return json({error:"TOKEN_INVALID_OR_EXPIRED",requestId:requestId(request)},401);
 
   const email=String(login.email);
-  const staff=await db.prepare("SELECT u.id,u.organization_id,s.role,s.property_id FROM app_users u JOIN staff_roles s ON s.user_id=u.id WHERE u.email=? AND u.is_active=1 LIMIT 1")
+  const staff=await db.prepare("SELECT u.id,u.organization_id,s.role,s.property_id FROM app_users u JOIN staff_roles s ON s.user_id=u.id WHERE lower(u.email)=? AND u.is_active=1 LIMIT 1")
     .bind(email).first<Record<string,unknown>>();
   const guest=staff?null:await db.prepare("SELECT id,organization_id FROM guests WHERE lower(email)=? LIMIT 1")
     .bind(email).first<Record<string,unknown>>();
   if(!staff&&!guest)return json({error:"ACCOUNT_NOT_FOUND",requestId:requestId(request)},404);
+
+  const consumed=await db.prepare("UPDATE email_login_tokens SET used_at=CURRENT_TIMESTAMP WHERE id=? AND used_at IS NULL AND expires_unix>?")
+    .bind(login.id,now).run();
+  if(!consumed.meta?.changes)return json({error:"TOKEN_INVALID_OR_EXPIRED",requestId:requestId(request)},401);
 
   const sid=crypto.randomUUID();
   const expiresAt=new Date(Date.now()+12*3600*1000).toISOString();
@@ -30,8 +34,6 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
     await db.prepare("INSERT INTO app_sessions(id,user_id,guest_id,organization_id,property_ids,expires_at) VALUES(?,?,?,?,?,?)")
       .bind(sid,"guest:"+guest!.id,guest!.id,guest!.organization_id,"[]",expiresAt).run();
   }
-
-  await db.prepare("UPDATE email_login_tokens SET used_at=CURRENT_TIMESTAMP WHERE id=?").bind(login.id).run();
 
   return new Response(JSON.stringify({authenticated:true,expiresAt,requestId:requestId(request)}),{
     headers:{
