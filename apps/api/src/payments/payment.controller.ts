@@ -1,5 +1,6 @@
 import {
-  BadRequestException,Body,Controller,Get,Headers,Post,ServiceUnavailableException
+  BadRequestException,Body,ConflictException,Controller,ForbiddenException,Get,Headers,
+  NotFoundException,Post,ServiceUnavailableException
 } from "@nestjs/common";
 import {requireUuid} from "../identity/actor-context";
 import {PaymentIntentService} from "./payment-intent.service";
@@ -57,6 +58,18 @@ export class PaymentController{
       }
       if(error instanceof Error&&error.message.startsWith("INVALID_")){
         throw new BadRequestException(error.message);
+      }
+      if(error instanceof Error&&error.message==="PROPERTY_FORBIDDEN"){
+        throw new ForbiddenException(error.message);
+      }
+      if(error instanceof Error&&error.message==="RESERVATION_NOT_FOUND"){
+        throw new NotFoundException(error.message);
+      }
+      if(error instanceof Error&&[
+        "RESERVATION_NOT_ON_HOLD","HOLD_EXPIRED","QUOTE_RESERVATION_MISMATCH",
+        "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYMENT"
+      ].includes(error.message)){
+        throw new ConflictException(error.message);
       }
       throw error;
     }
