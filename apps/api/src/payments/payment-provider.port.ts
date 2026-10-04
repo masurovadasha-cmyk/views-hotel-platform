@@ -15,6 +15,7 @@ export type HostedCheckoutResult={
 };
 
 export type VerifiedWebhookEvent={
+  organizationId:string;
   externalEventId:string;
   externalTransactionId:string;
   eventType:"authorized"|"captured"|"failed"|"cancelled"|"refunded";
