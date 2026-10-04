@@ -44,6 +44,7 @@ jobs:
           psql -h localhost -U views -d views -f apps/api/db/migrations/0004_identity_rls.sql
           psql -h localhost -U views -d views -f apps/api/db/migrations/0005_booking_hold_engine.sql
           psql -h localhost -U views -d views -f apps/api/db/migrations/0006_inventory_rls.sql
+          psql -h localhost -U views -d views -f apps/api/db/migrations/0007_rates_quotes_cancellation.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
