@@ -22,5 +22,12 @@ export const api={
   serviceOrderAction:(input:{id:string;action:"accept"|"start"|"complete"|"cancel";version:number})=>
     request<{id:string;status:string;version:number}>("/api/service-order-action",{method:"POST",body:JSON.stringify(input)}),
   health:()=>request<{status:string}>("/api/health"),
+  operationsSummary:(propertyId="utower")=>request<{propertyId:string;lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}>(`/api/operations-summary?propertyId=${encodeURIComponent(propertyId)}`),
+  apartmentTimeline:(unitId:string)=>request<{unitId:string;items:unknown[]}>(`/api/apartment-timeline?unitId=${encodeURIComponent(unitId)}`),
+  lostFoundAction:(id:string,action:"claim"|"return"|"close")=>request<{id:string;status:string}>("/api/lost-found-action",{method:"POST",body:JSON.stringify({id,action})}),
+  damageAction:(id:string,action:"review"|"resolve"|"close")=>request<{id:string;status:string}>("/api/damage-action",{method:"POST",body:JSON.stringify({id,action})}),
+  inventoryAdjust:(id:string,delta:number,note="")=>request<{id:string;quantity:number}>("/api/inventory-adjust",{method:"POST",body:JSON.stringify({id,delta,note})}),
+  createHandover:(input:{propertyId:string;fromShift:string;toShift:string;unresolved:unknown[];risks:unknown[];followUp:unknown[]})=>request<{id:string;status:string}>("/api/shift-handover",{method:"POST",body:JSON.stringify(input)}),
+  acknowledgeHandover:(id:string)=>request<{id:string;status:string}>("/api/shift-handover",{method:"PATCH",body:JSON.stringify({id})}),
   readiness:()=>request<{status:string;database:string}>("/api/readiness")
 };
