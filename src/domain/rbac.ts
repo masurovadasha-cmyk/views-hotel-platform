@@ -16,7 +16,7 @@ export const roleNavigation:Record<HospitalityRole,string[]>={
 
 const categories:Partial<Record<HospitalityRole,ServiceCategory[]>>={
   cleaner:["cleaning"], housekeeping_supervisor:["cleaning"],
-  concierge:["concierge","laundry","minimart","restaurant","bar","rent_car"],
+  concierge:["concierge","laundry","minimart","restaurant","bar","rent_car","spa"],
   technician:["maintenance"], maintenance_manager:["maintenance"],
   front_desk:["reservation_front_desk","concierge"], reservation_manager:["reservation_front_desk"]
 };
