@@ -1,4 +1,5 @@
-import { demoRole,json,requestId,requireDatabase,type Env } from "./_shared";
+import {json,requestId,requireDatabase,type Env} from "./_shared";
+import {requireMutationOrigin,resolveSession} from "./_auth";
 
 const categoriesByRole:Record<string,string[]>={
   cleaner:["cleaning"],housekeeping_supervisor:["cleaning"],
@@ -6,7 +7,7 @@ const categoriesByRole:Record<string,string[]>={
   technician:["maintenance"],maintenance_manager:["maintenance"],
   front_desk:["reservation_front_desk","concierge"],reservation_manager:["reservation_front_desk"]
 };
-const management=(r:string|null)=>r==="general_manager"||r==="super_admin";
+const management=(r:string)=>r==="general_manager"||r==="super_admin";
 
 function nextStatus(status:string,action:string){
   const map:Record<string,{from:string[];to:string}>={
@@ -20,14 +21,18 @@ function nextStatus(status:string,action:string){
 }
 
 export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
-  const role=demoRole(request),userId=request.headers.get("x-views-user-id")||"staff-demo";
-  if(!role)return json({error:"AUTH_REQUIRED",requestId:requestId(request)},401);
+  const originError=requireMutationOrigin(request,env);if(originError)return originError;
+  const session=await resolveSession(request,env);
+  if(!session||session.mode!=="staff")return json({error:"STAFF_AUTH_REQUIRED",requestId:requestId(request)},401);
+  const role=session.role,userId=session.userId;
   let db;try{db=requireDatabase(env)}catch{return json({error:"DATABASE_NOT_BOUND",requestId:requestId(request)},503)}
   const body=await request.json() as Record<string,unknown>;
   const id=String(body.id||""),action=String(body.action||""),expectedVersion=Number(body.version);
   if(!id||!Number.isInteger(expectedVersion))return json({error:"INVALID_REQUEST",requestId:requestId(request)},400);
-  const order=await db.prepare("SELECT id,category,status,assigned_user_id,version FROM service_orders WHERE id=? LIMIT 1").bind(id).first<Record<string,unknown>>();
+  const order=await db.prepare("SELECT id,property_id,category,status,assigned_user_id,version FROM service_orders WHERE id=? AND organization_id=? LIMIT 1")
+    .bind(id,session.organizationId).first<Record<string,unknown>>();
   if(!order)return json({error:"NOT_FOUND",requestId:requestId(request)},404);
+  if(!management(role)&&!session.propertyIds.includes(String(order.property_id)))return json({error:"PROPERTY_FORBIDDEN",requestId:requestId(request)},403);
   const allowed=management(role)||(categoriesByRole[role]||[]).includes(String(order.category));
   if(!allowed)return json({error:"FORBIDDEN",requestId:requestId(request)},403);
   if((role==="cleaner"||role==="technician")&&order.assigned_user_id&&order.assigned_user_id!==userId)return json({error:"NOT_ASSIGNED_TO_USER",requestId:requestId(request)},403);
@@ -35,12 +40,15 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
   const to=nextStatus(String(order.status),action);
   if(!to)return json({error:"INVALID_TRANSITION",from:order.status,action,requestId:requestId(request)},409);
   const assignee=order.assigned_user_id||(["accept","start"].includes(action)?userId:null);
-  const result=await db.prepare("UPDATE service_orders SET status=?,assigned_user_id=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=?").bind(to,assignee,id,expectedVersion).run();
+  const result=await db.prepare("UPDATE service_orders SET status=?,assigned_user_id=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND organization_id=? AND version=?")
+    .bind(to,assignee,id,session.organizationId,expectedVersion).run();
   if(!result.meta?.changes)return json({error:"VERSION_CONFLICT",requestId:requestId(request)},409);
   const eventId=crypto.randomUUID(),outboxId=crypto.randomUUID(),eventKey="order:"+id+":v"+(expectedVersion+1)+":"+action;
   await db.batch([
-    db.prepare("INSERT INTO service_order_events(id,service_order_id,event_type,from_status,to_status,actor_user_id,payload) VALUES(?,?,?,?,?,?,?)").bind(eventId,id,"service_order."+action,order.status,to,userId,JSON.stringify({role,version:expectedVersion+1})),
-    db.prepare("INSERT INTO outbox_events(id,organization_id,event_type,aggregate_type,aggregate_id,idempotency_key,payload) VALUES(?,?,?,?,?,?,?)").bind(outboxId,"views","service_order."+action,"service_order",id,eventKey,JSON.stringify({id,from:order.status,to,version:expectedVersion+1}))
+    db.prepare("INSERT INTO service_order_events(id,service_order_id,event_type,from_status,to_status,actor_user_id,payload) VALUES(?,?,?,?,?,?,?)")
+      .bind(eventId,id,"service_order."+action,order.status,to,userId,JSON.stringify({role,version:expectedVersion+1})),
+    db.prepare("INSERT INTO outbox_events(id,organization_id,event_type,aggregate_type,aggregate_id,idempotency_key,payload) VALUES(?,?,?,?,?,?,?)")
+      .bind(outboxId,session.organizationId,"service_order."+action,"service_order",id,eventKey,JSON.stringify({id,from:order.status,to,version:expectedVersion+1}))
   ]);
   return json({id,status:to,version:expectedVersion+1,assignedUserId:assignee,requestId:requestId(request)});
 };
