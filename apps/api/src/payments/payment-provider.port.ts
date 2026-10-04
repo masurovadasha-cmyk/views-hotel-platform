@@ -18,6 +18,7 @@ export type VerifiedWebhookEvent={
   organizationId:string;
   externalEventId:string;
   externalTransactionId:string;
+  relatedExternalTransactionId?:string;
   eventType:"authorized"|"captured"|"failed"|"cancelled"|"refunded";
   paymentIntentId:string;
   amountMinor:bigint;
