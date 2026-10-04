@@ -23,5 +23,5 @@ export type Apartment = {
 export type ServiceOrder = {
   id:string; title:string; category:ServiceCategory; status:ServiceOrderStatus;
   priority:Priority; assigneeUserId:string|null; unit:string|null;
-  guestName:string|null; slaMinutes:number; history:string[];
+  guestName:string|null; slaMinutes:number; history:string[]; version?:number;
 };
