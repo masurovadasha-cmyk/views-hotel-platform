@@ -50,6 +50,23 @@ export class LedgerService{
     });
   }
 
+  async postRefundReclassification(
+    client:PoolClient,
+    input:{
+      organizationId:string;paymentIntentId:string;amountMinor:bigint;currency:string;
+      idempotencyKey:string;
+    }
+  ){
+    return this.postTwoSided(client,{
+      ...input,
+      description:"Reclassify guest deposit to refund payable",
+      debitCode:"guest_deposits",
+      creditCode:"refunds_payable",
+      debitMemo:"Remove refundable guest deposit liability",
+      creditMemo:"Recognize customer refund payable"
+    });
+  }
+
   async postRefund(
     client:PoolClient,
     input:{
