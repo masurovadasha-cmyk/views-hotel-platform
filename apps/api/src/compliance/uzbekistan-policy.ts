@@ -1,26 +1,20 @@
 export const UZBEKISTAN_COMPLIANCE={
   countryCode:"UZ",
-  accommodationRegistrationProvider:"emehmon",
-  legalReferences:{
-    registrationLaw:"O'RQ-1074 / ЗРУ-1074",
-    touristFeeRegulation:"Cabinet Resolution 475 (current 2026 amendments)",
-    personalDataLaw:"O'RQ-547 / ЗРУ-547 as amended by O'RQ-1125 / ЗРУ-1125"
-  }
+  accommodationRegistrationProviderCode:"emehmon"
 } as const;
 
-export function isUzbekistanTouristFeeEligible(age:number){
+export function isGuestFeeEligible(age:number,minAge:number){
   if(!Number.isInteger(age)||age<0||age>130)throw new Error("INVALID_GUEST_AGE");
-  return age>=16;
+  if(!Number.isInteger(minAge)||minAge<0||minAge>130)throw new Error("INVALID_FEE_MIN_AGE");
+  return age>=minAge;
 }
 
-export function uzbekistanTouristFeeResidency(
-  residencyCountryCode:string|null|undefined
-):"resident"|"nonresident"{
-  return residencyCountryCode==="UZ"?"resident":"nonresident";
+export function residencyScope(isResident:boolean):"resident"|"nonresident"{
+  return isResident?"resident":"nonresident";
 }
 
-export function defaultGuestDocumentStorageRegion(countryCode:string){
-  // Product security default, stricter than the minimum legal localization rule.
+export function defaultProductDocumentStorageRegion(countryCode:string){
+  // Product security default only. This is not a statement of legal minimum.
   return countryCode==="UZ"?"UZ":"jurisdiction-default";
 }
 
