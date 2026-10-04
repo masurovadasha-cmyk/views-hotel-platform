@@ -4,6 +4,7 @@ import {
   ConciergeBell,CreditCard,Heart,Map as MapIcon,MapPin,MessageCircle,Search,Send,Shirt,ShoppingBag,
   Sparkles,Star,UserRound,Users,UtensilsCrossed,Wine
 } from "lucide-react";
+import type {LucideIcon} from "lucide-react";
 import {apartments} from "../../data/demo";
 import {bookingQuote} from "../../domain/bookingQuote";
 import type {Apartment} from "../../domain/types";
@@ -12,7 +13,7 @@ import type {LiveBooking} from "../../api/types";
 
 type Tab="explore"|"bookings"|"services"|"messages"|"profile";
 type FlowScreen="apartment"|"booking"|"guest-data"|"payment"|"secure-processing"|"payment-declined"|"booking-confirmed"|"booking-details"|"cancellation-refund";
-type ServiceTuple=readonly [string,React.ComponentType<{size?:number}>,string];
+type ServiceTuple=readonly [string,LucideIcon,string];
 
 const services:ServiceTuple[]=[
   ["Concierge",ConciergeBell,"concierge"],["Cleaning",Sparkles,"cleaning"],["Laundry",Shirt,"laundry"],
