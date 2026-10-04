@@ -2,7 +2,7 @@ import {useEffect,useMemo,useState} from "react";
 import {
   AlertCircle,Bath,BedDouble,Bell,CalendarDays,Car,CheckCircle2,ChevronLeft,ChevronRight,CircleHelp,
   ConciergeBell,CreditCard,Heart,Map as MapIcon,MapPin,MessageCircle,Search,Send,Shirt,ShoppingBag,
-  Sparkles,Star,UserRound,Users,UtensilsCrossed,Wine
+  Sparkles,Star,UserRound,Users,UtensilsCrossed,Wine,Flower2
 } from "lucide-react";
 import type {LucideIcon} from "lucide-react";
 import {apartments} from "../../data/demo";
@@ -17,7 +17,7 @@ type ServiceTuple=readonly [string,LucideIcon,string];
 
 const services:ServiceTuple[]=[
   ["Concierge",ConciergeBell,"concierge"],["Cleaning",Sparkles,"cleaning"],["Laundry",Shirt,"laundry"],
-  ["Mini-market",ShoppingBag,"minimart"],["Restaurant",UtensilsCrossed,"restaurant"],["Bar",Wine,"bar"],["Rent Car",Car,"rent_car"]
+  ["Mini-market",ShoppingBag,"minimart"],["Restaurant",UtensilsCrossed,"restaurant"],["Bar",Wine,"bar"],["Rent Car",Car,"rent_car"],["Spa & Wellness",Flower2,"spa"]
 ];
 
 export function GuestApp({live=false}:{live?:boolean}){
