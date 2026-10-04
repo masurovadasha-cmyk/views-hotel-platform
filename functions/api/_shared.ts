@@ -21,7 +21,3 @@ export function requireDatabase(env:Env){
   if(!env.DB) throw new Error("DATABASE_NOT_BOUND");
   return env.DB;
 }
-
-export function demoRole(request:Request){
-  return request.headers.get("x-views-demo-role");
-}
