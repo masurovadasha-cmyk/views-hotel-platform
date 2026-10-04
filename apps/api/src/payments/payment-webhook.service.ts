@@ -193,7 +193,7 @@ export class PaymentWebhookService{
         await client.query(
           `UPDATE payment_refund_requests
               SET status='completed',external_refund_id=$1,completed_at=now(),last_error=NULL
-            WHERE payment_intent_id=$2 AND status='pending' AND amount_minor=$3`,
+            WHERE payment_intent_id=$2 AND status IN ('pending','processing','submitted') AND amount_minor=$3`,
           [event.externalTransactionId,intent.id,event.amountMinor.toString()]
         );
         await this.markWebhookProcessed(client,provider,event.externalEventId);
