@@ -36,7 +36,7 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
   if(!to)return json({error:"INVALID_TRANSITION",from:order.status,action,requestId:requestId(request)},409);
   const assignee=order.assigned_user_id||(["accept","start"].includes(action)?userId:null);
   const result=await db.prepare("UPDATE service_orders SET status=?,assigned_user_id=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=?").bind(to,assignee,id,expectedVersion).run();
-  if(!result.meta.changes)return json({error:"VERSION_CONFLICT",requestId:requestId(request)},409);
+  if(!result.meta?.changes)return json({error:"VERSION_CONFLICT",requestId:requestId(request)},409);
   const eventId=crypto.randomUUID(),outboxId=crypto.randomUUID(),eventKey="order:"+id+":v"+(expectedVersion+1)+":"+action;
   await db.batch([
     db.prepare("INSERT INTO service_order_events(id,service_order_id,event_type,from_status,to_status,actor_user_id,payload) VALUES(?,?,?,?,?,?,?)").bind(eventId,id,"service_order."+action,order.status,to,userId,JSON.stringify({role,version:expectedVersion+1})),
