@@ -212,6 +212,33 @@ describe.sequential("payments and ledger integration",()=>{
       amountMinor:1n
     }),"{}");
     expect(duplicate.status).toBe("duplicate");
+
+    const paymentIntentId=await db.withActor(actor,async client=>
+      (await client.query<{id:string}>("SELECT id FROM payment_intents WHERE idempotency_key='payment-intent-2'")).rows[0].id
+    );
+    const duplicateTx=await webhooks.processVerified("payme",event({
+      eventId:"evt-capture-part-2-replayed",
+      txId:"cap-part-2",
+      type:"captured",
+      paymentIntentId,
+      amountMinor:1n
+    }),"{}");
+    expect(duplicateTx.status).toBe("duplicate_transaction");
+  });
+
+  it("keeps posted ledger immutable",async()=>{
+    const journal=await db.withActor(actor,async client=>
+      (await client.query<{id:string}>(
+        "SELECT id FROM ledger_journals WHERE status='posted' ORDER BY created_at DESC LIMIT 1"
+      )).rows[0]
+    );
+    expect(journal?.id).toBeTruthy();
+    await expect(db.withActor(actor,async client=>{
+      await client.query(
+        "UPDATE ledger_entries SET amount_minor=amount_minor+1 WHERE journal_id=$1",
+        [journal.id]
+      );
+    })).rejects.toThrow(/posted ledger entries are immutable/i);
   });
 
   it("rejects an unbalanced posted journal at transaction commit",async()=>{
