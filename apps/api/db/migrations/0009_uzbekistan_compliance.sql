@@ -188,6 +188,12 @@ CREATE TABLE data_residency_policies (
   UNIQUE(organization_id,country_code,data_category,effective_from)
 );
 
+ALTER TABLE guest_document_records
+  ADD COLUMN data_residency_policy_id uuid REFERENCES data_residency_policies(id);
+CREATE INDEX guest_document_residency_policy_idx
+  ON guest_document_records(data_residency_policy_id)
+  WHERE data_residency_policy_id IS NOT NULL;
+
 CREATE TABLE personal_data_base_registrations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES organizations(id),
