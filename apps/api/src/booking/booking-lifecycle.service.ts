@@ -1,5 +1,6 @@
 import {Injectable} from "@nestjs/common";
 import {DatabaseService} from "../database/database.service";
+import type {PoolClient} from "pg";
 import type {RequestActorContext} from "../identity/actor-context";
 import {HoldExpiredError,IdempotencyConflictError} from "./booking.errors";
 
@@ -109,7 +110,7 @@ export class BookingLifecycleService{
   }
 
   private async queueRefundsForReservation(
-    client:any,
+    client:PoolClient,
     organizationId:string,
     reservationId:string,
     reason:string
