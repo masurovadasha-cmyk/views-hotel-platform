@@ -2,6 +2,7 @@ import {randomUUID} from "node:crypto";
 import {Injectable} from "@nestjs/common";
 import {DatabaseService} from "../database/database.service";
 import {PaymentProviderRegistry} from "./payment-provider.registry";
+import {PaymentRecoveryService} from "./payment-recovery.service";
 import type {SupportedPaymentProvider} from "./payment-provider.port";
 
 type ClaimedRefund={
@@ -19,12 +20,14 @@ type ClaimedRefund={
 export class PaymentRefundWorkerService{
   constructor(
     private readonly db:DatabaseService,
-    private readonly providers:PaymentProviderRegistry
+    private readonly providers:PaymentProviderRegistry,
+    private readonly recovery:PaymentRecoveryService
   ){}
 
   async processTenantBatch(organizationId:string,limit=20){
     if(!Number.isInteger(limit)||limit<1||limit>100)throw new Error("INVALID_REFUND_BATCH_LIMIT");
     const workerId=randomUUID();
+    await this.recovery.reconcileTenant(organizationId,Math.min(limit*2,200));
 
     const claimed=await this.db.withOrganization(organizationId,async client=>{
       const rows=await client.query<ClaimedRefund>(
