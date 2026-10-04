@@ -1,0 +1,23 @@
+name: VIEWS D1 Schema
+on:
+  push:
+    branches: [main, "staging/**"]
+    paths:
+      - "migrations/**"
+      - ".github/workflows/schema.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "migrations/**"
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate D1-compatible SQLite schema
+        run: |
+          sqlite3 /tmp/views.db < migrations/0001_core.sql
+          sqlite3 /tmp/views.db ".tables"
+          sqlite3 /tmp/views.db "PRAGMA foreign_key_check;"
+          sqlite3 /tmp/views.db "SELECT id,name,slug FROM organizations;"
+          sqlite3 /tmp/views.db "SELECT id,name,city FROM properties;"
