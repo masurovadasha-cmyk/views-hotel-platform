@@ -1,6 +1,6 @@
 import {afterAll,describe,expect,it} from "vitest";
 import {DatabaseService} from "../database/database.service";
-import {BookingConflictError} from "./booking.errors";
+import {BookingConflictError,IdempotencyConflictError} from "./booking.errors";
 import {BookingHoldService} from "./booking-hold.service";
 import {BookingLifecycleService} from "./booking-lifecycle.service";
 
@@ -52,6 +52,13 @@ describe.sequential("booking hold integration",()=>{
     expect(second.totalMinor).toBe(203840000n);
   });
 
+  it("rejects reuse of an idempotency key with a different request",async()=>{
+    const first=input("idem-conflict","2027-02-10T14:00:00+05:00","2027-02-11T12:00:00+05:00");
+    await holds.createHold(first);
+    const changed=input("idem-conflict","2027-02-12T14:00:00+05:00","2027-02-13T12:00:00+05:00");
+    await expect(holds.createHold(changed)).rejects.toBeInstanceOf(IdempotencyConflictError);
+  });
+
   it("confirms a valid hold and converts the inventory period to reservation",async()=>{
     const hold=await holds.createHold(input("confirm-create","2027-03-01T14:00:00+05:00","2027-03-02T12:00:00+05:00"));
     const confirmed=await lifecycle.confirmHold(actor,hold.reservationId,"confirm-command");
@@ -64,6 +71,19 @@ describe.sequential("booking hold integration",()=>{
     expect(state.reservation.status).toBe("confirmed");
     expect(state.period.kind).toBe("reservation");
     expect(state.period.expires_at).toBeNull();
+    const replay=await lifecycle.confirmHold(actor,hold.reservationId,"confirm-command");
+    expect(replay.idempotentReplay).toBe(true);
+  });
+
+  it("manually releases a hold and makes the dates sellable again",async()=>{
+    const hold=await holds.createHold(input("release-create","2027-03-10T14:00:00+05:00","2027-03-11T12:00:00+05:00"));
+    const released=await lifecycle.releaseHold(actor,hold.reservationId,"release-command");
+    expect(released.status).toBe("cancelled");
+    const periodCount=await db.withActor(actor,async client=>{
+      const p=await client.query<{count:string}>("SELECT count(*)::text AS count FROM inventory_periods WHERE reservation_id=$1",[hold.reservationId]);
+      return Number(p.rows[0].count);
+    });
+    expect(periodCount).toBe(0);
   });
 
   it("expires stale holds and releases their inventory",async()=>{
