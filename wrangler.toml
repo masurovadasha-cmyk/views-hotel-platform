@@ -1,0 +1,9 @@
+name = "views-hotel-platform"
+compatibility_date = "2026-10-04"
+pages_build_output_dir = "dist"
+
+# Add free D1 staging binding after database creation:
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "views-staging"
+# database_id = "<cloudflare-generated-id>"
