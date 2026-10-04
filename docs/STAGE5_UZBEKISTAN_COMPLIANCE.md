@@ -1,309 +1,249 @@
-# Stage 5 — Uzbekistan Compliance
+# Stage 5 — Uzbekistan Compliance Foundation
 
-Status: implemented and verified in VIEWS Production Core.
+Status: production-core foundation implemented and verified.
+
+This stage builds a country plug-in boundary. It does not claim that VIEWS has live E-mehmon,
+fiscal-operator, tax-office, or document-storage credentials. Provider adapters must be explicitly connected.
 
 ## Delivered
 
-- country compliance policy versions
-- reservation guest manifest
-- encrypted guest document metadata model
-- guest document storage-region policy
-- E-mehmon-ready registration queue
-- registration attempts / retry metadata
-- durable lease/backoff fields
+### Guest registration / E-mehmon boundary
+- versioned country compliance policies
+- reservation guest registry
+- one registration case per reservation guest/provider
+- due_at deadline
+- ready / submitted / confirmed / rejected / manual_review states
+- attempt history
+- lease-based submission
+- bounded retry/backoff
+- idempotent outbox events
+- due-soon and overdue alert engine
+- property/role/RLS enforcement
+- GuestRegistrationProviderPort
+- provider registry that reports only connected providers
+
+### Guest identity documents
+- metadata record separated from document bytes
+- product-controlled storage region
+- data-residency policy reference snapshotted on document record
+- vault ID / encryption key reference
+- SHA-256 object checksum
+- document-number hash field
+- verification workflow
+- staff verifier attribution
+- DocumentVaultPort for controlled reads
+- DocumentUploadVaultPort for direct presigned upload
+- begin -> direct object-store upload -> finalize -> verify workflow
+
+The API does not proxy the document file bytes during the upload workflow.
+
+### Data residency
+- versioned data_residency_policies
+- required storage region
+- cross-border-allowed flag
+- policy conditions
+- legal reference metadata
+- guest registration submission refuses to proceed when the country policy is missing
+- document upload records which policy selected its region
+
+### Tourist fee / tax provenance
+The generic Stage 3 charge_rules model remains the calculator.
+
+Stage 5 links charge_rules to compliance_policy_versions so an immutable quote line can record:
+- compliance policy ID
+- effective rule metadata
+- age/residency predicates
+- exact charge code
+
+No production tourist-fee or VAT rate is hard-coded in TypeScript.
+
+### Fiscalization boundary
 - fiscalization request queue
-- fiscalization attempts / retry metadata
-- provider boundaries for:
-  - guest registration
-  - document vault
-  - fiscalization
-- personal-data base registration tracking
-- payment.captured / payment.refunded outbox boundary
-- fiscal receipt source linked to provider transaction
-- non-recursive membership-role RLS helper
-- server-side compliance role checks
-- integration tests with test-only adapters
+- sale/refund receipt type
+- provider transaction reference
+- ledger journal reference
+- immutable payload snapshot
+- idempotency
+- provider attempt log
+- retry lease/backoff
+- FiscalizationProviderPort
+- connected-provider registry
 
-## Provider connection status
+The provider-specific virtual cash-register/OFD payload must be implemented only after the accountant
+and chosen provider confirm the contractual schema.
 
-Production adapters are NOT_CONNECTED until real credentials/contracts are supplied.
-
-Expected production adapter identifiers are deployment-specific.
-
-Examples:
-- guest registration: emehmon
-- fiscalization: ODF / virtual cash register provider
-- document vault: Uzbekistan-region encrypted object storage + KMS
-
-The production registry starts empty.
-A missing adapter produces:
-- REGISTRATION_PROVIDER_NOT_CONNECTED
-- DOCUMENT_VAULT_NOT_CONNECTED
-- FISCALIZATION_PROVIDER_NOT_CONNECTED
-
-No fake success path is enabled in production.
-
-## Registration flow
-
-Confirmed booking
--> reservation_guests
--> verified guest document
--> compliance policy lookup
--> guest_registration_case
--> staff queue
--> document storage-region validation
--> document vault decrypt/read
--> E-mehmon provider adapter
--> submitted / confirmed
--> confirmation reference/proof
--> outbox event
-
-Case statuses:
-- draft
-- ready
-- submitted
-- confirmed
-- rejected
-- manual_review
-- cancelled
-
-Cases have:
-- due_at
-- attempt_count
-- next_attempt_at
-- lease_until
-- locked_by
-- policy snapshot
-- provider
-- external registration reference
-
-Network calls do not hold a database transaction open.
-
-## Registration deadline
-
-VIEWS does not hard-code one universal E-mehmon submission deadline.
-
-The active compliance policy supplies:
-- provider
-- dueHours
-- documentVaultId
-
-Reason: legal deadlines and operational requirements can change and can differ by registration category.
-
-The due time is frozen on each registration case.
-
-## Tourist / hotel fee
-
-Stage 3 already provides the configurable charge engine.
-
-The Uzbekistan policy primitive confirms only eligibility structure:
-- guests younger than 16 are excluded
-- age 16+ is eligible
-- resident/non-resident is preserved as charge context
-
-The production rate is NOT hard-coded.
-
-Current regulations must be converted into versioned charge_rules by accountant/legal review.
-
-The engine supports:
-- resident / non-resident
-- age threshold
-- per guest per night
-- percentage rules
-- region/property scope
-- effective dates
-- versioned legal metadata
-
-## Fiscalization flow
-
-Verified payment provider transaction
--> payment.captured / payment.refunded outbox event
--> fiscalization policy lookup
--> fiscalization_request
--> provider adapter
--> submitted / confirmed receipt
--> fiscal sign / receipt URL
--> outbox event
-
-A fiscal request is unique per provider transaction.
-
-This supports:
-- partial captures
-- multiple captures
-- partial refunds
-- multiple refunds
-
-without generating a duplicate receipt for the same transaction.
-
-## Personal data / documents
-
-Guest document records do not require plaintext document numbers in PostgreSQL.
-
-Supported fields:
-- encrypted_fields
-- document_number_hash
-- object_key
-- object checksum
-- storage_region
-- encryption_key_ref
-- verification status
-
-Product default for Uzbekistan guest identity documents:
-- storage region = UZ
-
-This is intentionally stricter than the minimum 2026 localization rule.
-
-The data-residency policy is versioned in PostgreSQL and checked before registration submission.
-
-## Personal-data database registration
-
-personal_data_base_registrations tracks:
-- system code
-- registry status
+### Personal-data-base operational register
+personal_data_base_registrations stores:
+- country
+- VIEWS system code
+- operational registry status
 - external registry reference
-- submission date
-- confirmation date
+- submitted/confirmed timestamps
 - metadata
 
-This is operational tracking only.
-It does not itself register a database with the state authority.
+This table is an operational compliance record. It does not itself perform a government registration.
 
-## Legal facts verified during Stage 5
+## Production schema
 
-### Guest registration
+- apps/api/db/migrations/0009_uzbekistan_compliance.sql
+- apps/api/db/migrations/0010_identity_rls_role_helpers.sql
 
-Law O'RQ-1074 / ЗРУ-1074 and official government guidance confirm that persons staying in accommodation facilities are registered by responsible staff through E-mehmon.
+Main tables:
+- compliance_policy_versions
+- reservation_guests
+- guest_document_records
+- guest_registration_cases
+- guest_registration_attempts
+- fiscalization_requests
+- fiscalization_attempts
+- data_residency_policies
+- personal_data_base_registrations
 
-### Tourist/hotel fee
-
-The current 2026 version of Cabinet Resolution 475 provides that:
-- children under 16 are excluded
-- local and foreign guests have different calculation rules
-- the fee is charged per day of stay
-- current foreign-guest rates depend on accommodation category / room count
-
-Production numeric rules remain CHECK WITH ACCOUNTANT/LAWYER before seeding.
-
-### Personal data
-
-O'RQ-1125 / ЗРУ-1125 (26 March 2026) amended the Personal Data Law.
-
-Mandatory in-country storage applies to specified categories including:
-- biometric data
-- genetic data
-- data of users of telecommunications operators operating in Uzbekistan
-
-Other personal data may be processed/stored outside Uzbekistan if statutory conditions are met.
-
-VIEWS still defaults guest identity documents to UZ storage as a product/security decision.
+All tenant-owned compliance tables use PostgreSQL RLS.
 
 ## API
 
-POST /v1/compliance/registrations/reservations/:reservationId/prepare
-
-Creates missing registration cases idempotently.
-
-GET /v1/compliance/registrations?propertyId=...&status=...
-
-Returns the staff registration queue.
-
-POST /v1/compliance/registrations/:caseId/submit
-
-Submits through the configured guest-registration adapter.
-
-POST /v1/compliance/fiscalization/provider-transactions/:transactionId/prepare
-
-Creates a fiscal request idempotently from one captured/refunded provider transaction.
-
-POST /v1/compliance/fiscalization/:requestId/submit
-
-Submits the fiscal receipt to the connected provider.
-
 GET /v1/compliance/providers
 
-Shows actually registered runtime adapters.
-An empty list is expected until live adapters are connected.
+Registration:
+- POST /v1/compliance/registrations/reservations/:reservationId/prepare
+- GET /v1/compliance/registrations?propertyId=...&status=...
+- POST /v1/compliance/registrations/:caseId/submit
 
-## Database migrations
+Document workflow:
+- POST /v1/compliance/documents/reservation-guests/:reservationGuestId/uploads
+- POST /v1/compliance/documents/:documentRecordId/finalize
+- POST /v1/compliance/documents/:documentRecordId/verify
 
-- 0009_uzbekistan_compliance.sql
-- 0010_identity_rls_role_helpers.sql
+Fiscalization:
+- POST /v1/compliance/fiscalization/provider-transactions/:providerTransactionId/prepare
+- POST /v1/compliance/fiscalization/:requestId/submit
 
-0010 fixes an older recursive organization_memberships RLS policy by using SECURITY DEFINER helper functions with a fixed search_path.
+## Document upload boundary
 
-## Automated verification
+1. A versioned registration policy selects a vault adapter.
+2. A data-residency policy selects the required storage region.
+3. VIEWS creates guest_document_records metadata.
+4. Vault adapter returns a short-lived HTTPS upload URL.
+5. Client sends document bytes directly to regional encrypted object storage.
+6. finalize verifies object existence/checksum through the vault adapter.
+7. VIEWS stores checksum/key metadata.
+8. authorized staff verifies the document.
+9. Registration provider reads the decrypted document only through DocumentVaultPort when submitting.
 
-VIEWS Production Core verifies:
-- migrations 0001 through 0010
-- PostgreSQL 16
-- no-overbooking constraint
-- tenant and property RLS
-- restricted views_app runtime role
-- compliance provider registry has no fake production adapters
-- tourist fee age eligibility boundary
-- residency classification
-- UZ document storage default
-- configurable registration deadline
-- registration case creation
-- UZ storage-region enforcement
-- test-only vault + E-mehmon adapter submission
-- confirmed registration queue state
-- one fiscal request per provider transaction
-- test-only fiscalization adapter
-- confirmed fiscal receipt
-- all prior booking/payment/ledger tests
-- NestJS typecheck
-- NestJS production build
+Production object storage must use:
+- encryption at rest
+- separate key management
+- least-privilege service identity
+- short-lived presigned URLs
+- private bucket/container
+- audit logs
+- lifecycle/retention policy approved by legal/privacy owner
+
+## Official legal reference check — 2026-10-05
+
+These references are recorded for engineering provenance and must be checked again immediately before launch.
+
+### Registration
+Official Lex.uz Law O'RQ/ЗРУ-1074 dated 10 July 2025 describes registration of persons staying
+at accommodation facilities through E-mehmon, including electronic forms based on identity/travel
+document data. The current text should be revalidated before enabling the live adapter.
+
+Official source:
+https://lex.uz/ru/docs/7627933
+
+### Personal data
+Official Lex.uz Law O'RQ/ЗРУ-1125 dated 26 March 2026 amended the personal-data law.
+Its current text contains special local-storage requirements for specified categories including
+biometric/genetic data and data of users of local telecommunications operators, while other
+personal data may be stored/processed abroad subject to statutory conditions.
+
+Official source:
+https://www.lex.uz/acts/-8099215
+
+VIEWS deliberately uses a stricter product default for guest identity documents: keep them in the
+country-specific vault selected by data_residency_policies until legal/privacy review approves otherwise.
+This is a product policy, not a statement that every passport image is legally required to be localized.
+
+### Tourist / hotel fee
+The current Lex.uz text of Cabinet Resolution No. 475 of 25 August 2022, as amended in 2026,
+contains differentiated tourist/hotel-fee rules, including age and resident/foreign-guest treatment.
+Do not encode the current percentages or annex rates in source code.
+
+Official source:
+https://www.lex.uz/uz/acts/-6173258?ONDATE=17.03.2026+00
+
+Production values must be inserted as versioned compliance_policy_versions + charge_rules
+after lawyer/accountant validation of:
+- current effective version
+- accommodation classification
+- region
+- local/foreign/residency definition
+- age rule
+- BHM/BRV value/date
+- rounding
+- partial-day handling
+- tax base
+- effective-from date
+
+## CHECK before production launch
+
+Legal/accounting:
+- CHECK current E-mehmon submission deadline and provider/API access model.
+- CHECK who is legally the responsible accepting party for each marketplace model.
+- CHECK current tourist/hotel fee and annex rates.
+- CHECK BHM/BRV effective values and effective dates.
+- CHECK VAT applicability and taxable base for accommodation and every ancillary service.
+- CHECK fiscal receipt timing, item schema, refund receipt rules and partial-payment behavior.
+- CHECK whether each personal-data database must be registered and record the external registration.
+- CHECK retention/deletion periods for guest identity documents and E-mehmon confirmations.
+- CHECK cross-border processing requirements for each future country.
+
+Provider/infrastructure:
+- connect a real E-mehmon adapter only after official/contracted access is confirmed
+- connect the selected fiscal/OFD/virtual-cash-register adapter
+- connect an Uzbekistan-region encrypted document vault
+- verify vault restore/backup and key-rotation procedures
+- verify webhook/provider retry semantics
+- verify no decrypted document content reaches application logs, Sentry or analytics
+
+## Known boundary
+
+Current production-core compliance endpoints use the staff membership actor context.
+Guest self-service online check-in is not yet exposed through a public guest-auth adapter.
+The storage/verification backend is ready; guest authorization and limited reservation-scoped access
+will be added with the production Guest Identity / Guest App layer.
+
+Do not expose staff tenant headers directly to a public browser.
 
 ## Local run
 
 1. docker compose -f docker-compose.production-dev.yml up -d
-2. Apply PostgreSQL extensions.
-3. Apply migrations 0001 through 0010 in order.
-4. Create restricted views_app role per ADR 0002.
-5. cd apps/api
-6. npm install
-7. DATABASE_URL=postgresql://views_app:<password>@localhost:5432/views npm test
-8. npm run typecheck
-9. npm run build
-10. npm run start:dev
+2. Apply PostgreSQL migrations 0001 through the current production chain.
+3. Use the restricted views_app runtime role.
+4. cd apps/api
+5. npm install
+6. DATABASE_URL=postgresql://views_app:<password>@localhost:5432/views npm test
+7. npm run typecheck
+8. npm run build
+9. npm run start:dev
 
-## CHECK MANUALLY before live Uzbekistan launch
+## Automated verification
 
-Legal/accounting:
-- current E-mehmon integration procedure and credentials
-- exact submission deadline for each guest category
-- current tourist/hotel fee table and BHM value
-- resident / foreign-guest classification details
-- VAT applicability and taxable base by product
-- fiscal receipt timing and correction/refund procedure
-- selected ODF / virtual cash register contract
-- personal-data database registration process
-- lawful cross-border transfer conditions
-
-Security/infrastructure:
-- Uzbekistan-region S3-compatible document storage
-- KMS/HSM key management
-- document encryption envelope design
-- retention and deletion periods
-- audit access to guest documents
-- backup location and encryption
-- incident-response procedure
-
-Provider behavior:
-- registration provider idempotency behavior
-- provider retry limits
-- confirmation proof format
-- fiscalization idempotency contract
-- fiscal correction/refund receipts
-- provider outage SLA and manual fallback process
-
-## Explicitly not implemented yet
-
-- live E-mehmon adapter
-- live ODF / virtual cash provider adapter
-- live document vault adapter
-- automated state-authority database registration
-- hard-coded Uzbekistan tax/tourist-fee rates
-
-Those require real provider/legal/accounting inputs and must not be simulated in production.
+The PostgreSQL 16 production-core suite currently verifies:
+- registration case preparation
+- verified-document readiness
+- configured storage-region enforcement
+- registration provider submission/idempotency
+- deadline due-soon event idempotency
+- regional presigned document upload contract
+- object checksum finalization
+- staff document verification/idempotency
+- data-residency policy reference persistence
+- fiscalization preparation idempotency
+- fiscalization provider submission
+- fiscalization attempt audit
+- tenant/property RLS
+- all previously completed booking/payment/ledger guarantees
+- NestJS typecheck
+- NestJS production build
