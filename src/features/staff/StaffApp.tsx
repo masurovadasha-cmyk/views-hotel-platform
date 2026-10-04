@@ -10,7 +10,7 @@ const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","
 const labels:Record<string,string>={overview:"Overview","my-tasks":"My Tasks",inbox:"Inbox",operations:"Operations","front-desk":"Front Desk",guests:"Guests CRM",housekeeping:"Housekeeping",maintenance:"Maintenance",host:"Host Desk",finance:"Finance",admin:"Admin",integrations:"Integrations",team:"Team",messages:"Messages"};
 const iconFor=(id:string)=>id.includes("maintenance")?Wrench:id.includes("housekeeping")?Sparkles:id.includes("front")?CalendarDays:id==="guests"?Users:id==="finance"?WalletCards:id==="host"?Building2:id==="admin"||id==="integrations"?ShieldCheck:id==="inbox"?Bell:id==="overview"?Gauge:ClipboardList;
 
-export function StaffApp({role,onRoleChange}:{role:HospitalityRole;onRoleChange:(r:HospitalityRole)=>void}){
+export function StaffApp({role,onRoleChange,allowRoleSwitch=true}:{role:HospitalityRole;onRoleChange:(r:HospitalityRole)=>void;allowRoleSwitch?:boolean}){
   const [active,setActive]=useState(roleNavigation[role][0]);
   const [orders,setOrders]=useState<ServiceOrder[]>(initialOrders);
   const userId=role==="cleaner"?"u-cleaner":role==="technician"?"u-tech":"u-manager";
@@ -40,7 +40,7 @@ export function StaffApp({role,onRoleChange}:{role:HospitalityRole;onRoleChange:
   };
 
   return <div className="staffLayout"><aside className="sidebar"><div className="sideBrand">VIEWS <small>OPERATIONS</small></div><nav>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} onClick={()=>setActive(id)}><Icon size={17}/><span>{labels[id]??id}</span></button>})}</nav></aside>
-    <main className="staffMain"><header className="staffHead"><div><small>VIEWS OPERATIONS</small><h1>{labels[current]??current}</h1></div><select value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{r.replaceAll("_"," ")}</option>)}</select></header>{content()}</main></div>
+    <main className="staffMain"><header className="staffHead"><div><small>VIEWS OPERATIONS</small><h1>{labels[current]??current}</h1></div>{allowRoleSwitch?<select value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{r.replaceAll("_"," ")}</option>)}</select>:<span className="roleLock">{role.replaceAll("_"," ")}</span>}</header>{content()}</main></div>
 }
 
 function Orders({orders,act}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void}){
