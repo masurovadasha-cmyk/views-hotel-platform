@@ -56,8 +56,8 @@ export class PaymentWebhookService{
       }
 
       if(event.eventType==="captured"){
-        const txInserted=await this.insertProviderTransaction(client,intent.organization_id,intent.id,provider,event,"capture");
-        if(!txInserted){
+        const providerTransactionId=await this.insertProviderTransaction(client,intent.organization_id,intent.id,provider,event,"capture");
+        if(!providerTransactionId){
           await this.markWebhookProcessed(client,provider,event.externalEventId);
           return {status:"duplicate_transaction" as const};
         }
@@ -74,6 +74,19 @@ export class PaymentWebhookService{
           currency:intent.currency,
           idempotencyKey:`capture:${provider}:${event.externalTransactionId}`
         });
+        await client.query(
+          `INSERT INTO outbox_events(id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload)
+           VALUES(gen_random_uuid(),$1,'provider_transaction',$2,'payment.captured',$3,$4::jsonb)
+           ON CONFLICT(idempotency_key) DO NOTHING`,
+          [
+            intent.organization_id,providerTransactionId,
+            `outbox:payment-captured:${provider}:${event.externalTransactionId}`,
+            JSON.stringify({
+              providerTransactionId,paymentIntentId:intent.id,reservationId:intent.reservation_id,
+              provider,amountMinor:event.amountMinor.toString(),currency:intent.currency
+            })
+          ]
+        );
 
         const reservation=(await client.query<{
           status:string;hold_expires_at:Date|null;property_id:string;
@@ -166,8 +179,8 @@ export class PaymentWebhookService{
       }
 
       if(event.eventType==="refunded"){
-        const txInserted=await this.insertProviderTransaction(client,intent.organization_id,intent.id,provider,event,"refund");
-        if(!txInserted){
+        const providerTransactionId=await this.insertProviderTransaction(client,intent.organization_id,intent.id,provider,event,"refund");
+        if(!providerTransactionId){
           await this.markWebhookProcessed(client,provider,event.externalEventId);
           return {status:"duplicate_transaction" as const};
         }
@@ -184,6 +197,19 @@ export class PaymentWebhookService{
           currency:intent.currency,
           idempotencyKey:`refund:${provider}:${event.externalTransactionId}`
         });
+        await client.query(
+          `INSERT INTO outbox_events(id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload)
+           VALUES(gen_random_uuid(),$1,'provider_transaction',$2,'payment.refunded',$3,$4::jsonb)
+           ON CONFLICT(idempotency_key) DO NOTHING`,
+          [
+            intent.organization_id,providerTransactionId,
+            `outbox:payment-refunded:${provider}:${event.externalTransactionId}`,
+            JSON.stringify({
+              providerTransactionId,paymentIntentId:intent.id,reservationId:intent.reservation_id,
+              provider,amountMinor:event.amountMinor.toString(),currency:intent.currency
+            })
+          ]
+        );
         await client.query(
           `UPDATE payment_intents
               SET refunded_minor=$1,status=$2,updated_at=now(),version=version+1
@@ -231,7 +257,7 @@ export class PaymentWebhookService{
         event.amountMinor.toString(),event.currency,event.occurredAt,JSON.stringify(event.rawMetadata)
       ]
     );
-    return Boolean(result.rowCount);
+    return result.rows[0]?.id??null;
   }
 
   private async markWebhookProcessed(client:any,provider:string,eventId:string){
