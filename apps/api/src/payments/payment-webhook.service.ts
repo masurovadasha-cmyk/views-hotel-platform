@@ -251,7 +251,7 @@ export class PaymentWebhookService{
         const refundRequest=await this.findRefundRequest(
           client,intent.id,event.relatedExternalTransactionId,event.externalTransactionId,event.amountMinor
         );
-        const liabilityCode=refundRequest?.reason==="late_capture_after_hold_expiry"
+        const liabilityCode=refundRequest?.liability_account_code==="refunds_payable"
           ?"refunds_payable" as const
           :"guest_deposits" as const;
 
@@ -343,8 +343,8 @@ export class PaymentWebhookService{
     client:PoolClient,paymentIntentId:string,relatedCaptureId:string|undefined,
     externalRefundId:string,amountMinor:bigint
   ){
-    const result=await client.query<{id:string;reason:string}>(
-      `SELECT id,reason
+    const result=await client.query<{id:string;reason:string;liability_account_code:string}>(
+      `SELECT id,reason,liability_account_code
          FROM payment_refund_requests
         WHERE payment_intent_id=$1
           AND amount_minor=$2
