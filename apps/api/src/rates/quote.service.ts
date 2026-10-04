@@ -90,9 +90,11 @@ export class QuoteService{
         ),
         client.query<{
           property_id:string|null;code:string;label:Record<string,string>;rule_kind:ChargeRule["ruleKind"];
-          rate_bps:number|null;amount_minor:string|null;currency:string|null;residency:ChargeRule["residency"];min_age:number|null;effective_from:string;
+          rate_bps:number|null;amount_minor:string|null;currency:string|null;residency:ChargeRule["residency"];
+          min_age:number|null;effective_from:string;compliance_policy_id:string|null;metadata:Record<string,unknown>;
         }>(
-          `SELECT property_id::text,code,label,rule_kind,rate_bps,amount_minor::text,currency,residency,min_age,effective_from::text
+          `SELECT property_id::text,code,label,rule_kind,rate_bps,amount_minor::text,currency,residency,min_age,
+                  effective_from::text,compliance_policy_id::text,metadata
              FROM charge_rules
             WHERE organization_id=$1
               AND active=true
@@ -130,7 +132,8 @@ export class QuoteService{
         charges.push({
           code:x.code,label:x.label,ruleKind:x.rule_kind,rateBps:x.rate_bps,
           amountMinor:x.amount_minor===null?null:BigInt(x.amount_minor),currency:x.currency,
-          residency:x.residency,minAge:x.min_age
+          residency:x.residency,minAge:x.min_age,
+          compliancePolicyId:x.compliance_policy_id,ruleMetadata:x.metadata
         });
       }
 
