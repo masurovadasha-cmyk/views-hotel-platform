@@ -10,7 +10,16 @@ export function AuthPanel({onDone}:{onDone:()=>void}){
 
   async function requestLink(e:FormEvent){
     e.preventDefault();setBusy(true);setMessage("");
-    try{await api.requestLogin(email);setStage("token");setMessage("Login link requested. Use the secure link/token delivered by the configured email provider.")}
+    try{
+      const result=await api.requestLogin(email);
+      setStage("token");
+      if(result.status==="staging_token_created"&&result.token){
+        setToken(result.token);
+        setMessage("Staging-only verification token loaded. Production never exposes login tokens.");
+      }else{
+        setMessage("Login link requested. Use the secure link/token delivered by the configured email provider.");
+      }
+    }
     catch(error){setMessage(error instanceof ApiError?error.message:"Login request failed")}
     finally{setBusy(false)}
   }
