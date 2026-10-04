@@ -26,7 +26,7 @@ export class PaymentWebhookService{
          VALUES(gen_random_uuid(),$1,$2,$3,$4::jsonb,'{}'::jsonb)
          ON CONFLICT(provider,external_event_id) DO NOTHING
          RETURNING id`,
-        [provider,event.externalEventId,event.eventType,rawBody||JSON.stringify(event)]
+        [provider,event.externalEventId,event.eventType,JSON.stringify({rawBody})]
       );
       if(!inbox.rowCount)return {status:"duplicate" as const};
 
@@ -103,12 +103,12 @@ export class PaymentWebhookService{
           );
           await client.query(
             `INSERT INTO payment_refund_requests(
-               id,organization_id,payment_intent_id,provider,amount_minor,currency,reason,idempotency_key
-             ) VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,'late_capture_after_hold_expiry',$6)
+               id,organization_id,payment_intent_id,provider,amount_minor,currency,reason,idempotency_key,external_capture_id
+             ) VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,'late_capture_after_hold_expiry',$6,$7)
              ON CONFLICT(organization_id,idempotency_key) DO NOTHING`,
             [
               intent.organization_id,intent.id,provider,event.amountMinor.toString(),intent.currency,
-              `late-capture:${provider}:${event.externalTransactionId}`
+              `late-capture:${provider}:${event.externalTransactionId}`,event.externalTransactionId
             ]
           );
           await client.query(
