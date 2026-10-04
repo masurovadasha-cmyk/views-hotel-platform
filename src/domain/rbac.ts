@@ -10,8 +10,8 @@ export const roleNavigation:Record<HospitalityRole,string[]>={
   reservation_manager:["overview","inbox","front-desk","guests"],
   finance_manager:["finance"], accountant:["finance"], revenue_manager:["finance"],
   owner_readonly:["host","finance"],
-  general_manager:["overview","inbox","operations","front-desk","guests","housekeeping","maintenance","host","finance","admin","team"],
-  super_admin:["overview","inbox","operations","front-desk","guests","housekeeping","maintenance","host","finance","admin","team"]
+  general_manager:["overview","inbox","operations","front-desk","guests","housekeeping","maintenance","host","finance","admin","integrations","team"],
+  super_admin:["overview","inbox","operations","front-desk","guests","housekeeping","maintenance","host","finance","admin","integrations","team"]
 };
 
 const categories:Partial<Record<HospitalityRole,ServiceCategory[]>>={
