@@ -221,13 +221,13 @@ export class PaymentWebhookService{
   ){
     const result=await client.query(
       `INSERT INTO provider_transactions(
-         id,organization_id,payment_intent_id,provider,external_transaction_id,kind,
+         id,organization_id,payment_intent_id,provider,external_transaction_id,related_external_transaction_id,kind,
          amount_minor,currency,occurred_at,raw_metadata
-       ) VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)
+       ) VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb)
        ON CONFLICT(provider,external_transaction_id,kind) DO NOTHING
        RETURNING id`,
       [
-        organizationId,paymentIntentId,provider,event.externalTransactionId,kind,
+        organizationId,paymentIntentId,provider,event.externalTransactionId,event.relatedExternalTransactionId??null,kind,
         event.amountMinor.toString(),event.currency,event.occurredAt,JSON.stringify(event.rawMetadata)
       ]
     );
