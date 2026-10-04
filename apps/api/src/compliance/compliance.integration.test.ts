@@ -4,6 +4,7 @@ import type {DocumentVaultPort} from "./document-vault.port";
 import {FiscalizationService} from "./fiscalization.service";
 import type {FiscalizationProviderPort} from "./fiscalization-provider.port";
 import {GuestRegistrationService} from "./guest-registration.service";
+import {RegistrationDeadlineService} from "./registration-deadline.service";
 import type {GuestRegistrationProviderPort} from "./guest-registration-provider.port";
 import {ComplianceProviderRegistry} from "./provider.registry";
 
@@ -74,6 +75,7 @@ registry.registerVault(new TestVault());
 registry.registerGuestRegistration(new TestRegistrationProvider());
 registry.registerFiscalization(new TestFiscalizationProvider());
 const registrations=new GuestRegistrationService(db,registry);
+const deadlines=new RegistrationDeadlineService(db);
 const fiscalization=new FiscalizationService(db,registry);
 
 beforeAll(async()=>{
@@ -88,7 +90,7 @@ beforeAll(async()=>{
       [
         REG_POLICY,FISC_POLICY,ORG,
         JSON.stringify({provider:"emehmon-test",dueHours:24,documentVaultId:"vault-test"}),
-        JSON.stringify(["O'RQ-1074","E-mehmon"]),
+        JSON.stringify(["CHECK_CURRENT_REGISTRATION_LAW","E-mehmon"]),
         JSON.stringify({provider:"fiscal-test"}),
         JSON.stringify(["CHECK_ACCOUNTANT_PROVIDER_CONTRACT"])
       ]
@@ -100,7 +102,7 @@ beforeAll(async()=>{
          conditions,legal_references,effective_from,active
        ) VALUES($1,$2,'UZ','guest_identity_document','UZ',false,'{}'::jsonb,$3::jsonb,'2026-01-01',true)
        ON CONFLICT DO NOTHING`,
-      [RESIDENCY_POLICY,ORG,JSON.stringify(["PRODUCT_DEFAULT_UZ_REGION","O'RQ-1125"])]
+      [RESIDENCY_POLICY,ORG,JSON.stringify(["PRODUCT_DEFAULT_UZ_REGION","CHECK_CURRENT_PERSONAL_DATA_LAW"])]
     );
 
     await client.query(
@@ -192,6 +194,31 @@ describe.sequential("Uzbekistan compliance integration",()=>{
     await db.withActor(actor,async client=>{
       await client.query("UPDATE guest_document_records SET storage_region='UZ' WHERE id=$1",[DOCUMENT]);
     });
+  });
+
+  it("emits one idempotent due-soon alert from the frozen registration policy",async()=>{
+    const first=await deadlines.emitTenantAlerts(
+      ORG,100,new Date("2027-09-11T08:40:00.000Z")
+    );
+    expect(first.emitted).toBeGreaterThanOrEqual(1);
+
+    const second=await deadlines.emitTenantAlerts(
+      ORG,100,new Date("2027-09-11T08:40:00.000Z")
+    );
+    expect(second.emitted).toBe(0);
+
+    const eventRow=await db.withActor(actor,async client=>{
+      return (await client.query<{event_type:string;payload:{thresholdMinutes:number}}>(
+        `SELECT event_type,payload
+           FROM outbox_events
+          WHERE aggregate_type='guest_registration'
+            AND event_type='compliance.registration_due_soon'
+          ORDER BY occurred_at DESC
+          LIMIT 1`
+      )).rows[0];
+    });
+    expect(eventRow.event_type).toBe("compliance.registration_due_soon");
+    expect(eventRow.payload.thresholdMinutes).toBe(30);
   });
 
   it("submits registration through test-only vault/provider and confirms the case",async()=>{
