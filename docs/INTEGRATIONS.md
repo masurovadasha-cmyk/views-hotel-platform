@@ -1,37 +1,29 @@
 # VIEWS Integration Hub
 
-## Booking.com
-Use the official Booking.com Connectivity APIs after the VIEWS account is approved as a Connectivity Partner and a machine account is created.
+VIEWS supports three integration classes:
 
-Supported target capabilities in VIEWS:
-- Reservations
-- Rates & Availability
-- Messaging
-- Guest reviews
-- Content
+1. Booking.com Connectivity
+   - reservations
+   - rates & availability
+   - messaging
+   - guest reviews
+   - content
+   - requires approved Connectivity Partner access and machine-account token authentication
 
-Authentication target: token-based machine-account flow. Credential values must live only in Cloudflare Secrets and must never be committed to GitHub or stored in D1.
+2. Airbnb Software Connection
+   - reservation sync
+   - rates & availability
+   - listing mapping/sync
+   - requires approved Airbnb software/API partner access
+   - normal host login credentials are never treated as API credentials
 
-## Airbnb
-Airbnb software connectivity is partner-gated. VIEWS must obtain approved software/API partner access before a live connector can be enabled.
+3. AI Concierge
+   - guest chat
+   - translation
+   - service-request triage
+   - knowledge assistance
+   - vendor-neutral adapter so the provider can be changed later
 
-Supported target capabilities in VIEWS:
-- Reservation sync
-- Rates & availability
-- Listing mapping/sync
+Security rule: integration credentials never belong in GitHub, D1 rows, browser storage or frontend bundles. VIEWS stores only connection metadata, health state, scopes, mappings and sync logs. Secret material belongs only in the deployment platform's encrypted secret store.
 
-Do not treat normal Airbnb host login/password as API credentials.
-
-## AI Concierge
-The AI concierge connector is intentionally vendor-neutral. It can be backed by OpenAI or another compatible provider through Cloudflare Secrets.
-
-Capabilities:
-- Guest chat
-- Translation
-- Service-request triage
-- Knowledge assistance
-
-Hard rule: the concierge never fabricates prices, booking state, payment success, refunds or property policies. Operational actions must create/route a Service Order or escalate to staff.
-
-## Secret storage
-Only secret references/status are exposed to the app. Secret values must live in Cloudflare encrypted secrets.
+The AI Concierge must never fabricate rates, reservation state, payment success, refunds or property policy. Operational requests are escalated to staff or transformed into tracked Service Orders.
