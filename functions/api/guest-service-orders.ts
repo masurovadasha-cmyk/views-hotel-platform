@@ -7,18 +7,25 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
   const originError=requireMutationOrigin(request,env);if(originError)return originError;
   const session=await resolveSession(request,env);
   if(!session||session.mode!=="guest")return json({error:"GUEST_AUTH_REQUIRED",requestId:requestId(request)},401);
-  let db;
-  try{db=requireDatabase(env)}catch{return json({error:"DATABASE_NOT_BOUND",requestId:requestId(request)},503)}
-  const body=await request.json() as Record<string,unknown>;
-  const reservationId=String(body.reservationId||""),category=String(body.category||""),title=String(body.title||"").trim(),description=String(body.details||"").trim();
-  if(!reservationId||!allowed.includes(category)||title.length<2||title.length>160||description.length<2||description.length>2000)return json({error:"INVALID_REQUEST",requestId:requestId(request)},400);
+  let db;try{db=requireDatabase(env)}catch{return json({error:"DATABASE_NOT_BOUND",requestId:requestId(request)},503)}
 
-  const reservation=await db.prepare("SELECT id,property_id,unit_id,primary_guest_id,status FROM reservations WHERE id=? AND primary_guest_id=? AND organization_id=? LIMIT 1")
+  const body=await request.json() as Record<string,unknown>;
+  const reservationId=String(body.reservationId||"");
+  const category=String(body.category||"");
+  const title=String(body.title||"").trim();
+  const description=String(body.details||"").trim();
+  if(!reservationId||!allowed.includes(category)||title.length<2||title.length>160||description.length<2||description.length>2000){
+    return json({error:"INVALID_REQUEST",requestId:requestId(request)},400);
+  }
+
+  const idem=String(request.headers.get("idempotency-key")||"").trim();
+  if(idem.length<8||idem.length>200)return json({error:"IDEMPOTENCY_KEY_REQUIRED",requestId:requestId(request)},400);
+
+  const reservation=await db.prepare("SELECT id,organization_id,property_id,unit_id,primary_guest_id,status FROM reservations WHERE id=? AND primary_guest_id=? AND organization_id=? LIMIT 1")
     .bind(reservationId,session.guestId,session.organizationId).first<Record<string,unknown>>();
   if(!reservation)return json({error:"RESERVATION_NOT_FOUND",requestId:requestId(request)},404);
   if(["cancelled","completed","no_show"].includes(String(reservation.status)))return json({error:"RESERVATION_NOT_ACTIVE",requestId:requestId(request)},409);
 
-  const idem=request.headers.get("idempotency-key")||crypto.randomUUID();
   const existing=await db.prepare("SELECT id,status FROM service_orders WHERE idempotency_key=? AND organization_id=? LIMIT 1")
     .bind(idem,session.organizationId).first<Record<string,unknown>>();
   if(existing)return json({id:existing.id,status:existing.status,idempotentReplay:true,requestId:requestId(request)});

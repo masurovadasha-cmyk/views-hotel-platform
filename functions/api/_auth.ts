@@ -7,10 +7,20 @@ export type LiveSession=
 export async function resolveSession(request:Request,env:Env):Promise<LiveSession|null>{
   const sessionId=getCookie(request,"views_session");
   if(sessionId&&env.DB){
-    const row=await env.DB.prepare("SELECT id,user_id,guest_id,role,organization_id,property_ids,expires_at FROM app_sessions WHERE id=? AND revoked_at IS NULL AND expires_at>CURRENT_TIMESTAMP LIMIT 1").bind(sessionId).first<Record<string,unknown>>();
+    const row=await env.DB.prepare("SELECT id,user_id,guest_id,role,organization_id,property_ids,expires_at FROM app_sessions WHERE id=? AND revoked_at IS NULL AND datetime(expires_at)>CURRENT_TIMESTAMP LIMIT 1")
+      .bind(sessionId).first<Record<string,unknown>>();
     if(row){
-      if(row.guest_id)return {mode:"guest",userId:String(row.user_id),guestId:String(row.guest_id),organizationId:String(row.organization_id)};
-      return {mode:"staff",userId:String(row.user_id),role:String(row.role),organizationId:String(row.organization_id),propertyIds:JSON.parse(String(row.property_ids||"[]"))};
+      if(row.guest_id){
+        return {mode:"guest",userId:String(row.user_id),guestId:String(row.guest_id),organizationId:String(row.organization_id)};
+      }
+      if(!row.role)return null;
+      return {
+        mode:"staff",
+        userId:String(row.user_id),
+        role:String(row.role),
+        organizationId:String(row.organization_id),
+        propertyIds:parsePropertyIds(row.property_ids)
+      };
     }
   }
   if(env.VIEWS_ENV==="staging"&&env.VIEWS_ALLOW_DEMO_HEADERS==="true"){
@@ -28,8 +38,19 @@ export function requireMutationOrigin(request:Request,env:Env){
   return null;
 }
 
+function parsePropertyIds(raw:unknown){
+  try{
+    const parsed=JSON.parse(String(raw||"[]"));
+    if(!Array.isArray(parsed))return [];
+    return [...new Set(parsed.map(String).filter(Boolean))];
+  }catch{return []}
+}
+
 function getCookie(request:Request,name:string){
   const cookie=request.headers.get("cookie")||"";
-  for(const part of cookie.split(";")){const [k,...rest]=part.trim().split("=");if(k===name)return decodeURIComponent(rest.join("="))}
+  for(const part of cookie.split(";")){
+    const [k,...rest]=part.trim().split("=");
+    if(k===name)return decodeURIComponent(rest.join("="));
+  }
   return null;
 }
