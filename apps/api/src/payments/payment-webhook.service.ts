@@ -4,6 +4,7 @@ import type {PoolClient} from "pg";
 import {DatabaseService} from "../database/database.service";
 import {LedgerService} from "./ledger.service";
 import {PaymentProviderRegistry} from "./payment-provider.registry";
+import {PaymentRecoveryService} from "./payment-recovery.service";
 import type {SupportedPaymentProvider,VerifiedWebhookEvent} from "./payment-provider.port";
 
 @Injectable()
@@ -11,7 +12,8 @@ export class PaymentWebhookService{
   constructor(
     private readonly db:DatabaseService,
     private readonly providers:PaymentProviderRegistry,
-    private readonly ledger:LedgerService
+    private readonly ledger:LedgerService,
+    private readonly recovery:PaymentRecoveryService
   ){}
 
   async processRaw(provider:SupportedPaymentProvider,rawBody:string,headers:Record<string,string|undefined>){
@@ -145,32 +147,13 @@ export class PaymentWebhookService{
               WHERE id=$2`,
             [nextCaptured.toString(),intent.id]
           );
-          await client.query(
-            `INSERT INTO payment_refund_requests(
-               id,organization_id,payment_intent_id,provider,amount_minor,currency,reason,idempotency_key,external_capture_id
-             )
-             VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,'late_capture_after_hold_expiry',$6,$7)
-             ON CONFLICT(organization_id,idempotency_key) DO NOTHING`,
-            [
-              intent.organization_id,intent.id,provider,event.amountMinor.toString(),intent.currency,
-              `late-capture:${provider}:${event.externalTransactionId}`,event.externalTransactionId
-            ]
-          );
-          await client.query(
-            `INSERT INTO outbox_events(
-               id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload
-             )
-             VALUES(gen_random_uuid(),$1,'payment_intent',$2,'payment.refund_required',$3,$4::jsonb)
-             ON CONFLICT(idempotency_key) DO NOTHING`,
-            [
-              intent.organization_id,intent.id,
-              `outbox:refund-required:${provider}:${event.externalTransactionId}`,
-              JSON.stringify({
-                paymentIntentId:intent.id,reservationId:intent.reservation_id,
-                reason:"late_capture_after_hold_expiry",providerTransactionId
-              })
-            ]
-          );
+          await this.recovery.ensureRefundsForIntent(client,{
+            organizationId:intent.organization_id,
+            paymentIntentId:intent.id,
+            provider,
+            currency:intent.currency,
+            reservationId:intent.reservation_id
+          });
           await this.markWebhookProcessed(
             client,event.organizationId,provider,event.externalEventId,{status:"refund_pending"}
           );
