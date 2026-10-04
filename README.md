@@ -34,3 +34,7 @@ npm run dev
 ## Cloudflare
 Build command: `npm run build`, output: `dist`.
 Pages Functions expose `/api/health` and `/api/readiness`.
+
+## Staging preview
+
+Preview deployments are built from `staging/master-reference-v1` with GitHub Actions. Production `main` remains unchanged until approval.
