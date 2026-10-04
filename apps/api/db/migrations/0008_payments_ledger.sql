@@ -211,14 +211,14 @@ FOR EACH ROW EXECUTE FUNCTION app.prevent_posted_ledger_mutation();
 CREATE OR REPLACE FUNCTION app.prevent_posted_journal_mutation()
 RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
   IF OLD.status='posted' THEN
     RAISE EXCEPTION 'posted journal is immutable';
   END IF;
   RETURN COALESCE(NEW,OLD);
 END
-$;
+$$;
 
 CREATE TRIGGER ledger_journal_immutable_after_post
 BEFORE UPDATE OR DELETE ON ledger_journals
