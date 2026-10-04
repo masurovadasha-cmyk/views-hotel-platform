@@ -4,10 +4,11 @@ import type { HospitalityRole, ServiceOrder } from "../../domain/types";
 import { initialOrders } from "../../data/demo";
 import { canSeeServiceOrder, roleNavigation } from "../../domain/rbac";
 import { transitionServiceOrder } from "../../domain/workflows";
+import { integrationCatalog } from "../../domain/integrations";
 
 const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","general_manager","super_admin"];
-const labels:Record<string,string>={overview:"Overview","my-tasks":"My Tasks",inbox:"Inbox",operations:"Operations","front-desk":"Front Desk",guests:"Guests CRM",housekeeping:"Housekeeping",maintenance:"Maintenance",host:"Host Desk",finance:"Finance",admin:"Admin",team:"Team",messages:"Messages"};
-const iconFor=(id:string)=>id.includes("maintenance")?Wrench:id.includes("housekeeping")?Sparkles:id.includes("front")?CalendarDays:id==="guests"?Users:id==="finance"?WalletCards:id==="host"?Building2:id==="admin"?ShieldCheck:id==="inbox"?Bell:id==="overview"?Gauge:ClipboardList;
+const labels:Record<string,string>={overview:"Overview","my-tasks":"My Tasks",inbox:"Inbox",operations:"Operations","front-desk":"Front Desk",guests:"Guests CRM",housekeeping:"Housekeeping",maintenance:"Maintenance",host:"Host Desk",finance:"Finance",admin:"Admin",integrations:"Integrations",team:"Team",messages:"Messages"};
+const iconFor=(id:string)=>id.includes("maintenance")?Wrench:id.includes("housekeeping")?Sparkles:id.includes("front")?CalendarDays:id==="guests"?Users:id==="finance"?WalletCards:id==="host"?Building2:id==="admin"||id==="integrations"?ShieldCheck:id==="inbox"?Bell:id==="overview"?Gauge:ClipboardList;
 
 export function StaffApp({role,onRoleChange}:{role:HospitalityRole;onRoleChange:(r:HospitalityRole)=>void}){
   const [active,setActive]=useState(roleNavigation[role][0]);
@@ -33,7 +34,8 @@ export function StaffApp({role,onRoleChange}:{role:HospitalityRole;onRoleChange:
     if(current==="maintenance")return <Panel title="Maintenance"><Workflow text="open → assigned/in_progress → waiting/blocked → resolved → inspection/verified → closed"/></Panel>;
     if(current==="host")return <Panel title="Host Desk"><div className="notice">Listings, booking readiness and integrations are shown truthfully. No OTA/iCal connector is marked active until connected.</div></Panel>;
     if(current==="finance")return <Panel title="Finance"><div className="notice">No financial KPIs are invented. Revenue, ADR and RevPAR stay unavailable until backed by captured transactional data.</div></Panel>;
-    if(current==="admin")return <><section className="kpis"><article><span>Listings</span><b>4</b></article><article><span>Roles</span><b>13</b></article><article><span>Service orders</span><b>{orders.length}</b></article><article><span>Integrations</span><b>0</b></article></section><Orders orders={orders} act={act}/></>;
+    if(current==="admin")return <><section className="kpis"><article><span>Listings</span><b>4</b></article><article><span>Roles</span><b>13</b></article><article><span>Service orders</span><b>{orders.length}</b></article><article><span>Integrations</span><b>{integrationCatalog.length}</b></article></section><Orders orders={orders} act={act}/></>;
+    if(current==="integrations")return <Panel title="Integration Hub"><div className="integrationGrid">{integrationCatalog.map(item=><article className="integrationCard" key={item.provider}><div><b>{item.label}</b><span>{item.capabilities.join(" · ")}</span></div><span className={"status "+(item.status==="configured"?"done":"assigned")}>{item.status.replaceAll("_"," ")}</span></article>)}</div><div className="notice">Credentials are never stored in this UI, browser storage or GitHub. Live secrets are added only to the deployment secret store.</div></Panel>;
     return <Panel title={labels[current]??current}><div className="notice">Module foundation ready for the next backend slice.</div></Panel>;
   };
 
