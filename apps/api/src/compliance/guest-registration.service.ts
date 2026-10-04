@@ -273,8 +273,8 @@ export class GuestRegistrationService{
         const status=result.status;
         await client.query(
           `UPDATE guest_registration_cases
-              SET status=$2,submitted_at=COALESCE(submitted_at,now()),
-                  confirmed_at=CASE WHEN $2='confirmed' THEN now() ELSE confirmed_at END,
+              SET status=$2::guest_registration_status,submitted_at=COALESCE(submitted_at,now()),
+                  confirmed_at=CASE WHEN $2::text='confirmed' THEN now() ELSE confirmed_at END,
                   external_registration_id=$3,confirmation_object_key=$4,
                   lease_until=NULL,locked_by=NULL,last_error_code=NULL,last_error_message=NULL,
                   updated_at=now(),version=version+1
