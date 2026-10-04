@@ -4,5 +4,6 @@ import {DatabaseModule} from "./database/database.module";
 import {HealthController} from "./health.controller";
 import {InventoryModule} from "./inventory/inventory.module";
 import {RatesModule} from "./rates/rates.module";
-@Module({imports:[DatabaseModule,InventoryModule,RatesModule,BookingModule],controllers:[HealthController]})
+import {PaymentsModule} from "./payments/payments.module";
+@Module({imports:[DatabaseModule,InventoryModule,RatesModule,BookingModule,PaymentsModule],controllers:[HealthController]})
 export class AppModule{}
