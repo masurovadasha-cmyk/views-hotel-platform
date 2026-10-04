@@ -3,6 +3,7 @@ import {
   Bell,Building2,CalendarDays,Camera,CheckCircle2,ClipboardList,FileText,Gauge,Image as ImageIcon,
   Plus,RefreshCw,ShieldCheck,Sparkles,Users,WalletCards,Wrench
 } from "lucide-react";
+import type {LucideIcon} from "lucide-react";
 import type {HospitalityRole,ServiceOrder} from "../../domain/types";
 import {initialOrders} from "../../data/demo";
 import {canSeeServiceOrder,roleNavigation} from "../../domain/rbac";
@@ -149,7 +150,7 @@ function Orders({orders,act,onOpen}:{orders:ServiceOrder[];act:(id:string,a:"acc
 function Panel({title,children}:{title:string;children:React.ReactNode}){return <section className="panel"><header><small>VIEWS CRM</small><h2>{title}</h2></header>{children}</section>}
 
 function StaffMobileDock({tab,setTab}:{tab:string;setTab:(t:any)=>void}){
-  const items:[string,React.ComponentType<{size?:number}>][]=[["tasks",ClipboardList],["detail",FileText],["proof",Camera],["create",Plus],["notifications",Bell]];
+  const items:[string,LucideIcon][]=[["tasks",ClipboardList],["detail",FileText],["proof",Camera],["create",Plus],["notifications",Bell]];
   return <nav className="staffMobileDock">{items.map(([id,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><Icon size={17}/><span>{id}</span></button>)}</nav>;
 }
 
