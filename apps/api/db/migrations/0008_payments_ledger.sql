@@ -77,14 +77,16 @@ CREATE TABLE payment_refund_requests (
   external_refund_id text,
   attempt_count integer NOT NULL DEFAULT 0,
   next_attempt_at timestamptz NOT NULL DEFAULT now(),
+  lease_until timestamptz,
+  locked_by text,
   last_error text,
   created_at timestamptz NOT NULL DEFAULT now(),
   completed_at timestamptz,
   UNIQUE(organization_id,idempotency_key)
 );
 CREATE INDEX payment_refund_requests_due_idx
-  ON payment_refund_requests(status,next_attempt_at)
-  WHERE status='pending';
+  ON payment_refund_requests(status,next_attempt_at,lease_until)
+  WHERE status IN ('pending','processing');
 
 CREATE TABLE provider_transactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
