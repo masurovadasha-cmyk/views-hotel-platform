@@ -94,13 +94,16 @@ CREATE TABLE guest_registration_cases (
   last_error_code text,
   last_error_message text,
   attempt_count integer NOT NULL DEFAULT 0,
+  next_attempt_at timestamptz NOT NULL DEFAULT now(),
+  lease_until timestamptz,
+  locked_by text,
   version integer NOT NULL DEFAULT 1 CHECK (version > 0),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(reservation_guest_id,provider)
 );
 CREATE INDEX guest_registration_queue_idx
-  ON guest_registration_cases(property_id,status,due_at);
+  ON guest_registration_cases(property_id,status,due_at,next_attempt_at,lease_until);
 CREATE INDEX guest_registration_reservation_idx
   ON guest_registration_cases(reservation_id);
 
