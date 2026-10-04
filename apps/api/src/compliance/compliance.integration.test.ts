@@ -198,6 +198,7 @@ describe.sequential("Uzbekistan compliance integration",()=>{
     const prepared=await registrations.prepareReservation(actor,RESERVATION);
     const result=await registrations.submitNow(actor,prepared.cases[0].id);
     expect(result.status).toBe("confirmed");
+    if(!("externalRegistrationId" in result))throw new Error("EXPECTED_FRESH_REGISTRATION_RESULT");
     expect(result.externalRegistrationId).toBe("EM-TEST-001");
 
     const queue=await registrations.listQueue(actor,PROPERTY,"confirmed");
@@ -213,6 +214,7 @@ describe.sequential("Uzbekistan compliance integration",()=>{
 
     const submitted=await fiscalization.submitNow(actor,first.requestId);
     expect(submitted.status).toBe("confirmed");
+    if(!("externalReceiptId" in submitted))throw new Error("EXPECTED_FRESH_FISCAL_RESULT");
     expect(submitted.externalReceiptId).toBe("RECEIPT-TEST-001");
 
     const state=await db.withActor(actor,async client=>{
