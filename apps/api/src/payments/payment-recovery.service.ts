@@ -163,9 +163,10 @@ export class PaymentRecoveryService{
       const inserted=await client.query<{id:string}>(
         `INSERT INTO payment_refund_requests(
            id,organization_id,payment_intent_id,provider,amount_minor,currency,reason,
-           idempotency_key,external_capture_id
+           liability_account_code,idempotency_key,external_capture_id
          )
-         VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,'booking_unavailable_after_capture',$6,$7)
+         VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,'booking_unavailable_after_capture',
+                'refunds_payable',$6,$7)
          ON CONFLICT(organization_id,idempotency_key) DO NOTHING
          RETURNING id`,
         [
