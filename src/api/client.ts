@@ -10,7 +10,7 @@ async function request<T>(path:string,init?:RequestInit):Promise<T>{
 }
 export const api={
   session:()=>request<{authenticated:boolean;session?:unknown}>("/api/session"),
-  requestLogin:(email:string)=>request<{status:string;expiresIn:number}>("/api/auth-email",{method:"POST",body:JSON.stringify({email})}),
+  requestLogin:(email:string)=>request<{status:string;expiresIn:number;token?:string}>("/api/auth-email",{method:"POST",body:JSON.stringify({email})}),
   verifyLogin:(token:string)=>request<{authenticated:boolean;expiresAt:string}>("/api/auth-verify",{method:"POST",body:JSON.stringify({token})}),
   logout:()=>request<{ok:boolean}>("/api/logout",{method:"POST"}),
   bookings:()=>request<{items:import("./types").LiveBooking[]}>("/api/my-bookings"),
