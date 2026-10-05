@@ -1,7 +1,8 @@
 import {describe,expect,it} from "vitest";
 import {
   TrustedProxyCidrGateError,
-  evaluateTrustedProxyCidrs
+  evaluateTrustedProxyCidrs,
+  runTrustedProxyCidrGate
 } from "./trusted-proxy-cidr-gate.mjs";
 
 function provider(overrides={}){
@@ -17,6 +18,22 @@ function provider(overrides={}){
 }
 
 describe("trusted proxy CIDR drift gate",()=>{
+  it("is not applicable to the private cloudflared connector boundary",async()=>{
+    let output="";
+    const code=await runTrustedProxyCidrGate(
+      [],
+      {TRUSTED_PROXY_MODE:"cloudflare_tunnel"},
+      {write:value=>{output+=String(value)}}
+    );
+    expect(code).toBe(0);
+    expect(JSON.parse(output)).toMatchObject({
+      ok:true,
+      applicable:false,
+      proxyMode:"cloudflare_tunnel",
+      reason:"TUNNEL_CONNECTOR_BOUNDARY"
+    });
+  });
+
   it("passes only when configured and provider ranges match exactly",()=>{
     const result=evaluateTrustedProxyCidrs([
       "2606:4700::/32",

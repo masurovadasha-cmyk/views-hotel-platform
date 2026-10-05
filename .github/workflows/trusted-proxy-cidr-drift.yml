@@ -17,17 +17,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
+      TRUSTED_PROXY_MODE: ${{ vars.TRUSTED_PROXY_MODE || 'cloudflare' }}
       VIEWS_TRUSTED_PROXY_CIDRS_JSON: ${{ vars.VIEWS_TRUSTED_PROXY_CIDRS_JSON }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Require production trusted-proxy allowlist
+      - name: Require public-origin allowlist when applicable
         shell: bash
         run: |
-          if [ -z "$VIEWS_TRUSTED_PROXY_CIDRS_JSON" ]; then
-            echo "::error::Repository variable VIEWS_TRUSTED_PROXY_CIDRS_JSON is required."
+          if [ "$TRUSTED_PROXY_MODE" = "cloudflare" ] && [ -z "$VIEWS_TRUSTED_PROXY_CIDRS_JSON" ]; then
+            echo "::error::Repository variable VIEWS_TRUSTED_PROXY_CIDRS_JSON is required in cloudflare mode."
             exit 1
           fi
       - name: Compare configured CIDRs with Cloudflare published ranges

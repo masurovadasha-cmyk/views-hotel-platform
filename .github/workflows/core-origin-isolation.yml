@@ -1,0 +1,48 @@
+name: VIEWS Core Origin Isolation
+
+on:
+  push:
+    branches: [main, "staging/**", "stage7/**"]
+    paths:
+      - "apps/api/**"
+      - "docker-compose.core-tunnel.yml"
+      - "scripts/core-origin-isolation-gate.mjs"
+      - ".github/workflows/core-origin-isolation.yml"
+  pull_request:
+    branches: [main, "staging/master-reference-v1"]
+    paths:
+      - "apps/api/**"
+      - "docker-compose.core-tunnel.yml"
+      - "scripts/core-origin-isolation-gate.mjs"
+      - ".github/workflows/core-origin-isolation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      POSTGRES_PASSWORD: ci-only-postgres-password
+      DATABASE_URL: postgresql://views_app:ci-only@postgres:5432/views
+      GUEST_AUTH_RATE_LIMIT_SECRET: ci-only-rate-limit-secret-material-32chars
+      CLOUDFLARE_TUNNEL_TOKEN: ci-only-tunnel-token-placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Render hardened tunnel topology
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.core-tunnel.yml config --format json > /tmp/views-core-tunnel.json
+          test -s /tmp/views-core-tunnel.json
+
+      - name: Enforce origin-isolation invariants
+        run: node scripts/core-origin-isolation-gate.mjs --file=/tmp/views-core-tunnel.json
+
+      - name: Build production Core image
+        run: docker build -f apps/api/Dockerfile -t views-core:stage7.15 apps/api

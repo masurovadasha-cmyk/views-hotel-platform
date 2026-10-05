@@ -1,7 +1,7 @@
 import {createHash,createPublicKey} from "node:crypto";
-import {validateNetworkRange} from "./security/network-cidr";
+import {networkRangeIsHost,validateNetworkRange} from "./security/network-cidr";
 
-export type TrustedProxyMode="direct"|"cloudflare";
+export type TrustedProxyMode="direct"|"cloudflare"|"cloudflare_tunnel";
 export type InternalServiceAuthMode="internal_key_only"|"dual"|"signed_only";
 
 export type ConfiguredInternalServicePublicKey={
@@ -41,7 +41,7 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
   if(!Number.isInteger(port)||port<1||port>65535)throw new Error("Invalid PORT");
 
   const trustedProxyMode=(env.TRUSTED_PROXY_MODE||"direct") as TrustedProxyMode;
-  if(!["direct","cloudflare"].includes(trustedProxyMode)){
+  if(!["direct","cloudflare","cloudflare_tunnel"].includes(trustedProxyMode)){
     throw new Error("Invalid TRUSTED_PROXY_MODE");
   }
 
@@ -204,9 +204,21 @@ function validateInternalIngressConfig(
 ){
   if(nodeEnv!=="production")return;
 
-  if(proxyMode==="cloudflare"&&trustedProxyCidrs.length===0){
+  if(
+    (proxyMode==="cloudflare"||proxyMode==="cloudflare_tunnel")&&
+    trustedProxyCidrs.length===0
+  ){
     throw new Error(
-      "VIEWS_TRUSTED_PROXY_CIDRS_JSON is required in cloudflare production mode"
+      "VIEWS_TRUSTED_PROXY_CIDRS_JSON is required in "+proxyMode+" production mode"
+    );
+  }
+
+  if(
+    proxyMode==="cloudflare_tunnel"&&
+    trustedProxyCidrs.some(range=>!networkRangeIsHost(range))
+  ){
+    throw new Error(
+      "cloudflare_tunnel production mode requires exact connector host CIDRs"
     );
   }
 
