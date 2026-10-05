@@ -50,6 +50,7 @@ Wrangler applies every unapplied file in `migrations/` in lexical order:
 5. `0005_operations_exceptions.sql`
 6. `0006_operations_events.sql`
 7. `0007_stage4_operations_seed.sql`
+8. `0008_frontdesk_stays.sql`
 
 The staging seed contains only synthetic accounts/operational records and no real guest personal data.
 
