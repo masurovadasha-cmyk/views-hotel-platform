@@ -84,6 +84,7 @@ export class InternalServiceAuditInterceptor implements NestInterceptor{
         httpMethod:method,
         routePath:endpoint,
         authScheme:identity.authScheme,
+        credentialId:identity.credentialId,
         tokenJti:identity.tokenJti
       });
     }catch(error){
