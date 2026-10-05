@@ -80,6 +80,9 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
       "Configure either VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON or VIEWS_INTERNAL_SERVICE_KEYS_JSON, not both"
     );
   }
+  if(nodeEnv==="production"&&Object.keys(rawServiceKeys).length>0){
+    throw new Error("VIEWS_INTERNAL_SERVICE_KEYS_JSON is not allowed in production");
+  }
   const internalServiceKeys=Object.keys(serviceKeyRefs).length>0
     ?resolveInternalServiceKeyRefs(serviceKeyRefs,env)
     :rawServiceKeys;
@@ -151,7 +154,7 @@ function resolveInternalServiceAuthModes(
     ...Object.keys(configured)
   ])].sort();
 
-  if(nodeEnv==="production"&&known.length>0&&Object.keys(configured).length===0){
+  if(nodeEnv==="production"&&Object.keys(configured).length===0){
     throw new Error("VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON is required in production");
   }
 
