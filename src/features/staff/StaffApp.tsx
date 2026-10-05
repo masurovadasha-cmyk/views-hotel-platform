@@ -16,6 +16,7 @@ import {ExceptionsLive,OperationsOverviewLive,ShiftHandoverLive} from "./LiveOpe
 import {ApartmentTimelineLive,Guest360Live,StayCardLive} from "./LiveGuestStay";
 import {IntegrationHubLive,TeamWorkloadLive} from "./LiveTeamIntegrations";
 import {LiveDashboard} from "./LiveDashboard";
+import {LiveFinance} from "./LiveFinance";
 
 const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","general_manager","super_admin"];
 const labels:Record<string,string>={
@@ -81,7 +82,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="stay-card")return live?<StayCardLive/>:<StayCard/>;
     if(current==="timeline")return live?<ApartmentTimelineLive/>:<ApartmentTimeline/>;
     if(current==="host")return <HostDesk step={hostStep} setStep={setHostStep}/>;
-    if(current==="finance")return <Finance/>;
+    if(current==="finance")return live?<LiveFinance/>:<Finance/>;
     if(current==="admin")return <AdminPanel orders={orders} act={act}/>;
     if(current==="integrations")return live?<IntegrationHubLive/>:<IntegrationHub/>;
     if(current==="team")return live?<TeamWorkloadLive role={role}/>:<TeamPanel orders={orders}/>;
