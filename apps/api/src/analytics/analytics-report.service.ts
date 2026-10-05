@@ -104,7 +104,11 @@ export class AnalyticsReportService{
     });
   }
 
-  async artifact(actor:RequestActorContext,jobId:string):Promise<AnalyticsReportArtifact>{
+  async artifact(
+    actor:RequestActorContext,
+    jobId:string,
+    now=new Date()
+  ):Promise<AnalyticsReportArtifact>{
     return this.db.withActor(actor,async client=>{
       const row=(await client.query<{
         job_status:string;format:string;content_type:string;filename:string;
@@ -127,7 +131,7 @@ export class AnalyticsReportService{
       if(row.job_status!=="completed")throw new Error("REPORT_NOT_READY");
       if(
         !row.artifact_expires_at||
-        row.artifact_expires_at.getTime()<=Date.now()
+        row.artifact_expires_at.getTime()<=now.getTime()
       )throw new Error("REPORT_EXPIRED");
       if(!row.content_bytes)throw new Error("REPORT_ARTIFACT_MISSING");
 
