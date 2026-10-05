@@ -37,7 +37,10 @@ describe("internal service audit interceptor",()=>{
       begin:vi.fn(async()=> "70000000-0000-4000-8000-000000000001"),
       complete:vi.fn(async()=>true)
     };
-    const interceptor=new InternalServiceAuditInterceptor(audit as any);
+    const rejections={record:vi.fn(async()=>1)};
+    const interceptor=new InternalServiceAuditInterceptor(
+      audit as any,rejections as any
+    );
 
     const observable=await interceptor.intercept(
       context({
@@ -76,7 +79,10 @@ describe("internal service audit interceptor",()=>{
       begin:vi.fn(async()=> "70000000-0000-4000-8000-000000000002"),
       complete:vi.fn(async()=>true)
     };
-    const interceptor=new InternalServiceAuditInterceptor(audit as any);
+    const rejections={record:vi.fn(async()=>1)};
+    const interceptor=new InternalServiceAuditInterceptor(
+      audit as any,rejections as any
+    );
 
     const observable=await interceptor.intercept(
       context({
@@ -99,7 +105,10 @@ describe("internal service audit interceptor",()=>{
     vi.stubEnv("VIEWS_INTERNAL_API_KEY",KEY);
 
     const audit={begin:vi.fn(),complete:vi.fn()};
-    const interceptor=new InternalServiceAuditInterceptor(audit as any);
+    const rejections={record:vi.fn(async()=>1)};
+    const interceptor=new InternalServiceAuditInterceptor(
+      audit as any,rejections as any
+    );
 
     await expect(interceptor.intercept(
       context({"x-views-internal-key":KEY}),
@@ -107,5 +116,8 @@ describe("internal service audit interceptor",()=>{
     )).rejects.toBeInstanceOf(UnauthorizedException);
 
     expect(audit.begin).not.toHaveBeenCalled();
+    expect(rejections.record).toHaveBeenCalledWith(
+      expect.anything(),"missing_service_identity"
+    );
   });
 });

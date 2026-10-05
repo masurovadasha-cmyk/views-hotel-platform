@@ -5,8 +5,10 @@ import {
 import type {IncomingHttpHeaders} from "node:http";
 import {catchError,from,map,mergeMap,Observable,of,throwError} from "rxjs";
 import {loadConfig} from "../config";
+import {InternalAuthRejectionService} from "./internal-auth-rejection.service";
 import {InternalServiceAuditService} from "./internal-service-audit.service";
 import {
+  classifyInternalServiceIdentityFailure,
   singleInternalHeader,trustedInternalServiceIdentity
 } from "./internal-service-identity";
 
@@ -14,7 +16,10 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 
 @Injectable()
 export class InternalServiceAuditInterceptor implements NestInterceptor{
-  constructor(private readonly audit:InternalServiceAuditService){}
+  constructor(
+    private readonly audit:InternalServiceAuditService,
+    private readonly rejections:InternalAuthRejectionService
+  ){}
 
   async intercept(
     context:ExecutionContext,
@@ -35,7 +40,11 @@ export class InternalServiceAuditInterceptor implements NestInterceptor{
         request.headers,
         loadConfig().internalApiKeys
       );
-    }catch{
+    }catch(error){
+      const reason=classifyInternalServiceIdentityFailure(
+        request.headers,error
+      );
+      await this.rejections.record(context,reason).catch(()=>undefined);
       throw new UnauthorizedException(
         "trusted internal service identity required"
       );

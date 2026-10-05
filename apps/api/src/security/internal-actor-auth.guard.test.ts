@@ -9,6 +9,7 @@ const ACTOR={
   "x-user-id":"20000000-0000-4000-8000-000000000001",
   "x-membership-id":"30000000-0000-4000-8000-000000000001"
 };
+const SERVICE={"x-views-service-id":"pages-bff"};
 
 describe("internal actor gateway boundary",()=>{
   it("allows public routes that send no actor context",()=>{
@@ -41,6 +42,7 @@ describe("internal actor gateway boundary",()=>{
   it("accepts a complete actor context only with the internal key",()=>{
     expect(()=>assertTrustedInternalActorHeaders({
       ...ACTOR,
+      ...SERVICE,
       "x-views-internal-key":KEY
     },[KEY,PREVIOUS])).not.toThrow();
   });
@@ -48,8 +50,24 @@ describe("internal actor gateway boundary",()=>{
   it("accepts the previous key while the rotation window is active",()=>{
     expect(()=>assertTrustedInternalActorHeaders({
       ...ACTOR,
+      ...SERVICE,
       "x-views-internal-key":PREVIOUS
     },[KEY,PREVIOUS])).not.toThrow();
+  });
+
+  it("rejects a valid key when trusted service identity is missing",()=>{
+    expect(()=>assertTrustedInternalActorHeaders({
+      ...ACTOR,
+      "x-views-internal-key":KEY
+    },[KEY,PREVIOUS])).toThrow("trusted internal service identity required");
+  });
+
+  it("rejects an invalid trusted service identity",()=>{
+    expect(()=>assertTrustedInternalActorHeaders({
+      ...ACTOR,
+      "x-views-internal-key":KEY,
+      "x-views-service-id":"Bad Service"
+    },[KEY,PREVIOUS])).toThrow("trusted internal service identity required");
   });
 
   it("rejects duplicated security headers instead of picking one",()=>{

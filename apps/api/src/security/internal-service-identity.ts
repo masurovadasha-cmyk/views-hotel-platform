@@ -46,3 +46,24 @@ function singleHeader(value:string|string[]|undefined){
   const normalized=value.trim();
   return normalized||null;
 }
+
+
+export type InternalServiceIdentityRejectionReason=
+  |"invalid_internal_key"
+  |"missing_service_identity"
+  |"invalid_service_identity";
+
+export function classifyInternalServiceIdentityFailure(
+  headers:IncomingHttpHeaders,
+  error:unknown
+):InternalServiceIdentityRejectionReason{
+  if(error instanceof Error&&error.message==="INTERNAL_API_UNAUTHORIZED"){
+    return "invalid_internal_key";
+  }
+
+  const rawService=headers["x-views-service-id"];
+  if(rawService===undefined)return "missing_service_identity";
+
+  const serviceId=singleHeader(rawService);
+  return serviceId?"invalid_service_identity":"missing_service_identity";
+}
