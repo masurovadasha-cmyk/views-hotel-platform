@@ -82,6 +82,7 @@ ON analytics_report_jobs
 FOR SELECT
 USING (
   organization_id=app.current_organization_id()
+  AND app.current_membership_role() IN ('host','owner','manager','accountant')
   AND (
     created_by_membership_id=app.current_membership_id()
     OR app.current_membership_role() IN ('owner','manager','accountant')
