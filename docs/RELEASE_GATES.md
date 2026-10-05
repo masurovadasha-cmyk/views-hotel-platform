@@ -10,6 +10,7 @@ A VIEWS release candidate is acceptable only when all of the following are green
 6. Full D1 migration chain
 7. Published GitHub Pages smoke test
 8. Cloudflare live E2E once live staging is enabled
+9. Finance read projection: PostgreSQL source-of-truth marker, live money disabled, zero unbalanced posted journals
 
 ## Canva master parity
 - Guest: 20 screens
@@ -32,3 +33,7 @@ Required before production:
 10. logout/session revocation
 
 No production merge should be treated as a release solely because static UI renders.
+
+
+## Finance projection gate
+The Pages/D1 finance surface is read-only. It must never become the payment source of truth, must never collect card data, and must fail acceptance if any projected posted journal is unbalanced.
