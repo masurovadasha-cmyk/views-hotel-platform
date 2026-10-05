@@ -13,7 +13,16 @@ export type OwnerPayoutSubmissionResult={
   status:"submitted"|"confirmed";
 };
 
+export type OwnerPayoutStatusResult={
+  externalPayoutId:string;
+  status:"submitted"|"confirmed"|"failed";
+};
+
 export interface OwnerPayoutProviderPort{
   readonly provider:string;
   submit(input:OwnerPayoutSubmission):Promise<OwnerPayoutSubmissionResult>;
+  getStatus(input:{
+    payoutInstructionId:string;
+    externalPayoutId:string;
+  }):Promise<OwnerPayoutStatusResult>;
 }
