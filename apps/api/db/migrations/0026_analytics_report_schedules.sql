@@ -311,6 +311,13 @@ BEGIN
   )
   INTO v_next_run
   FROM analytics_report_schedules s
+  JOIN analytics_report_jobs j
+    ON j.id=target_report_job_id
+   AND j.organization_id=s.organization_id
+   AND j.created_by_membership_id=s.created_by_membership_id
+   AND j.report_type=s.report_type
+   AND j.format=s.format
+   AND j.property_id IS NOT DISTINCT FROM s.property_id
   WHERE s.id=target_schedule_id
     AND s.status='active'
     AND s.lease_token=target_worker_token
