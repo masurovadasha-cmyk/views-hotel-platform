@@ -11,15 +11,14 @@ Required secrets:
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_API_TOKEN`
 
-Required repository variable:
+No enable/disable feature flag is required. The workflow detects the two Cloudflare credentials at runtime:
 
-- `CLOUDFLARE_STAGING_ENABLED=true`
+- when both are present, it provisions/reuses D1 and Pages, deploys the staging preview, and runs live smoke tests;
+- when either credential is absent, it exits safely with a deployment summary and leaves GitHub Pages + repository CI unaffected.
 
 Optional repository variable:
 
 - `VIEWS_STAGING_EXTRA_ORIGINS` — comma-separated extra staging origins, for example a custom staging domain.
-
-Until `CLOUDFLARE_STAGING_ENABLED` is true, the Cloudflare job safely skips and GitHub Pages remains the static preview.
 
 ## What the workflow provisions
 
