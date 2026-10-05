@@ -179,9 +179,18 @@ Never reuse the same internal key across environments.
 
 Keep the rotation window as short as operationally practical.
 
+## Stage 7.5 production evolution
+
+Stage 7.5 replaces the production-wide shared ring with service-specific key rings.
+
+The current/previous mechanism documented above remains the migration model, but rotation is now
+performed independently inside each service ring.
+
+See `docs/STAGE7_SERVICE_SPECIFIC_KEYS.md`.
+
 ## Next work
 
-- key identifier/fingerprint in security telemetry without exposing secret material;
-- centralized trusted-service request audit;
+- key identifier/fingerprint in security telemetry without exposing secret material (implemented Stage 7.3);
+- centralized trusted-service request audit (implemented Stage 7.3);
 - optional asymmetric signed service identity/JWT;
 - longer-term mTLS/service mesh when deployment infrastructure supports it.
