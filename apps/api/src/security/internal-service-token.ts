@@ -44,7 +44,6 @@ export function verifyInternalServiceToken(input:{
   }
 
   const header=parseJsonSegment(parts[0]);
-  const claims=parseJsonSegment(parts[1]);
   const alg=header.alg;
   const typ=header.typ;
   const kid=header.kid;
@@ -61,6 +60,14 @@ export function verifyInternalServiceToken(input:{
   const keyConfig=input.keys.find(item=>item.kid===kid);
   if(!keyConfig)throw new Error("INTERNAL_SERVICE_TOKEN_KEY_UNKNOWN");
 
+  const key=publicKey(keyConfig.publicKeyPem);
+  const signingInput=Buffer.from(parts[0]+"."+parts[1],"utf8");
+  const signature=decodeBase64Url(parts[2]);
+  if(!verifySignature(null,signingInput,key,signature)){
+    throw new Error("INTERNAL_SERVICE_TOKEN_SIGNATURE_INVALID");
+  }
+
+  const claims=parseJsonSegment(parts[1]);
   const normalizedMethod=String(input.method||"").toUpperCase();
   const normalizedPath=normalizePath(input.path);
   const normalizedRequestId=String(input.requestId||"").trim();
@@ -107,14 +114,6 @@ export function verifyInternalServiceToken(input:{
     exp<now-CLOCK_SKEW_SECONDS
   ){
     throw new Error("INTERNAL_SERVICE_TOKEN_EXPIRED");
-  }
-
-  const key=publicKey(keyConfig.publicKeyPem);
-  const signingInput=Buffer.from(parts[0]+"."+parts[1],"utf8");
-  const signature=decodeBase64Url(parts[2]);
-
-  if(!verifySignature(null,signingInput,key,signature)){
-    throw new Error("INTERNAL_SERVICE_TOKEN_SIGNATURE_INVALID");
   }
 
   return {
