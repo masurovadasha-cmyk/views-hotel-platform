@@ -48,4 +48,38 @@ WITH CHECK (
   )
 );
 
+CREATE OR REPLACE FUNCTION app.prune_analytics_dashboard_cache(
+  target_limit integer DEFAULT 10000,
+  target_now timestamptz DEFAULT now()
+)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, app
+AS $
+DECLARE
+  v_deleted integer;
+BEGIN
+  IF target_limit<1 OR target_limit>100000 THEN
+    RAISE EXCEPTION 'INVALID_DASHBOARD_CACHE_PRUNE_LIMIT';
+  END IF;
+
+  WITH doomed AS (
+    SELECT ctid
+    FROM analytics_dashboard_cache
+    WHERE expires_at<target_now
+    ORDER BY expires_at
+    LIMIT target_limit
+  )
+  DELETE FROM analytics_dashboard_cache c
+  USING doomed d
+  WHERE c.ctid=d.ctid;
+
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END
+$;
+
+REVOKE ALL ON FUNCTION app.prune_analytics_dashboard_cache(integer,timestamptz) FROM PUBLIC;
+
 COMMIT;
