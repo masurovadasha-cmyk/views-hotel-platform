@@ -1,3 +1,4 @@
+import {generateKeyPairSync} from "node:crypto";
 import {describe,expect,it} from "vitest";
 import {loadConfig} from "../config";
 
@@ -7,6 +8,10 @@ const PREVIOUS="fixture-previous-internal-api-key-material";
 const PAGES_CURRENT="fixture-pages-bff-current-key-material";
 const PAGES_PREVIOUS="fixture-pages-bff-previous-key-material";
 const CRON_CURRENT="fixture-analytics-cron-current-key-material";
+const PAGES_SIGNING=generateKeyPairSync("ed25519");
+const CRON_SIGNING=generateKeyPairSync("ed25519");
+const PAGES_PUBLIC=PAGES_SIGNING.publicKey.export({format:"pem",type:"spki"}).toString();
+const CRON_PUBLIC=CRON_SIGNING.publicKey.export({format:"pem",type:"spki"}).toString();
 
 const SERVICE_REFS=JSON.stringify({
   "pages-bff":["VIEWS_SECRET_PAGES_CURRENT","VIEWS_SECRET_PAGES_PREVIOUS"],
@@ -197,6 +202,60 @@ describe("production security config",()=>{
       VIEWS_SECRET_PAGES_CURRENT:PAGES_CURRENT
     });
     expect(config.internalServiceKeys["pages-bff"]).toEqual([PAGES_CURRENT]);
+  });
+
+  it("loads Ed25519 service public keys from explicit references",()=>{
+    const config=loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
+        "pages-bff":[{kid:"pages-2026-10",ref:"VIEWS_PAGES_PUBLIC"}],
+        "analytics-cron":[{kid:"cron-2026-10",ref:"VIEWS_CRON_PUBLIC"}]
+      }),
+      VIEWS_PAGES_PUBLIC:PAGES_PUBLIC,
+      VIEWS_CRON_PUBLIC:CRON_PUBLIC
+    });
+
+    expect(config.internalServicePublicKeys["pages-bff"]).toEqual([
+      {kid:"pages-2026-10",publicKeyPem:PAGES_PUBLIC.trim()}
+    ]);
+    expect(config.internalServicePublicKeys["analytics-cron"]).toEqual([
+      {kid:"cron-2026-10",publicKeyPem:CRON_PUBLIC.trim()}
+    ]);
+  });
+
+  it("rejects malformed signing-key references and non-Ed25519 keys",()=>{
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
+        "pages-bff":[{kid:"bad kid",ref:"VIEWS_PAGES_PUBLIC"}]
+      }),
+      VIEWS_PAGES_PUBLIC:PAGES_PUBLIC
+    })).toThrow(
+      "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON contains invalid kid or reference"
+    );
+
+    const rsa=generateKeyPairSync("rsa",{modulusLength:2048});
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
+        "pages-bff":[{kid:"pages-2026-10",ref:"VIEWS_PAGES_PUBLIC"}]
+      }),
+      VIEWS_PAGES_PUBLIC:rsa.publicKey.export({format:"pem",type:"spki"}).toString()
+    })).toThrow(
+      "Referenced internal service public key VIEWS_PAGES_PUBLIC must be Ed25519"
+    );
+  });
+
+  it("rejects signing-key reuse across service identities",()=>{
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
+        "pages-bff":[{kid:"pages-2026-10",ref:"VIEWS_PAGES_PUBLIC"}],
+        "analytics-cron":[{kid:"cron-2026-10",ref:"VIEWS_CRON_PUBLIC"}]
+      }),
+      VIEWS_PAGES_PUBLIC:PAGES_PUBLIC,
+      VIEWS_CRON_PUBLIC:PAGES_PUBLIC
+    })).toThrow("Resolved internal service public key cannot be shared across services");
   });
 
   it("continues validating the non-production raw service-key fallback",()=>{
