@@ -90,7 +90,7 @@ FOR EACH ROW EXECUTE FUNCTION app.assert_reservation_economic_scope();
 CREATE OR REPLACE FUNCTION app.prevent_finalized_economics_mutation()
 RETURNS trigger
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
   IF OLD.status='finalized' THEN
     RAISE EXCEPTION 'finalized reservation economics are immutable';
@@ -100,7 +100,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END
-$;
+$$;
 
 CREATE TRIGGER reservation_economic_finalized_immutable
 BEFORE UPDATE OR DELETE ON reservation_economic_snapshots
