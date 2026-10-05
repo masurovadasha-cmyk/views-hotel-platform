@@ -95,6 +95,7 @@ export class AnalyticsDashboardService{
           lastProcessedAt:sources.lastProcessedAt,
           consecutiveFailures:sources.consecutiveFailures,
           lastErrorCode:sources.lastErrorCode,
+          scopeFingerprint:sources.scopeFingerprint,
           rollupRefreshedAt:sources.rollupRefreshedAt,
           reservationProjectedAt:sources.reservationProjectedAt,
           economicsProjectedAt:sources.economicsProjectedAt
@@ -154,6 +155,20 @@ export class AnalyticsDashboardService{
     to:string,
     propertyId:string|null
   ){
+    const scope=(await client.query<{property_ids:string[]}>(
+      `SELECT COALESCE(
+         array_agg(p.id::text ORDER BY p.id),
+         ARRAY[]::text[]
+       ) AS property_ids
+       FROM properties p
+       WHERE p.organization_id=$1
+         AND app.can_access_property(p.id)
+         AND ($2::uuid IS NULL OR p.id=$2)`,
+      [organizationId,propertyId]
+    )).rows[0];
+
+    const scopeFingerprint=this.hash(scope?.property_ids??[]);
+
     const timestamps=(await client.query<{
       rollup_refreshed_at:Date|null;
       reservation_projected_at:Date|null;
@@ -203,6 +218,7 @@ export class AnalyticsDashboardService{
     )).rows[0];
 
     return {
+      scopeFingerprint,
       projectionStatus:health?.status??"healthy",
       pendingEvents:Number(health?.pending_events??0),
       oldestPendingAt:health?.oldest_pending_at?.toISOString()??null,
