@@ -35,6 +35,7 @@ describe("internal actor gateway boundary",()=>{
   it("rejects a mismatched internal key",()=>{
     expect(()=>assertTrustedInternalActorHeaders({
       ...ACTOR,
+      ...SERVICE,
       "x-views-internal-key":"different-internal-key-material-32chars"
     },[KEY,PREVIOUS])).toThrow("internal API authentication required");
   });
