@@ -144,6 +144,44 @@ describe("trusted internal service identity",()=>{
     expect(identity?.keyFingerprint).toMatch(/^[a-f0-9]{32}$/);
   });
 
+  it("rejects a symmetric key when the service is signed-only",()=>{
+    const signedOnly={
+      ...SERVICE_AUTH,
+      serviceAuthModes:{"pages-bff":"signed_only" as const}
+    };
+    expect(()=>trustedInternalServiceIdentity({
+      "x-views-internal-key":PAGES_CURRENT,
+      "x-views-service-id":"pages-bff"
+    },signedOnly,REQUEST)).toThrow("INTERNAL_SERVICE_SIGNED_TOKEN_REQUIRED");
+  });
+
+  it("rejects a signed token when the service is internal-key-only",()=>{
+    const keyOnly={
+      ...SERVICE_AUTH,
+      serviceAuthModes:{"pages-bff":"internal_key_only" as const}
+    };
+    expect(()=>trustedInternalServiceIdentity({
+      "x-views-service-token":signedToken(),
+      "x-views-service-id":"pages-bff"
+    },keyOnly,REQUEST)).toThrow("INTERNAL_SERVICE_TOKEN_NOT_ALLOWED");
+  });
+
+  it("accepts both credential paths in explicit dual mode",()=>{
+    const dual={
+      ...SERVICE_AUTH,
+      serviceAuthModes:{"pages-bff":"dual" as const}
+    };
+    expect(trustedInternalServiceIdentity({
+      "x-views-internal-key":PAGES_CURRENT,
+      "x-views-service-id":"pages-bff"
+    },dual,REQUEST)).toMatchObject({authScheme:"internal_key"});
+
+    expect(trustedInternalServiceIdentity({
+      "x-views-service-token":signedToken(),
+      "x-views-service-id":"pages-bff"
+    },dual,REQUEST)).toMatchObject({authScheme:"signed_token"});
+  });
+
   it("does not downgrade to a valid API key when a token header is present but invalid",()=>{
     expect(()=>trustedInternalServiceIdentity({
       "x-views-service-token":signedToken({aud:"wrong-audience"}),
