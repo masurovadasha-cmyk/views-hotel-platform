@@ -301,7 +301,7 @@ export class MarketplaceEconomicsService{
 
   async reservationSnapshots(actor:RequestActorContext,reservationId:string){
     return this.db.withActor(actor,async client=>{
-      await this.assertRole(client,["owner","manager","accountant"]);
+      await this.assertRole(client,["host","owner","manager","accountant"]);
 
       const reservation=(await client.query<{property_id:string}>(
         "SELECT property_id FROM reservations WHERE id=$1 AND organization_id=$2",
