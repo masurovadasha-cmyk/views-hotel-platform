@@ -47,7 +47,8 @@ export class InternalActorAuthGuard implements CanActivate{
         {
           legacyKeys:config.internalApiKeys,
           serviceKeys:config.internalServiceKeys,
-          servicePublicKeys:config.internalServicePublicKeys
+          servicePublicKeys:config.internalServicePublicKeys,
+          serviceAuthModes:config.internalServiceAuthModes
         },
         {
           method:String(request.method||"GET"),
