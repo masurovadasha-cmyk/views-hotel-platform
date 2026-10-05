@@ -23,12 +23,21 @@ CREATE TABLE analytics_report_jobs (
   last_error_code text,
   started_at timestamptz,
   completed_at timestamptz,
+  artifact_expires_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CHECK (to_date>=from_date),
   CHECK (length(idempotency_key) BETWEEN 1 AND 160),
   CHECK (length(request_hash)=64),
   CHECK (source_fingerprint IS NULL OR length(source_fingerprint)=64),
+  CHECK (
+    status <> 'completed'
+    OR (
+      completed_at IS NOT NULL
+      AND artifact_expires_at IS NOT NULL
+      AND source_fingerprint IS NOT NULL
+    )
+  ),
   UNIQUE(organization_id,created_by_membership_id,idempotency_key)
 );
 
@@ -40,6 +49,10 @@ CREATE INDEX analytics_report_jobs_actor_idx
   ON analytics_report_jobs(
     organization_id,created_by_membership_id,created_at DESC
   );
+
+CREATE INDEX analytics_report_jobs_artifact_expiry_idx
+  ON analytics_report_jobs(artifact_expires_at)
+  WHERE artifact_expires_at IS NOT NULL;
 
 CREATE TABLE analytics_report_artifacts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -214,6 +227,7 @@ BEGIN
   SET status='completed',
       source_fingerprint=target_source_fingerprint,
       completed_at=now(),
+      artifact_expires_at=now()+interval '30 days',
       lease_token=NULL,
       lease_until=NULL,
       last_error_code=NULL,
@@ -286,6 +300,7 @@ BEGIN
   WHERE id=target_job_id
     AND status='processing'
     AND lease_token=target_worker_token
+    AND lease_until>now()
   RETURNING status INTO v_status;
 
   RETURN v_status;
@@ -293,5 +308,44 @@ END
 $$;
 
 REVOKE ALL ON FUNCTION app.fail_analytics_report_job(uuid,text,text) FROM PUBLIC;
+
+
+CREATE OR REPLACE FUNCTION app.prune_analytics_report_artifacts(
+  target_limit integer DEFAULT 10000,
+  target_now timestamptz DEFAULT now()
+)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, app
+AS $$
+DECLARE
+  v_deleted integer;
+BEGIN
+  IF target_limit<1 OR target_limit>100000 THEN
+    RAISE EXCEPTION 'INVALID_REPORT_PRUNE_LIMIT';
+  END IF;
+
+  WITH doomed AS (
+    SELECT a.id
+    FROM analytics_report_artifacts a
+    JOIN analytics_report_jobs j
+      ON j.id=a.report_job_id
+     AND j.organization_id=a.organization_id
+    WHERE j.artifact_expires_at<target_now
+    ORDER BY j.artifact_expires_at,a.id
+    LIMIT target_limit
+  )
+  DELETE FROM analytics_report_artifacts a
+  USING doomed d
+  WHERE a.id=d.id;
+
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END
+$$;
+
+REVOKE ALL ON FUNCTION app.prune_analytics_report_artifacts(integer,timestamptz)
+  FROM PUBLIC;
 
 COMMIT;
