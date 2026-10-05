@@ -1,6 +1,7 @@
 import type {RequestActorContext} from "../identity/actor-context";
 import type {GuestChargeContext,QuoteLine} from "./pricing.types";
 import type {CancellationPolicySnapshot} from "./cancellation";
+import type {BookingAttributionInput} from "./booking-attribution";
 
 export type CreateQuoteInput={
   actor:RequestActorContext;
@@ -10,6 +11,7 @@ export type CreateQuoteInput={
   checkInAt:string;
   checkOutAt:string;
   guests:GuestChargeContext[];
+  attribution?:BookingAttributionInput;
 };
 
 export type QuoteResult={
