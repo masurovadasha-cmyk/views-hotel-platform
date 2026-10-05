@@ -10,7 +10,7 @@ describe("analytics internal report cycle",()=>{
       {pruneExpiredArtifacts:vi.fn()} as any
     );
 
-    await expect(controller.reportCycle(undefined,{}))
+    await expect(controller.reportCycle(undefined,"analytics-cron",{}))
       .rejects.toBeInstanceOf(UnauthorizedException);
   });
 
@@ -42,6 +42,7 @@ describe("analytics internal report cycle",()=>{
 
     const result=await controller.reportCycle(
       "views-development-only-internal-api-key-not-for-production",
+      "analytics-cron",
       {scheduleLimit:3,reportLimit:4,pruneLimit:5}
     );
 
