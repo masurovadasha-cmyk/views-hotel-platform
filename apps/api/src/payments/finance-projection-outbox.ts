@@ -104,21 +104,11 @@ export async function publishLedgerProjection(
     id:string;organization_id:string;reference_type:string;reference_id:string;
     description:string;status:string;posted_at:Date|null;property_id:string;
   }>(
-    `SELECT
-        j.id,j.organization_id,j.reference_type,j.reference_id,j.description,j.status,j.posted_at,
-        COALESCE(payment_reservation.property_id,economics.property_id) AS property_id
+    `SELECT j.id,j.organization_id,j.reference_type,j.reference_id,j.description,j.status,j.posted_at,r.property_id
        FROM ledger_journals j
-       LEFT JOIN payment_intents pi
-         ON j.reference_type='payment_intent'
-        AND pi.id=j.reference_id
-       LEFT JOIN reservations payment_reservation
-         ON payment_reservation.id=pi.reservation_id
-       LEFT JOIN reservation_economic_snapshots economics
-         ON j.reference_type='reservation_economics'
-        AND economics.id=j.reference_id
-      WHERE j.id=$1
-        AND j.organization_id=$2
-        AND COALESCE(payment_reservation.property_id,economics.property_id) IS NOT NULL`,
+       JOIN payment_intents pi ON j.reference_type='payment_intent' AND pi.id=j.reference_id
+       JOIN reservations r ON r.id=pi.reservation_id
+      WHERE j.id=$1 AND j.organization_id=$2`,
     [journalId,organizationId]
   )).rows[0];
   if(!journal)throw new Error("LEDGER_PROJECTION_SOURCE_NOT_FOUND");
