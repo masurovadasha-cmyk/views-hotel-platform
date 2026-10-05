@@ -18,6 +18,12 @@ export const api={
     request<{propertyId:string;items:import("./types").LiveFrontDeskReservation[]}>(`/api/frontdesk-reservations?propertyId=${encodeURIComponent(propertyId)}`),
   frontDeskAction:(input:{id:string;action:"check_in"|"check_out";version:number})=>
     request<{id:string;status:string;version:number;unitStatus:string;housekeepingCreated:boolean}>("/api/frontdesk-action",{method:"POST",body:JSON.stringify(input)}),
+  guest360:(guestId:string,propertyId="utower")=>
+    request<{guest:import("./types").LiveGuestProfile;reservations:import("./types").LiveGuestReservation[];openServiceOrders:number}>(`/api/guest-360?propertyId=${encodeURIComponent(propertyId)}&guestId=${encodeURIComponent(guestId)}`),
+  stayCard:(reservationId:string,propertyId="utower")=>
+    request<{reservation:Record<string,unknown>;operations:{openServiceOrders:number;openMaintenance:number;latestHousekeeping:Record<string,unknown>|null}}>(`/api/stay-card?propertyId=${encodeURIComponent(propertyId)}&reservationId=${encodeURIComponent(reservationId)}`),
+  propertyUnits:(propertyId="utower")=>
+    request<{propertyId:string;items:import("./types").LivePropertyUnit[]}>(`/api/property-units?propertyId=${encodeURIComponent(propertyId)}`),
   serviceOrders:(propertyId="utower")=>request<{items:import("./types").LiveServiceOrder[]}>(`/api/service-orders?propertyId=${encodeURIComponent(propertyId)}`),
   createServiceOrder:(input:{propertyId:string;category:string;title:string;priority?:string},idempotencyKey:string)=>
     request<{id:string;status:string}>("/api/service-orders",{method:"POST",headers:{"Idempotency-Key":idempotencyKey},body:JSON.stringify(input)}),
@@ -37,7 +43,7 @@ export const api={
   operationsSummary:(propertyId="utower")=>request<{propertyId:string;lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}>(`/api/operations-summary?propertyId=${encodeURIComponent(propertyId)}`),
   operationsExceptions:(propertyId="utower")=>request<{propertyId:string;lostFound:import("./types").LiveLostFoundItem[];damage:import("./types").LiveDamageReport[];lowStock:import("./types").LiveInventoryItem[]}>(`/api/operations-exceptions?propertyId=${encodeURIComponent(propertyId)}`),
   handovers:(propertyId="utower")=>request<{propertyId:string;items:import("./types").LiveShiftHandover[]}>(`/api/shift-handover?propertyId=${encodeURIComponent(propertyId)}`),
-  apartmentTimeline:(unitId:string)=>request<{unitId:string;items:unknown[]}>(`/api/apartment-timeline?unitId=${encodeURIComponent(unitId)}`),
+  apartmentTimeline:(unitId:string)=>request<{unit:{id:string;propertyId:string;code:string;name:string;status:string};items:import("./types").LiveTimelineEvent[]}>(`/api/apartment-timeline?unitId=${encodeURIComponent(unitId)}`),
   lostFoundAction:(id:string,action:"claim"|"return"|"close")=>request<{id:string;status:string}>("/api/lost-found-action",{method:"POST",body:JSON.stringify({id,action})}),
   damageAction:(id:string,action:"review"|"resolve"|"close")=>request<{id:string;status:string}>("/api/damage-action",{method:"POST",body:JSON.stringify({id,action})}),
   inventoryAdjust:(id:string,delta:number,note="")=>request<{id:string;quantity:number}>("/api/inventory-adjust",{method:"POST",body:JSON.stringify({id,delta,note})}),
