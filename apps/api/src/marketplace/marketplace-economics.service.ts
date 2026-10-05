@@ -209,6 +209,13 @@ export class MarketplaceEconomicsService{
         throw new Error("ECONOMICS_PAYMENT_STATE_CHANGED");
       }
 
+      const guestDepositBalance=await this.reservationGuestDepositBalance(
+        client,actor.organizationId,snapshot.reservation_id,snapshot.currency
+      );
+      if(guestDepositBalance!==money.netCollected){
+        throw new Error("ECONOMICS_LEDGER_PAYMENT_MISMATCH");
+      }
+
       const other=(await client.query<{id:string}>(
         "SELECT id FROM reservation_economic_snapshots WHERE reservation_id=$1 AND status='finalized' AND id<>$2 LIMIT 1",
         [snapshot.reservation_id,snapshot.id]
@@ -341,6 +348,38 @@ export class MarketplaceEconomicsService{
         createdAt:row.created_at.toISOString()
       }));
     });
+  }
+
+  private async reservationGuestDepositBalance(
+    client:PoolClient,
+    organizationId:string,
+    reservationId:string,
+    currency:string
+  ){
+    const row=(await client.query<{balance:string}>(
+      `SELECT COALESCE(SUM(
+          CASE
+            WHEN e.side='credit' THEN e.amount_minor
+            ELSE -e.amount_minor
+          END
+        ),0)::text AS balance
+       FROM ledger_entries e
+       JOIN ledger_accounts a
+         ON a.id=e.account_id
+        AND a.code='guest_deposits'
+        AND a.currency=$3
+       JOIN ledger_journals j
+         ON j.id=e.journal_id
+        AND j.organization_id=$1
+        AND j.reference_type='payment_intent'
+        AND j.status='posted'
+       JOIN payment_intents pi
+         ON pi.id=j.reference_id
+        AND pi.organization_id=$1
+        AND pi.reservation_id=$2`,
+      [organizationId,reservationId,currency]
+    )).rows[0];
+    return BigInt(row?.balance??"0");
   }
 
   private async currentPaymentState(
