@@ -6,7 +6,8 @@ describe("analytics internal report cycle",()=>{
   it("rejects a missing internal key",async()=>{
     const controller=new AnalyticsInternalJobsController(
       {runCycle:vi.fn()} as any,
-      {runCycle:vi.fn()} as any
+      {runCycle:vi.fn()} as any,
+      {pruneExpiredArtifacts:vi.fn()} as any
     );
 
     await expect(controller.reportCycle(undefined,{}))
@@ -27,20 +28,29 @@ describe("analytics internal report cycle",()=>{
         return {claimed:1,completed:1,limit};
       })
     };
+    const retention={
+      pruneExpiredArtifacts:vi.fn(async(limit:number)=>{
+        order.push("retention");
+        return {pruned:0,limit};
+      })
+    };
     const controller=new AnalyticsInternalJobsController(
       scheduler as any,
-      reports as any
+      reports as any,
+      retention as any
     );
 
     const result=await controller.reportCycle(
       "views-development-only-internal-api-key-not-for-production",
-      {scheduleLimit:3,reportLimit:4}
+      {scheduleLimit:3,reportLimit:4,pruneLimit:5}
     );
 
-    expect(order).toEqual(["scheduler","reports"]);
+    expect(order).toEqual(["scheduler","reports","retention"]);
     expect(scheduler.runCycle).toHaveBeenCalledWith(3);
     expect(reports.runCycle).toHaveBeenCalledWith(4);
+    expect(retention.pruneExpiredArtifacts).toHaveBeenCalledWith(5);
     expect(result.schedules.enqueued).toBe(1);
     expect(result.reports.completed).toBe(1);
+    expect(result.retention.pruned).toBe(0);
   });
 });
