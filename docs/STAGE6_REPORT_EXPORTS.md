@@ -34,7 +34,8 @@ The worker does not recalculate KPI formulas independently. It exports the canon
 
 Migration:
 
-- `0025_analytics_report_exports.sql`
+- `0025_analytics_report_exports.sql` — base jobs/artifacts
+- `0026_report_export_hardening.sql` — retention, active-role RLS and lease-safe mutations
 
 Tables:
 
@@ -235,5 +236,4 @@ Automated tests verify:
 - report scheduler / recurring delivery;
 - object-storage port for >2 MiB exports;
 - audit event for artifact downloads;
-- report expiry/retention policies;
 - guest-level operational exports with explicit PII permissions.
