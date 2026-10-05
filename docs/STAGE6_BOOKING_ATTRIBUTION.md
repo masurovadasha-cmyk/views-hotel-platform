@@ -1,4 +1,4 @@
-# Stage 6.3 — Transactional Booking Attribution
+# Stage 6.4 — Transactional Booking Attribution
 
 Status: implementation candidate.
 
@@ -6,7 +6,7 @@ Status: implementation candidate.
 
 Make analytics dimensions originate from the booking transaction itself.
 
-Stage 6.2 made booking-channel and market-segment analytics truthful by preserving missing
+Stage 6.2 made booking-channel and market-segment analytics truthful after the marketplace economics slice by preserving missing
 attribution as NULL. Stage 6.3 closes the remaining provenance gap: new quotes can now record
 explicit attribution that is frozen into the reservation snapshot and then projected to analytics.
 
@@ -14,7 +14,7 @@ explicit attribution that is frozen into the reservation snapshot and then proje
 
 Migration:
 
-- `0019_booking_attribution.sql`
+- `0021_booking_attribution.sql`
 
 `booking_quotes` gains nullable:
 
