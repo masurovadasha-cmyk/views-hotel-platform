@@ -194,4 +194,40 @@ SUMMARY="$SUMMARY" node -e '
   }
 '
 
+GUEST360="$(curl -kfsS -b /tmp/frontdesk.cookies "$BASE/api/guest-360?propertyId=utower&guestId=guest-stage4-frontdesk")"
+GUEST360="$GUEST360" node -e '
+  const x=JSON.parse(process.env.GUEST360);
+  if(x.guest?.id!=="guest-stage4-frontdesk") throw new Error("guest 360 profile missing");
+  const reservation=x.reservations?.find(r=>r.id==="res-stage4-frontdesk");
+  if(!reservation||reservation.status!=="completed"||reservation.stay_status!=="checked_out") {
+    throw new Error("guest 360 stay history is stale");
+  }
+'
+
+STAYCARD="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/stay-card?propertyId=utower&reservationId=res-stage4-frontdesk")"
+STAYCARD="$STAYCARD" node -e '
+  const x=JSON.parse(process.env.STAYCARD);
+  if(x.reservation?.status!=="completed") throw new Error("stay card reservation status mismatch");
+  if(x.reservation?.stay_status!=="checked_out") throw new Error("stay card stay not closed");
+  if(x.reservation?.unit_status!=="ready") throw new Error("stay card unit not ready");
+  if(x.operations?.latestHousekeeping?.status!=="ready") throw new Error("stay card housekeeping not ready");
+'
+
+UNITS="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/property-units?propertyId=utower")"
+UNITS="$UNITS" node -e '
+  const x=JSON.parse(process.env.UNITS);
+  const unit=x.items?.find(u=>u.id==="unit-250");
+  if(!unit||unit.status!=="ready") throw new Error("property units read model is stale");
+'
+
+TIMELINE="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/apartment-timeline?unitId=unit-250")"
+TIMELINE="$TIMELINE" node -e '
+  const x=JSON.parse(process.env.TIMELINE);
+  if(x.unit?.id!=="unit-250"||x.unit?.status!=="ready") throw new Error("timeline unit snapshot mismatch");
+  const events=new Set((x.items||[]).map(e=>e.event_type));
+  for(const required of ["reservation.check_in","reservation.check_out","housekeeping.start","housekeeping.complete","housekeeping.verify"]){
+    if(!events.has(required)) throw new Error("timeline missing "+required);
+  }
+'
+
 echo "PASS: Stage 4 local Pages + D1 golden flow"
