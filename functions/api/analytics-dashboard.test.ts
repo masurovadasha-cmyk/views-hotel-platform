@@ -1,3 +1,4 @@
+import {generateKeyPairSync} from "node:crypto";
 import {afterEach,describe,expect,it,vi} from "vitest";
 import {onRequestGet} from "./analytics-dashboard";
 import type {D1Database,D1Result,D1Statement,Env} from "./_shared";
@@ -41,6 +42,9 @@ function db(options:{linked?:boolean}={}):D1Database{
     batch:async()=>[] as D1Result[]
   };
 }
+
+const SIGNING=generateKeyPairSync("ed25519");
+const SIGNING_PRIVATE=SIGNING.privateKey.export({format:"pem",type:"pkcs8"}).toString();
 
 function env(linked=true):Env{
   return {
@@ -127,4 +131,56 @@ describe("analytics dashboard BFF",()=>{
     );
     expect(forwarded).not.toContain("propertyId=utower");
   });
+
+  it("prefers a signed service token and does not send the legacy API key",async()=>{
+    const fetchMock=vi.fn(async(_input:RequestInfo|URL,init?:RequestInit)=>{
+      const headers=new Headers(init?.headers);
+      const token=headers.get("x-views-service-token");
+      expect(token).toBeTruthy();
+      expect(headers.get("x-views-internal-key")).toBeNull();
+      expect(headers.get("x-views-service-id")).toBe("pages-bff");
+
+      const parts=String(token).split(".");
+      expect(parts).toHaveLength(3);
+      const jwtHeader=JSON.parse(Buffer.from(parts[0],"base64url").toString("utf8"));
+      const claims=JSON.parse(Buffer.from(parts[1],"base64url").toString("utf8"));
+      expect(jwtHeader).toMatchObject({
+        alg:"EdDSA",
+        typ:"views-service+jwt",
+        kid:"pages-2026-10"
+      });
+      expect(claims).toMatchObject({
+        iss:"pages-bff",
+        sub:"pages-bff",
+        aud:"views-core",
+        htm:"GET",
+        htp:"/v1/analytics/dashboard/summary"
+      });
+
+      return Response.json({
+        schemaVersion:2,
+        scope:{organizationId:"00000000-0000-4000-8000-000000000001",propertyId:null},
+        period:{from:"2036-01-01",to:"2036-01-31"},
+        kpisByCurrency:[]
+      });
+    });
+    vi.stubGlobal("fetch",fetchMock);
+
+    const request=new Request(
+      "https://staff.views.example/api/analytics-dashboard?from=2036-01-01&to=2036-01-31",
+      {headers:{cookie:"views_session=session-1"}}
+    );
+    const signedEnv:Env={
+      DB:db(),
+      VIEWS_ENV:"staging",
+      VIEWS_CORE_API_URL:"https://core.views.example",
+      VIEWS_CORE_SIGNING_PRIVATE_KEY:SIGNING_PRIVATE,
+      VIEWS_CORE_SIGNING_KID:"pages-2026-10"
+    };
+
+    const response=await onRequestGet({request,env:signedEnv});
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
 });
