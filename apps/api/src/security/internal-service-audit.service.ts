@@ -12,6 +12,7 @@ export type InternalServiceAuditStart={
   httpMethod:string;
   routePath:string;
   authScheme:"internal_key"|"signed_token";
+  credentialId:string|null;
   tokenJti:string|null;
 };
 
@@ -22,13 +23,14 @@ export class InternalServiceAuditService{
   async begin(input:InternalServiceAuditStart){
     try{
       const row=(await this.db.query<{audit_id:string}>(
-        `SELECT app.begin_internal_service_request_audit_v2(
-           $1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7,$8,$9,$10::uuid
+        `SELECT app.begin_internal_service_request_audit_v3(
+           $1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7,$8,$9,$10,$11::uuid
          ) AS audit_id`,
         [
           input.organizationId,input.actorUserId,input.actorMembershipId,
           input.serviceId,input.keyFingerprint,input.requestId,
-          input.httpMethod,input.routePath,input.authScheme,input.tokenJti
+          input.httpMethod,input.routePath,input.authScheme,
+          input.credentialId,input.tokenJti
         ]
       )).rows[0];
       if(!row?.audit_id)throw new Error("INTERNAL_AUDIT_BEGIN_FAILED");
@@ -87,12 +89,13 @@ export class InternalServiceAuditService{
         request_id:string;http_method:string;route_path:string;status_code:number|null;
         outcome:string;error_code:string|null;started_at:Date;completed_at:Date|null;
         duration_ms:number|null;auth_scheme:"internal_key"|"signed_token";
+        credential_id:string|null;
       }>(
         `SELECT
            id,organization_id,actor_user_id,actor_membership_id,
            service_id,key_fingerprint,request_id,http_method,route_path,
            status_code,outcome,error_code,started_at,completed_at,duration_ms,
-           auth_scheme
+           auth_scheme,credential_id
          FROM internal_service_request_audit
         WHERE organization_id=$1
           AND ($2::text IS NULL OR service_id=$2)
@@ -109,6 +112,7 @@ export class InternalServiceAuditService{
         serviceId:row.service_id,
         keyFingerprint:row.key_fingerprint,
         authScheme:row.auth_scheme,
+        credentialId:row.credential_id,
         requestId:row.request_id,
         method:row.http_method,
         endpoint:row.route_path,
