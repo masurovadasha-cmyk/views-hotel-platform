@@ -1,5 +1,5 @@
 import {
-  BadRequestException,Body,ConflictException,Controller,ForbiddenException,Get,
+  BadRequestException,Body,ConflictException,Controller,ForbiddenException,Get,GoneException,
   Headers,NotFoundException,Param,Post,Res,StreamableFile,UnauthorizedException
 } from "@nestjs/common";
 import type {Response} from "express";
@@ -97,6 +97,7 @@ export class AnalyticsReportController{
         'attachment; filename="'+safeFilename(artifact.filename)+'"'
       );
       response.setHeader("Content-Length",String(artifact.byteSize));
+      response.setHeader("X-Content-SHA256",artifact.checksumSha256);
 
       return new StreamableFile(artifact.content);
     }catch(error){throw mapReportError(error)}
@@ -126,7 +127,8 @@ function mapReportError(error:unknown){
     error instanceof UnauthorizedException||
     error instanceof ForbiddenException||
     error instanceof NotFoundException||
-    error instanceof ConflictException
+    error instanceof ConflictException||
+    error instanceof GoneException
   )return error;
 
   const message=error instanceof Error?error.message:"ANALYTICS_REPORT_ERROR";
@@ -135,6 +137,7 @@ function mapReportError(error:unknown){
   }
   if(message==="REPORT_JOB_NOT_FOUND")return new NotFoundException(message);
   if(message==="REPORT_NOT_READY")return new ConflictException(message);
+  if(message==="REPORT_EXPIRED")return new GoneException(message);
   if(message==="IDEMPOTENCY_CONFLICT")return new ConflictException(message);
   if(
     message.startsWith("INVALID_")||
