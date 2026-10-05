@@ -15,6 +15,7 @@ import {LiveFrontDesk} from "./LiveFrontDesk";
 import {ExceptionsLive,OperationsOverviewLive,ShiftHandoverLive} from "./LiveOperationsControl";
 import {ApartmentTimelineLive,Guest360Live,StayCardLive} from "./LiveGuestStay";
 import {IntegrationHubLive,TeamWorkloadLive} from "./LiveTeamIntegrations";
+import {LiveDashboard} from "./LiveDashboard";
 
 const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","general_manager","super_admin"];
 const labels:Record<string,string>={
@@ -67,7 +68,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
   };
 
   const content=()=>{
-    if(current==="overview")return <Dashboard orders={visible} role={role}/>;
+    if(current==="overview")return live?<LiveDashboard role={role}/>:<Dashboard orders={visible} role={role}/>;
     if(current==="my-tasks")return <><div className="sectionHead"><div><small>OPERATIONS QUEUE</small><h2>My Tasks</h2></div></div>{liveError&&<div className="notice">{liveError}</div>}<Orders orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/></>;
     if(current==="inbox")return <UnifiedInbox orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/>;
     if(current==="operations")return live?<OperationsOverviewLive/>:<Panel title="Operations"><div className="notice">Live operations data is available in the authenticated staging runtime.</div></Panel>;
@@ -94,7 +95,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
       {content()}
     </main>
     <StaffMobileDock tab={mobileTab} setTab={setMobileTab}/>
-    <StaffMobileSheet tab={mobileTab} setTab={setMobileTab} orders={visible} selected={selectedOrder} setSelected={setSelectedOrder} act={act} proofBefore={proofBefore} proofAfter={proofAfter} setProofBefore={setProofBefore} setProofAfter={setProofAfter}/>
+    <StaffMobileSheet tab={mobileTab} setTab={setMobileTab} orders={visible} selected={selectedOrder} setSelected={setSelectedOrder} act={act} proofBefore={proofBefore} proofAfter={proofAfter} setProofBefore={setProofBefore} setProofAfter={setProofAfter} live={live} role={role} onLiveCreated={loadLiveOrders}/>
   </div>;
 }
 
@@ -199,6 +200,48 @@ function Orders({orders,act,onOpen}:{orders:ServiceOrder[];act:(id:string,a:"acc
   return <Panel title="Service Orders">{orders.length===0?<div className="emptyLine">No requests in this queue.</div>:<div className="orderList">{orders.map(o=><article className="order" key={o.id}><div onClick={()=>onOpen?.(o)}><b>{o.title}</b><span>Apt {o.unit??"—"} · {o.category.replaceAll("_"," ")} · {o.guestName??"No guest"}</span></div><span className={"status "+o.status}>{o.status.replaceAll("_"," ")}</span><div className="orderActions"><button onClick={()=>act(o.id,"accept")}>Accept</button><button className="primary" onClick={()=>act(o.id,"start")}>Start</button><button onClick={()=>act(o.id,"complete")}>Complete</button></div></article>)}</div>}</Panel>;
 }
 
+
+function creatableCategories(role:HospitalityRole){
+  if(role==="front_desk")return ["reservation_front_desk","concierge"] as const;
+  if(role==="housekeeping_supervisor")return ["cleaning"] as const;
+  if(role==="maintenance_manager")return ["maintenance"] as const;
+  if(role==="general_manager"||role==="super_admin")return ["concierge","cleaning","maintenance","reservation_front_desk"] as const;
+  return [] as const;
+}
+
+function MobileCreateTask({live,role,onCreated}:{live:boolean;role:HospitalityRole;onCreated:()=>Promise<void>}){
+  const categories=creatableCategories(role);
+  const [category,setCategory]=useState<string>(categories[0]??"");
+  const [title,setTitle]=useState("");
+  const [priority,setPriority]=useState("normal");
+  const [message,setMessage]=useState("");
+  const [busy,setBusy]=useState(false);
+
+  useEffect(()=>{setCategory(categories[0]??"")},[role]);
+
+  async function submit(){
+    if(!live){setMessage("Task creation is available in live staging runtime.");return}
+    if(!category||title.trim().length<2){setMessage("Choose a task type and enter a description.");return}
+    setBusy(true);setMessage("");
+    try{
+      const key="mobile-"+crypto.randomUUID();
+      const result=await api.createServiceOrder({propertyId:"utower",category,title:title.trim(),priority},key);
+      setTitle("");
+      setMessage("Created: "+result.id);
+      await onCreated();
+    }catch(error){setMessage(error instanceof Error?error.message:"Create failed")}
+    finally{setBusy(false)}
+  }
+
+  return <div><h3>Create task</h3>{categories.length===0?<div className="notice">This role cannot create operational tasks.</div>:<div className="mobileCreate">
+    <label>Type<select value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(x=><option key={x} value={x}>{x.replaceAll("_"," ")}</option>)}</select></label>
+    <label>Description<textarea value={title} onChange={e=>setTitle(e.target.value)} placeholder="What needs to be done?"/></label>
+    <label>Priority<select value={priority} onChange={e=>setPriority(e.target.value)}><option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
+    <button className="primary" disabled={busy} onClick={submit}>{busy?"Creating…":"Create"}</button>
+    {message&&<div className="notice">{message}</div>}
+  </div>}</div>;
+}
+
 function Panel({title,children}:{title:string;children:React.ReactNode}){return <section className="panel"><header><small>VIEWS CRM</small><h2>{title}</h2></header>{children}</section>}
 
 function StaffMobileDock({tab,setTab}:{tab:string;setTab:(t:any)=>void}){
@@ -206,12 +249,12 @@ function StaffMobileDock({tab,setTab}:{tab:string;setTab:(t:any)=>void}){
   return <nav className="staffMobileDock">{items.map(([id,Icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><Icon size={17}/><span>{id}</span></button>)}</nav>;
 }
 
-function StaffMobileSheet({tab,setTab,orders,selected,setSelected,act,proofBefore,proofAfter,setProofBefore,setProofAfter}:{tab:string;setTab:(t:any)=>void;orders:ServiceOrder[];selected:ServiceOrder|null;setSelected:(o:ServiceOrder|null)=>void;act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;proofBefore:boolean;proofAfter:boolean;setProofBefore:(v:boolean)=>void;setProofAfter:(v:boolean)=>void}){
+function StaffMobileSheet({tab,setTab,orders,selected,setSelected,act,proofBefore,proofAfter,setProofBefore,setProofAfter,live,role,onLiveCreated}:{tab:string;setTab:(t:any)=>void;orders:ServiceOrder[];selected:ServiceOrder|null;setSelected:(o:ServiceOrder|null)=>void;act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;proofBefore:boolean;proofAfter:boolean;setProofBefore:(v:boolean)=>void;setProofAfter:(v:boolean)=>void;live:boolean;role:HospitalityRole;onLiveCreated:()=>Promise<void>}){
   return <div className="staffMobileSheet">
     {tab==="tasks"&&<div><h3>My Tasks</h3>{orders.slice(0,4).map(o=><button className="mobileTask" key={o.id} onClick={()=>{setSelected(o);setTab("detail")}}><span>{o.title}</span><i className={"status "+o.status}>{o.status}</i></button>)}</div>}
     {tab==="detail"&&<div><h3>Task detail</h3>{selected?<><div className="mobileDetail"><b>{selected.title}</b><span>Apt {selected.unit??"—"}</span><span>{selected.category}</span><span>SLA {selected.slaMinutes||"—"} min</span></div><div className="orderActions"><button onClick={()=>act(selected.id,"accept")}>Accept</button><button className="primary" onClick={()=>act(selected.id,"start")}>Start</button><button onClick={()=>act(selected.id,"complete")}>Complete</button></div></>:<p>Select a task.</p>}</div>}
     {tab==="proof"&&<div><h3>Before / after proof</h3><div className="mobileProof"><button className={proofBefore?"done":""} onClick={()=>setProofBefore(true)}><Camera/><b>Before</b><small>{proofBefore?"Captured":"Capture photo"}</small></button><button className={proofAfter?"done":""} onClick={()=>setProofAfter(true)}><ImageIcon/><b>After</b><small>{proofAfter?"Captured":"Capture photo"}</small></button></div></div>}
-    {tab==="create"&&<div><h3>Create task</h3><div className="mobileCreate"><label>Type<select><option>Cleaning</option><option>Maintenance</option><option>Concierge</option></select></label><label>Description<textarea placeholder="What needs to be done?"/></label><label>Apartment<input placeholder="235"/></label><button className="primary">Create</button></div></div>}
+    {tab==="create"&&<MobileCreateTask live={live} role={role} onCreated={onLiveCreated}/>}
     {tab==="notifications"&&<div><h3>Notifications</h3><div className="compactRows"><div><span>Now</span><b>New task assigned</b><small>Apartment #235</small></div><div><span>5 min</span><b>Booking confirmed</b><small>Guest arrival updated</small></div><div><span>10 min</span><b>Message</b><small>Concierge request waiting</small></div></div></div>}
   </div>;
 }
