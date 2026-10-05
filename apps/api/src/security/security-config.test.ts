@@ -34,7 +34,8 @@ function base(){
     DATABASE_URL:"postgresql://example.invalid/views",
     NODE_ENV:"production",
     TRUSTED_PROXY_MODE:"cloudflare",
-    GUEST_AUTH_RATE_LIMIT_SECRET:GUEST_SECRET
+    GUEST_AUTH_RATE_LIMIT_SECRET:GUEST_SECRET,
+    VIEWS_TRUSTED_PROXY_CIDRS_JSON:JSON.stringify(["203.0.113.0/24","2001:db8::/32"])
   } as NodeJS.ProcessEnv;
 }
 
@@ -394,6 +395,61 @@ describe("production security config",()=>{
       })
     })).toThrow(
       "VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON must declare every production service"
+    );
+  });
+
+  it("requires trusted reverse-proxy CIDRs in cloudflare production mode",()=>{
+    const input=managed();
+    delete input.VIEWS_TRUSTED_PROXY_CIDRS_JSON;
+    expect(()=>loadConfig(input)).toThrow(
+      "VIEWS_TRUSTED_PROXY_CIDRS_JSON is required in cloudflare production mode"
+    );
+  });
+
+  it("requires per-service source CIDRs in direct production mode",()=>{
+    expect(()=>loadConfig({
+      ...managed(),
+      TRUSTED_PROXY_MODE:"direct",
+      VIEWS_TRUSTED_PROXY_CIDRS_JSON:undefined
+    })).toThrow(
+      "VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON must declare every direct-mode production service"
+    );
+
+    const config=loadConfig({
+      ...managed(),
+      TRUSTED_PROXY_MODE:"direct",
+      VIEWS_TRUSTED_PROXY_CIDRS_JSON:undefined,
+      VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON:JSON.stringify({
+        "pages-bff":["198.51.100.0/24"],
+        "analytics-cron":["2001:db8:7::/48"]
+      })
+    });
+    expect(config.internalServiceSourceCidrs["pages-bff"])
+      .toEqual(["198.51.100.0/24"]);
+  });
+
+  it("validates proxy and per-service source CIDRs",()=>{
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_TRUSTED_PROXY_CIDRS_JSON:JSON.stringify(["not-a-cidr"])
+    })).toThrow("INVALID_NETWORK_CIDR");
+
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON:JSON.stringify({
+        "pages-bff":["198.51.100.0/33"]
+      })
+    })).toThrow("INVALID_NETWORK_CIDR");
+  });
+
+  it("rejects production source policies for unknown services",()=>{
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON:JSON.stringify({
+        "unknown-service":["198.51.100.0/24"]
+      })
+    })).toThrow(
+      "VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON contains an unknown production service"
     );
   });
 

@@ -70,6 +70,7 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0030_signed_service_tokens.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0031_internal_service_credential_posture.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0032_signed_only_auth_mode.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0033_internal_ingress_boundary.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'

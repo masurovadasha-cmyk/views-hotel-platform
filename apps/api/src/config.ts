@@ -1,4 +1,5 @@
 import {createHash,createPublicKey} from "node:crypto";
+import {validateNetworkRange} from "./security/network-cidr";
 
 export type TrustedProxyMode="direct"|"cloudflare";
 export type InternalServiceAuthMode="internal_key_only"|"dual"|"signed_only";
@@ -21,6 +22,8 @@ export type ApiConfig={
   internalServiceKeys:Record<string,string[]>;
   internalServicePublicKeys:Record<string,ConfiguredInternalServicePublicKey[]>;
   internalServiceAuthModes:Record<string,InternalServiceAuthMode>;
+  trustedProxyCidrs:string[];
+  internalServiceSourceCidrs:Record<string,string[]>;
 };
 
 const SERVICE_ID=/^[a-z0-9][a-z0-9._:-]{1,63}$/;
@@ -103,12 +106,127 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
     internalServicePublicKeys,
     nodeEnv
   );
+  const trustedProxyCidrs=parseNetworkCidrs(
+    env.VIEWS_TRUSTED_PROXY_CIDRS_JSON,
+    "VIEWS_TRUSTED_PROXY_CIDRS_JSON"
+  );
+  const internalServiceSourceCidrs=parseInternalServiceSourceCidrs(
+    env.VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON
+  );
+  validateInternalIngressConfig(
+    trustedProxyMode,
+    trustedProxyCidrs,
+    internalServiceSourceCidrs,
+    internalServiceAuthModes,
+    nodeEnv
+  );
 
   return {
     port,databaseUrl,nodeEnv,trustedProxyMode,
     guestAuthRateLimitSecret,internalApiKey,internalApiKeys,
-    internalServiceKeys,internalServicePublicKeys,internalServiceAuthModes
+    internalServiceKeys,internalServicePublicKeys,internalServiceAuthModes,
+    trustedProxyCidrs,internalServiceSourceCidrs
   };
+}
+
+function parseNetworkCidrs(raw:string|undefined,name:string){
+  const value=raw?.trim();
+  if(!value)return [] as string[];
+
+  let parsed:unknown;
+  try{
+    parsed=JSON.parse(value);
+  }catch{
+    throw new Error(name+" must be valid JSON");
+  }
+  if(!Array.isArray(parsed)||parsed.length<1||parsed.length>128){
+    throw new Error(name+" must be a non-empty array of CIDRs");
+  }
+
+  const result:string[]=[];
+  for(const item of parsed){
+    if(typeof item!=="string"||!item.trim()){
+      throw new Error(name+" must contain only CIDR strings");
+    }
+    const range=item.trim();
+    validateNetworkRange(range);
+    if(!result.includes(range))result.push(range);
+  }
+  return result;
+}
+
+function parseInternalServiceSourceCidrs(raw:string|undefined){
+  const value=raw?.trim();
+  if(!value)return {} as Record<string,string[]>;
+
+  let parsed:unknown;
+  try{
+    parsed=JSON.parse(value);
+  }catch{
+    throw new Error("VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON must be valid JSON");
+  }
+  if(!parsed||typeof parsed!=="object"||Array.isArray(parsed)){
+    throw new Error("VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON must be an object");
+  }
+
+  const result:Record<string,string[]>={};
+  for(const [serviceId,rawRanges] of Object.entries(parsed as Record<string,unknown>)){
+    if(!SERVICE_ID.test(serviceId)){
+      throw new Error("VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON contains invalid service id");
+    }
+    if(!Array.isArray(rawRanges)||rawRanges.length<1||rawRanges.length>64){
+      throw new Error(
+        "VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON service entry must contain 1..64 CIDRs"
+      );
+    }
+    const ranges:string[]=[];
+    for(const item of rawRanges){
+      if(typeof item!=="string"||!item.trim()){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON must contain only CIDR strings"
+        );
+      }
+      const range=item.trim();
+      validateNetworkRange(range);
+      if(!ranges.includes(range))ranges.push(range);
+    }
+    result[serviceId]=ranges;
+  }
+  return result;
+}
+
+function validateInternalIngressConfig(
+  proxyMode:TrustedProxyMode,
+  trustedProxyCidrs:string[],
+  sourceCidrs:Record<string,string[]>,
+  authModes:Record<string,InternalServiceAuthMode>,
+  nodeEnv:ApiConfig["nodeEnv"]
+){
+  if(nodeEnv!=="production")return;
+
+  if(proxyMode==="cloudflare"&&trustedProxyCidrs.length===0){
+    throw new Error(
+      "VIEWS_TRUSTED_PROXY_CIDRS_JSON is required in cloudflare production mode"
+    );
+  }
+
+  if(proxyMode==="direct"){
+    for(const serviceId of Object.keys(authModes)){
+      if(!sourceCidrs[serviceId]?.length){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON must declare every direct-mode production service"
+        );
+      }
+    }
+  }
+
+  for(const serviceId of Object.keys(sourceCidrs)){
+    if(!authModes[serviceId]){
+      throw new Error(
+        "VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON contains an unknown production service"
+      );
+    }
+  }
 }
 
 function parseInternalServiceAuthModes(raw:string|undefined){

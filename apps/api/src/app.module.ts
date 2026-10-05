@@ -10,6 +10,7 @@ import {RatesModule} from "./rates/rates.module";
 import {PaymentsModule} from "./payments/payments.module";
 import {ComplianceModule} from "./compliance/compliance.module";
 import {InternalActorAuthGuard} from "./security/internal-actor-auth.guard";
+import {InternalIngressGuard} from "./security/internal-ingress.guard";
 import {InternalAuthRejectionController} from "./security/internal-auth-rejection.controller";
 import {InternalAuthRejectionService} from "./security/internal-auth-rejection.service";
 import {InternalServiceAuditController} from "./security/internal-service-audit.controller";
@@ -33,6 +34,7 @@ import {InternalServicePostureService} from "./security/internal-service-posture
     InternalServiceAuditService,
     InternalAuthRejectionService,
     InternalServicePostureService,
+    {provide:APP_GUARD,useClass:InternalIngressGuard},
     {provide:APP_GUARD,useClass:InternalActorAuthGuard},
     {provide:APP_INTERCEPTOR,useClass:InternalServiceAuditInterceptor}
   ]
