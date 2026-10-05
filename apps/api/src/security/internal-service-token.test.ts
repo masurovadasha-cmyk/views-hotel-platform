@@ -69,6 +69,13 @@ describe("signed internal service token",()=>{
       .toThrow("INTERNAL_SERVICE_TOKEN_INVALID");
   });
 
+  it("rejects extra header or claim fields outside the service-token profile",()=>{
+    expect(()=>verify(token({}, {jku:"https://attacker.invalid/jwks"})))
+      .toThrow("INTERNAL_SERVICE_TOKEN_INVALID");
+    expect(()=>verify(token({scope:"platform_admin"})))
+      .toThrow("INTERNAL_SERVICE_TOKEN_CLAIMS_INVALID");
+  });
+
   it("rejects service, audience and request binding mismatches",()=>{
     expect(()=>verify(token({iss:"analytics-cron",sub:"analytics-cron"})))
       .toThrow("INTERNAL_SERVICE_TOKEN_BINDING_INVALID");
