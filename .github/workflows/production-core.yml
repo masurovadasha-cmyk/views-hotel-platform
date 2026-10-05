@@ -52,6 +52,7 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0012_guest_auth_challenges.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0013_security_rate_limits.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0014_analytics_foundation.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0015_analytics_dimensions_health.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
