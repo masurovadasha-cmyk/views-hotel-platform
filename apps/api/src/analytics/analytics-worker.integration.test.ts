@@ -109,6 +109,29 @@ describe.sequential("Stage 6 analytics worker",()=>{
     expect(state.rollupRows).toBeGreaterThanOrEqual(2);
   });
 
+  it("serves materialized property and organization rollups",async()=>{
+    const propertyRows=await queries.propertyDailyRollup(
+      actor,PROPERTY,"2027-02-10","2027-02-11"
+    );
+    const organizationRows=await queries.organizationDailyRollup(
+      actor,"2027-02-10","2027-02-11"
+    );
+
+    const propertyUzs=propertyRows.filter(row=>row.currency==="UZS");
+    const organizationUzs=organizationRows.filter(row=>row.currency==="UZS");
+
+    expect(propertyUzs).toHaveLength(2);
+    expect(organizationUzs).toHaveLength(2);
+
+    expect(propertyUzs[0].accommodationRevenueMinor).toBe("500");
+    expect(propertyUzs[1].accommodationRevenueMinor).toBe("500");
+    expect(organizationUzs[0].accommodationRevenueMinor)
+      .toBe(propertyUzs[0].accommodationRevenueMinor);
+    expect(organizationUzs[0].occupancy).toBe(propertyUzs[0].occupancy);
+    expect(organizationUzs[0].adrMinor).toBe(propertyUzs[0].adrMinor);
+    expect(organizationUzs[0].revparMinor).toBe(propertyUzs[0].revparMinor);
+  });
+
   it("does not reclaim a tenant when no relevant pending event remains",async()=>{
     const second=await worker.runCycle(10,100);
     expect(second.results.some(x=>x.organizationId===ORG)).toBe(false);
