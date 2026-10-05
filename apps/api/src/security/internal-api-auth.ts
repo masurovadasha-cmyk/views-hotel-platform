@@ -4,7 +4,7 @@ export function assertInternalApiKey(
   provided:string|undefined,
   expected:string|readonly string[]
 ){
-  const candidates=Array.isArray(expected)?expected:[expected];
+  const candidates=typeof expected==="string"?[expected]:[...expected];
   const left=digest(String(provided||""));
 
   let matched=false;
