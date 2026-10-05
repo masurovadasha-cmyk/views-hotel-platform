@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: views-stage4-local-e2e-\${{ github.ref }}
+  group: views-stage4-local-e2e-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
