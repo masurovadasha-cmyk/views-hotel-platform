@@ -1,4 +1,5 @@
 name: VIEWS Stage 4 Local E2E
+# v2: root wrangler config for Pages dev
 
 on:
   push:
