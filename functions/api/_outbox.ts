@@ -1,5 +1,6 @@
 export const OUTBOX_CONSUMER="stage4-internal-audit";
 export const OUTBOX_MAX_ATTEMPTS=5;
+export const OUTBOX_LEASE_SECONDS=120;
 
 export function outboxBackoffSeconds(attempt:number){
   const safe=Math.max(1,Math.min(OUTBOX_MAX_ATTEMPTS,Math.floor(attempt)));
@@ -22,4 +23,9 @@ export function outboxFailureDecision(attempt:number,now=Date.now()){
     return {deadLetter:true,availableAt:null as string|null};
   }
   return {deadLetter:false,availableAt:nextAvailableAt(safe,now)};
+}
+
+
+export function outboxLeaseExpiresAt(now=Date.now()){
+  return new Date(now+OUTBOX_LEASE_SECONDS*1000).toISOString();
 }
