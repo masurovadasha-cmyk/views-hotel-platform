@@ -21,7 +21,7 @@ export class AnalyticsInternalJobsController{
     @Body() body:{scheduleLimit?:number;reportLimit?:number;pruneLimit?:number}
   ){
     try{
-      assertInternalApiKey(internalApiKey,loadConfig().internalApiKey);
+      assertInternalApiKey(internalApiKey,loadConfig().internalApiKeys);
       const scheduleLimit=body.scheduleLimit??20;
       const reportLimit=body.reportLimit??20;
       const pruneLimit=body.pruneLimit??1000;
