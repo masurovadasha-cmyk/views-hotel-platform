@@ -52,3 +52,23 @@ export type LiveMaintenanceTicket={
   created_at:string;
   resolved_at:string|null;
 };
+
+export type LiveFrontDeskReservation={
+  id:string;
+  confirmation_code:string;
+  status:string;
+  check_in_date:string;
+  check_out_date:string;
+  version:number;
+  unit_id:string|null;
+  unit_code:string|null;
+  unit_status:string|null;
+  guest_id:string;
+  first_name:string;
+  last_name:string;
+  vip:number;
+  stay_id:string|null;
+  stay_status:string|null;
+  checked_in_at:string|null;
+  checked_out_at:string|null;
+};
