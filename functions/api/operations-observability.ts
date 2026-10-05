@@ -15,8 +15,10 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
     .bind(propertyId,session.organizationId).first<Record<string,unknown>>();
   if(!property)return json({error:"PROPERTY_NOT_FOUND",requestId:requestId(request)},404);
 
-  const [outbox,serviceStale,housekeepingStale,maintenanceStale]=await db.batch([
-    db.prepare("SELECT COUNT(*) AS count FROM outbox_events WHERE organization_id=? AND processed_at IS NULL").bind(session.organizationId),
+  const [outbox,outboxRetrying,outboxDeadLetter,serviceStale,housekeepingStale,maintenanceStale]=await db.batch([
+    db.prepare("SELECT COUNT(*) AS count FROM outbox_events WHERE organization_id=? AND processed_at IS NULL AND dead_letter_at IS NULL").bind(session.organizationId),
+    db.prepare("SELECT COUNT(*) AS count FROM outbox_events WHERE organization_id=? AND processed_at IS NULL AND dead_letter_at IS NULL AND attempt_count>0").bind(session.organizationId),
+    db.prepare("SELECT COUNT(*) AS count FROM outbox_events WHERE organization_id=? AND processed_at IS NULL AND dead_letter_at IS NOT NULL").bind(session.organizationId),
     db.prepare("SELECT COUNT(*) AS count FROM service_orders WHERE organization_id=? AND property_id=? AND status NOT IN ('done','closed','cancelled') AND updated_at<datetime('now','-2 hours')").bind(session.organizationId,propertyId),
     db.prepare("SELECT COUNT(*) AS count FROM housekeeping_jobs h JOIN properties p ON p.id=h.property_id WHERE p.organization_id=? AND h.property_id=? AND h.status NOT IN ('ready','service_declined') AND h.created_at<datetime('now','-2 hours')").bind(session.organizationId,propertyId),
     db.prepare("SELECT COUNT(*) AS count FROM maintenance_tickets m JOIN properties p ON p.id=m.property_id WHERE p.organization_id=? AND m.property_id=? AND m.status!='closed' AND m.created_at<datetime('now','-2 hours')").bind(session.organizationId,propertyId)
@@ -46,6 +48,8 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
   return json({
     propertyId,
     outboxPending:count(outbox),
+    outboxRetrying:count(outboxRetrying),
+    outboxDeadLetter:count(outboxDeadLetter),
     stale:{
       serviceOrders:count(serviceStale),
       housekeeping:count(housekeepingStale),
