@@ -475,6 +475,115 @@ export class AnalyticsDashboardService{
     }));
   }
 
+  private async channelSegmentBreakdown(
+    client:PoolClient,
+    organizationId:string,
+    from:string,
+    to:string,
+    propertyId:string|null
+  ){
+    const rows=await client.query<{
+      currency:string;booking_channel:string|null;market_segment:string|null;
+      booking_count:string;active_or_stayed_count:string;cancellation_count:string;
+      no_show_count:string;cancellation_rate:string;no_show_rate:string;
+      economics_reservation_count:string;economics_coverage_rate:string|null;
+      net_collected_minor:string;platform_commission_minor:string;owner_payable_minor:string;
+      platform_commission_rate:string;owner_payable_rate:string;
+    }>(
+      `WITH lifecycle AS (
+         SELECT
+           c.currency,c.booking_channel,c.market_segment,
+           SUM(c.booking_count)::bigint AS booking_count,
+           SUM(c.active_or_stayed_count)::bigint AS active_or_stayed_count,
+           SUM(c.cancellation_count)::bigint AS cancellation_count,
+           SUM(c.no_show_count)::bigint AS no_show_count
+         FROM analytics_booking_cohorts_daily c
+         WHERE c.organization_id=$1
+           AND c.arrival_date BETWEEN $2::date AND $3::date
+           AND app.can_access_property(c.property_id)
+           AND ($4::uuid IS NULL OR c.property_id=$4)
+         GROUP BY c.currency,c.booking_channel,c.market_segment
+       ),
+       economics AS (
+         SELECT
+           e.currency,e.booking_channel,e.market_segment,
+           SUM(e.reservation_count)::bigint AS reservation_count,
+           SUM(e.net_collected_minor)::bigint AS net_collected_minor,
+           SUM(e.platform_commission_minor)::bigint AS platform_commission_minor,
+           SUM(e.owner_payable_minor)::bigint AS owner_payable_minor
+         FROM analytics_marketplace_arrival_daily e
+         WHERE e.organization_id=$1
+           AND e.arrival_date BETWEEN $2::date AND $3::date
+           AND app.can_access_property(e.property_id)
+           AND ($4::uuid IS NULL OR e.property_id=$4)
+         GROUP BY e.currency,e.booking_channel,e.market_segment
+       )
+       SELECT
+         COALESCE(l.currency,e.currency) AS currency,
+         COALESCE(l.booking_channel,e.booking_channel) AS booking_channel,
+         COALESCE(l.market_segment,e.market_segment) AS market_segment,
+         COALESCE(l.booking_count,0)::text AS booking_count,
+         COALESCE(l.active_or_stayed_count,0)::text AS active_or_stayed_count,
+         COALESCE(l.cancellation_count,0)::text AS cancellation_count,
+         COALESCE(l.no_show_count,0)::text AS no_show_count,
+         CASE
+           WHEN COALESCE(l.booking_count,0)=0 THEN 0::numeric
+           ELSE ROUND(l.cancellation_count::numeric/l.booking_count,6)
+         END::text AS cancellation_rate,
+         CASE
+           WHEN COALESCE(l.booking_count,0)=0 THEN 0::numeric
+           ELSE ROUND(l.no_show_count::numeric/l.booking_count,6)
+         END::text AS no_show_rate,
+         COALESCE(e.reservation_count,0)::text AS economics_reservation_count,
+         CASE
+           WHEN COALESCE(l.booking_count,0)=0 THEN NULL::numeric
+           ELSE ROUND(COALESCE(e.reservation_count,0)::numeric/l.booking_count,6)
+         END::text AS economics_coverage_rate,
+         COALESCE(e.net_collected_minor,0)::text AS net_collected_minor,
+         COALESCE(e.platform_commission_minor,0)::text AS platform_commission_minor,
+         COALESCE(e.owner_payable_minor,0)::text AS owner_payable_minor,
+         CASE
+           WHEN COALESCE(e.net_collected_minor,0)=0 THEN 0::numeric
+           ELSE ROUND(e.platform_commission_minor::numeric/e.net_collected_minor,6)
+         END::text AS platform_commission_rate,
+         CASE
+           WHEN COALESCE(e.net_collected_minor,0)=0 THEN 0::numeric
+           ELSE ROUND(e.owner_payable_minor::numeric/e.net_collected_minor,6)
+         END::text AS owner_payable_rate
+       FROM lifecycle l
+       FULL OUTER JOIN economics e
+         ON e.currency=l.currency
+        AND e.booking_channel IS NOT DISTINCT FROM l.booking_channel
+        AND e.market_segment IS NOT DISTINCT FROM l.market_segment
+       ORDER BY
+         COALESCE(l.currency,e.currency),
+         COALESCE(l.booking_channel,e.booking_channel) NULLS LAST,
+         COALESCE(l.market_segment,e.market_segment) NULLS LAST`,
+      [organizationId,from,to,propertyId]
+    );
+
+    return rows.rows.map(row=>({
+      currency:row.currency,
+      bookingChannel:row.booking_channel,
+      marketSegment:row.market_segment,
+      bookingCount:Number(row.booking_count),
+      activeOrStayedCount:Number(row.active_or_stayed_count),
+      cancellationCount:Number(row.cancellation_count),
+      noShowCount:Number(row.no_show_count),
+      cancellationRate:Number(row.cancellation_rate),
+      noShowRate:Number(row.no_show_rate),
+      economicsReservationCount:Number(row.economics_reservation_count),
+      economicsCoverageRate:row.economics_coverage_rate===null
+        ?null
+        :Number(row.economics_coverage_rate),
+      netCollectedMinor:row.net_collected_minor,
+      platformCommissionMinor:row.platform_commission_minor,
+      ownerPayableMinor:row.owner_payable_minor,
+      platformCommissionRate:Number(row.platform_commission_rate),
+      ownerPayableRate:Number(row.owner_payable_rate)
+    }));
+  }
+
   private async geography(
     client:PoolClient,
     organizationId:string,
@@ -538,6 +647,143 @@ export class AnalyticsDashboardService{
       adrMinor:row.adr_minor,
       revparMinor:row.revpar_minor
     }));
+  }
+
+  private compareKpis(current:any[],previous:any[]){
+    return this.currencyPairs(current,previous).map(({currency,currentRow,previousRow})=>({
+      currency,
+      current:currentRow,
+      previous:previousRow,
+      delta:currentRow&&previousRow?{
+        bookingCount:Number(currentRow.bookingCount)-Number(previousRow.bookingCount),
+        occupiedUnitNights:Number(currentRow.occupiedUnitNights)-Number(previousRow.occupiedUnitNights),
+        accommodationRevenueMinor:this.integerDelta(
+          currentRow.accommodationRevenueMinor,previousRow.accommodationRevenueMinor
+        ),
+        grossRevenueMinor:this.integerDelta(
+          currentRow.grossRevenueMinor,previousRow.grossRevenueMinor
+        ),
+        netRevenueMinor:this.integerDelta(
+          currentRow.netRevenueMinor,previousRow.netRevenueMinor
+        ),
+        occupancy:this.numberDelta(currentRow.occupancy,previousRow.occupancy),
+        adrMinor:this.fixedDelta(currentRow.adrMinor,previousRow.adrMinor,2),
+        revparMinor:this.fixedDelta(currentRow.revparMinor,previousRow.revparMinor,2),
+        avgLeadTimeDays:this.numberDelta(
+          currentRow.avgLeadTimeDays,previousRow.avgLeadTimeDays
+        ),
+        avgStayNights:this.numberDelta(
+          currentRow.avgStayNights,previousRow.avgStayNights
+        )
+      }:null
+    }));
+  }
+
+  private compareLifecycle(current:any[],previous:any[]){
+    return this.currencyPairs(current,previous).map(({currency,currentRow,previousRow})=>({
+      currency,
+      current:currentRow,
+      previous:previousRow,
+      delta:currentRow&&previousRow?{
+        bookingCount:Number(currentRow.bookingCount)-Number(previousRow.bookingCount),
+        cancellationCount:Number(currentRow.cancellationCount)-Number(previousRow.cancellationCount),
+        noShowCount:Number(currentRow.noShowCount)-Number(previousRow.noShowCount),
+        cancellationRate:this.numberDelta(
+          currentRow.cancellationRate,previousRow.cancellationRate
+        ),
+        noShowRate:this.numberDelta(currentRow.noShowRate,previousRow.noShowRate),
+        avgLeadTimeDays:this.numberDelta(
+          currentRow.avgLeadTimeDays,previousRow.avgLeadTimeDays
+        ),
+        avgStayNights:this.numberDelta(
+          currentRow.avgStayNights,previousRow.avgStayNights
+        )
+      }:null
+    }));
+  }
+
+  private compareMarketplace(current:any[],previous:any[]){
+    return this.currencyPairs(current,previous).map(({currency,currentRow,previousRow})=>({
+      currency,
+      current:currentRow,
+      previous:previousRow,
+      delta:currentRow&&previousRow?{
+        reservationCount:Number(currentRow.reservationCount)-Number(previousRow.reservationCount),
+        netCollectedMinor:this.integerDelta(
+          currentRow.netCollectedMinor,previousRow.netCollectedMinor
+        ),
+        platformCommissionMinor:this.integerDelta(
+          currentRow.platformCommissionMinor,previousRow.platformCommissionMinor
+        ),
+        ownerPayableMinor:this.integerDelta(
+          currentRow.ownerPayableMinor,previousRow.ownerPayableMinor
+        ),
+        platformCommissionRate:this.numberDelta(
+          currentRow.platformCommissionRate,previousRow.platformCommissionRate
+        ),
+        ownerPayableRate:this.numberDelta(
+          currentRow.ownerPayableRate,previousRow.ownerPayableRate
+        )
+      }:null
+    }));
+  }
+
+  private currencyPairs(current:any[],previous:any[]){
+    const currencies=[...new Set(
+      [...current,...previous].map(row=>String(row.currency))
+    )].sort();
+    return currencies.map(currency=>({
+      currency,
+      currentRow:current.find(row=>row.currency===currency)??null,
+      previousRow:previous.find(row=>row.currency===currency)??null
+    }));
+  }
+
+  private previousPeriod(from:string,to:string){
+    const dayMs=86400000;
+    const start=Date.parse(from+"T00:00:00Z");
+    const end=Date.parse(to+"T00:00:00Z");
+    const days=Math.floor((end-start)/dayMs)+1;
+    const previousTo=new Date(start-dayMs);
+    const previousFrom=new Date(previousTo.getTime()-(days-1)*dayMs);
+    return {
+      from:previousFrom.toISOString().slice(0,10),
+      to:previousTo.toISOString().slice(0,10)
+    };
+  }
+
+  private integerDelta(current:string,previous:string){
+    return (BigInt(current)-BigInt(previous)).toString();
+  }
+
+  private fixedDelta(current:string,previous:string,scale:number){
+    return this.formatFixed(
+      this.parseFixed(current,scale)-this.parseFixed(previous,scale),
+      scale
+    );
+  }
+
+  private parseFixed(value:string,scale:number){
+    const match=/^(-?)(\d+)(?:\.(\d+))?$/.exec(String(value));
+    if(!match)throw new Error("INVALID_DASHBOARD_DECIMAL");
+    const factor=10n**BigInt(scale);
+    const fraction=(match[3]??"").padEnd(scale,"0").slice(0,scale);
+    let result=BigInt(match[2])*factor+BigInt(fraction||"0");
+    if(match[1]==="-")result=-result;
+    return result;
+  }
+
+  private formatFixed(value:bigint,scale:number){
+    const negative=value<0n;
+    const absolute=negative?-value:value;
+    const factor=10n**BigInt(scale);
+    const integer=absolute/factor;
+    const fraction=(absolute%factor).toString().padStart(scale,"0");
+    return (negative?"-":"")+integer.toString()+(scale?"."+fraction:"");
+  }
+
+  private numberDelta(current:number,previous:number){
+    return Number((Number(current)-Number(previous)).toFixed(6));
   }
 
   private async assertAccess(client:PoolClient,propertyId:string|null){
