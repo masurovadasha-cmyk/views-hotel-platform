@@ -5,29 +5,22 @@ BASE="https://127.0.0.1:8788"
 ORIGIN="$BASE"
 STATE_DIR=".wrangler/stage4-e2e"
 LOG="/tmp/views-stage4-wrangler.log"
+PROJECT_WRANGLER_BACKUP="/tmp/views-project-wrangler.toml"
+WRANGLER_PID=""
+
+cp wrangler.toml "$PROJECT_WRANGLER_BACKUP"
+cp wrangler.local.toml wrangler.toml
 
 rm -rf "$STATE_DIR"
 mkdir -p "$STATE_DIR"
 
-npx --yes wrangler@4 d1 migrations apply views-local \
-  --local \
-  --config wrangler.local.toml \
-  --persist-to "$STATE_DIR"
-
-npx --yes wrangler@4 pages dev dist \
-  --config wrangler.local.toml \
-  --ip 127.0.0.1 \
-  --port 8788 \
-  --local-protocol=https \
-  --persist-to "$STATE_DIR" \
-  --log-level=warn \
-  >"$LOG" 2>&1 &
-WRANGLER_PID=$!
-
 cleanup(){
   status=$?
-  kill "$WRANGLER_PID" >/dev/null 2>&1 || true
-  wait "$WRANGLER_PID" >/dev/null 2>&1 || true
+  if [ -n "$WRANGLER_PID" ]; then
+    kill "$WRANGLER_PID" >/dev/null 2>&1 || true
+    wait "$WRANGLER_PID" >/dev/null 2>&1 || true
+  fi
+  cp "$PROJECT_WRANGLER_BACKUP" wrangler.toml || true
   if [ "$status" -ne 0 ]; then
     echo "----- Wrangler log -----" >&2
     tail -200 "$LOG" >&2 || true
@@ -35,6 +28,19 @@ cleanup(){
   exit "$status"
 }
 trap cleanup EXIT
+
+npx --yes wrangler@4 d1 migrations apply views-local \
+  --local \
+  --persist-to "$STATE_DIR"
+
+npx --yes wrangler@4 pages dev dist \
+  --ip 127.0.0.1 \
+  --port 8788 \
+  --local-protocol=https \
+  --persist-to "$STATE_DIR" \
+  --log-level=warn \
+  >"$LOG" 2>&1 &
+WRANGLER_PID=$!
 
 for _ in $(seq 1 60); do
   if curl -kfsS "$BASE/api/health" >/tmp/views-health.json 2>/dev/null; then
