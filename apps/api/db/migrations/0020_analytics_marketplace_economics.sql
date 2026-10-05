@@ -146,7 +146,15 @@ SELECT
   SUM(platform_commission_minor)::bigint AS platform_commission_minor,
   SUM(owner_payable_minor)::bigint AS owner_payable_minor,
   SUM(taxes_withheld_minor)::bigint AS taxes_withheld_minor,
-  SUM(other_deductions_minor)::bigint AS other_deductions_minor
+  SUM(other_deductions_minor)::bigint AS other_deductions_minor,
+  CASE
+    WHEN SUM(net_collected_minor)=0 THEN 0::numeric
+    ELSE ROUND(SUM(platform_commission_minor)::numeric/SUM(net_collected_minor),6)
+  END AS platform_commission_rate,
+  CASE
+    WHEN SUM(net_collected_minor)=0 THEN 0::numeric
+    ELSE ROUND(SUM(owner_payable_minor)::numeric/SUM(net_collected_minor),6)
+  END AS owner_payable_rate
 FROM nightly
 GROUP BY
   organization_id,
