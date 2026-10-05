@@ -198,3 +198,37 @@ export type LiveFinanceSummary={
     accounts:LiveFinanceAccountBalance[];
   };
 };
+
+
+export type LiveAnalyticsDashboardCurrency={
+  currency:string;
+  propertyCount:number;
+  availableUnitNights:number;
+  occupiedUnitNights:number;
+  bookingCount:number;
+  accommodationRevenueMinor:string;
+  grossRevenueMinor:string;
+  netRevenueMinor:string;
+  occupancy:number;
+  adrMinor:string;
+  revparMinor:string;
+  avgLeadTimeDays:number;
+  avgStayNights:number;
+};
+
+export type LiveAnalyticsDashboardSummary={
+  schemaVersion:number;
+  scope:{organizationId:string;propertyId:string|null};
+  period:{from:string;to:string};
+  freshness:{
+    projectionStatus:string;
+    pendingEvents:number;
+    oldestPendingAt:string|null;
+    lastProcessedAt:string|null;
+    scopePropertyCount:number;
+    rollupRefreshedAt:string|null;
+    sourceFingerprint?:string;
+  };
+  kpisByCurrency:LiveAnalyticsDashboardCurrency[];
+  cache:{hit:boolean;generatedAt:string;expiresAt:string};
+};

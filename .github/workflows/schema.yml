@@ -1,12 +1,12 @@
 name: VIEWS D1 Schema
 on:
   push:
-    branches: [main, "staging/**", "stage4/**"]
+    branches: [main, "staging/**", "stage4/**", "stage5/**", "stage6/**"]
     paths:
       - "migrations/**"
       - ".github/workflows/schema.yml"
   pull_request:
-    branches: [main]
+    branches: [main, "staging/master-reference-v1"]
     paths:
       - "migrations/**"
 

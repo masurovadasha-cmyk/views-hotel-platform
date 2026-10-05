@@ -6,6 +6,7 @@ export type ApiConfig={
   nodeEnv:"development"|"test"|"production";
   trustedProxyMode:TrustedProxyMode;
   guestAuthRateLimitSecret:string;
+  internalApiKey:string;
 };
 
 export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
@@ -23,17 +24,28 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
     throw new Error("Invalid TRUSTED_PROXY_MODE");
   }
 
-  const configuredSecret=env.GUEST_AUTH_RATE_LIMIT_SECRET?.trim();
-  if(configuredSecret&&configuredSecret.length<32){
+  const configuredGuestSecret=env.GUEST_AUTH_RATE_LIMIT_SECRET?.trim();
+  if(configuredGuestSecret&&configuredGuestSecret.length<32){
     throw new Error("GUEST_AUTH_RATE_LIMIT_SECRET must be at least 32 characters");
   }
-  if(nodeEnv==="production"&&!configuredSecret){
+  if(nodeEnv==="production"&&!configuredGuestSecret){
     throw new Error("GUEST_AUTH_RATE_LIMIT_SECRET is required in production");
   }
-  const guestAuthRateLimitSecret=configuredSecret
+  const guestAuthRateLimitSecret=configuredGuestSecret
     ??"views-development-only-rate-limit-secret-not-for-production";
 
+  const configuredInternalKey=env.VIEWS_INTERNAL_API_KEY?.trim();
+  if(configuredInternalKey&&configuredInternalKey.length<32){
+    throw new Error("VIEWS_INTERNAL_API_KEY must be at least 32 characters");
+  }
+  if(nodeEnv==="production"&&!configuredInternalKey){
+    throw new Error("VIEWS_INTERNAL_API_KEY is required in production");
+  }
+  const internalApiKey=configuredInternalKey
+    ??"views-development-only-internal-api-key-not-for-production";
+
   return {
-    port,databaseUrl,nodeEnv,trustedProxyMode,guestAuthRateLimitSecret
+    port,databaseUrl,nodeEnv,trustedProxyMode,
+    guestAuthRateLimitSecret,internalApiKey
   };
 }

@@ -2,7 +2,9 @@ import {
   BadRequestException,Controller,ForbiddenException,Get,Headers,Query,Res,UnauthorizedException
 } from "@nestjs/common";
 import type {Response} from "express";
+import {loadConfig} from "../config";
 import {requireUuid} from "../identity/actor-context";
+import {assertInternalApiKey} from "../security/internal-api-auth";
 import {dashboardEtag,matchesIfNoneMatch} from "./analytics-dashboard-http";
 import {AnalyticsDashboardService} from "./analytics-dashboard.service";
 
@@ -16,6 +18,7 @@ export class AnalyticsDashboardController{
     @Query("to") to:string|undefined,
     @Query("propertyId") propertyId:string|undefined,
     @Headers("if-none-match") ifNoneMatch:string|undefined,
+    @Headers("x-views-internal-key") internalApiKey:string|undefined,
     @Headers("x-organization-id") organizationId:string|undefined,
     @Headers("x-user-id") userId:string|undefined,
     @Headers("x-membership-id") membershipId:string|undefined,
@@ -23,6 +26,7 @@ export class AnalyticsDashboardController{
     @Res({passthrough:true}) response:Response
   ){
     try{
+      assertInternalApiKey(internalApiKey,loadConfig().internalApiKey);
       if(!from||!to)throw new BadRequestException("from and to are required");
       const result=await this.dashboard.summary(
         actorFromHeaders(organizationId,userId,membershipId,requestId),
@@ -72,6 +76,9 @@ function mapDashboardError(error:unknown){
   )return error;
 
   const message=error instanceof Error?error.message:"ANALYTICS_DASHBOARD_ERROR";
+  if(message==="INTERNAL_API_UNAUTHORIZED"){
+    return new UnauthorizedException("internal API authentication required");
+  }
   if(message==="PROPERTY_FORBIDDEN"||message==="ANALYTICS_ROLE_FORBIDDEN"){
     return new ForbiddenException(message);
   }

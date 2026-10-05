@@ -7,6 +7,8 @@ export type Env={
   VIEWS_ALLOW_DEMO_HEADERS?:string;
   VIEWS_ALLOWED_ORIGINS?:string;
   VIEWS_EXPOSE_LOGIN_TOKEN?:string;
+  VIEWS_CORE_API_URL?:string;
+  VIEWS_CORE_API_KEY?:string;
 };
 
 export function json(data:unknown,status=200){

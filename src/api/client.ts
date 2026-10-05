@@ -59,5 +59,10 @@ export const api={
   createHandover:(input:{propertyId:string;fromShift:string;toShift:string;unresolved:unknown[];risks:unknown[];followUp:unknown[]})=>request<{id:string;status:string}>("/api/shift-handover",{method:"POST",body:JSON.stringify(input)}),
   acknowledgeHandover:(id:string)=>request<{id:string;status:string}>("/api/shift-handover",{method:"PATCH",body:JSON.stringify({id})}),
   financeSummary:(propertyId="utower")=>request<import("./types").LiveFinanceSummary>(`/api/finance-summary?propertyId=${encodeURIComponent(propertyId)}`),
+  analyticsDashboard:(from:string,to:string,propertyId?:string)=>{
+    const params=new URLSearchParams({from,to});
+    if(propertyId)params.set("propertyId",propertyId);
+    return request<import("./types").LiveAnalyticsDashboardSummary>(`/api/analytics-dashboard?${params.toString()}`);
+  },
   readiness:()=>request<{status:string;database:string;schema:string}>("/api/readiness")
 };
