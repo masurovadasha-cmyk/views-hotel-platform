@@ -60,6 +60,45 @@ export class AnalyticsController{
     }catch(error){throw mapAnalyticsError(error)}
   }
 
+  @Get("portfolio/cities/daily")
+  async cityRollups(
+    @Query("from") from:string|undefined,
+    @Query("to") to:string|undefined,
+    @Query("countryCode") countryCode:string|undefined,
+    @Query("city") city:string|undefined,
+    @Headers("x-organization-id") organizationId:string|undefined,
+    @Headers("x-user-id") userId:string|undefined,
+    @Headers("x-membership-id") membershipId:string|undefined,
+    @Headers("x-request-id") requestId:string|undefined
+  ){
+    try{
+      if(!from||!to)throw new BadRequestException("from and to are required");
+      return await this.queries.cityDailyRollup(
+        actorFromHeaders(organizationId,userId,membershipId,requestId),
+        from,to,countryCode,city
+      );
+    }catch(error){throw mapAnalyticsError(error)}
+  }
+
+  @Get("portfolio/countries/daily")
+  async countryRollups(
+    @Query("from") from:string|undefined,
+    @Query("to") to:string|undefined,
+    @Query("countryCode") countryCode:string|undefined,
+    @Headers("x-organization-id") organizationId:string|undefined,
+    @Headers("x-user-id") userId:string|undefined,
+    @Headers("x-membership-id") membershipId:string|undefined,
+    @Headers("x-request-id") requestId:string|undefined
+  ){
+    try{
+      if(!from||!to)throw new BadRequestException("from and to are required");
+      return await this.queries.countryDailyRollup(
+        actorFromHeaders(organizationId,userId,membershipId,requestId),
+        from,to,countryCode
+      );
+    }catch(error){throw mapAnalyticsError(error)}
+  }
+
   @Get("properties/:id/rollups/daily")
   async propertyRollups(
     @Param("id") id:string,
