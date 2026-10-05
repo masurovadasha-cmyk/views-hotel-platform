@@ -5,6 +5,7 @@ CREATE TABLE analytics_marketplace_economic_facts (
   organization_id uuid NOT NULL REFERENCES organizations(id),
   property_id uuid NOT NULL REFERENCES properties(id),
   currency char(3) NOT NULL,
+  source_kind reservation_economics_source NOT NULL,
   net_collected_minor bigint NOT NULL CHECK (net_collected_minor >= 0),
   platform_commission_minor bigint NOT NULL CHECK (platform_commission_minor >= 0),
   owner_payable_minor bigint NOT NULL CHECK (owner_payable_minor >= 0),
