@@ -96,9 +96,13 @@ export class AnalyticsDashboardService{
           consecutiveFailures:sources.consecutiveFailures,
           lastErrorCode:sources.lastErrorCode,
           scopeFingerprint:sources.scopeFingerprint,
+          scopePropertyCount:sources.propertyIds.length,
           rollupRefreshedAt:sources.rollupRefreshedAt,
+          rollupRowCount:sources.rollupRowCount,
           reservationProjectedAt:sources.reservationProjectedAt,
-          economicsProjectedAt:sources.economicsProjectedAt
+          reservationFactCount:sources.reservationFactCount,
+          economicsProjectedAt:sources.economicsProjectedAt,
+          economicsFactCount:sources.economicsFactCount
         },
         kpisByCurrency,
         lifecycleByCurrency,
@@ -109,16 +113,16 @@ export class AnalyticsDashboardService{
 
       await client.query(
         `INSERT INTO analytics_dashboard_cache(
-           cache_key,organization_id,membership_id,property_id,from_date,to_date,
+           cache_key,organization_id,membership_id,property_id,property_ids,from_date,to_date,
            schema_version,source_fingerprint,payload,generated_at,expires_at
-         ) VALUES($1,$2,$3,$4,$5::date,$6::date,$7,$8,$9::jsonb,$10,$11)
+         ) VALUES($1,$2,$3,$4,$5::uuid[],$6::date,$7::date,$8,$9,$10::jsonb,$11,$12)
          ON CONFLICT(cache_key) DO UPDATE SET
            payload=EXCLUDED.payload,
            generated_at=EXCLUDED.generated_at,
            expires_at=EXCLUDED.expires_at`,
         [
           cacheKey,actor.organizationId,actor.membershipId,input.propertyId??null,
-          input.from,input.to,DASHBOARD_SCHEMA_VERSION,sourceFingerprint,
+          sources.propertyIds,input.from,input.to,DASHBOARD_SCHEMA_VERSION,sourceFingerprint,
           JSON.stringify(payload),generatedAt,expiresAt
         ]
       );
@@ -167,12 +171,13 @@ export class AnalyticsDashboardService{
       [organizationId,propertyId]
     )).rows[0];
 
-    const scopeFingerprint=this.hash(scope?.property_ids??[]);
+    const propertyIds=scope?.property_ids??[];
+    const scopeFingerprint=this.hash(propertyIds);
 
     const timestamps=(await client.query<{
-      rollup_refreshed_at:Date|null;
-      reservation_projected_at:Date|null;
-      economics_projected_at:Date|null;
+      rollup_refreshed_at:Date|null;rollup_row_count:string;
+      reservation_projected_at:Date|null;reservation_fact_count:string;
+      economics_projected_at:Date|null;economics_fact_count:string;
     }>(
       `SELECT
          (
@@ -184,6 +189,14 @@ export class AnalyticsDashboardService{
               AND ($4::uuid IS NULL OR r.property_id=$4)
          ) AS rollup_refreshed_at,
          (
+           SELECT COUNT(*)::text
+             FROM analytics_property_daily_rollups r
+            WHERE r.organization_id=$1
+              AND r.local_date BETWEEN $2::date AND $3::date
+              AND app.can_access_property(r.property_id)
+              AND ($4::uuid IS NULL OR r.property_id=$4)
+         ) AS rollup_row_count,
+         (
            SELECT MAX(f.projected_at)
              FROM analytics_reservation_facts f
             WHERE f.organization_id=$1
@@ -191,6 +204,14 @@ export class AnalyticsDashboardService{
               AND app.can_access_property(f.property_id)
               AND ($4::uuid IS NULL OR f.property_id=$4)
          ) AS reservation_projected_at,
+         (
+           SELECT COUNT(*)::text
+             FROM analytics_reservation_facts f
+            WHERE f.organization_id=$1
+              AND f.check_in_local_date BETWEEN $2::date AND $3::date
+              AND app.can_access_property(f.property_id)
+              AND ($4::uuid IS NULL OR f.property_id=$4)
+         ) AS reservation_fact_count,
          (
            SELECT MAX(e.projected_at)
              FROM analytics_marketplace_economic_facts e
@@ -201,7 +222,18 @@ export class AnalyticsDashboardService{
               AND f.check_in_local_date BETWEEN $2::date AND $3::date
               AND app.can_access_property(e.property_id)
               AND ($4::uuid IS NULL OR e.property_id=$4)
-         ) AS economics_projected_at`,
+         ) AS economics_projected_at,
+         (
+           SELECT COUNT(*)::text
+             FROM analytics_marketplace_economic_facts e
+             JOIN analytics_reservation_facts f
+               ON f.reservation_id=e.reservation_id
+              AND f.organization_id=e.organization_id
+            WHERE e.organization_id=$1
+              AND f.check_in_local_date BETWEEN $2::date AND $3::date
+              AND app.can_access_property(e.property_id)
+              AND ($4::uuid IS NULL OR e.property_id=$4)
+         ) AS economics_fact_count`,
       [organizationId,from,to,propertyId]
     )).rows[0];
 
@@ -218,6 +250,7 @@ export class AnalyticsDashboardService{
     )).rows[0];
 
     return {
+      propertyIds,
       scopeFingerprint,
       projectionStatus:health?.status??"healthy",
       pendingEvents:Number(health?.pending_events??0),
@@ -226,8 +259,11 @@ export class AnalyticsDashboardService{
       consecutiveFailures:Number(health?.consecutive_failures??0),
       lastErrorCode:health?.last_error_code??null,
       rollupRefreshedAt:timestamps?.rollup_refreshed_at?.toISOString()??null,
+      rollupRowCount:Number(timestamps?.rollup_row_count??0),
       reservationProjectedAt:timestamps?.reservation_projected_at?.toISOString()??null,
-      economicsProjectedAt:timestamps?.economics_projected_at?.toISOString()??null
+      reservationFactCount:Number(timestamps?.reservation_fact_count??0),
+      economicsProjectedAt:timestamps?.economics_projected_at?.toISOString()??null,
+      economicsFactCount:Number(timestamps?.economics_fact_count??0)
     };
   }
 
