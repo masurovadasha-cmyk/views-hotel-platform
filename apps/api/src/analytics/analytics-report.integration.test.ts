@@ -1,3 +1,4 @@
+import {createHash} from "node:crypto";
 import {afterAll,beforeAll,describe,expect,it} from "vitest";
 import {DatabaseService} from "../database/database.service";
 import {AnalyticsReportService} from "./analytics-report.service";
@@ -126,10 +127,15 @@ describe.sequential("Stage 6 durable report exports",()=>{
     expect(job.sourceFingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(job.artifact?.contentType).toBe("application/json");
     expect(job.artifact?.checksumSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(job.artifactExpiresAt).toBeTruthy();
 
     const artifact=await reports.artifact(MANAGER,jsonJobId);
     expect(artifact.byteSize).toBe(artifact.content.length);
     expect(artifact.filename).toMatch(/\.json$/);
+    expect(artifact.expiresAt).toBeTruthy();
+    expect(
+      createHash("sha256").update(artifact.content).digest("hex")
+    ).toBe(artifact.checksumSha256);
 
     const parsed=JSON.parse(artifact.content.toString("utf8"));
     expect(parsed.schemaVersion).toBe(2);
