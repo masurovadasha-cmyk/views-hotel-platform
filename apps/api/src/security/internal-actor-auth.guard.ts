@@ -16,7 +16,7 @@ export class InternalActorAuthGuard implements CanActivate{
     const request=context.switchToHttp().getRequest<{headers:IncomingHttpHeaders}>();
     assertTrustedInternalActorHeaders(
       request.headers,
-      loadConfig().internalApiKey
+      loadConfig().internalApiKeys
     );
     return true;
   }
