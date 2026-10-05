@@ -15,6 +15,7 @@ describe("security telemetry redaction",()=>{
   it("redacts sensitive object keys recursively",()=>{
     const output=redactTelemetryValue({
       authorization:"fixture-auth-value",
+      "x-views-internal-key":"fixture-internal-key-value",
       nested:{
         accessToken:"fixture-access-value",
         email:"user@example.test",
@@ -23,6 +24,7 @@ describe("security telemetry redaction",()=>{
     }) as Record<string,any>;
 
     expect(output.authorization).toBe("[REDACTED]");
+    expect(output["x-views-internal-key"]).toBe("[REDACTED]");
     expect(output.nested.accessToken).toBe("[REDACTED]");
     expect(output.nested.email).toBe("[REDACTED]");
     expect(output.nested.safe).toBe("ok");
