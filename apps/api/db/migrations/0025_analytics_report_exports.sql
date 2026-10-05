@@ -144,8 +144,11 @@ BEGIN
   WITH candidates AS (
     SELECT j.id
     FROM analytics_report_jobs j
-    WHERE j.status='queued'
-      AND j.next_attempt_at<=now()
+    WHERE (
+        (j.status='queued' AND j.next_attempt_at<=now())
+        OR
+        (j.status='processing' AND j.lease_until<=now())
+      )
       AND (j.lease_until IS NULL OR j.lease_until<=now())
     ORDER BY j.next_attempt_at,j.created_at,j.id
     FOR UPDATE SKIP LOCKED
