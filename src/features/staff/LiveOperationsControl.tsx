@@ -1,5 +1,5 @@
 import {FormEvent,useEffect,useState} from "react";
-import type {LiveDamageReport,LiveInventoryItem,LiveLostFoundItem,LiveShiftHandover} from "../../api/types";
+import type {LiveDamageReport,LiveInventoryItem,LiveLostFoundItem,LiveOperationsObservability,LiveShiftHandover} from "../../api/types";
 import {api,ApiError} from "../../api/client";
 
 function errorMessage(error:unknown){
@@ -13,9 +13,18 @@ function Panel({title,children}:{title:string;children:React.ReactNode}){
 
 export function OperationsOverviewLive(){
   const [summary,setSummary]=useState<{lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}|null>(null);
+  const [observability,setObservability]=useState<LiveOperationsObservability|null>(null);
   const [error,setError]=useState("");
 
-  useEffect(()=>{void api.operationsSummary("utower").then(x=>{setSummary(x);setError("")}).catch(e=>setError(errorMessage(e)))},[]);
+  useEffect(()=>{
+    void Promise.all([api.operationsSummary("utower"),api.operationsObservability("utower")])
+      .then(([summaryResult,observabilityResult])=>{
+        setSummary(summaryResult);
+        setObservability(observabilityResult);
+        setError("");
+      })
+      .catch(e=>setError(errorMessage(e)));
+  },[]);
 
   return <div>
     {error&&<div className="notice">{error}</div>}
@@ -25,8 +34,23 @@ export function OperationsOverviewLive(){
       <article><span>Damage reports</span><b>{summary?.damageOpen??"—"}</b></article>
       <article><span>Low stock</span><b>{summary?.inventoryLow??"—"}</b></article>
     </section>
+    <section className="kpis">
+      <article><span>Outbox pending</span><b>{observability?.outboxPending??"—"}</b></article>
+      <article><span>Stale service work</span><b>{observability?.stale.serviceOrders??"—"}</b></article>
+      <article><span>Stale housekeeping</span><b>{observability?.stale.housekeeping??"—"}</b></article>
+      <article><span>Stale maintenance</span><b>{observability?.stale.maintenance??"—"}</b></article>
+    </section>
+    <Panel title="Recent operational events">
+      {!observability?.recentEvents.length?<div className="emptyLine">No domain events recorded yet.</div>:
+      <div className="compactRows">{observability.recentEvents.slice(0,12).map((event,index)=><div key={event.source+event.aggregate_id+event.created_at+index}>
+        <span>{event.source}</span>
+        <b>{event.event_type}</b>
+        <small>{event.from_status??"—"} → {event.to_status??"—"} · {event.actor_user_id??"system"}</small>
+        <i>{event.created_at}</i>
+      </div>)}</div>}
+    </Panel>
     <Panel title="Operations control">
-      <div className="notice">Counts are read from D1 for the authenticated organization and property. Use Exceptions and Shift Handover for the underlying records and actions.</div>
+      <div className="notice">All observability data is organization/property scoped. Raw event payloads are intentionally not exposed in this UI.</div>
     </Panel>
   </div>;
 }
