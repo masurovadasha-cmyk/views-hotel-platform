@@ -153,6 +153,8 @@ export type LiveObservabilityEvent={
 export type LiveOperationsObservability={
   propertyId:string;
   outboxPending:number;
+  outboxRetrying:number;
+  outboxDeadLetter:number;
   stale:{
     serviceOrders:number;
     housekeeping:number;
