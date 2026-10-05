@@ -239,15 +239,21 @@ function validateSchedule(
   if(input.cadence==="daily"&&(weekday!==null||dayOfMonth!==null)){
     throw new Error("INVALID_DAILY_REPORT_SCHEDULE");
   }
+  const validWeekday=
+    typeof weekday==="number"&&Number.isInteger(weekday)&&weekday>=1&&weekday<=7;
+  const validDayOfMonth=
+    typeof dayOfMonth==="number"&&Number.isInteger(dayOfMonth)&&
+    dayOfMonth>=1&&dayOfMonth<=28;
+
   if(
     input.cadence==="weekly"&&
-    (!Number.isInteger(weekday)||weekday!<1||weekday!>7||dayOfMonth!==null)
+    (!validWeekday||dayOfMonth!==null)
   ){
     throw new Error("INVALID_WEEKLY_REPORT_SCHEDULE");
   }
   if(
     input.cadence==="monthly"&&
-    (!Number.isInteger(dayOfMonth)||dayOfMonth!<1||dayOfMonth!>28||weekday!==null)
+    (!validDayOfMonth||weekday!==null)
   ){
     throw new Error("INVALID_MONTHLY_REPORT_SCHEDULE");
   }
