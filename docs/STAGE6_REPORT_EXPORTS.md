@@ -66,6 +66,11 @@ If a worker crashes, a `processing` job becomes claimable again after its lease 
 
 Failures use bounded exponential retry delay. After max attempts the job becomes `failed`.
 
+Worker mutations require a still-valid lease token. A stale worker whose lease expired cannot
+complete or fail a job.
+
+Persisted worker errors are strict machine-readable codes. Arbitrary exception text is not stored.
+
 ## Idempotency
 
 Create request requires:
@@ -106,6 +111,13 @@ Metadata:
 - SHA-256 checksum
 - format
 - created timestamp
+- artifact expiry timestamp
+
+Retention:
+
+- completed artifacts expire after 30 days;
+- bounded cleanup uses `app.prune_analytics_report_artifacts(...)`;
+- expired downloads return HTTP 410.
 
 This is appropriate for compact dashboard snapshots.
 
@@ -177,7 +189,9 @@ Download response uses:
 - private cache policy
 - report checksum ETag
 - If-None-Match / 304 support
+- `X-Content-SHA256`
 - safe generated filename
+- HTTP 410 after artifact expiry
 
 ## Authorization / RLS
 
