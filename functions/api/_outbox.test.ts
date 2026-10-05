@@ -1,5 +1,5 @@
 import {describe,expect,it} from "vitest";
-import {OUTBOX_MAX_ATTEMPTS,nextAvailableAt,outboxBackoffSeconds,parseOutboxPayload} from "./_outbox";
+import {OUTBOX_MAX_ATTEMPTS,nextAvailableAt,outboxBackoffSeconds,outboxFailureDecision,parseOutboxPayload} from "./_outbox";
 
 describe("outbox recovery",()=>{
   it("uses bounded exponential-ish backoff",()=>{
@@ -18,5 +18,11 @@ describe("outbox recovery",()=>{
   it("computes deterministic retry timestamps",()=>{
     expect(nextAvailableAt(1,0)).toBe("1970-01-01T00:00:30.000Z");
     expect(OUTBOX_MAX_ATTEMPTS).toBe(5);
+  });
+
+  it("dead-letters only at the configured maximum attempt",()=>{
+    expect(outboxFailureDecision(4,0)).toEqual({deadLetter:false,availableAt:"1970-01-01T00:30:00.000Z"});
+    expect(outboxFailureDecision(5,0)).toEqual({deadLetter:true,availableAt:null});
+    expect(outboxFailureDecision(9,0)).toEqual({deadLetter:true,availableAt:null});
   });
 });
