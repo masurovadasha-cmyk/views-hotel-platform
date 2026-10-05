@@ -130,7 +130,7 @@ export class GuestAuthService{
           [challengeId,message]
         );
       });
-      throw error;
+      throw new Error("GUEST_AUTH_DELIVERY_FAILED");
     }
   }
 
