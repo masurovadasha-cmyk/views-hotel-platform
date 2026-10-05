@@ -7,7 +7,7 @@ on:
       - "functions/**"
       - "migrations/**"
       - "src/**"
-      - "scripts/stage4-local-e2e.sh"
+      - "scripts/stage4-local-e2e.sh"\n      - "scripts/stage4-remote-smoke.sh"
       - "wrangler.local.toml"
       - "package.json"
       - ".github/workflows/stage4-local-e2e.yml"
@@ -17,7 +17,7 @@ on:
       - "functions/**"
       - "migrations/**"
       - "src/**"
-      - "scripts/stage4-local-e2e.sh"
+      - "scripts/stage4-local-e2e.sh"\n      - "scripts/stage4-remote-smoke.sh"
       - "wrangler.local.toml"
 
 permissions:
@@ -43,6 +43,9 @@ jobs:
 
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Validate remote smoke shell
+        run: bash -n scripts/stage4-remote-smoke.sh
 
       - name: Build Pages assets
         run: npm run build
