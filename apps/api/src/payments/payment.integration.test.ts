@@ -135,6 +135,25 @@ describe.sequential("payments and ledger integration",()=>{
     expect(row.status).toBe("pending_provider");
     expect(BigInt(row.amount_minor)).toBe(quote.totalMinor);
     expect(row.currency).toBe("UZS");
+
+    const projectionEvents=await db.withActor(actor,async client=>
+      (await client.query<{payload:{schemaVersion:number;sourceVersion:number;status:string;paymentIntentId:string}}>(
+        `SELECT payload
+           FROM outbox_events
+          WHERE aggregate_type='payment_intent'
+            AND aggregate_id=$1
+            AND event_type='finance.payment_snapshot.v1'
+          ORDER BY (payload->>'sourceVersion')::integer`,
+        [first.paymentIntentId]
+      )).rows
+    );
+    expect(projectionEvents.length).toBeGreaterThanOrEqual(2);
+    expect(projectionEvents[0].payload).toMatchObject({
+      schemaVersion:1,paymentIntentId:first.paymentIntentId,sourceVersion:1,status:"requires_payment"
+    });
+    expect(projectionEvents.at(-1)?.payload).toMatchObject({
+      schemaVersion:1,paymentIntentId:first.paymentIntentId,sourceVersion:2,status:"pending_provider"
+    });
   });
 
   it("keeps reservation on hold after partial capture and confirms only after full capture",async()=>{
@@ -205,6 +224,24 @@ describe.sequential("payments and ledger integration",()=>{
     });
     expect(journalState.count).toBeGreaterThanOrEqual(2);
     expect(journalState.debit).toBe(journalState.credit);
+
+    const ledgerProjection=await db.withActor(actor,async client=>
+      (await client.query<{payload:{
+        schemaVersion:number;status:string;entries:Array<{side:string;amountMinor:string;currency:string}>
+      }}>(
+        `SELECT payload FROM outbox_events
+          WHERE event_type='finance.ledger_journal.v1'
+          ORDER BY created_at DESC LIMIT 1`
+      )).rows[0]?.payload
+    );
+    expect(ledgerProjection?.schemaVersion).toBe(1);
+    expect(ledgerProjection?.status).toBe("posted");
+    expect(ledgerProjection?.entries.length).toBeGreaterThanOrEqual(2);
+    const projectedDebit=(ledgerProjection?.entries??[])
+      .filter(x=>x.side==="debit").reduce((sum,x)=>sum+BigInt(x.amountMinor),0n);
+    const projectedCredit=(ledgerProjection?.entries??[])
+      .filter(x=>x.side==="credit").reduce((sum,x)=>sum+BigInt(x.amountMinor),0n);
+    expect(projectedDebit).toBe(projectedCredit);
 
     const duplicate=await webhooks.processVerified("payme",event({
       eventId:"evt-capture-part-2",txId:"cap-part-2",type:"captured",
