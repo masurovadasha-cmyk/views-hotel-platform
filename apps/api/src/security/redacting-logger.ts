@@ -1,6 +1,6 @@
 import {ConsoleLogger} from "@nestjs/common";
 
-const sensitiveKey=/^(authorization|cookie|set-cookie|token|accessToken|exchangeToken|password|secret|email|phone|phone_e164|x-views-internal-key)$/i;
+const sensitiveKey=/^(authorization|cookie|set-cookie|token|accessToken|exchangeToken|password|secret|email|phone|phone_e164|x-views-internal-key|x-views-service-token|VIEWS_CORE_SIGNING_PRIVATE_KEY|privateKey|privateKeyPem)$/i;
 const bearer=/\bBearer\s+[A-Za-z0-9._~+\/-]+/gi;
 const guestToken=/\bvg[ae]_[A-Za-z0-9_-]{8,}\b/g;
 const email=/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
