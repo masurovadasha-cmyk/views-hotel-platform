@@ -21,6 +21,14 @@ export const api={
     request<{id:string;status:string}>("/api/guest-service-orders",{method:"POST",headers:{"Idempotency-Key":idempotencyKey},body:JSON.stringify(input)}),
   serviceOrderAction:(input:{id:string;action:"accept"|"start"|"complete"|"cancel";version:number})=>
     request<{id:string;status:string;version:number}>("/api/service-order-action",{method:"POST",body:JSON.stringify(input)}),
+  housekeepingJobs:(propertyId="utower")=>
+    request<{propertyId:string;items:import("./types").LiveHousekeepingJob[]}>(`/api/housekeeping-jobs?propertyId=${encodeURIComponent(propertyId)}`),
+  housekeepingAction:(id:string,action:"start"|"complete"|"verify"|"dnd"|"decline")=>
+    request<{id:string;status:string;assignedUserId?:string|null}>("/api/housekeeping-action",{method:"POST",body:JSON.stringify({id,action})}),
+  maintenanceTickets:(propertyId="utower")=>
+    request<{propertyId:string;items:import("./types").LiveMaintenanceTicket[]}>(`/api/maintenance-tickets?propertyId=${encodeURIComponent(propertyId)}`),
+  maintenanceAction:(id:string,action:"start"|"wait"|"block"|"resolve"|"verify")=>
+    request<{id:string;status:string;assignedUserId?:string|null}>("/api/maintenance-action",{method:"POST",body:JSON.stringify({id,action})}),
   health:()=>request<{status:string}>("/api/health"),
   operationsSummary:(propertyId="utower")=>request<{propertyId:string;lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}>(`/api/operations-summary?propertyId=${encodeURIComponent(propertyId)}`),
   apartmentTimeline:(unitId:string)=>request<{unitId:string;items:unknown[]}>(`/api/apartment-timeline?unitId=${encodeURIComponent(unitId)}`),
