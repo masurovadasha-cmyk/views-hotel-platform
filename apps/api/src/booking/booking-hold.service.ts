@@ -37,10 +37,12 @@ export class BookingHoldService{
           id:string;property_id:string;unit_id:string;rate_plan_id:string;check_in_at:Date;check_out_at:Date;
           currency:string;accommodation_minor:string;total_minor:string;cancellation_policy_snapshot:Record<string,unknown>;
           pricing_snapshot:Record<string,unknown>;guest_context:Record<string,unknown>;expires_at:Date;
+          booking_channel:string|null;market_segment:string|null;attribution_source:string|null;
         }>(
           `SELECT id,property_id,unit_id,rate_plan_id,check_in_at,check_out_at,currency,
                   accommodation_minor::text,total_minor::text,cancellation_policy_snapshot,
-                  pricing_snapshot,guest_context,expires_at
+                  pricing_snapshot,guest_context,expires_at,
+                  booking_channel,market_segment,attribution_source
              FROM booking_quotes
             WHERE id=$1 AND organization_id=$2`,
           [input.quoteId,input.actor.organizationId]
@@ -68,7 +70,10 @@ export class BookingHoldService{
         const reservationSnapshot={
           quoteId:quote.id,
           pricingSnapshot:quote.pricing_snapshot,
-          guestContext:quote.guest_context
+          guestContext:quote.guest_context,
+          bookingChannel:quote.booking_channel,
+          marketSegment:quote.market_segment,
+          attributionSource:quote.attribution_source
         };
 
         const reservation=await client.query<{hold_expires_at:Date}>(
