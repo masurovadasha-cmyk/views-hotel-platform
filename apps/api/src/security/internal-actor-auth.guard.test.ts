@@ -45,6 +45,13 @@ describe("internal actor gateway boundary",()=>{
     },[KEY,PREVIOUS])).not.toThrow();
   });
 
+  it("accepts the previous key while the rotation window is active",()=>{
+    expect(()=>assertTrustedInternalActorHeaders({
+      ...ACTOR,
+      "x-views-internal-key":PREVIOUS
+    },[KEY,PREVIOUS])).not.toThrow();
+  });
+
   it("rejects duplicated security headers instead of picking one",()=>{
     expect(()=>assertTrustedInternalActorHeaders({
       ...ACTOR,
