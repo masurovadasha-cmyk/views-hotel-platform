@@ -43,6 +43,7 @@ export class AnalyticsReportService{
     idempotencyKey:string
   ){
     validateIdempotencyKey(idempotencyKey);
+    const normalizedIdempotencyKey=idempotencyKey.trim();
     validateDateRange(input.from,input.to);
     if(!["json","csv"].includes(input.format)){
       throw new Error("INVALID_REPORT_FORMAT");
@@ -76,7 +77,7 @@ export class AnalyticsReportService{
         [
           actor.organizationId,actor.userId,actor.membershipId,
           normalized.propertyId,normalized.format,normalized.from,normalized.to,
-          idempotencyKey,inputHash
+          normalizedIdempotencyKey,inputHash
         ]
       );
 
@@ -95,7 +96,7 @@ export class AnalyticsReportService{
         WHERE organization_id=$1
           AND membership_id=$2
           AND idempotency_key=$3`,
-        [actor.organizationId,actor.membershipId,idempotencyKey]
+        [actor.organizationId,actor.membershipId,normalizedIdempotencyKey]
       )).rows[0];
 
       if(!existing)throw new Error("REPORT_IDEMPOTENCY_STATE_MISSING");
