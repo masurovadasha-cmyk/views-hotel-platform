@@ -5,6 +5,8 @@ export type TrustedProxyMode="direct"|"cloudflare";
 export type ConfiguredInternalServicePublicKey={
   kid:string;
   publicKeyPem:string;
+  activatedAt:string|null;
+  rotateBy:string|null;
 };
 
 export type ApiConfig={
@@ -85,7 +87,8 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
     :rawServiceKeys;
 
   const servicePublicKeyRefs=parseInternalServicePublicKeyRefs(
-    env.VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON
+    env.VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON,
+    nodeEnv==="production"
   );
   const internalServicePublicKeys=resolveInternalServicePublicKeyRefs(
     servicePublicKeyRefs,env
@@ -176,12 +179,17 @@ function resolveInternalServiceKeyRefs(
   return result;
 }
 
-function parseInternalServicePublicKeyRefs(raw:string|undefined){
+function parseInternalServicePublicKeyRefs(
+  raw:string|undefined,
+  requireRotationMetadata:boolean
+){
   const parsed=parseServiceMap(
     raw,
     "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON"
   );
-  const result:Record<string,{kid:string;ref:string}[]>={};
+  const result:Record<string,{
+    kid:string;ref:string;activatedAt:string|null;rotateBy:string|null;
+  }[]>={};
   const refOwners=new Map<string,string>();
 
   for(const [serviceId,value] of Object.entries(parsed)){
@@ -191,7 +199,9 @@ function parseInternalServicePublicKeyRefs(raw:string|undefined){
       );
     }
 
-    const entries:{kid:string;ref:string}[]=[];
+    const entries:{
+      kid:string;ref:string;activatedAt:string|null;rotateBy:string|null;
+    }[]=[];
     const kids=new Set<string>();
     for(const rawEntry of value){
       if(!rawEntry||typeof rawEntry!=="object"||Array.isArray(rawEntry)){
@@ -205,6 +215,30 @@ function parseInternalServicePublicKeyRefs(raw:string|undefined){
       if(!KID.test(kid)||!SECRET_REF.test(ref)){
         throw new Error(
           "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON contains invalid kid or reference"
+        );
+      }
+
+      const activatedAt=rotationTimestamp(
+        entry.activatedAt,
+        requireRotationMetadata,
+        "activatedAt"
+      );
+      const rotateBy=rotationTimestamp(
+        entry.rotateBy,
+        requireRotationMetadata,
+        "rotateBy"
+      );
+      if((activatedAt===null)!==(rotateBy===null)){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON rotation metadata must include activatedAt and rotateBy"
+        );
+      }
+      if(
+        activatedAt&&rotateBy&&
+        Date.parse(rotateBy)<=Date.parse(activatedAt)
+      ){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON rotateBy must be after activatedAt"
         );
       }
       if(kids.has(kid)){
@@ -221,7 +255,7 @@ function parseInternalServicePublicKeyRefs(raw:string|undefined){
         );
       }
       refOwners.set(ref,serviceId);
-      entries.push({kid,ref});
+      entries.push({kid,ref,activatedAt,rotateBy});
     }
     result[serviceId]=entries;
   }
@@ -230,14 +264,16 @@ function parseInternalServicePublicKeyRefs(raw:string|undefined){
 }
 
 function resolveInternalServicePublicKeyRefs(
-  refs:Record<string,{kid:string;ref:string}[]>,
+  refs:Record<string,{
+    kid:string;ref:string;activatedAt:string|null;rotateBy:string|null;
+  }[]>,
   env:NodeJS.ProcessEnv
 ){
   const result:Record<string,ConfiguredInternalServicePublicKey[]>={};
   const fingerprints=new Map<string,string>();
 
   for(const [serviceId,entries] of Object.entries(refs)){
-    result[serviceId]=entries.map(({kid,ref})=>{
+    result[serviceId]=entries.map(({kid,ref,activatedAt,rotateBy})=>{
       const pem=env[ref]?.trim();
       if(!pem){
         throw new Error("Referenced internal service public key "+ref+" is required");
@@ -264,11 +300,38 @@ function resolveInternalServicePublicKeyRefs(
       }
       fingerprints.set(fingerprint,serviceId);
 
-      return {kid,publicKeyPem:pem};
+      return {kid,publicKeyPem:pem,activatedAt,rotateBy};
     });
   }
 
   return result;
+}
+
+function rotationTimestamp(
+  value:unknown,
+  required:boolean,
+  field:"activatedAt"|"rotateBy"
+){
+  if(value===undefined||value===null||value===""){
+    if(required){
+      throw new Error(
+        "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON production keys require activatedAt and rotateBy"
+      );
+    }
+    return null;
+  }
+  if(typeof value!=="string"){
+    throw new Error(
+      "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON "+field+" must be an ISO timestamp"
+    );
+  }
+  const timestamp=Date.parse(value);
+  if(!Number.isFinite(timestamp)){
+    throw new Error(
+      "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON "+field+" must be an ISO timestamp"
+    );
+  }
+  return new Date(timestamp).toISOString();
 }
 
 function parseInternalServiceKeys(raw:string|undefined){
