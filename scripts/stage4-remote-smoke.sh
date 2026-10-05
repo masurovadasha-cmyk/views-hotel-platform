@@ -132,7 +132,7 @@ QUEUE_AFTER="$QUEUE_AFTER" node -e '
 OBS="$(curl -fsS -b /tmp/views-manager.cookies "$BASE/api/operations-observability?propertyId=utower")"
 OBS="$OBS" node -e '
   const x=JSON.parse(process.env.OBS);
-  if(typeof x.outboxPending!=="number") throw new Error("remote outbox metric missing");
+  if(typeof x.outboxPending!=="number"||typeof x.outboxRetrying!=="number"||typeof x.outboxDeadLetter!=="number"||typeof x.outboxLeased!=="number") throw new Error("remote outbox metrics missing");
   const events=new Set((x.recentEvents||[]).map(e=>e.event_type));
   for(const required of ["reservation.check_in","reservation.check_out","housekeeping.start","housekeeping.complete","housekeeping.verify"]){
     if(!events.has(required)) throw new Error("remote observability missing "+required);
@@ -171,6 +171,8 @@ OUTBOX_PROCESS="$(curl -fsS -b /tmp/views-manager.cookies \
   "$BASE/api/outbox-process")"
 OUTBOX_PROCESS="$OUTBOX_PROCESS" node -e '
   const x=JSON.parse(process.env.OUTBOX_PROCESS);
+  if(x.claimed<1||x.processed<1) throw new Error("remote outbox processor did not claim and deliver events");
+  if(x.claimed<x.processed) throw new Error("remote outbox processed more events than claimed");
   if(x.deadLettered!==0) throw new Error("remote outbox dead-lettered an event");
   if(x.remaining!==0) throw new Error("remote outbox still has ready events");
 '
@@ -178,8 +180,8 @@ OUTBOX_PROCESS="$OUTBOX_PROCESS" node -e '
 OUTBOX_AFTER="$(curl -fsS -b /tmp/views-manager.cookies "$BASE/api/operations-observability?propertyId=utower")"
 OUTBOX_AFTER="$OUTBOX_AFTER" node -e '
   const x=JSON.parse(process.env.OUTBOX_AFTER);
-  if(x.outboxPending!==0||x.outboxRetrying!==0||x.outboxDeadLetter!==0){
-    throw new Error("remote outbox recovery metrics are not clean");
+  if(x.outboxPending!==0||x.outboxRetrying!==0||x.outboxDeadLetter!==0||x.outboxLeased!==0){
+    throw new Error("remote outbox recovery/lease metrics are not clean");
   }
 '
 
