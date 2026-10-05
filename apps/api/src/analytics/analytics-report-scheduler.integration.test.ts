@@ -251,6 +251,7 @@ describe.sequential("Stage 6 recurring report scheduler",()=>{
     const schedule=await schedules.get(MANAGER,dailyScheduleId);
     if(!schedule)throw new Error("EXPECTED_ADVANCED_SCHEDULE");
     expect(schedule.lastEnqueuedAt).toBe(dailyNextRunAt);
+    expect(schedule.lastReportJobId).toBe(dailyResult.reportJobId);
     expect(schedule.nextRunAt).toBe(dailyResult.nextRunAt);
 
     const report=await reports.get(MANAGER,dailyResult.reportJobId);
