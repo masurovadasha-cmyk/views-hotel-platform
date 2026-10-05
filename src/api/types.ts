@@ -163,3 +163,38 @@ export type LiveOperationsObservability={
   };
   recentEvents:LiveObservabilityEvent[];
 };
+
+export type LiveFinancePaymentCurrency={
+  currency:string;
+  intents:number;
+  amountMinor:number;
+  capturedMinor:number;
+  refundedMinor:number;
+  netCapturedMinor:number;
+  statuses:Record<string,number>;
+  projectedAt:string|null;
+};
+
+export type LiveFinanceAccountBalance={
+  accountCode:string;
+  accountType:string;
+  currency:string;
+  debitMinor:number;
+  creditMinor:number;
+  netDebitMinor:number;
+};
+
+export type LiveFinanceSummary={
+  propertyId:string;
+  sourceOfTruth:"postgres-payments-ledger";
+  projection:"d1-finance-read-model";
+  liveMoneyEnabled:false;
+  payments:LiveFinancePaymentCurrency[];
+  ledger:{
+    postedJournals:number;
+    unbalancedPostedJournals:Array<{
+      id:string;currencyCount:number;debitMinor:number;creditMinor:number;entryCount:number;
+    }>;
+    accounts:LiveFinanceAccountBalance[];
+  };
+};
