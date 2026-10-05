@@ -12,6 +12,7 @@ on:
       - "wrangler.local.toml"
       - "package.json"
       - ".github/workflows/stage4-acceptance.yml"
+      - ".github/workflows/cloudflare-staging.yml"
   pull_request:
     branches: [main]
     paths:
@@ -21,6 +22,7 @@ on:
       - "scripts/**"
       - "docs/STAGE4_*.md"
       - "wrangler.local.toml"
+      - ".github/workflows/cloudflare-staging.yml"
 
 permissions:
   contents: read
