@@ -4,35 +4,33 @@ Status: implementation candidate.
 
 ## Purpose
 
-Add a truthful economic allocation boundary for marketplace reservations without pretending that
-VIEWS already performs legal revenue recognition, split settlement, or owner bank payouts.
+Create a truthful marketplace economics boundary for each reservation:
 
-This slice answers:
+- payment-derived net collected;
+- platform commission;
+- owner payable;
+- taxes withheld;
+- other explicit deductions;
+- balanced double-entry reclassification;
+- analytical platform/owner economics.
 
-- how much money has actually been collected after refunds;
-- how that collected amount is allocated between platform commission, owner payable,
-  taxes withheld and other explicit deductions;
-- which finalized allocation feeds analytics.
-
-It does not claim that owner payable has been paid.
+This stage creates an **owner payable liability**. It does not claim that the owner has been paid.
 
 ## Source of truth
 
 `net_collected_minor` is never supplied by an operator.
 
-The service derives it from PostgreSQL payment intents:
+It is derived from PostgreSQL payment intents:
 
 `SUM(captured_minor) - SUM(refunded_minor)`
 
-The operator/provider/contract adapter supplies only the allocation components.
-
-The database requires exact equality:
+The allocation must satisfy exactly:
 
 `net collected = platform commission + owner payable + taxes withheld + other deductions`
 
-No guessed percentage is stored.
+No commission percentage is guessed or hard-coded.
 
-## Reservation economic snapshots
+## Snapshot integrity
 
 Migration:
 
@@ -42,42 +40,75 @@ Table:
 
 - `reservation_economic_snapshots`
 
-Properties:
+Each draft stores:
 
-- tenant + property + reservation scoped;
-- reservation currency enforced by database trigger;
-- sequential version per reservation;
-- idempotency key + request hash;
-- draft/finalized lifecycle;
-- at most one finalized snapshot per reservation;
-- finalized snapshots are immutable;
-- complete actor attribution and audit-log entries.
+- reservation/property/tenant scope;
+- currency;
+- exact economic components;
+- source kind/reference;
+- idempotency request hash;
+- **payment-state SHA-256 hash**;
+- actor attribution.
 
-Sources are explicit:
+The payment-state hash includes the ordered payment intent state/version/captured/refunded values.
 
-- manual;
-- contract;
-- provider.
+Draft creation is blocked while payment intents are in transient states such as pending provider,
+partial capture, authorization, or refund pending.
 
-A source kind does not imply legal correctness. The selected source reference must correspond to
-a reviewed contract/provider record before production settlement.
+## Finalization
 
-## Finalization safety
+Finalization requires:
 
-A draft may be finalized only when the current payment-derived net collected amount still equals
-the amount snapshotted at draft creation.
+- role owner or accountant;
+- property access;
+- reservation in checked-out, cancelled, or no-show state;
+- current payment state equals the draft payment-state hash;
+- current net collected equals snapshotted net collected;
+- reservation guest-deposit ledger balance equals the same net collected amount.
 
-If captures/refunds change after draft creation, finalization fails with:
+A stale draft fails with:
 
-- `ECONOMICS_NET_COLLECTED_CHANGED`
+- `ECONOMICS_PAYMENT_STATE_CHANGED`
 
-The operator must create a new version from the current money state.
+A ledger/payment mismatch fails with:
 
-Finalization emits:
+- `ECONOMICS_LEDGER_PAYMENT_MISMATCH`
 
-- `marketplace.reservation_economics.v1`
+Finalized snapshots are immutable.
 
-The event contains exact minor-unit strings and no invented rates.
+## Double-entry ledger
+
+Finalization posts a balanced journal.
+
+Debit:
+
+- `guest_deposits`
+
+Credits, only when non-zero:
+
+- `platform_commission_revenue`
+- `owner_payable`
+- `taxes_payable`
+- `other_deductions_payable`
+
+The journal is linked to the economics snapshot and is included in the existing finance ledger projection.
+
+This is accounting recognition / liability creation. It is **not** a bank payout.
+
+## Reconciliation
+
+View:
+
+- `reservation_economic_reconciliation`
+
+It compares finalized economics net collected with the latest payment-derived net collected.
+
+States:
+
+- `reconciled`
+- `drifted`
+
+This makes later capture/refund drift visible instead of silently changing an immutable finalized snapshot.
 
 ## API
 
@@ -89,7 +120,7 @@ Required header:
 
 - `Idempotency-Key`
 
-Required body fields:
+Required body:
 
 - `platformCommissionMinor`
 - `ownerPayableMinor`
@@ -105,24 +136,26 @@ Finalize:
 
 `POST /v1/marketplace/economics/:snapshotId/finalize`
 
-Read reservation economics:
+Read:
 
 `GET /v1/marketplace/economics/reservations/:reservationId`
 
-Write roles:
+Roles:
 
-- owner
-- manager
-- accountant
+- draft: owner / manager / accountant
+- finalize: owner / accountant
+- read: host / owner / manager / accountant
 
-Read roles:
+Property scope is enforced server-side.
 
-- host
-- owner
-- manager
-- accountant
+## Event contract
 
-Property scope remains enforced server-side.
+Finalization emits:
+
+- `marketplace.reservation_economics.v1`
+
+The event is reservation-scoped so the existing `analytics-core-v1` Worker/SLO pipeline consumes it
+without creating a second analytics consumer.
 
 ## Analytics
 
@@ -130,75 +163,71 @@ Migration:
 
 - `0020_analytics_marketplace_economics.sql`
 
-Fact table:
+Fact:
 
 - `analytics_marketplace_economic_facts`
 
-Canonical view:
+Provenance includes the finalized snapshot ID/version and source kind.
+
+Views:
 
 - `analytics_marketplace_arrival_daily`
+- `analytics_marketplace_stay_daily`
 
-Dimensions:
+Arrival view is for cohort/channel analysis.
 
-- organization;
-- property;
-- arrival date;
-- currency;
-- booking channel;
-- market segment.
+Stay-date view allocates every economic component over stay nights using integer quotient + remainder,
+so the sum of daily minor units is exactly equal to the finalized snapshot.
 
 Metrics:
 
-- finalized reservation count;
-- net collected;
-- platform commission;
-- owner payable;
-- taxes withheld;
-- other deductions;
-- platform commission rate;
-- owner payable rate.
+- net collected
+- platform commission
+- owner payable
+- taxes withheld
+- other deductions
+- platform commission rate
+- owner payable rate
 
-The view joins the already truthful nullable channel/segment reservation facts. Missing attribution
-remains NULL.
+Missing booking channel/market segment remains NULL.
 
-Analytics worker/health/SLO is extended so `marketplace.reservation_economics.v1` is a relevant
-event for tenant claiming and lag monitoring.
+APIs:
 
-API:
+- `GET /v1/analytics/properties/:propertyId/marketplace-economics?from=...&to=...`
+- `GET /v1/analytics/properties/:propertyId/marketplace-economics/stay-daily?from=...&to=...`
 
-`GET /v1/analytics/properties/:propertyId/marketplace-economics?from=YYYY-MM-DD&to=YYYY-MM-DD`
-
-Optional filters:
+Both support optional:
 
 - `bookingChannel`
 - `marketSegment`
 
-## Important accounting boundary
+## Still outside this stage
 
-This stage deliberately does not:
+This stage does not:
 
-- create a host-payable ledger account;
-- recognize accommodation revenue;
-- initiate an owner payout;
-- call a bank/payment-provider split-settlement API;
-- claim tax remittance;
-- claim fiscal receipt completion.
+- initiate owner bank/card payouts;
+- mark owner payable as paid;
+- implement payout batching;
+- reconcile bank statements;
+- submit tax remittance;
+- assume split-settlement provider contracts.
 
-Those actions require the final legal/accounting model and provider contracts.
-
-A future accounting/settlement stage may convert a finalized economic snapshot into posted,
-balanced journals and payout instructions after those rules are approved.
+Those belong to the payout/settlement execution layer.
 
 ## Automated acceptance
 
-The test fixture proves:
+The integration suite verifies:
 
-- payment-derived net collected cannot be overridden;
-- an allocation that does not balance exactly is rejected;
-- identical idempotency input replays safely;
-- changed input under the same idempotency key conflicts;
-- payment changes invalidate a stale draft;
+- payment-derived net cannot be overridden;
+- allocation must balance exactly;
+- idempotency replay is safe;
+- payment-state changes invalidate a draft;
+- finalize requires closed reservation state;
+- guest-deposit ledger must reconcile to payment net;
+- economics finalization creates a balanced multi-account journal;
 - finalized snapshots are immutable;
-- finalization emits one exact marketplace event;
-- analytics consumes the finalized event;
-- commission/owner payable totals and rates are exact.
+- reconciliation reports zero drift;
+- analytics consumes the economics event;
+- source provenance is retained;
+- arrival analytics totals/rates are exact;
+- stay-date analytics allocations sum back to the source economics.
