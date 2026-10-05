@@ -79,7 +79,8 @@ export class AnalyticsProjectionService{
       currency:string;timezone:string;check_in_at:Date;check_out_at:Date;
       check_in_local_date:string;check_out_local_date:string;stay_nights:number;
       created_at:Date;lead_time_days:string;accommodation_minor:string;total_minor:string;
-      version:number;updated_at:Date;
+      version:number;updated_at:Date;quote_snapshot:Record<string,unknown>;
+      cancelled_at:Date|null;no_show_at:Date|null;
     }>(
       `SELECT
           r.id,r.organization_id,r.property_id,r.unit_id,r.status,r.currency,p.timezone,
@@ -98,7 +99,15 @@ export class AnalyticsProjectionService{
               -(r.created_at AT TIME ZONE p.timezone)
             ))/86400.0
           )::text AS lead_time_days,
-          r.accommodation_minor::text,r.total_minor::text,r.version,r.updated_at
+          r.accommodation_minor::text,r.total_minor::text,r.version,r.updated_at,
+          r.quote_snapshot,r.cancelled_at,
+          (
+            SELECT MIN(e.created_at)
+              FROM booking_state_events e
+             WHERE e.reservation_id=r.id
+               AND e.organization_id=r.organization_id
+               AND e.to_status='no_show'
+          ) AS no_show_at
         FROM reservations r
         JOIN properties p ON p.id=r.property_id
        WHERE r.id=$1 AND r.organization_id=$2`,
@@ -108,15 +117,19 @@ export class AnalyticsProjectionService{
     if(!row)return;
     if(row.stay_nights<1)throw new Error("ANALYTICS_INVALID_STAY_NIGHTS");
 
+    const bookingChannel=this.dimensionCode(row.quote_snapshot?.bookingChannel);
+    const marketSegment=this.dimensionCode(row.quote_snapshot?.marketSegment);
+
     await client.query(
       `INSERT INTO analytics_reservation_facts(
          reservation_id,organization_id,property_id,unit_id,status,currency,property_timezone,
          check_in_at,check_out_at,check_in_local_date,check_out_local_date,stay_nights,
          booked_at,lead_time_days,accommodation_minor,gross_revenue_minor,
-         source_version,source_updated_at,projected_at
+         source_version,source_updated_at,projected_at,
+         booking_channel,market_segment,cancelled_at,no_show_at
        ) VALUES(
          $1,$2,$3,$4,$5::reservation_status,$6,$7,$8,$9,$10::date,$11::date,$12,
-         $13,$14::numeric,$15,$16,$17,$18,now()
+         $13,$14::numeric,$15,$16,$17,$18,now(),$19,$20,$21,$22
        )
        ON CONFLICT(reservation_id) DO UPDATE SET
          organization_id=EXCLUDED.organization_id,
@@ -136,15 +149,26 @@ export class AnalyticsProjectionService{
          gross_revenue_minor=EXCLUDED.gross_revenue_minor,
          source_version=EXCLUDED.source_version,
          source_updated_at=EXCLUDED.source_updated_at,
+         booking_channel=EXCLUDED.booking_channel,
+         market_segment=EXCLUDED.market_segment,
+         cancelled_at=EXCLUDED.cancelled_at,
+         no_show_at=EXCLUDED.no_show_at,
          projected_at=now()
        WHERE analytics_reservation_facts.source_version<=EXCLUDED.source_version`,
       [
         row.id,row.organization_id,row.property_id,row.unit_id,row.status,row.currency,row.timezone,
         row.check_in_at,row.check_out_at,row.check_in_local_date,row.check_out_local_date,row.stay_nights,
         row.created_at,row.lead_time_days,row.accommodation_minor,row.total_minor,
-        row.version,row.updated_at
+        row.version,row.updated_at,
+        bookingChannel,marketSegment,row.cancelled_at,row.no_show_at
       ]
     );
+  }
+
+  private dimensionCode(value:unknown){
+    if(typeof value!=="string")return "unknown";
+    const normalized=value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"_").slice(0,64);
+    return normalized||"unknown";
   }
 
   private async projectPayments(
