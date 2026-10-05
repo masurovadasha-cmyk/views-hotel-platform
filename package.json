@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "analytics:report-cycle": "node scripts/analytics-report-cycle.mjs",
-    "security:service-cutover-gate": "node scripts/internal-service-cutover-gate.mjs"
+    "security:service-cutover-gate": "node scripts/internal-service-cutover-gate.mjs",
+    "security:trusted-proxy-cidr-gate": "node scripts/trusted-proxy-cidr-gate.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
