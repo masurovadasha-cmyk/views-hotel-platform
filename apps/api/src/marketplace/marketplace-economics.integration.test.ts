@@ -37,7 +37,7 @@ beforeAll(async()=>{
     );
 
     await client.query(
-      "INSERT INTO reservations(id,organization_id,property_id,unit_id,rate_plan_id,confirmation_code,status,check_in_at,check_out_at,currency,accommodation_minor,total_minor,cancellation_policy_snapshot,quote_snapshot,created_at,updated_at,version) VALUES($1,$3,$4,$5,$6,\'VW-ECON-MAIN\',\'confirmed\',\'2028-05-10T14:00:00+05\',\'2028-05-12T12:00:00+05\',\'UZS\',1000,1000,\'{}\'::jsonb,\'{\"bookingChannel\":\"Direct Web\",\"marketSegment\":\"Leisure\"}\'::jsonb,\'2028-04-10T12:00:00+05\',now(),2),($2,$3,$4,$5,$6,\'VW-ECON-STALE\',\'confirmed\',\'2028-06-10T14:00:00+05\',\'2028-06-12T12:00:00+05\',\'UZS\',1000,1000,\'{}\'::jsonb,\'{}\'::jsonb,\'2028-05-10T12:00:00+05\',now(),2) ON CONFLICT(id) DO NOTHING",
+      "INSERT INTO reservations(id,organization_id,property_id,unit_id,rate_plan_id,confirmation_code,status,check_in_at,check_out_at,currency,accommodation_minor,total_minor,cancellation_policy_snapshot,quote_snapshot,created_at,updated_at,version) VALUES($1,$3,$4,$5,$6,\'VW-ECON-MAIN\',\'checked_out\',\'2028-05-10T14:00:00+05\',\'2028-05-12T12:00:00+05\',\'UZS\',1000,1000,\'{}\'::jsonb,\'{\"bookingChannel\":\"Direct Web\",\"marketSegment\":\"Leisure\"}\'::jsonb,\'2028-04-10T12:00:00+05\',now(),2),($2,$3,$4,$5,$6,\'VW-ECON-STALE\',\'checked_out\',\'2028-06-10T14:00:00+05\',\'2028-06-12T12:00:00+05\',\'UZS\',1000,1000,\'{}\'::jsonb,\'{}\'::jsonb,\'2028-05-10T12:00:00+05\',now(),2) ON CONFLICT(id) DO NOTHING",
       [RESERVATION,STALE_RESERVATION,ORG,PROPERTY,UNIT,RATE]
     );
 
@@ -45,6 +45,15 @@ beforeAll(async()=>{
       "INSERT INTO payment_intents(id,organization_id,reservation_id,quote_id,provider,status,amount_minor,currency,idempotency_key,captured_minor,refunded_minor,version,created_at,updated_at) VALUES($1,$2,$3,$4,\'test-provider\',\'captured\',1000,\'UZS\',\'economics-payment-main\',1000,0,2,now(),now()),($5,$2,$6,$7,\'test-provider\',\'captured\',1000,\'UZS\',\'economics-payment-stale\',1000,0,2,now(),now()) ON CONFLICT(id) DO NOTHING",
       [PAYMENT,ORG,RESERVATION,QUOTE,STALE_PAYMENT,STALE_RESERVATION,STALE_QUOTE]
     );
+
+    await ledger.postCapture(client,{
+      organizationId:ORG,paymentIntentId:PAYMENT,amountMinor:1000n,currency:"UZS",
+      idempotencyKey:"economics-ledger-capture-main"
+    });
+    await ledger.postCapture(client,{
+      organizationId:ORG,paymentIntentId:STALE_PAYMENT,amountMinor:1000n,currency:"UZS",
+      idempotencyKey:"economics-ledger-capture-stale"
+    });
   });
 });
 
@@ -135,8 +144,8 @@ describe.sequential("marketplace reservation economics",()=>{
         platformCommissionMinor:string;ownerPayableMinor:string;taxesWithheldMinor:string;
         otherDeductionsMinor:string;
       }}>(
-        "SELECT payload FROM outbox_events WHERE aggregate_type=\'reservation_economics\' AND aggregate_id=$1 AND event_type=\'marketplace.reservation_economics.v1\' LIMIT 1",
-        [draft.snapshotId]
+        "SELECT payload FROM outbox_events WHERE aggregate_type=\'reservation\' AND aggregate_id=$1 AND event_type=\'marketplace.reservation_economics.v1\' LIMIT 1",
+        [RESERVATION]
       )).rows[0]
     );
     expect(event.payload).toMatchObject({
@@ -179,13 +188,27 @@ describe.sequential("marketplace reservation economics",()=>{
     expect(rows[0].ownerPayableRate).toBe(0.8);
 
     const fact=await db.withActor(actor,async client=>
-      (await client.query<{source_version:number;source_snapshot_id:string}>(
-        "SELECT source_version,source_snapshot_id FROM analytics_marketplace_economic_facts WHERE reservation_id=$1",
+      (await client.query<{source_version:number;source_snapshot_id:string;source_kind:string}>(
+        "SELECT source_version,source_snapshot_id,source_kind FROM analytics_marketplace_economic_facts WHERE reservation_id=$1",
         [RESERVATION]
       )).rows[0]
     );
     expect(fact.source_version).toBe(1);
     expect(fact.source_snapshot_id).toBeTruthy();
+    expect(fact.source_kind).toBe("contract");
+
+    const stayRows=await analytics.propertyStayEconomics(
+      actor,PROPERTY,"2028-05-10","2028-05-11","Direct Web","Leisure"
+    );
+    expect(stayRows).toHaveLength(2);
+    expect(stayRows[0]).toMatchObject({
+      date:"2028-05-10",netCollectedMinor:"500",platformCommissionMinor:"75",
+      ownerPayableMinor:"400",taxesWithheldMinor:"15",otherDeductionsMinor:"10"
+    });
+    expect(stayRows[1]).toMatchObject({
+      date:"2028-05-11",netCollectedMinor:"500",platformCommissionMinor:"75",
+      ownerPayableMinor:"400",taxesWithheldMinor:"15",otherDeductionsMinor:"10"
+    });
   });
   it("blocks finalization when collected money changed after draft creation",async()=>{
     const draft=await economics.createDraft(actor,STALE_RESERVATION,"economics-stale-v1",{
