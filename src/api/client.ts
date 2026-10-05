@@ -48,6 +48,8 @@ export const api={
   operationsSummary:(propertyId="utower")=>request<{propertyId:string;lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}>(`/api/operations-summary?propertyId=${encodeURIComponent(propertyId)}`),
   operationsObservability:(propertyId="utower")=>
     request<import("./types").LiveOperationsObservability>(`/api/operations-observability?propertyId=${encodeURIComponent(propertyId)}`),
+  processOutbox:(limit=25)=>request<{processed:number;retried:number;deadLettered:number;remaining:number;failures:Array<{id:string;error:string;attempt:number}>}>("/api/outbox-process",{method:"POST",body:JSON.stringify({limit})}),
+  retryOutbox:(id:string)=>request<{id:string;status:string}>("/api/outbox-retry",{method:"POST",body:JSON.stringify({id})}),
   operationsExceptions:(propertyId="utower")=>request<{propertyId:string;lostFound:import("./types").LiveLostFoundItem[];damage:import("./types").LiveDamageReport[];lowStock:import("./types").LiveInventoryItem[]}>(`/api/operations-exceptions?propertyId=${encodeURIComponent(propertyId)}`),
   handovers:(propertyId="utower")=>request<{propertyId:string;items:import("./types").LiveShiftHandover[]}>(`/api/shift-handover?propertyId=${encodeURIComponent(propertyId)}`),
   apartmentTimeline:(unitId:string)=>request<{unit:{id:string;propertyId:string;code:string;name:string;status:string};items:import("./types").LiveTimelineEvent[]}>(`/api/apartment-timeline?unitId=${encodeURIComponent(unitId)}`),
