@@ -1,5 +1,6 @@
 import {resolveSession} from "./_auth";
 import {CoreBridgeError,coreApiConfig,resolveCoreActor,resolveCoreProperty} from "./_core-bridge";
+import {createCoreServiceToken} from "./_core-service-token";
 import {json,requestId,type Env} from "./_shared";
 
 export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
@@ -29,13 +30,29 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
 
     const headers=new Headers({
       "Accept":"application/json",
-      "X-Views-Internal-Key":config.internalKey,
       "X-Views-Service-Id":"pages-bff",
       "X-Organization-Id":actor.organizationId,
       "X-User-Id":actor.userId,
       "X-Membership-Id":actor.membershipId,
       "X-Request-Id":rid
     });
+
+    if(config.signingPrivateKey&&config.signingKid){
+      try{
+        headers.set("X-Views-Service-Token",await createCoreServiceToken({
+          serviceId:"pages-bff",
+          kid:config.signingKid,
+          privateKeyPem:config.signingPrivateKey,
+          method:"GET",
+          path:coreUrl.pathname,
+          requestId:rid
+        }));
+      }catch{
+        throw new CoreBridgeError("CORE_SIGNING_FAILED");
+      }
+    }else if(config.internalKey){
+      headers.set("X-Views-Internal-Key",config.internalKey);
+    }
     const conditional=request.headers.get("if-none-match");
     if(conditional)headers.set("If-None-Match",conditional);
 

@@ -100,6 +100,36 @@ describe("internal service audit interceptor",()=>{
     );
   });
 
+  it("rejects a replay before controller execution",async()=>{
+    vi.stubEnv("DATABASE_URL","postgresql://example.invalid/views");
+    vi.stubEnv("VIEWS_INTERNAL_API_KEY",KEY);
+
+    const audit={
+      begin:vi.fn(async()=>{throw new Error("INTERNAL_SERVICE_TOKEN_REPLAY")}),
+      complete:vi.fn()
+    };
+    const rejections={record:vi.fn(async()=>1)};
+    const interceptor=new InternalServiceAuditInterceptor(
+      audit as any,rejections as any
+    );
+    const next={handle:vi.fn(()=>of({ok:true}))};
+
+    await expect(interceptor.intercept(
+      context({
+        "x-views-internal-key":KEY,
+        "x-views-service-id":"pages-bff",
+        "x-request-id":"replay-unit-request"
+      }),
+      next as any
+    )).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(next.handle).not.toHaveBeenCalled();
+    expect(audit.complete).not.toHaveBeenCalled();
+    expect(rejections.record).toHaveBeenCalledWith(
+      expect.anything(),"service_token_replay"
+    );
+  });
+
   it("rejects a valid key without service identity before controller execution",async()=>{
     vi.stubEnv("DATABASE_URL","postgresql://example.invalid/views");
     vi.stubEnv("VIEWS_INTERNAL_API_KEY",KEY);

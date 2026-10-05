@@ -31,8 +31,14 @@ export class InternalServiceAuditInterceptor implements NestInterceptor{
     const request=http.getRequest<{
       headers:IncomingHttpHeaders;
       method:string;
+      originalUrl?:string;
+      url?:string;
     }>();
     const response=http.getResponse<{statusCode:number}>();
+    const method=String(request.method||"GET").toUpperCase().slice(0,12);
+    const requestId=normalizedRequestId(
+      singleInternalHeader(request.headers["x-request-id"])
+    );
 
     let identity;
     try{
@@ -41,7 +47,13 @@ export class InternalServiceAuditInterceptor implements NestInterceptor{
         request.headers,
         {
           legacyKeys:config.internalApiKeys,
-          serviceKeys:config.internalServiceKeys
+          serviceKeys:config.internalServiceKeys,
+          servicePublicKeys:config.internalServicePublicKeys
+        },
+        {
+          method,
+          path:requestPath(request),
+          requestId
         }
       );
     }catch(error){
@@ -56,24 +68,31 @@ export class InternalServiceAuditInterceptor implements NestInterceptor{
     if(!identity)return next.handle();
 
     const actor=actorContext(request.headers);
-    const requestId=normalizedRequestId(
-      singleInternalHeader(request.headers["x-request-id"])
-    );
     const endpoint=(
       context.getClass().name+"."+context.getHandler().name
     ).slice(0,240);
-    const method=String(request.method||"GET").toUpperCase().slice(0,12);
 
-    const auditId=await this.audit.begin({
-      organizationId:actor.organizationId,
-      actorUserId:actor.userId,
-      actorMembershipId:actor.membershipId,
-      serviceId:identity.serviceId,
-      keyFingerprint:identity.keyFingerprint,
-      requestId,
-      httpMethod:method,
-      routePath:endpoint
-    });
+    let auditId:string;
+    try{
+      auditId=await this.audit.begin({
+        organizationId:actor.organizationId,
+        actorUserId:actor.userId,
+        actorMembershipId:actor.membershipId,
+        serviceId:identity.serviceId,
+        keyFingerprint:identity.keyFingerprint,
+        requestId,
+        httpMethod:method,
+        routePath:endpoint,
+        authScheme:identity.authScheme,
+        tokenJti:identity.tokenJti
+      });
+    }catch(error){
+      if(error instanceof Error&&error.message==="INTERNAL_SERVICE_TOKEN_REPLAY"){
+        await this.rejections.record(context,"service_token_replay").catch(()=>undefined);
+        throw new UnauthorizedException("internal service token replay rejected");
+      }
+      throw error;
+    }
 
     return next.handle().pipe(
       mergeMap(value=>from(
@@ -128,6 +147,15 @@ function validUuid(value:string|null){
 function normalizedRequestId(value:string|null){
   if(value&&value.length<=160)return value;
   return "core:"+randomUUID();
+}
+
+function requestPath(request:{originalUrl?:string;url?:string}){
+  const raw=request.originalUrl||request.url||"/";
+  try{
+    return new URL(raw,"http://views.internal").pathname;
+  }catch{
+    return "/";
+  }
 }
 
 function normalizeStatus(value:number|undefined,fallback:number){

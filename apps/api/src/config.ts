@@ -1,4 +1,11 @@
+import {createHash,createPublicKey} from "node:crypto";
+
 export type TrustedProxyMode="direct"|"cloudflare";
+
+export type ConfiguredInternalServicePublicKey={
+  kid:string;
+  publicKeyPem:string;
+};
 
 export type ApiConfig={
   port:number;
@@ -9,10 +16,12 @@ export type ApiConfig={
   internalApiKey:string;
   internalApiKeys:string[];
   internalServiceKeys:Record<string,string[]>;
+  internalServicePublicKeys:Record<string,ConfiguredInternalServicePublicKey[]>;
 };
 
 const SERVICE_ID=/^[a-z0-9][a-z0-9._:-]{1,63}$/;
 const SECRET_REF=/^[A-Z][A-Z0-9_]{2,127}$/;
+const KID=/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
 
 export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
   const databaseUrl=env.DATABASE_URL?.trim();
@@ -75,9 +84,17 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
     ?resolveInternalServiceKeyRefs(serviceKeyRefs,env)
     :rawServiceKeys;
 
+  const servicePublicKeyRefs=parseInternalServicePublicKeyRefs(
+    env.VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON
+  );
+  const internalServicePublicKeys=resolveInternalServicePublicKeyRefs(
+    servicePublicKeyRefs,env
+  );
+
   return {
     port,databaseUrl,nodeEnv,trustedProxyMode,
-    guestAuthRateLimitSecret,internalApiKey,internalApiKeys,internalServiceKeys
+    guestAuthRateLimitSecret,internalApiKey,internalApiKeys,
+    internalServiceKeys,internalServicePublicKeys
   };
 }
 
@@ -159,6 +176,101 @@ function resolveInternalServiceKeyRefs(
   return result;
 }
 
+function parseInternalServicePublicKeyRefs(raw:string|undefined){
+  const parsed=parseServiceMap(
+    raw,
+    "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON"
+  );
+  const result:Record<string,{kid:string;ref:string}[]>={};
+  const refOwners=new Map<string,string>();
+
+  for(const [serviceId,value] of Object.entries(parsed)){
+    if(!Array.isArray(value)||value.length<1||value.length>2){
+      throw new Error(
+        "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON service ring must contain 1 or 2 keys"
+      );
+    }
+
+    const entries:{kid:string;ref:string}[]=[];
+    const kids=new Set<string>();
+    for(const rawEntry of value){
+      if(!rawEntry||typeof rawEntry!=="object"||Array.isArray(rawEntry)){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON entries must be objects"
+        );
+      }
+      const entry=rawEntry as Record<string,unknown>;
+      const kid=typeof entry.kid==="string"?entry.kid.trim():"";
+      const ref=typeof entry.ref==="string"?entry.ref.trim():"";
+      if(!KID.test(kid)||!SECRET_REF.test(ref)){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON contains invalid kid or reference"
+        );
+      }
+      if(kids.has(kid)){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON kid must be unique per service"
+        );
+      }
+      kids.add(kid);
+
+      const owner=refOwners.get(ref);
+      if(owner&&owner!==serviceId){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON reference cannot be shared across services"
+        );
+      }
+      refOwners.set(ref,serviceId);
+      entries.push({kid,ref});
+    }
+    result[serviceId]=entries;
+  }
+
+  return result;
+}
+
+function resolveInternalServicePublicKeyRefs(
+  refs:Record<string,{kid:string;ref:string}[]>,
+  env:NodeJS.ProcessEnv
+){
+  const result:Record<string,ConfiguredInternalServicePublicKey[]>={};
+  const fingerprints=new Map<string,string>();
+
+  for(const [serviceId,entries] of Object.entries(refs)){
+    result[serviceId]=entries.map(({kid,ref})=>{
+      const pem=env[ref]?.trim();
+      if(!pem){
+        throw new Error("Referenced internal service public key "+ref+" is required");
+      }
+
+      let key:ReturnType<typeof createPublicKey>;
+      try{
+        key=createPublicKey(pem);
+      }catch{
+        throw new Error("Referenced internal service public key "+ref+" is invalid");
+      }
+      if(key.asymmetricKeyType!=="ed25519"){
+        throw new Error("Referenced internal service public key "+ref+" must be Ed25519");
+      }
+
+      const fingerprint=createHash("sha256")
+        .update(key.export({format:"der",type:"spki"}))
+        .digest("hex");
+      const owner=fingerprints.get(fingerprint);
+      if(owner&&owner!==serviceId){
+        throw new Error(
+          "Resolved internal service public key cannot be shared across services"
+        );
+      }
+      fingerprints.set(fingerprint,serviceId);
+
+      return {kid,publicKeyPem:pem};
+    });
+  }
+
+  return result;
+}
+
 function parseInternalServiceKeys(raw:string|undefined){
   const parsed=parseServiceMap(
     raw,
@@ -199,7 +311,10 @@ function parseInternalServiceKeys(raw:string|undefined){
 
 function parseServiceMap(
   raw:string|undefined,
-  name:"VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON"|"VIEWS_INTERNAL_SERVICE_KEYS_JSON"
+  name:
+    |"VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON"
+    |"VIEWS_INTERNAL_SERVICE_KEYS_JSON"
+    |"VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON"
 ){
   const value=raw?.trim();
   if(!value)return {} as Record<string,unknown>;

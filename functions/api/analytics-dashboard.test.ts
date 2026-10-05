@@ -127,4 +127,80 @@ describe("analytics dashboard BFF",()=>{
     );
     expect(forwarded).not.toContain("propertyId=utower");
   });
+
+  it("prefers a signed service token and does not send the legacy API key",async()=>{
+    const fetchMock=vi.fn(async(_input:RequestInfo|URL,init?:RequestInit)=>{
+      const headers=new Headers(init?.headers);
+      const token=headers.get("x-views-service-token");
+      expect(token).toBeTruthy();
+      expect(headers.get("x-views-internal-key")).toBeNull();
+      expect(headers.get("x-views-service-id")).toBe("pages-bff");
+
+      const parts=String(token).split(".");
+      expect(parts).toHaveLength(3);
+      const jwtHeader=decodeJwtJson(parts[0]);
+      const claims=decodeJwtJson(parts[1]);
+      expect(jwtHeader).toMatchObject({
+        alg:"EdDSA",
+        typ:"views-service+jwt",
+        kid:"pages-2026-10"
+      });
+      expect(claims).toMatchObject({
+        iss:"pages-bff",
+        sub:"pages-bff",
+        aud:"views-core",
+        htm:"GET",
+        htp:"/v1/analytics/dashboard/summary"
+      });
+
+      return Response.json({
+        schemaVersion:2,
+        scope:{organizationId:"00000000-0000-4000-8000-000000000001",propertyId:null},
+        period:{from:"2036-01-01",to:"2036-01-31"},
+        kpisByCurrency:[]
+      });
+    });
+    vi.stubGlobal("fetch",fetchMock);
+
+    const request=new Request(
+      "https://staff.views.example/api/analytics-dashboard?from=2036-01-01&to=2036-01-31",
+      {headers:{cookie:"views_session=session-1"}}
+    );
+    const signedEnv:Env={
+      DB:db(),
+      VIEWS_ENV:"staging",
+      VIEWS_CORE_API_URL:"https://core.views.example",
+      VIEWS_CORE_SIGNING_PRIVATE_KEY:await signingPrivatePem(),
+      VIEWS_CORE_SIGNING_KID:"pages-2026-10"
+    };
+
+    const response=await onRequestGet({request,env:signedEnv});
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
 });
+
+
+async function signingPrivatePem(){
+  const pair=await crypto.subtle.generateKey(
+    {name:"Ed25519"},
+    true,
+    ["sign","verify"]
+  ) as CryptoKeyPair;
+  const pkcs8=await crypto.subtle.exportKey("pkcs8",pair.privateKey);
+  const bytes=new Uint8Array(pkcs8);
+  let binary="";
+  for(const byte of bytes)binary+=String.fromCharCode(byte);
+  const base64=btoa(binary);
+  const lines=base64.match(/.{1,64}/g)?.join("\n")||base64;
+  return "-----BEGIN PRIVATE KEY-----\n"+lines+"\n-----END PRIVATE KEY-----";
+}
+
+function decodeJwtJson(segment:string){
+  const padded=segment.replace(/-/g,"+").replace(/_/g,"/")+
+    "=".repeat((4-segment.length%4)%4);
+  const binary=atob(padded);
+  const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes)) as Record<string,unknown>;
+}

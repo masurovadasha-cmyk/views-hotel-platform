@@ -46,6 +46,15 @@ describe.sequential("Stage 7 internal auth rejection telemetry",()=>{
     expect(Number(visible)).toBe(0);
   });
 
+  it("accepts fixed signed-token rejection reasons from the Stage 7.7 schema",async()=>{
+    await expect(service.record(context(),"invalid_service_token"))
+      .resolves.toBeGreaterThanOrEqual(1);
+    await expect(service.record(context(),"expired_service_token"))
+      .resolves.toBeGreaterThanOrEqual(1);
+    await expect(service.record(context(),"service_token_replay"))
+      .resolves.toBeGreaterThanOrEqual(1);
+  });
+
   it("fails closed for non-platform roles reading rejection telemetry",async()=>{
     await expect(service.list(MANAGER,24,100))
       .rejects.toThrow("SECURITY_REJECTION_ROLE_FORBIDDEN");

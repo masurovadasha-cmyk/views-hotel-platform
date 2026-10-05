@@ -30,7 +30,9 @@ describe.sequential("Stage 7 trusted-service request audit",()=>{
       keyFingerprint:"a".repeat(32),
       requestId:"stage7-audit-success",
       httpMethod:"GET",
-      routePath:"AnalyticsDashboardController.summary"
+      routePath:"AnalyticsDashboardController.summary",
+      authScheme:"internal_key",
+      tokenJti:null
     });
 
     expect(auditId).toMatch(/^[0-9a-f-]{36}$/);
@@ -66,7 +68,9 @@ describe.sequential("Stage 7 trusted-service request audit",()=>{
       keyFingerprint:"b".repeat(32),
       requestId:"stage7-audit-failure",
       httpMethod:"POST",
-      routePath:"AnalyticsInternalJobsController.reportCycle"
+      routePath:"AnalyticsInternalJobsController.reportCycle",
+      authScheme:"internal_key",
+      tokenJti:null
     });
     await audit.complete(failedId,500,"REPORT_WORKER_FAILURE");
 
@@ -78,6 +82,26 @@ describe.sequential("Stage 7 trusted-service request audit",()=>{
     expect(row.statusCode).toBe(500);
     expect(row.errorCode).toBe("REPORT_WORKER_FAILURE");
     expect(JSON.stringify(row)).not.toContain("internal-api-key");
+  });
+
+  it("rejects a replayed signed-token jti before a second request can start",async()=>{
+    const tokenJti="70000000-0000-4000-8000-000000000099";
+    const input={
+      organizationId:ORG,
+      actorUserId:MANAGER.userId,
+      actorMembershipId:MANAGER.membershipId,
+      serviceId:"pages-bff",
+      keyFingerprint:"c".repeat(32),
+      requestId:"stage7-signed-token-first",
+      httpMethod:"GET",
+      routePath:"AnalyticsDashboardController.summary",
+      authScheme:"signed_token" as const,
+      tokenJti
+    };
+
+    await expect(audit.begin(input)).resolves.toMatch(/^[0-9a-f-]{36}$/);
+    await expect(audit.begin({...input,requestId:"stage7-signed-token-replay"}))
+      .rejects.toThrow("INTERNAL_SERVICE_TOKEN_REPLAY");
   });
 
   it("does not allow a scoped host to read the security audit",async()=>{

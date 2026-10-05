@@ -95,7 +95,32 @@ describe("Core identity bridge",()=>{
       VIEWS_CORE_API_KEY:"x".repeat(32)
     })).toEqual({
       baseUrl:"https://core.views.example",
-      internalKey:"x".repeat(32)
+      internalKey:"x".repeat(32),
+      signingPrivateKey:null,
+      signingKid:null
     });
   });
+
+  it("accepts a complete signing credential pair without a legacy API key",()=>{
+    const config=coreApiConfig({
+      VIEWS_ENV:"production",
+      VIEWS_CORE_API_URL:"https://core.views.example",
+      VIEWS_CORE_SIGNING_PRIVATE_KEY:"-----BEGIN PRIVATE KEY-----\nfixture\n-----END PRIVATE KEY-----",
+      VIEWS_CORE_SIGNING_KID:"pages-2026-10"
+    });
+
+    expect(config).toEqual({
+      baseUrl:"https://core.views.example",
+      internalKey:null,
+      signingPrivateKey:"-----BEGIN PRIVATE KEY-----\nfixture\n-----END PRIVATE KEY-----",
+      signingKid:"pages-2026-10"
+    });
+
+    expect(()=>coreApiConfig({
+      VIEWS_ENV:"production",
+      VIEWS_CORE_API_URL:"https://core.views.example",
+      VIEWS_CORE_SIGNING_PRIVATE_KEY:"private-only"
+    })).toThrow("CORE_SIGNING_CONFIG_INCOMPLETE");
+  });
+
 });

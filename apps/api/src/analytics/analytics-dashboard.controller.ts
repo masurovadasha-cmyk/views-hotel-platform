@@ -19,6 +19,7 @@ export class AnalyticsDashboardController{
     @Query("propertyId") propertyId:string|undefined,
     @Headers("if-none-match") ifNoneMatch:string|undefined,
     @Headers("x-views-internal-key") internalApiKey:string|undefined,
+    @Headers("x-views-service-token") serviceToken:string|undefined,
     @Headers("x-views-service-id") serviceId:string|undefined,
     @Headers("x-organization-id") organizationId:string|undefined,
     @Headers("x-user-id") userId:string|undefined,
@@ -31,11 +32,18 @@ export class AnalyticsDashboardController{
       const identity=trustedInternalServiceIdentity(
         {
           "x-views-internal-key":internalApiKey,
+          "x-views-service-token":serviceToken,
           "x-views-service-id":serviceId
         },
         {
           legacyKeys:config.internalApiKeys,
-          serviceKeys:config.internalServiceKeys
+          serviceKeys:config.internalServiceKeys,
+          servicePublicKeys:config.internalServicePublicKeys
+        },
+        {
+          method:"GET",
+          path:"/v1/analytics/dashboard/summary",
+          requestId:requestId||""
         }
       );
       if(!identity)throw new Error("INTERNAL_API_UNAUTHORIZED");
@@ -91,7 +99,8 @@ function mapDashboardError(error:unknown){
   if(
     message==="INTERNAL_API_UNAUTHORIZED"||
     message==="INTERNAL_SERVICE_ID_REQUIRED"||
-    message==="INTERNAL_SERVICE_NOT_CONFIGURED"
+    message==="INTERNAL_SERVICE_NOT_CONFIGURED"||
+    message.startsWith("INTERNAL_SERVICE_TOKEN_")
   ){
     return new UnauthorizedException("internal API authentication required");
   }

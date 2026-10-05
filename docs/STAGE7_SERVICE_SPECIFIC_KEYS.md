@@ -84,16 +84,20 @@ When the service-specific map exists, the legacy ring is not used for trusted-se
 
 ## Pages BFF
 
-Pages continues sending:
+Stage 7.5/7.6 uses:
 
-- `X-Views-Service-Id: pages-bff`
-- its server-side `VIEWS_CORE_API_KEY`
+- `X-Views-Service-Id: pages-bff`;
+- the server-side `VIEWS_CORE_API_KEY`.
 
-That sender key must exist in Core under:
+Stage 7.7 adds the preferred migration path:
 
-- `pages-bff`
+- Pages/BFF mints a short-lived Ed25519 `X-Views-Service-Token`;
+- Core holds only the corresponding public key;
+- the token is bound to method, path and request ID;
+- when a token header is present Core never downgrades to a supplied legacy key.
 
-It must not be reused by `analytics-cron` or another service.
+The Stage 7.6 symmetric key remains a migration/rollback fallback until all trusted services have
+migrated. See `docs/STAGE7_SIGNED_SERVICE_TOKENS.md`.
 
 ## Analytics Cron
 
@@ -160,7 +164,8 @@ Tests verify:
 ## Next work
 
 - managed secret-store references (implemented in Stage 7.6);
-- short-lived signed service identity tokens;
+- short-lived signed service identity tokens (implemented as the Stage 7.7 candidate);
+- migrate remaining trusted senders and retire long-lived symmetric production credentials;
 - key age / rotation SLO alerts;
 - network ingress allowlists;
 - mTLS when deployment infrastructure supports it.
