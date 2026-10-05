@@ -10,7 +10,6 @@ CREATE TABLE guest_access_challenges (
   delivery_status text NOT NULL DEFAULT 'pending'
     CHECK (delivery_status IN ('pending','delivered','failed')),
   provider_message_id text,
-  delivery_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   last_error text,
   expires_at timestamptz NOT NULL,
   consumed_at timestamptz,
