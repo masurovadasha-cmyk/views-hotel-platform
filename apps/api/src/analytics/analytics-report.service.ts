@@ -22,6 +22,7 @@ export class AnalyticsReportService{
     idempotencyKey:string
   ){
     validateRequest(input,idempotencyKey);
+    const normalizedIdempotencyKey=idempotencyKey.trim();
     const normalized={
       reportType:input.reportType,
       format:input.format,
@@ -59,7 +60,7 @@ export class AnalyticsReportService{
          RETURNING id`,
         [
           actor.organizationId,normalized.propertyId,normalized.reportType,normalized.format,
-          normalized.from,normalized.to,idempotencyKey,requestHash,
+          normalized.from,normalized.to,normalizedIdempotencyKey,requestHash,
           actor.userId,actor.membershipId
         ]
       );
@@ -74,7 +75,7 @@ export class AnalyticsReportService{
           WHERE organization_id=$1
             AND created_by_membership_id=$2
             AND idempotency_key=$3`,
-        [actor.organizationId,actor.membershipId,idempotencyKey]
+        [actor.organizationId,actor.membershipId,normalizedIdempotencyKey]
       )).rows[0];
 
       if(!existing)throw new Error("IDEMPOTENCY_STATE_MISSING");
@@ -97,9 +98,10 @@ export class AnalyticsReportService{
       const row=(await client.query<{
         job_status:string;format:string;content_type:string;filename:string;
         byte_size:number;checksum_sha256:string;content_bytes:Buffer;created_at:Date;
+        artifact_expires_at:Date|null;
       }>(
         `SELECT
-           j.status AS job_status,
+           j.status AS job_status,j.artifact_expires_at,
            a.format,a.content_type,a.filename,a.byte_size,
            a.checksum_sha256,a.content_bytes,a.created_at
          FROM analytics_report_jobs j
@@ -112,6 +114,10 @@ export class AnalyticsReportService{
 
       if(!row)throw new Error("REPORT_JOB_NOT_FOUND");
       if(row.job_status!=="completed")throw new Error("REPORT_NOT_READY");
+      if(
+        !row.artifact_expires_at||
+        row.artifact_expires_at.getTime()<=Date.now()
+      )throw new Error("REPORT_EXPIRED");
       if(!row.content_bytes)throw new Error("REPORT_ARTIFACT_MISSING");
 
       return {
@@ -121,7 +127,8 @@ export class AnalyticsReportService{
         byteSize:Number(row.byte_size),
         checksumSha256:row.checksum_sha256,
         content:row.content_bytes,
-        createdAt:row.created_at.toISOString()
+        createdAt:row.created_at.toISOString(),
+        expiresAt:row.artifact_expires_at.toISOString()
       };
     });
   }
@@ -137,6 +144,7 @@ export class AnalyticsReportService{
       status:string;attempt_count:number;max_attempts:number;next_attempt_at:Date;
       last_error_code:string|null;source_fingerprint:string|null;
       created_at:Date;started_at:Date|null;completed_at:Date|null;
+      artifact_expires_at:Date|null;
       artifact_id:string|null;filename:string|null;content_type:string|null;
       byte_size:number|null;checksum_sha256:string|null;
     }>(
@@ -144,7 +152,7 @@ export class AnalyticsReportService{
          j.id,j.organization_id,j.property_id,j.report_type,j.format,
          j.from_date::text,j.to_date::text,j.status,j.attempt_count,j.max_attempts,
          j.next_attempt_at,j.last_error_code,j.source_fingerprint,
-         j.created_at,j.started_at,j.completed_at,
+         j.created_at,j.started_at,j.completed_at,j.artifact_expires_at,
          a.id AS artifact_id,a.filename,a.content_type,a.byte_size,a.checksum_sha256
        FROM analytics_report_jobs j
        LEFT JOIN analytics_report_artifacts a
@@ -173,6 +181,7 @@ export class AnalyticsReportService{
       createdAt:row.created_at.toISOString(),
       startedAt:row.started_at?.toISOString()??null,
       completedAt:row.completed_at?.toISOString()??null,
+      artifactExpiresAt:row.artifact_expires_at?.toISOString()??null,
       artifact:row.artifact_id?{
         filename:row.filename,
         contentType:row.content_type,
