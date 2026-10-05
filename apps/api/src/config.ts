@@ -42,9 +42,6 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
   if(configuredInternalKey&&configuredInternalKey.length<32){
     throw new Error("VIEWS_INTERNAL_API_KEY must be at least 32 characters");
   }
-  if(nodeEnv==="production"&&!configuredInternalKey){
-    throw new Error("VIEWS_INTERNAL_API_KEY is required in production");
-  }
   const internalApiKey=configuredInternalKey
     ??"views-development-only-internal-api-key-not-for-production";
 
