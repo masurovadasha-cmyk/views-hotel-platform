@@ -65,9 +65,17 @@ It must never be exposed through:
 
 ## Production config
 
-`VIEWS_INTERNAL_API_KEY` remains mandatory in production and must be at least 32 characters.
+Stage 7.1 originally used one global `VIEWS_INTERNAL_API_KEY`. The runtime trust boundary has since
+evolved without changing the actor-header contract:
 
-The Pages BFF uses the matching server-side `VIEWS_CORE_API_KEY`.
+- Stage 7.5 binds `X-Views-Service-Id` to a service-specific key ring;
+- Stage 7.6 requires production service rings to be resolved from
+  `VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON`;
+- the referenced environment variables are injected by the deployment secret manager;
+- the legacy global key ring remains development/test migration compatibility only.
+
+The Pages BFF continues using its own server-side `VIEWS_CORE_API_KEY`, which must match the
+current secret resolved for the `pages-bff` service identity.
 
 ## Defense in depth
 
@@ -129,8 +137,8 @@ Tests verify:
 
 Before exposing the Core API on a network reachable outside the trusted BFF/service layer:
 
-- configure `VIEWS_INTERNAL_API_KEY`;
-- ensure all server-side actor-context callers send the matching key;
+- configure `VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON` and inject every referenced secret;
+- ensure every server-side actor-context caller sends its own `X-Views-Service-Id` and matching key;
 - do not permit browser code to call Core staff endpoints directly;
 - keep provider webhook routes reachable only as required by providers;
 - prefer network-level restrictions in addition to this application-layer boundary.

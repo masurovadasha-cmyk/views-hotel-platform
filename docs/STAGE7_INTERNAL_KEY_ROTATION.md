@@ -147,11 +147,18 @@ No browser changes are required for key rotation.
 
 ## Production startup
 
-Production still fails closed when the current `VIEWS_INTERNAL_API_KEY` is absent.
+The original Stage 7.2 production contract required `VIEWS_INTERNAL_API_KEY`.
+That contract is now superseded for production by Stage 7.5/7.6:
 
-A previous key alone is not sufficient to start production.
+- production requires `VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON`;
+- each trusted service resolves one current reference and optionally one previous reference;
+- every referenced secret must exist and be at least 32 characters;
+- the same reference or resolved raw key cannot be shared across different service IDs;
+- the legacy global current/previous variables remain development/test migration compatibility only.
 
-This prevents an old credential from silently becoming the permanent primary credential.
+A previous service key must never silently become the permanent primary credential. Keep the
+two-key window temporary and remove the previous reference after audit confirms old-key traffic
+has stopped.
 
 ## Automated acceptance
 
@@ -179,14 +186,20 @@ Never reuse the same internal key across environments.
 
 Keep the rotation window as short as operationally practical.
 
-## Stage 7.5 production evolution
+## Stage 7.5 / 7.6 production evolution
 
 Stage 7.5 replaces the production-wide shared ring with service-specific key rings.
+Stage 7.6 keeps that runtime model and moves production raw secrets behind managed environment
+references.
 
 The current/previous mechanism documented above remains the migration model, but rotation is now
-performed independently inside each service ring.
+performed independently inside each service ring by changing secret references rather than storing
+the raw service-key ring in one JSON value.
 
-See `docs/STAGE7_SERVICE_SPECIFIC_KEYS.md`.
+See:
+
+- `docs/STAGE7_SERVICE_SPECIFIC_KEYS.md`;
+- `docs/STAGE7_MANAGED_SECRET_REFERENCES.md`.
 
 ## Next work
 

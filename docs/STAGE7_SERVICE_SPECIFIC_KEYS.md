@@ -13,40 +13,34 @@ Stage 7.5 binds each service ID to its own accepted key ring.
 
 ## Production configuration
 
-Required in production:
+Stage 7.5 introduced the service-specific ring model using
+`VIEWS_INTERNAL_SERVICE_KEYS_JSON`.
 
-`VIEWS_INTERNAL_SERVICE_KEYS_JSON`
+Stage 7.6 supersedes the production storage format while preserving the same runtime model:
+production now requires `VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON`, whose values are names of
+individually injected secret environment variables.
 
 Example:
 
 ```json
 {
   "pages-bff": [
-    "<pages-current-key>"
+    "VIEWS_INTERNAL_PAGES_BFF_KEY_CURRENT"
   ],
   "analytics-cron": [
-    "<cron-current-key>"
+    "VIEWS_INTERNAL_ANALYTICS_CRON_KEY_CURRENT"
   ]
 }
 ```
 
-During rotation one service may temporarily accept two keys:
+During rotation one service may temporarily resolve two references:
+`[current, previous]`.
 
-```json
-{
-  "pages-bff": [
-    "<pages-new-key>",
-    "<pages-old-key>"
-  ],
-  "analytics-cron": [
-    "<cron-current-key>"
-  ]
-}
-```
+Each resolved key must be at least 32 characters.
+A service ring contains one or two resolved keys.
 
-Each key must be at least 32 characters.
-
-A service ring contains one or two keys.
+`VIEWS_INTERNAL_SERVICE_KEYS_JSON` remains only a non-production migration fallback.
+See `docs/STAGE7_MANAGED_SECRET_REFERENCES.md`.
 
 ## Key uniqueness
 
@@ -84,9 +78,9 @@ They are used only when no service-specific map exists.
 
 This preserves development/test and staged migration compatibility.
 
-Production now requires a non-empty service-specific map.
+Production requires a non-empty managed service-reference map.
 
-When the map exists, the legacy ring is not used for trusted-service verification.
+When the service-specific map exists, the legacy ring is not used for trusted-service verification.
 
 ## Pages BFF
 
@@ -165,7 +159,7 @@ Tests verify:
 
 ## Next work
 
-- move individual service secrets to managed secret-store references;
+- managed secret-store references (implemented in Stage 7.6);
 - short-lived signed service identity tokens;
 - key age / rotation SLO alerts;
 - network ingress allowlists;
