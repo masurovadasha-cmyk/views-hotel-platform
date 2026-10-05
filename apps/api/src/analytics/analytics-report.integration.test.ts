@@ -126,6 +126,9 @@ describe.sequential("Stage 6 durable report exports",()=>{
     expect(job.sourceFingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(job.artifact?.contentType).toBe("application/json");
     expect(job.artifact?.checksumSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(job.artifactExpiresAt).toBeTruthy();
+    expect(new Date(job.artifactExpiresAt!).getTime())
+      .toBeGreaterThan(new Date(job.completedAt!).getTime());
 
     const artifact=await reports.artifact(MANAGER,jsonJobId);
     expect(artifact.byteSize).toBe(artifact.content.length);
@@ -144,6 +147,41 @@ describe.sequential("Stage 6 durable report exports",()=>{
       revparMinor:"800.00"
     });
     expect(parsed.freshness.sourceFingerprint).toBe(job.sourceFingerprint);
+  });
+
+  it("records a minimal download audit without report content",async()=>{
+    const artifact=await reports.artifact(MANAGER,jsonJobId);
+    await reports.recordDownload(MANAGER,jsonJobId,artifact);
+
+    const audit=await db.withActor(MANAGER,async client=>{
+      return (await client.query<{
+        action:string;entity_type:string;entity_id:string;
+        request_id:string|null;after_state:Record<string,unknown>;
+      }>(
+        `SELECT action,entity_type,entity_id,request_id,after_state
+           FROM audit_log
+          WHERE organization_id=$1
+            AND entity_type='analytics_report_job'
+            AND entity_id=$2
+            AND action='analytics.report.download'
+          ORDER BY created_at DESC
+          LIMIT 1`,
+        [ORG,jsonJobId]
+      )).rows[0];
+    });
+
+    expect(audit.action).toBe("analytics.report.download");
+    expect(audit.entity_type).toBe("analytics_report_job");
+    expect(audit.entity_id).toBe(jsonJobId);
+    expect(audit.request_id).toBe(MANAGER.requestId);
+    expect(audit.after_state).toEqual({
+      format:"json",
+      byteSize:artifact.byteSize,
+      checksumSha256:artifact.checksumSha256
+    });
+    expect(JSON.stringify(audit.after_state)).not.toContain(
+      artifact.content.toString("utf8")
+    );
   });
 
   it("creates and renders a CSV artifact from the same canonical dashboard model",async()=>{
