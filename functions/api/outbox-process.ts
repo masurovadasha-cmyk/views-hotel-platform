@@ -19,7 +19,7 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
     "SELECT id,organization_id,event_type,aggregate_type,aggregate_id,payload,attempt_count ",
     "FROM outbox_events ",
     "WHERE organization_id=? AND processed_at IS NULL AND dead_letter_at IS NULL ",
-    "AND datetime(available_at)<=CURRENT_TIMESTAMP ",
+    "AND datetime(COALESCE(available_at,created_at))<=CURRENT_TIMESTAMP ",
     "ORDER BY created_at ASC LIMIT ?"
   ].join("")).bind(session.organizationId,limit).all();
 
