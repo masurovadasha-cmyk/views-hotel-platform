@@ -1,6 +1,6 @@
 -- Stage 4 release/readiness hardening: outbox retry, dead-letter and delivery audit.
 ALTER TABLE outbox_events ADD COLUMN attempt_count INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE outbox_events ADD COLUMN available_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE outbox_events ADD COLUMN available_at TEXT;
 ALTER TABLE outbox_events ADD COLUMN last_attempt_at TEXT;
 ALTER TABLE outbox_events ADD COLUMN last_error TEXT;
 ALTER TABLE outbox_events ADD COLUMN dead_letter_at TEXT;
