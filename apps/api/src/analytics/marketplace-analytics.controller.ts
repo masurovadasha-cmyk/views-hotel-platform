@@ -6,6 +6,27 @@ import {MarketplaceAnalyticsQueryService} from "./marketplace-analytics-query.se
 export class MarketplaceAnalyticsController{
   constructor(private readonly queries:MarketplaceAnalyticsQueryService){}
 
+  @Get("properties/:id/marketplace-economics/stay-daily")
+  async propertyStayEconomics(
+    @Param("id") id:string,
+    @Query("from") from:string|undefined,
+    @Query("to") to:string|undefined,
+    @Query("bookingChannel") bookingChannel:string|undefined,
+    @Query("marketSegment") marketSegment:string|undefined,
+    @Headers("x-organization-id") organizationId:string|undefined,
+    @Headers("x-user-id") userId:string|undefined,
+    @Headers("x-membership-id") membershipId:string|undefined,
+    @Headers("x-request-id") requestId:string|undefined
+  ){
+    try{
+      if(!from||!to)throw new BadRequestException("from and to are required");
+      return await this.queries.propertyStayEconomics(
+        actorFromHeaders(organizationId,userId,membershipId,requestId),
+        requireUuid(id,"property_id"),from,to,bookingChannel,marketSegment
+      );
+    }catch(error){throw mapAnalyticsError(error)}
+  }
+
   @Get("properties/:id/marketplace-economics")
   async propertyEconomics(
     @Param("id") id:string,
