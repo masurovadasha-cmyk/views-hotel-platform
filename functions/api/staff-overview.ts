@@ -26,6 +26,7 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
   const management=isManagement(session.role);
   const allowedCategories=serviceCategoriesByRole[session.role]||[];
   let serviceSql="";
+  let serviceCountSql="";
   let serviceValues:unknown[]=[];
 
   if(management){
@@ -35,6 +36,7 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
       "AND status NOT IN ('done','closed','cancelled') ",
       "ORDER BY CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,created_at ASC LIMIT 8"
     ].join("");
+    serviceCountSql="SELECT COUNT(*) AS count FROM service_orders WHERE organization_id=? AND property_id=? AND status NOT IN ('done','closed','cancelled')";
     serviceValues=[session.organizationId,propertyId];
   }else if(allowedCategories.length){
     const marks=allowedCategories.map(()=>"?").join(",");
@@ -47,6 +49,12 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
       "AND status NOT IN ('done','closed','cancelled') ",
       "ORDER BY CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,created_at ASC LIMIT 8"
     ].join("");
+    serviceCountSql=[
+      "SELECT COUNT(*) AS count FROM service_orders WHERE organization_id=? AND property_id=? ",
+      "AND category IN ("+marks+") ",
+      ownOnly?"AND assigned_user_id=? ":"",
+      "AND status NOT IN ('done','closed','cancelled')"
+    ].join("");
     serviceValues=[
       session.organizationId,
       propertyId,
@@ -58,8 +66,11 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
   const serviceRows=serviceSql
     ?await db.prepare(serviceSql).bind(...serviceValues).all()
     :{results:[]};
+  const serviceCount=serviceCountSql
+    ?await db.prepare(serviceCountSql).bind(...serviceValues).first<{count:number}>()
+    :null;
 
-  const serviceOrdersOpen=(serviceRows.results||[]).length;
+  const serviceOrdersOpen=Number(serviceCount?.count||0);
 
   let housekeepingOpen:number|null=null;
   if(canSeeHousekeeping(session.role)){
