@@ -10,6 +10,7 @@ CREATE TABLE guest_access_challenges (
   delivery_status text NOT NULL DEFAULT 'pending'
     CHECK (delivery_status IN ('pending','delivered','failed')),
   provider_message_id text,
+  delivery_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   last_error text,
   expires_at timestamptz NOT NULL,
   consumed_at timestamptz,
@@ -189,6 +190,20 @@ BEGIN
   ) VALUES(
     v_session_id,v_organization_id,v_reservation_id,target_session_token_hash,v_expires_at
   );
+
+  INSERT INTO outbox_events(
+    id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload
+  ) VALUES(
+    gen_random_uuid(),v_organization_id,'guest_access_session',v_session_id,
+    'identity.guest_access_exchanged',
+    'identity:guest-access-exchanged:'||v_session_id::text,
+    jsonb_build_object(
+      'sessionId',v_session_id,
+      'reservationId',v_reservation_id,
+      'expiresAt',v_expires_at
+    )
+  )
+  ON CONFLICT(idempotency_key) DO NOTHING;
 
   RETURN QUERY
   SELECT v_session_id,v_organization_id,v_reservation_id,v_property_id,v_expires_at;
