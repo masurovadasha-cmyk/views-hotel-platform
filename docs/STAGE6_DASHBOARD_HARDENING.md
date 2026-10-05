@@ -1,8 +1,22 @@
 # Stage 6.7 — Dashboard Cache Security & Conditional HTTP
 
-Status: implementation candidate.
+Status: implementation candidate on top of Dashboard schema v2.
+
+## Compatibility
+
+This hardening preserves Dashboard schema v2, including:
+
+- channel / market-segment breakdown;
+- marketplace economics coverage rate;
+- previous-equal-period comparison;
+- geography;
+- KPI/lifecycle/marketplace currency buckets.
+
+The source fingerprint already covers both the requested period and comparison period; Stage 6.7
+adds property-set RLS and source row-count sensitivity without changing those business blocks.
 
 ## Purpose
+
 
 Harden the Stage 6.6 dashboard read model against two edge cases:
 
