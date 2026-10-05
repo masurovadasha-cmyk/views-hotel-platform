@@ -8,7 +8,7 @@ on:
       - "docker-compose.production-dev.yml"
       - ".github/workflows/production-core.yml"
   pull_request:
-    branches: [main]
+    branches: [main, "staging/master-reference-v1"]
     paths:
       - "apps/api/**"
       - "infra/postgres/**"
