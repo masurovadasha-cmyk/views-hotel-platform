@@ -77,7 +77,7 @@ export class MarketplaceEconomicsController{
 }
 
 function parseMinor(value:string|undefined,name:string){
-  if(value===undefined||!/^d+$/.test(value))throw new BadRequestException(name+" must be a non-negative integer string");
+  if(value===undefined||!/^\\d+$/.test(value))throw new BadRequestException(name+" must be a non-negative integer string");
   return BigInt(value);
 }
 
