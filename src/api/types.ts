@@ -93,3 +93,21 @@ export type LiveShiftHandover={
   unresolved:unknown[]; risks:unknown[]; followUp:unknown[];
   created_by:string|null; acknowledged_by:string|null; created_at:string; acknowledged_at:string|null;
 };
+
+export type LiveGuestProfile={
+  id:string; first_name:string; last_name:string; email:string|null; phone:string|null; vip:number; created_at:string;
+};
+
+export type LiveGuestReservation={
+  id:string; confirmation_code:string; status:string; check_in_date:string; check_out_date:string;
+  unit_id:string|null; unit_code:string|null; stay_status:string|null; checked_in_at:string|null; checked_out_at:string|null;
+};
+
+export type LivePropertyUnit={
+  id:string; code:string; name:string; status:string; capacity:number; bedrooms:number;
+};
+
+export type LiveTimelineEvent={
+  source:"reservation"|"service_order"|"housekeeping"|"maintenance";
+  event_type:string; from_status:string|null; to_status:string|null; payload:string; created_at:string;
+};
