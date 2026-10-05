@@ -164,4 +164,23 @@ for spec in "accept:1:accepted:2" "complete:2:done:3"; do
   '
 done
 
+
+OUTBOX_PROCESS="$(curl -fsS -b /tmp/views-manager.cookies \
+  -H "Origin: $ORIGIN" -H "Content-Type: application/json" \
+  --data '{"limit":50}' \
+  "$BASE/api/outbox-process")"
+OUTBOX_PROCESS="$OUTBOX_PROCESS" node -e '
+  const x=JSON.parse(process.env.OUTBOX_PROCESS);
+  if(x.deadLettered!==0) throw new Error("remote outbox dead-lettered an event");
+  if(x.remaining!==0) throw new Error("remote outbox still has ready events");
+'
+
+OUTBOX_AFTER="$(curl -fsS -b /tmp/views-manager.cookies "$BASE/api/operations-observability?propertyId=utower")"
+OUTBOX_AFTER="$OUTBOX_AFTER" node -e '
+  const x=JSON.parse(process.env.OUTBOX_AFTER);
+  if(x.outboxPending!==0||x.outboxRetrying!==0||x.outboxDeadLetter!==0){
+    throw new Error("remote outbox recovery metrics are not clean");
+  }
+'
+
 echo "PASS: Stage 4 remote Cloudflare Golden Flow"
