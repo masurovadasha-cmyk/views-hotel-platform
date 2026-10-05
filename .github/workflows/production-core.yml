@@ -1,7 +1,7 @@
 name: VIEWS Production Core
 on:
   push:
-    branches: [main, "staging/**", "stage4/**", "stage5/**", "stage6/**"]
+    branches: [main, "staging/**", "stage4/**", "stage5/**", "stage6/**", "stage7/**"]
     paths:
       - "apps/api/**"
       - "infra/postgres/**"
