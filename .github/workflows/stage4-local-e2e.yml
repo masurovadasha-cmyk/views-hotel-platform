@@ -2,7 +2,7 @@ name: VIEWS Stage 4 Local E2E
 
 on:
   push:
-    branches: ["staging/**", "stage4/**"]
+    branches: ["staging/**", "stage4/**", "stage5/**", "stage6/**"]
     paths:
       - "functions/**"
       - "migrations/**"
@@ -13,7 +13,7 @@ on:
       - "package.json"
       - ".github/workflows/stage4-local-e2e.yml"
   pull_request:
-    branches: [main]
+    branches: [main, "staging/master-reference-v1"]
     paths:
       - "functions/**"
       - "migrations/**"
