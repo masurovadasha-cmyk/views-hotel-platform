@@ -62,7 +62,7 @@ export class AnalyticsReportSchedulerWorkerService{
 
         const completed=await this.db.query<{next_run_at:Date|null}>(
           `SELECT app.complete_analytics_report_schedule(
-             $1,$2,$3
+             $1,$2,$3,$4
            ) AS next_run_at`,
           [schedule.schedule_id,workerToken,schedule.scheduled_for,report.reportJobId]
         );
