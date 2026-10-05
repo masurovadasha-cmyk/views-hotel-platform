@@ -276,7 +276,7 @@ export class MarketplaceEconomicsService{
   }
 
   private minor(value:string,name:string){
-    if(typeof value!=="string"||!/^\\d+$/.test(value)){
+    if(typeof value!=="string"||!/^\d+$/.test(value)){
       throw new Error("INVALID_"+name+"_MINOR");
     }
     return BigInt(value);
