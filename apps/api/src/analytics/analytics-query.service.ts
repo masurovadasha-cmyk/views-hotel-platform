@@ -12,23 +12,10 @@ export class AnalyticsQueryService{
     from:string,
     to:string
   ){
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)){
-      throw new Error("INVALID_ANALYTICS_DATE");
-    }
-    if(from>to)throw new Error("INVALID_ANALYTICS_RANGE");
+    validateRange(from,to);
 
     return this.db.withActor(actor,async client=>{
-      const role=(await client.query<{code:string|null}>(
-        "SELECT app.current_membership_role() AS code"
-      )).rows[0]?.code;
-      if(!role||!["host","owner","manager","accountant"].includes(role)){
-        throw new Error("ANALYTICS_ROLE_FORBIDDEN");
-      }
-
-      const access=(await client.query<{allowed:boolean}>(
-        "SELECT app.can_access_property($1::uuid) AS allowed",[propertyId]
-      )).rows[0]?.allowed;
-      if(!access)throw new Error("PROPERTY_FORBIDDEN");
+      await assertPropertyAnalyticsAccess(client,propertyId);
 
       const rows=await client.query<{
         local_date:string;currency:string|null;available_unit_nights:number;
@@ -67,32 +54,20 @@ export class AnalyticsQueryService{
       }));
     });
   }
+
   async propertyDimensions(
     actor:RequestActorContext,
     propertyId:string,
     from:string,
     to:string
   ){
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)){
-      throw new Error("INVALID_ANALYTICS_DATE");
-    }
-    if(from>to)throw new Error("INVALID_ANALYTICS_RANGE");
+    validateRange(from,to);
 
     return this.db.withActor(actor,async client=>{
-      const role=(await client.query<{code:string|null}>(
-        "SELECT app.current_membership_role() AS code"
-      )).rows[0]?.code;
-      if(!role||!["host","owner","manager","accountant"].includes(role)){
-        throw new Error("ANALYTICS_ROLE_FORBIDDEN");
-      }
-
-      const access=(await client.query<{allowed:boolean}>(
-        "SELECT app.can_access_property($1::uuid) AS allowed",[propertyId]
-      )).rows[0]?.allowed;
-      if(!access)throw new Error("PROPERTY_FORBIDDEN");
+      await assertPropertyAnalyticsAccess(client,propertyId);
 
       const rows=await client.query<{
-        local_date:string;currency:string;booking_channel:string;market_segment:string;
+        local_date:string;currency:string;booking_channel:string|null;market_segment:string|null;
         booking_count:number;active_booking_count:number;cancelled_booking_count:number;
         no_show_booking_count:number;cancellation_rate:string;no_show_rate:string;
         avg_lead_time_days:string;avg_stay_nights:string;
@@ -106,7 +81,11 @@ export class AnalyticsQueryService{
         WHERE organization_id=$1
           AND property_id=$2
           AND local_date BETWEEN $3::date AND $4::date
-        ORDER BY local_date,booking_channel,market_segment,currency`,
+        ORDER BY
+          local_date,
+          booking_channel NULLS LAST,
+          market_segment NULLS LAST,
+          currency`,
         [actor.organizationId,propertyId,from,to]
       );
 
@@ -123,6 +102,70 @@ export class AnalyticsQueryService{
         noShowRate:Number(row.no_show_rate),
         avgLeadTimeDays:Number(row.avg_lead_time_days),
         avgStayNights:Number(row.avg_stay_nights)
+      }));
+    });
+  }
+
+  async propertyBookingCohorts(
+    actor:RequestActorContext,
+    propertyId:string,
+    from:string,
+    to:string,
+    bookingChannel?:string,
+    marketSegment?:string
+  ){
+    validateRange(from,to);
+    validateDimension(bookingChannel,"BOOKING_CHANNEL");
+    validateDimension(marketSegment,"MARKET_SEGMENT");
+
+    return this.db.withActor(actor,async client=>{
+      await assertPropertyAnalyticsAccess(client,propertyId);
+
+      const rows=await client.query<{
+        arrival_date:string;currency:string;booking_channel:string|null;market_segment:string|null;
+        booking_count:number;active_or_stayed_count:number;cancellation_count:number;no_show_count:number;
+        cancellation_rate:string;no_show_rate:string;avg_lead_time_days:string;avg_stay_nights:string;
+        avg_cancellation_lead_days:string|null;
+      }>(
+        `SELECT
+           arrival_date::text,currency,booking_channel,market_segment,
+           booking_count,active_or_stayed_count,cancellation_count,no_show_count,
+           cancellation_rate::text,no_show_rate::text,
+           avg_lead_time_days::text,avg_stay_nights::text,
+           avg_cancellation_lead_days::text
+         FROM analytics_booking_cohorts_daily
+        WHERE organization_id=$1
+          AND property_id=$2
+          AND arrival_date BETWEEN $3::date AND $4::date
+          AND ($5::text IS NULL OR booking_channel=$5)
+          AND ($6::text IS NULL OR market_segment=$6)
+        ORDER BY
+          arrival_date,
+          currency,
+          booking_channel NULLS LAST,
+          market_segment NULLS LAST`,
+        [
+          actor.organizationId,propertyId,from,to,
+          normalizeFilter(bookingChannel),normalizeFilter(marketSegment)
+        ]
+      );
+
+      return rows.rows.map(row=>({
+        arrivalDate:row.arrival_date,
+        currency:row.currency,
+        bookingChannel:row.booking_channel,
+        marketSegment:row.market_segment,
+        bookingCount:Number(row.booking_count),
+        activeOrStayedCount:Number(row.active_or_stayed_count),
+        cancellationCount:Number(row.cancellation_count),
+        noShowCount:Number(row.no_show_count),
+        cancellationRate:Number(row.cancellation_rate),
+        noShowRate:Number(row.no_show_rate),
+        avgLeadTimeDays:Number(row.avg_lead_time_days),
+        avgStayNights:Number(row.avg_stay_nights),
+        avgCancellationLeadDays:row.avg_cancellation_lead_days===null
+          ?null
+          :Number(row.avg_cancellation_lead_days)
       }));
     });
   }
@@ -163,4 +206,40 @@ export class AnalyticsQueryService{
       };
     });
   }
+}
+
+function validateRange(from:string,to:string){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)){
+    throw new Error("INVALID_ANALYTICS_DATE");
+  }
+  if(from>to)throw new Error("INVALID_ANALYTICS_RANGE");
+}
+
+function validateDimension(value:string|undefined,name:string){
+  if(value===undefined)return;
+  const normalized=value.trim();
+  if(!normalized||normalized.length>64)throw new Error("INVALID_"+name);
+}
+
+function normalizeFilter(value:string|undefined){
+  if(value===undefined)return null;
+  const normalized=value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"_").slice(0,64);
+  return normalized||null;
+}
+
+async function assertPropertyAnalyticsAccess(
+  client:import("pg").PoolClient,
+  propertyId:string
+){
+  const role=(await client.query<{code:string|null}>(
+    "SELECT app.current_membership_role() AS code"
+  )).rows[0]?.code;
+  if(!role||!["host","owner","manager","accountant"].includes(role)){
+    throw new Error("ANALYTICS_ROLE_FORBIDDEN");
+  }
+
+  const access=(await client.query<{allowed:boolean}>(
+    "SELECT app.can_access_property($1::uuid) AS allowed",[propertyId]
+  )).rows[0]?.allowed;
+  if(!access)throw new Error("PROPERTY_FORBIDDEN");
 }
