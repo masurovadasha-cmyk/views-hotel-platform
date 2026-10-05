@@ -5,6 +5,7 @@ on:
     branches: ["staging/master-reference-v1", "stage4/**"]
     paths:
       - "functions/**"
+      - "apps/api/**"
       - "migrations/**"
       - "src/**"
       - "scripts/**"
@@ -17,6 +18,7 @@ on:
     branches: [main]
     paths:
       - "functions/**"
+      - "apps/api/**"
       - "migrations/**"
       - "src/**"
       - "scripts/**"
