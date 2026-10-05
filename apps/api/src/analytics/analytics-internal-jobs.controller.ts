@@ -2,7 +2,7 @@ import {
   BadRequestException,Body,Controller,Headers,Post,UnauthorizedException
 } from "@nestjs/common";
 import {loadConfig} from "../config";
-import {assertInternalApiKey} from "../security/internal-api-auth";
+import {trustedInternalServiceIdentity} from "../security/internal-service-identity";
 import {AnalyticsReportSchedulerWorkerService} from "./analytics-report-scheduler-worker.service";
 import {AnalyticsReportService} from "./analytics-report.service";
 import {AnalyticsReportWorkerService} from "./analytics-report-worker.service";
@@ -18,10 +18,22 @@ export class AnalyticsInternalJobsController{
   @Post("report-cycle")
   async reportCycle(
     @Headers("x-views-internal-key") internalApiKey:string|undefined,
+    @Headers("x-views-service-id") serviceId:string|undefined,
     @Body() body:{scheduleLimit?:number;reportLimit?:number;pruneLimit?:number}
   ){
     try{
-      assertInternalApiKey(internalApiKey,loadConfig().internalApiKeys);
+      const config=loadConfig();
+      const identity=trustedInternalServiceIdentity(
+        {
+          "x-views-internal-key":internalApiKey,
+          "x-views-service-id":serviceId
+        },
+        {
+          legacyKeys:config.internalApiKeys,
+          serviceKeys:config.internalServiceKeys
+        }
+      );
+      if(!identity)throw new Error("INTERNAL_API_UNAUTHORIZED");
       const scheduleLimit=body.scheduleLimit??20;
       const reportLimit=body.reportLimit??20;
       const pruneLimit=body.pruneLimit??1000;
@@ -45,7 +57,13 @@ export class AnalyticsInternalJobsController{
       if(error instanceof BadRequestException||error instanceof UnauthorizedException){
         throw error;
       }
-      if(error instanceof Error&&error.message==="INTERNAL_API_UNAUTHORIZED"){
+      if(
+        error instanceof Error&&[
+          "INTERNAL_API_UNAUTHORIZED",
+          "INTERNAL_SERVICE_ID_REQUIRED",
+          "INTERNAL_SERVICE_NOT_CONFIGURED"
+        ].includes(error.message)
+      ){
         throw new UnauthorizedException("internal API authentication required");
       }
       throw error;
