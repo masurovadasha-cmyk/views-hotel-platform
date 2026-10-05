@@ -123,7 +123,10 @@ export class AnalyticsReportWorkerService{
           `SELECT app.fail_analytics_report_job(
              $1,$2,$3,$4
            ) AS status`,
-          [job.job_id,workerToken,errorCode,MAX_ATTEMPTS]
+          [
+            job.job_id,workerToken,errorCode,
+            retryableErrorCode(errorCode)?MAX_ATTEMPTS:1
+          ]
         );
         const status=failed.rows[0]?.status;
         results.push({
@@ -165,4 +168,13 @@ function normalizeErrorCode(error:unknown){
   const raw=error instanceof Error?error.message:"REPORT_WORKER_ERROR";
   if(/^[A-Z][A-Z0-9_:-]{1,119}$/.test(raw))return raw;
   return "REPORT_WORKER_ERROR";
+}
+
+function retryableErrorCode(code:string){
+  return [
+    "REPORT_WORKER_ERROR",
+    "ANALYTICS_WORKER_LEASE_LOST",
+    "ECONNRESET",
+    "ETIMEDOUT"
+  ].includes(code);
 }
