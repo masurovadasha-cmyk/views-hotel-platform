@@ -320,6 +320,18 @@ BEGIN
     RETURN NULL;
   END IF;
 
+  IF NOT EXISTS(
+    SELECT 1
+    FROM analytics_report_jobs j
+    JOIN analytics_report_schedules s
+      ON s.id=target_schedule_id
+    WHERE j.id=target_report_job_id
+      AND j.organization_id=s.organization_id
+      AND j.created_by_membership_id=s.created_by_membership_id
+  ) THEN
+    RAISE EXCEPTION 'REPORT_SCHEDULE_JOB_SCOPE_MISMATCH';
+  END IF;
+
   UPDATE analytics_report_schedules
   SET last_enqueued_at=target_scheduled_for,
       last_report_job_id=target_report_job_id,
