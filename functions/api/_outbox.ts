@@ -15,3 +15,11 @@ export function parseOutboxPayload(raw:string){
 export function nextAvailableAt(attempt:number,now=Date.now()){
   return new Date(now+outboxBackoffSeconds(attempt)*1000).toISOString();
 }
+
+export function outboxFailureDecision(attempt:number,now=Date.now()){
+  const safe=Math.max(1,Math.floor(attempt));
+  if(safe>=OUTBOX_MAX_ATTEMPTS){
+    return {deadLetter:true,availableAt:null as string|null};
+  }
+  return {deadLetter:false,availableAt:nextAvailableAt(safe,now)};
+}
