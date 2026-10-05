@@ -35,7 +35,7 @@ export function OperationsOverviewLive(){
     setBusy(true);setOutboxMessage("");
     try{
       const result=await api.processOutbox(50);
-      setOutboxMessage("Processed "+result.processed+" · retried "+result.retried+" · dead-letter "+result.deadLettered+" · remaining "+result.remaining);
+      setOutboxMessage("Claimed "+result.claimed+" · processed "+result.processed+" · skipped "+result.skippedClaim+" · retried "+result.retried+" · dead-letter "+result.deadLettered+" · remaining "+result.remaining);
       await load();
     }catch(e){setError(errorMessage(e))}
     finally{setBusy(false)}
@@ -52,10 +52,11 @@ export function OperationsOverviewLive(){
     <section className="kpis">
       <article><span>Outbox pending</span><b>{observability?.outboxPending??"—"}</b></article>
       <article><span>Outbox retrying</span><b>{observability?.outboxRetrying??"—"}</b></article>
+      <article><span>Outbox leased</span><b>{observability?.outboxLeased??"—"}</b></article>
       <article><span>Dead-letter</span><b>{observability?.outboxDeadLetter??"—"}</b></article>
-      <article><span>Stale service work</span><b>{observability?.stale.serviceOrders??"—"}</b></article>
     </section>
     <section className="kpis">
+      <article><span>Stale service work</span><b>{observability?.stale.serviceOrders??"—"}</b></article>
       <article><span>Stale housekeeping</span><b>{observability?.stale.housekeeping??"—"}</b></article>
       <article><span>Stale maintenance</span><b>{observability?.stale.maintenance??"—"}</b></article>
       <article><span>Queue health</span><b>{observability?.outboxDeadLetter===0?"OK":"ATTENTION"}</b></article>
