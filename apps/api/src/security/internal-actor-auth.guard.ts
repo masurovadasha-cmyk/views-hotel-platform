@@ -1,7 +1,15 @@
 import {CanActivate,ExecutionContext,Injectable,UnauthorizedException} from "@nestjs/common";
 import type {IncomingHttpHeaders} from "node:http";
 import {loadConfig} from "../config";
-import {assertInternalApiKey} from "./internal-api-auth";
+import {
+  InternalAuthRejectionService,
+  type InternalAuthRejectionReason
+} from "./internal-auth-rejection.service";
+import {
+  classifyInternalServiceIdentityFailure,
+  singleInternalHeader,
+  trustedInternalServiceIdentity
+} from "./internal-service-identity";
 
 const actorHeaders=[
   "x-organization-id",
@@ -9,16 +17,35 @@ const actorHeaders=[
   "x-membership-id"
 ] as const;
 
+export class InternalActorAuthFailure extends UnauthorizedException{
+  constructor(
+    readonly reason:InternalAuthRejectionReason,
+    message:string
+  ){
+    super(message);
+  }
+}
+
 @Injectable()
 export class InternalActorAuthGuard implements CanActivate{
-  canActivate(context:ExecutionContext){
+  constructor(private readonly rejections:InternalAuthRejectionService){}
+
+  async canActivate(context:ExecutionContext){
     if(context.getType()!=="http")return true;
     const request=context.switchToHttp().getRequest<{headers:IncomingHttpHeaders}>();
-    assertTrustedInternalActorHeaders(
-      request.headers,
-      loadConfig().internalApiKeys
-    );
-    return true;
+
+    try{
+      assertTrustedInternalActorHeaders(
+        request.headers,
+        loadConfig().internalApiKeys
+      );
+      return true;
+    }catch(error){
+      if(error instanceof InternalActorAuthFailure){
+        await this.rejections.record(context,error.reason).catch(()=>undefined);
+      }
+      throw error;
+    }
   }
 }
 
@@ -29,29 +56,47 @@ export function assertTrustedInternalActorHeaders(
   const anyActorHeader=actorHeaders.some(name=>headers[name]!==undefined);
   if(!anyActorHeader)return;
 
-  const organizationId=singleHeader(headers["x-organization-id"]);
-  const userId=singleHeader(headers["x-user-id"]);
-  const membershipId=singleHeader(headers["x-membership-id"]);
+  const organizationId=singleInternalHeader(headers["x-organization-id"]);
+  const userId=singleInternalHeader(headers["x-user-id"]);
+  const membershipId=singleInternalHeader(headers["x-membership-id"]);
 
   if(!organizationId||!userId||!membershipId){
-    throw new UnauthorizedException("complete internal actor context required");
+    throw new InternalActorAuthFailure(
+      "partial_actor_context",
+      "complete internal actor context required"
+    );
   }
 
-  const internalKey=singleHeader(headers["x-views-internal-key"]);
+  const rawKey=headers["x-views-internal-key"];
+  if(rawKey===undefined){
+    throw new InternalActorAuthFailure(
+      "missing_internal_key",
+      "internal API authentication required"
+    );
+  }
+  const internalKey=singleInternalHeader(rawKey);
+  if(!internalKey){
+    throw new InternalActorAuthFailure(
+      "invalid_internal_key",
+      "internal API authentication required"
+    );
+  }
+
   try{
-    assertInternalApiKey(internalKey??undefined,expectedInternalKey);
-  }catch{
-    throw new UnauthorizedException("internal API authentication required");
+    const identity=trustedInternalServiceIdentity(
+      headers,
+      expectedInternalKey
+    );
+    if(!identity){
+      throw new Error("INTERNAL_API_UNAUTHORIZED");
+    }
+  }catch(error){
+    const reason=classifyInternalServiceIdentityFailure(headers,error);
+    throw new InternalActorAuthFailure(
+      reason,
+      reason==="missing_service_identity"||reason==="invalid_service_identity"
+        ?"trusted internal service identity required"
+        :"internal API authentication required"
+    );
   }
-}
-
-function singleHeader(value:string|string[]|undefined){
-  if(value===undefined)return null;
-  if(Array.isArray(value)){
-    if(value.length!==1)return null;
-    const normalized=value[0].trim();
-    return normalized||null;
-  }
-  const normalized=value.trim();
-  return normalized||null;
 }
