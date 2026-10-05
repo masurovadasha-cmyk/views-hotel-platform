@@ -20,5 +20,7 @@ grep -q -- "--bookmark" /tmp/views-d1-tt-restore-help.txt
 grep -q "d1 export views-staging" docs/STAGE4_RECOVERY_RUNBOOK.md
 grep -q "d1 time-travel restore views-staging" docs/STAGE4_RECOVERY_RUNBOOK.md
 grep -q "outbox-process" docs/STAGE4_RECOVERY_RUNBOOK.md
+grep -q "Capture D1 pre-migration recovery point" .github/workflows/cloudflare-staging.yml
+grep -q "d1 time-travel info views-staging" .github/workflows/cloudflare-staging.yml
 
 echo "PASS: Stage 4 recovery commands and runbook"
