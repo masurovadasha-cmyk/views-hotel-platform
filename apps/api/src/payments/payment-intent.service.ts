@@ -4,6 +4,7 @@ import {DatabaseService} from "../database/database.service";
 import type {RequestActorContext} from "../identity/actor-context";
 import {PaymentProviderRegistry} from "./payment-provider.registry";
 import type {SupportedPaymentProvider} from "./payment-provider.port";
+import {publishPaymentProjection} from "./finance-projection-outbox";
 
 export type CreatePaymentIntentInput={
   actor:RequestActorContext;
@@ -75,6 +76,7 @@ export class PaymentIntentService{
           row.total_minor,row.currency,input.idempotencyKey,row.hold_expires_at
         ]
       );
+      await publishPaymentProjection(client,input.actor.organizationId,paymentIntentId);
       return {
         paymentIntentId,
         amountMinor:BigInt(row.total_minor),
@@ -121,6 +123,7 @@ export class PaymentIntentService{
            WHERE id=$3`,
           [checkout.checkoutUrl,checkout.expiresAt,prepared.paymentIntentId]
         );
+        await publishPaymentProjection(client,input.actor.organizationId,prepared.paymentIntentId);
       });
 
       return {
