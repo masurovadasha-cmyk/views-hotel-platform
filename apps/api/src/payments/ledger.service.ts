@@ -1,5 +1,6 @@
 import {Injectable} from "@nestjs/common";
 import type {PoolClient} from "pg";
+import {publishLedgerProjection} from "./finance-projection-outbox";
 
 export type LedgerAccountCode="provider_clearing"|"guest_deposits"|"refunds_payable";
 
@@ -124,6 +125,7 @@ export class LedgerService{
       "UPDATE ledger_journals SET status='posted',posted_at=now() WHERE id=$1",
       [journalId]
     );
+    await publishLedgerProjection(client,input.organizationId,journalId);
     return journalId;
   }
 }
