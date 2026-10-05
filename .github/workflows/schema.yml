@@ -1,7 +1,7 @@
 name: VIEWS D1 Schema
 on:
   push:
-    branches: [main, "staging/**"]
+    branches: [main, "staging/**", "stage4/**"]
     paths:
       - "migrations/**"
       - ".github/workflows/schema.yml"
