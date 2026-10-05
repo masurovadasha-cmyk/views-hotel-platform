@@ -1,7 +1,7 @@
 import {json,requestId,requireDatabase,type Env} from "./_shared";
 import {requireMutationOrigin,resolveSession} from "./_auth";
 import {isManagement} from "./_authorization";
-import {OUTBOX_CONSUMER,OUTBOX_MAX_ATTEMPTS,nextAvailableAt,parseOutboxPayload} from "./_outbox";
+import {OUTBOX_CONSUMER,outboxFailureDecision,parseOutboxPayload} from "./_outbox";
 
 export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
   const originError=requireMutationOrigin(request,env);if(originError)return originError;
@@ -53,7 +53,8 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
       if(result[1]?.meta?.changes)processed++;
     }catch(error){
       const message=String(error instanceof Error?error.message:error).slice(0,500);
-      if(attempt>=OUTBOX_MAX_ATTEMPTS){
+      const decision=outboxFailureDecision(attempt);
+      if(decision.deadLetter){
         await db.prepare([
           "UPDATE outbox_events SET attempt_count=?,last_attempt_at=CURRENT_TIMESTAMP,last_error=?,",
           "dead_letter_at=CURRENT_TIMESTAMP WHERE id=? AND organization_id=? AND processed_at IS NULL"
@@ -63,7 +64,7 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
         await db.prepare([
           "UPDATE outbox_events SET attempt_count=?,last_attempt_at=CURRENT_TIMESTAMP,last_error=?,",
           "available_at=? WHERE id=? AND organization_id=? AND processed_at IS NULL AND dead_letter_at IS NULL"
-        ].join("")).bind(attempt,message,nextAvailableAt(attempt),id,session.organizationId).run();
+        ].join("")).bind(attempt,message,decision.availableAt,id,session.organizationId).run();
         retried++;
       }
       failures.push({id,error:message,attempt});
