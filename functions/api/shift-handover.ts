@@ -4,6 +4,50 @@ import {canAccessProperty} from "./_authorization";
 
 const allowedRoles=["front_desk","housekeeping_supervisor","maintenance_manager","reservation_manager","general_manager","super_admin"];
 
+
+function parseList(value:unknown){
+  try{
+    const parsed=JSON.parse(String(value||"[]"));
+    return Array.isArray(parsed)?parsed:[];
+  }catch{return []}
+}
+
+export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
+  const session=await resolveSession(request,env);
+  if(!session||session.mode!=="staff")return json({error:"STAFF_AUTH_REQUIRED",requestId:requestId(request)},401);
+  if(!allowedRoles.includes(session.role))return json({error:"FORBIDDEN",requestId:requestId(request)},403);
+  let db;try{db=requireDatabase(env)}catch{return json({error:"DATABASE_NOT_BOUND",requestId:requestId(request)},503)}
+
+  const propertyId=new URL(request.url).searchParams.get("propertyId")||session.propertyIds[0]||"";
+  if(!canAccessProperty(session,propertyId))return json({error:"PROPERTY_FORBIDDEN",requestId:requestId(request)},403);
+
+  const rows=await db.prepare([
+    "SELECT id,property_id,from_shift,to_shift,unresolved_json,risks_json,follow_up_json,",
+    "created_by,acknowledged_by,created_at,acknowledged_at ",
+    "FROM shift_handovers WHERE organization_id=? AND property_id=? ",
+    "ORDER BY created_at DESC LIMIT 50"
+  ].join("")).bind(session.organizationId,propertyId).all();
+
+  const items=(rows.results||[]).map(raw=>{
+    const row=raw as Record<string,unknown>;
+    return {
+      id:String(row.id),
+      property_id:String(row.property_id),
+      from_shift:String(row.from_shift),
+      to_shift:String(row.to_shift),
+      unresolved:parseList(row.unresolved_json),
+      risks:parseList(row.risks_json),
+      followUp:parseList(row.follow_up_json),
+      created_by:row.created_by?String(row.created_by):null,
+      acknowledged_by:row.acknowledged_by?String(row.acknowledged_by):null,
+      created_at:String(row.created_at),
+      acknowledged_at:row.acknowledged_at?String(row.acknowledged_at):null
+    };
+  });
+
+  return json({propertyId,items,requestId:requestId(request)});
+};
+
 export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
   const originError=requireMutationOrigin(request,env);if(originError)return originError;
   const session=await resolveSession(request,env);
