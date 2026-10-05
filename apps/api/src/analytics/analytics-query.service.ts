@@ -127,6 +127,121 @@ export class AnalyticsQueryService{
     });
   }
 
+  async propertyDailyRollup(
+    actor:RequestActorContext,
+    propertyId:string,
+    from:string,
+    to:string
+  ){
+    this.validateDates(from,to);
+
+    return this.db.withActor(actor,async client=>{
+      await this.assertReadRole(client);
+      const access=(await client.query<{allowed:boolean}>(
+        "SELECT app.can_access_property($1::uuid) AS allowed",[propertyId]
+      )).rows[0]?.allowed;
+      if(!access)throw new Error("PROPERTY_FORBIDDEN");
+
+      const rows=await client.query<{
+        local_date:string;currency:string;available_unit_nights:string;
+        occupied_unit_nights:string;booking_count:string;
+        accommodation_revenue_minor:string;gross_revenue_minor:string;net_revenue_minor:string;
+        occupancy:string;adr_minor:string;revpar_minor:string;
+        avg_lead_time_days:string;avg_stay_nights:string;refreshed_at:Date;
+      }>(
+        `SELECT
+           local_date::text,currency,
+           available_unit_nights::text,occupied_unit_nights::text,booking_count::text,
+           accommodation_revenue_minor::text,gross_revenue_minor::text,net_revenue_minor::text,
+           occupancy::text,adr_minor::text,revpar_minor::text,
+           avg_lead_time_days::text,avg_stay_nights::text,refreshed_at
+         FROM analytics_property_daily_rollups
+        WHERE organization_id=$1
+          AND property_id=$2
+          AND local_date BETWEEN $3::date AND $4::date
+        ORDER BY local_date,currency`,
+        [actor.organizationId,propertyId,from,to]
+      );
+
+      return rows.rows.map(row=>({
+        date:row.local_date,
+        currency:row.currency,
+        availableUnitNights:Number(row.available_unit_nights),
+        occupiedUnitNights:Number(row.occupied_unit_nights),
+        bookingCount:Number(row.booking_count),
+        accommodationRevenueMinor:row.accommodation_revenue_minor,
+        grossRevenueMinor:row.gross_revenue_minor,
+        netRevenueMinor:row.net_revenue_minor,
+        occupancy:Number(row.occupancy),
+        adrMinor:row.adr_minor,
+        revparMinor:row.revpar_minor,
+        avgLeadTimeDays:Number(row.avg_lead_time_days),
+        avgStayNights:Number(row.avg_stay_nights),
+        refreshedAt:row.refreshed_at.toISOString()
+      }));
+    });
+  }
+
+  async organizationDailyRollup(
+    actor:RequestActorContext,
+    from:string,
+    to:string
+  ){
+    this.validateDates(from,to);
+
+    return this.db.withActor(actor,async client=>{
+      await this.assertReadRole(client);
+      const rows=await client.query<{
+        local_date:string;currency:string;available_unit_nights:string;
+        occupied_unit_nights:string;booking_count:string;
+        accommodation_revenue_minor:string;gross_revenue_minor:string;net_revenue_minor:string;
+        occupancy:string;adr_minor:string;revpar_minor:string;refreshed_at:Date;
+      }>(
+        `SELECT
+           local_date::text,currency,
+           available_unit_nights::text,occupied_unit_nights::text,booking_count::text,
+           accommodation_revenue_minor::text,gross_revenue_minor::text,net_revenue_minor::text,
+           occupancy::text,adr_minor::text,revpar_minor::text,refreshed_at
+         FROM analytics_organization_daily_rollups
+        WHERE organization_id=$1
+          AND local_date BETWEEN $2::date AND $3::date
+        ORDER BY local_date,currency`,
+        [actor.organizationId,from,to]
+      );
+
+      return rows.rows.map(row=>({
+        date:row.local_date,
+        currency:row.currency,
+        availableUnitNights:Number(row.available_unit_nights),
+        occupiedUnitNights:Number(row.occupied_unit_nights),
+        bookingCount:Number(row.booking_count),
+        accommodationRevenueMinor:row.accommodation_revenue_minor,
+        grossRevenueMinor:row.gross_revenue_minor,
+        netRevenueMinor:row.net_revenue_minor,
+        occupancy:Number(row.occupancy),
+        adrMinor:row.adr_minor,
+        revparMinor:row.revpar_minor,
+        refreshedAt:row.refreshed_at.toISOString()
+      }));
+    });
+  }
+
+  private validateDates(from:string,to:string){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)){
+      throw new Error("INVALID_ANALYTICS_DATE");
+    }
+    if(from>to)throw new Error("INVALID_ANALYTICS_RANGE");
+  }
+
+  private async assertReadRole(client:import("pg").PoolClient){
+    const role=(await client.query<{code:string|null}>(
+      "SELECT app.current_membership_role() AS code"
+    )).rows[0]?.code;
+    if(!role||!["host","owner","manager","accountant"].includes(role)){
+      throw new Error("ANALYTICS_ROLE_FORBIDDEN");
+    }
+  }
+
   async projectionHealth(actor:RequestActorContext){
     return this.db.withActor(actor,async client=>{
       const role=(await client.query<{code:string|null}>(
