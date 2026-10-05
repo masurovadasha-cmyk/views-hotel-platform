@@ -61,6 +61,7 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0021_booking_attribution.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0022_analytics_portfolio_rollups.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0023_analytics_dashboard_cache.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0024_analytics_dashboard_scope_hardening.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
@@ -99,11 +100,15 @@ jobs:
           VALUES('10000000-0000-4000-8000-000000000001','host','Host B','{"en":"Host B"}','UZ','UZS','Asia/Tashkent');
           INSERT INTO properties(id,organization_id,name,country_code,city,timezone)
           VALUES('10000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000001','{"en":"Other Property"}','UZ','Tashkent','Asia/Tashkent');
+          INSERT INTO properties(id,organization_id,name,country_code,city,timezone)
+          VALUES('50000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000001','{"en":"Samarkand Scoped Cache Test"}','UZ','Samarkand','Asia/Samarkand')
+          ON CONFLICT(id) DO NOTHING;
 
           INSERT INTO users(id,email,display_name)
           VALUES('20000000-0000-4000-8000-000000000001','manager@views.test','Manager A'),
                 ('20000000-0000-4000-8000-000000000002','frontdesk@views.test','Front Desk A'),
-                ('20000000-0000-4000-8000-000000000003','owner@views.test','Owner A');
+                ('20000000-0000-4000-8000-000000000003','owner@views.test','Owner A'),
+                ('20000000-0000-4000-8000-000000000004','host@views.test','Scoped Host A');
 
           INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
           SELECT '30000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000001',id,'active',now()
@@ -117,8 +122,31 @@ jobs:
           SELECT '30000000-0000-4000-8000-000000000003','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000003',id,'active',now()
           FROM roles WHERE code='owner';
 
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000004',id,'active',now()
+          FROM roles WHERE code='host';
+
           INSERT INTO membership_property_scopes(membership_id,property_id)
-          VALUES('30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000002');
+          VALUES
+          ('30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000002'),
+          ('30000000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000002');
+
+          INSERT INTO analytics_dashboard_cache(
+            cache_key,organization_id,membership_id,property_id,property_ids,
+            from_date,to_date,schema_version,source_fingerprint,payload,generated_at,expires_at
+          ) VALUES(
+            repeat('e',64),
+            '00000000-0000-0000-0000-000000000001',
+            '30000000-0000-4000-8000-000000000004',
+            NULL,
+            ARRAY[
+              '00000000-0000-0000-0000-000000000002'::uuid,
+              '50000000-0000-4000-8000-000000000001'::uuid
+            ],
+            '2035-01-01','2035-01-01',2,repeat('f',64),
+            '{"fixture":"stale-broad-scope"}'::jsonb,
+            now(),now()+interval '1 day'
+          );
           SQL
 
           OWN=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='00000000-0000-0000-0000-000000000002'; ROLLBACK;" | tail -2 | head -1)
