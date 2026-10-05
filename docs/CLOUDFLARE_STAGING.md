@@ -52,6 +52,9 @@ Wrangler applies every unapplied file in `migrations/` in lexical order:
 7. `0007_stage4_operations_seed.sql`
 8. `0008_frontdesk_stays.sql`
 9. `0009_stage4_operations_control_seed.sql`
+10. `0010_outbox_recovery.sql`
+11. `0011_outbox_leases.sql`
+12. `0012_finance_read_model.sql`
 
 The staging seed contains only synthetic accounts/operational records and no real guest personal data.
 
@@ -66,6 +69,9 @@ After deploy the workflow verifies:
 5. `/api/session` resolves that live staff session.
 6. The authenticated staff session creates a concierge service order.
 7. The same session moves the order `new → accepted → done`.
+8. Finance projection remains read-only with PostgreSQL source-of-truth metadata.
+9. Front Desk access to Finance is denied.
+10. Projected posted journals have zero balance violations.
 
 The CI token is never returned by the public login endpoint. This keeps staging testable without exposing a public staff bypass.
 
