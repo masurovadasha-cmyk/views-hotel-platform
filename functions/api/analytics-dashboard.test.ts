@@ -1,4 +1,3 @@
-import {generateKeyPairSync} from "node:crypto";
 import {afterEach,describe,expect,it,vi} from "vitest";
 import {onRequestGet} from "./analytics-dashboard";
 import type {D1Database,D1Result,D1Statement,Env} from "./_shared";
@@ -42,9 +41,6 @@ function db(options:{linked?:boolean}={}):D1Database{
     batch:async()=>[] as D1Result[]
   };
 }
-
-const SIGNING=generateKeyPairSync("ed25519");
-const SIGNING_PRIVATE=SIGNING.privateKey.export({format:"pem",type:"pkcs8"}).toString();
 
 function env(linked=true):Env{
   return {
@@ -142,8 +138,8 @@ describe("analytics dashboard BFF",()=>{
 
       const parts=String(token).split(".");
       expect(parts).toHaveLength(3);
-      const jwtHeader=JSON.parse(Buffer.from(parts[0],"base64url").toString("utf8"));
-      const claims=JSON.parse(Buffer.from(parts[1],"base64url").toString("utf8"));
+      const jwtHeader=decodeJwtJson(parts[0]);
+      const claims=decodeJwtJson(parts[1]);
       expect(jwtHeader).toMatchObject({
         alg:"EdDSA",
         typ:"views-service+jwt",
@@ -174,7 +170,7 @@ describe("analytics dashboard BFF",()=>{
       DB:db(),
       VIEWS_ENV:"staging",
       VIEWS_CORE_API_URL:"https://core.views.example",
-      VIEWS_CORE_SIGNING_PRIVATE_KEY:SIGNING_PRIVATE,
+      VIEWS_CORE_SIGNING_PRIVATE_KEY:await signingPrivatePem(),
       VIEWS_CORE_SIGNING_KID:"pages-2026-10"
     };
 
@@ -184,3 +180,27 @@ describe("analytics dashboard BFF",()=>{
   });
 
 });
+
+
+async function signingPrivatePem(){
+  const pair=await crypto.subtle.generateKey(
+    {name:"Ed25519"},
+    true,
+    ["sign","verify"]
+  ) as CryptoKeyPair;
+  const pkcs8=await crypto.subtle.exportKey("pkcs8",pair.privateKey);
+  const bytes=new Uint8Array(pkcs8);
+  let binary="";
+  for(const byte of bytes)binary+=String.fromCharCode(byte);
+  const base64=btoa(binary);
+  const lines=base64.match(/.{1,64}/g)?.join("\n")||base64;
+  return "-----BEGIN PRIVATE KEY-----\n"+lines+"\n-----END PRIVATE KEY-----";
+}
+
+function decodeJwtJson(segment:string){
+  const padded=segment.replace(/-/g,"+").replace(/_/g,"/")+
+    "=".repeat((4-segment.length%4)%4);
+  const binary=atob(padded);
+  const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes)) as Record<string,unknown>;
+}
