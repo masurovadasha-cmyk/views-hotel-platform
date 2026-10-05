@@ -15,16 +15,31 @@ export function OperationsOverviewLive(){
   const [summary,setSummary]=useState<{lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}|null>(null);
   const [observability,setObservability]=useState<LiveOperationsObservability|null>(null);
   const [error,setError]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [outboxMessage,setOutboxMessage]=useState("");
 
-  useEffect(()=>{
-    void Promise.all([api.operationsSummary("utower"),api.operationsObservability("utower")])
-      .then(([summaryResult,observabilityResult])=>{
-        setSummary(summaryResult);
-        setObservability(observabilityResult);
-        setError("");
-      })
-      .catch(e=>setError(errorMessage(e)));
-  },[]);
+  async function load(){
+    try{
+      const [summaryResult,observabilityResult]=await Promise.all([
+        api.operationsSummary("utower"),api.operationsObservability("utower")
+      ]);
+      setSummary(summaryResult);
+      setObservability(observabilityResult);
+      setError("");
+    }catch(e){setError(errorMessage(e))}
+  }
+
+  useEffect(()=>{void load()},[]);
+
+  async function processOutbox(){
+    setBusy(true);setOutboxMessage("");
+    try{
+      const result=await api.processOutbox(50);
+      setOutboxMessage("Processed "+result.processed+" · retried "+result.retried+" · dead-letter "+result.deadLettered+" · remaining "+result.remaining);
+      await load();
+    }catch(e){setError(errorMessage(e))}
+    finally{setBusy(false)}
+  }
 
   return <div>
     {error&&<div className="notice">{error}</div>}
@@ -36,10 +51,17 @@ export function OperationsOverviewLive(){
     </section>
     <section className="kpis">
       <article><span>Outbox pending</span><b>{observability?.outboxPending??"—"}</b></article>
+      <article><span>Outbox retrying</span><b>{observability?.outboxRetrying??"—"}</b></article>
+      <article><span>Dead-letter</span><b>{observability?.outboxDeadLetter??"—"}</b></article>
       <article><span>Stale service work</span><b>{observability?.stale.serviceOrders??"—"}</b></article>
+    </section>
+    <section className="kpis">
       <article><span>Stale housekeeping</span><b>{observability?.stale.housekeeping??"—"}</b></article>
       <article><span>Stale maintenance</span><b>{observability?.stale.maintenance??"—"}</b></article>
+      <article><span>Queue health</span><b>{observability?.outboxDeadLetter===0?"OK":"ATTENTION"}</b></article>
+      <article><span>Processor</span><button className="primary" disabled={busy} onClick={processOutbox}>{busy?"Processing…":"Process now"}</button></article>
     </section>
+    {outboxMessage&&<div className="notice">{outboxMessage}</div>}
     <Panel title="Recent operational events">
       {!observability?.recentEvents.length?<div className="emptyLine">No domain events recorded yet.</div>:
       <div className="compactRows">{observability.recentEvents.slice(0,12).map((event,index)=><div key={event.source+event.aggregate_id+event.created_at+index}>
