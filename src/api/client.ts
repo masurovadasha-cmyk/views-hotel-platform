@@ -45,6 +45,8 @@ export const api={
   maintenanceAction:(id:string,action:"start"|"wait"|"block"|"resolve"|"verify")=>
     request<{id:string;status:string;assignedUserId?:string|null}>("/api/maintenance-action",{method:"POST",body:JSON.stringify({id,action})}),
   health:()=>request<{status:string}>("/api/health"),
+  staffOverview:(propertyId="utower")=>
+    request<import("./types").LiveStaffOverview>(`/api/staff-overview?propertyId=${encodeURIComponent(propertyId)}`),
   operationsSummary:(propertyId="utower")=>request<{propertyId:string;lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}>(`/api/operations-summary?propertyId=${encodeURIComponent(propertyId)}`),
   operationsExceptions:(propertyId="utower")=>request<{propertyId:string;lostFound:import("./types").LiveLostFoundItem[];damage:import("./types").LiveDamageReport[];lowStock:import("./types").LiveInventoryItem[]}>(`/api/operations-exceptions?propertyId=${encodeURIComponent(propertyId)}`),
   handovers:(propertyId="utower")=>request<{propertyId:string;items:import("./types").LiveShiftHandover[]}>(`/api/shift-handover?propertyId=${encodeURIComponent(propertyId)}`),
