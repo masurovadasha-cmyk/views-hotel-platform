@@ -94,11 +94,10 @@ export class GuestAuthService{
           `UPDATE guest_access_challenges
               SET delivery_status='delivered',
                   provider_message_id=$2,
-                  delivery_metadata=$3::jsonb,
                   last_error=NULL,
                   updated_at=now()
             WHERE id=$1`,
-          [challengeId,delivered.messageId??null,JSON.stringify(delivered.metadata??{})]
+          [challengeId,delivered.messageId??null]
         );
 
         await client.query(
@@ -120,14 +119,13 @@ export class GuestAuthService{
       return {
         challengeId,channel,status:"delivered" as const,expiresAt:expiresAt.toISOString()
       };
-    }catch(error){
-      const message=String(error instanceof Error?error.message:error).slice(0,120);
+    }catch{
       await this.db.withActor(actor,async client=>{
         await client.query(
           `UPDATE guest_access_challenges
               SET delivery_status='failed',last_error=$2,updated_at=now()
             WHERE id=$1`,
-          [challengeId,message]
+          [challengeId,"GUEST_AUTH_DELIVERY_FAILED"]
         );
       });
       throw new Error("GUEST_AUTH_DELIVERY_FAILED");
