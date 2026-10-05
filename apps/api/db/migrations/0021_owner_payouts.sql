@@ -40,6 +40,10 @@ CREATE TABLE owner_payout_instructions (
   CHECK (
     (status='confirmed' AND confirmed_at IS NOT NULL AND ledger_journal_id IS NOT NULL)
     OR status<>'confirmed'
+  ),
+  CHECK (
+    status NOT IN ('submitted','confirmed')
+    OR external_payout_id IS NOT NULL
   )
 );
 
