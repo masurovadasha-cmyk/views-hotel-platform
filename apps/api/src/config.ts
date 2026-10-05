@@ -1,6 +1,7 @@
 import {createHash,createPublicKey} from "node:crypto";
 
 export type TrustedProxyMode="direct"|"cloudflare";
+export type InternalServiceAuthMode="internal_key_only"|"dual"|"signed_only";
 
 export type ConfiguredInternalServicePublicKey={
   kid:string;
@@ -19,6 +20,7 @@ export type ApiConfig={
   internalApiKeys:string[];
   internalServiceKeys:Record<string,string[]>;
   internalServicePublicKeys:Record<string,ConfiguredInternalServicePublicKey[]>;
+  internalServiceAuthModes:Record<string,InternalServiceAuthMode>;
 };
 
 const SERVICE_ID=/^[a-z0-9][a-z0-9._:-]{1,63}$/;
@@ -78,10 +80,6 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
       "Configure either VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON or VIEWS_INTERNAL_SERVICE_KEYS_JSON, not both"
     );
   }
-  if(nodeEnv==="production"&&Object.keys(serviceKeyRefs).length===0){
-    throw new Error("VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON is required in production");
-  }
-
   const internalServiceKeys=Object.keys(serviceKeyRefs).length>0
     ?resolveInternalServiceKeyRefs(serviceKeyRefs,env)
     :rawServiceKeys;
@@ -93,12 +91,108 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
   const internalServicePublicKeys=resolveInternalServicePublicKeyRefs(
     servicePublicKeyRefs,env
   );
+  const configuredAuthModes=parseInternalServiceAuthModes(
+    env.VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON
+  );
+  const internalServiceAuthModes=resolveInternalServiceAuthModes(
+    configuredAuthModes,
+    internalServiceKeys,
+    internalServicePublicKeys,
+    nodeEnv
+  );
 
   return {
     port,databaseUrl,nodeEnv,trustedProxyMode,
     guestAuthRateLimitSecret,internalApiKey,internalApiKeys,
-    internalServiceKeys,internalServicePublicKeys
+    internalServiceKeys,internalServicePublicKeys,internalServiceAuthModes
   };
+}
+
+function parseInternalServiceAuthModes(raw:string|undefined){
+  const value=raw?.trim();
+  if(!value)return {} as Record<string,InternalServiceAuthMode>;
+
+  let parsed:unknown;
+  try{
+    parsed=JSON.parse(value);
+  }catch{
+    throw new Error("VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON must be valid JSON");
+  }
+  if(!parsed||typeof parsed!=="object"||Array.isArray(parsed)){
+    throw new Error("VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON must be an object");
+  }
+
+  const result:Record<string,InternalServiceAuthMode>={};
+  for(const [serviceId,mode] of Object.entries(parsed as Record<string,unknown>)){
+    if(!SERVICE_ID.test(serviceId)){
+      throw new Error("VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON contains invalid service id");
+    }
+    if(
+      mode!=="internal_key_only"&&
+      mode!=="dual"&&
+      mode!=="signed_only"
+    ){
+      throw new Error("VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON contains invalid auth mode");
+    }
+    result[serviceId]=mode;
+  }
+  return result;
+}
+
+function resolveInternalServiceAuthModes(
+  configured:Record<string,InternalServiceAuthMode>,
+  serviceKeys:Record<string,string[]>,
+  servicePublicKeys:Record<string,ConfiguredInternalServicePublicKey[]>,
+  nodeEnv:ApiConfig["nodeEnv"]
+){
+  const known=[...new Set([
+    ...Object.keys(serviceKeys),
+    ...Object.keys(servicePublicKeys),
+    ...Object.keys(configured)
+  ])].sort();
+
+  if(nodeEnv==="production"&&known.length>0&&Object.keys(configured).length===0){
+    throw new Error("VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON is required in production");
+  }
+
+  const result:Record<string,InternalServiceAuthMode>={};
+  for(const serviceId of known){
+    const mode=configured[serviceId]??(
+      serviceKeys[serviceId]?.length&&servicePublicKeys[serviceId]?.length
+        ?"dual"
+        :servicePublicKeys[serviceId]?.length
+          ?"signed_only"
+          :"internal_key_only"
+    );
+
+    if(nodeEnv==="production"&&!configured[serviceId]){
+      throw new Error(
+        "VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON must declare every production service"
+      );
+    }
+
+    const hasKey=Boolean(serviceKeys[serviceId]?.length);
+    const hasPublicKey=Boolean(servicePublicKeys[serviceId]?.length);
+
+    if(mode==="internal_key_only"&&!hasKey){
+      throw new Error(
+        "internal_key_only service requires a symmetric service key"
+      );
+    }
+    if(mode==="dual"&&(!hasKey||!hasPublicKey)){
+      throw new Error(
+        "dual service requires symmetric and signing credentials"
+      );
+    }
+    if(mode==="signed_only"&&!hasPublicKey){
+      throw new Error(
+        "signed_only service requires signing public keys"
+      );
+    }
+    result[serviceId]=mode;
+  }
+
+  return result;
 }
 
 function parseInternalServiceKeyRefs(raw:string|undefined){
