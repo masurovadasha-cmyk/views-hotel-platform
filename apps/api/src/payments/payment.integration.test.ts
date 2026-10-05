@@ -231,7 +231,7 @@ describe.sequential("payments and ledger integration",()=>{
       }}>(
         `SELECT payload FROM outbox_events
           WHERE event_type='finance.ledger_journal.v1'
-          ORDER BY created_at DESC LIMIT 1`
+          ORDER BY occurred_at DESC LIMIT 1`
       )).rows[0]?.payload
     );
     expect(ledgerProjection?.schemaVersion).toBe(1);
