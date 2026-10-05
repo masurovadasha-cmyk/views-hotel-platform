@@ -79,7 +79,7 @@ ON analytics_payment_facts
 USING (organization_id=app.current_organization_id())
 WITH CHECK (organization_id=app.current_organization_id());
 
-CREATE OR REPLACE VIEW analytics_property_daily AS
+CREATE OR REPLACE VIEW analytics_property_daily WITH (security_invoker=true) AS
 WITH property_dates AS (
   SELECT
     p.organization_id,
