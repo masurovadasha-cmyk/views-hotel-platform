@@ -192,3 +192,21 @@ VIEWS Production Core currently proves:
 - CHECK: reconciliation against provider settlement reports.
 
 Do not enable live money until these are confirmed.
+
+
+## Pages / D1 finance read model
+
+Stage 4 exposes a read-only Finance projection to the Staff UI.
+
+- PostgreSQL payment/ledger tables remain the financial source of truth.
+- D1 projection tables cannot initiate checkout, authorize, capture, refund, or mutate provider transactions.
+- The Pages API returns `liveMoneyEnabled=false`.
+- Amounts are exposed as minor units only; the UI does not guess provider-specific currency decimal conventions.
+- Finance access is role/property scoped.
+- Front Desk access is rejected.
+- Acceptance fails if a projected posted journal is missing entries, spans more than one currency, or has debit != credit.
+- Empty projection is valid and is rendered as "not synchronized yet", never as invented revenue.
+
+D1 migration: `migrations/0012_finance_read_model.sql`
+
+Pages endpoint: `GET /api/finance-summary?propertyId=<property>`
