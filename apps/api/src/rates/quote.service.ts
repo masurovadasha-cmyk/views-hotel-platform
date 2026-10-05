@@ -2,6 +2,7 @@ import {createHash,randomUUID} from "node:crypto";
 import {Injectable} from "@nestjs/common";
 import {DatabaseService} from "../database/database.service";
 import {validateCancellationPolicy,type CancellationPolicySnapshot} from "./cancellation";
+import {normalizeBookingAttribution,type NormalizedBookingAttribution} from "./booking-attribution";
 import {enumerateStayDates} from "./local-date";
 import {priceStay} from "./pricing.engine";
 import type {AdjustmentRule,ChargeRule,DayOverride,WeekdayRule} from "./pricing.types";
@@ -9,11 +10,12 @@ import type {CreateQuoteInput,QuoteResult} from "./quote.types";
 
 const QUOTE_TTL_SECONDS=600;
 
-function hashInput(input:CreateQuoteInput){
+function hashInput(input:CreateQuoteInput,attribution:NormalizedBookingAttribution){
   const stable=JSON.stringify({
     propertyId:input.propertyId,unitId:input.unitId,ratePlanId:input.ratePlanId,
     checkInAt:input.checkInAt,checkOutAt:input.checkOutAt,
-    guests:[...input.guests].sort((a,b)=>a.age-b.age||a.residency.localeCompare(b.residency))
+    guests:[...input.guests].sort((a,b)=>a.age-b.age||a.residency.localeCompare(b.residency)),
+    attribution
   });
   return createHash("sha256").update(stable).digest("hex");
 }
@@ -27,6 +29,7 @@ export class QuoteService{
     for(const guest of input.guests){
       if(!Number.isInteger(guest.age)||guest.age<0||guest.age>130)throw new Error("INVALID_GUEST_AGE");
     }
+    const attribution=normalizeBookingAttribution(input.attribution);
 
     return this.db.withActor(input.actor,async client=>{
       const access=await client.query<{allowed:boolean}>("SELECT app.can_access_property($1::uuid) AS allowed",[input.propertyId]);
@@ -154,17 +157,25 @@ export class QuoteService{
       });
 
       const quoteId=randomUUID(),expiresAt=new Date(Date.now()+QUOTE_TTL_SECONDS*1000);
-      const inputHash=hashInput(input);
+      const inputHash=hashInput(input,attribution);
       await client.query(
         `INSERT INTO booking_quotes(
           id,organization_id,property_id,unit_id,rate_plan_id,check_in_at,check_out_at,guest_context,currency,
-          accommodation_minor,discount_minor,charges_minor,total_minor,cancellation_policy_snapshot,pricing_snapshot,input_hash,expires_at
-        ) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,$16,$17)`,
+          accommodation_minor,discount_minor,charges_minor,total_minor,cancellation_policy_snapshot,pricing_snapshot,
+          input_hash,booking_channel,market_segment,attribution_source,
+          attribution_actor_user_id,attribution_actor_membership_id,expires_at
+        ) VALUES(
+          $1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,
+          $16,$17,$18,$19,$20,$21,$22
+        )`,
         [
           quoteId,input.actor.organizationId,input.propertyId,input.unitId,input.ratePlanId,input.checkInAt,input.checkOutAt,
           JSON.stringify({guests:input.guests}),row.currency,priced.accommodationMinor.toString(),priced.discountMinor.toString(),
           priced.chargesMinor.toString(),priced.totalMinor.toString(),JSON.stringify(policy),JSON.stringify(priced.pricingSnapshot),
-          inputHash,expiresAt
+          inputHash,attribution.bookingChannel,attribution.marketSegment,attribution.source,
+          attribution.source===null?null:input.actor.userId,
+          attribution.source===null?null:input.actor.membershipId,
+          expiresAt
         ]
       );
 
