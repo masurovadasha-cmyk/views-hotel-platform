@@ -21,7 +21,7 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
 
   const body=await request.json() as Record<string,unknown>;
   const id=String(body.id||""),action=String(body.action||"");
-  const job=await db.prepare("SELECT h.id,h.property_id,h.status,h.assigned_user_id,p.organization_id FROM housekeeping_jobs h JOIN properties p ON p.id=h.property_id WHERE h.id=? LIMIT 1")
+  const job=await db.prepare("SELECT h.id,h.property_id,h.unit_id,h.status,h.assigned_user_id,p.organization_id FROM housekeeping_jobs h JOIN properties p ON p.id=h.property_id WHERE h.id=? LIMIT 1")
     .bind(id).first<Record<string,unknown>>();
   if(!job)return json({error:"NOT_FOUND",requestId:requestId(request)},404);
   if(String(job.organization_id)!==session.organizationId)return json({error:"ORGANIZATION_FORBIDDEN",requestId:requestId(request)},403);
@@ -40,11 +40,13 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
     :rule.to==="inspection"?",completed_at=CURRENT_TIMESTAMP"
     :rule.to==="ready"?",verified_at=CURRENT_TIMESTAMP":"";
   const assignee=job.assigned_user_id||(session.role==="cleaner"&&action==="start"?session.userId:null);
+  const unitStatus=rule.to==="service_declined"?"dirty":rule.to;
 
   await db.batch([
     db.prepare("UPDATE housekeeping_jobs SET status=?,assigned_user_id=?"+stamps+" WHERE id=?").bind(rule.to,assignee,id),
+    db.prepare("UPDATE units SET status=? WHERE id=? AND property_id=?").bind(unitStatus,job.unit_id,job.property_id),
     db.prepare("INSERT INTO operations_events(id,organization_id,property_id,aggregate_type,aggregate_id,event_type,from_status,to_status,actor_user_id,payload) VALUES(?,?,?,?,?,?,?,?,?,?)")
-      .bind(crypto.randomUUID(),session.organizationId,job.property_id,"housekeeping",id,"housekeeping."+action,job.status,rule.to,session.userId,JSON.stringify({role:session.role}))
+      .bind(crypto.randomUUID(),session.organizationId,job.property_id,"housekeeping",id,"housekeeping."+action,job.status,rule.to,session.userId,JSON.stringify({role:session.role,unitStatus}))
   ]);
   return json({id,status:rule.to,assignedUserId:assignee,requestId:requestId(request)});
 };
