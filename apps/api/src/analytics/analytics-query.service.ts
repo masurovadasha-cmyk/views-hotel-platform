@@ -266,6 +266,120 @@ export class AnalyticsQueryService{
     });
   }
 
+
+  async cityDailyRollup(
+    actor:RequestActorContext,
+    from:string,
+    to:string,
+    countryCode?:string,
+    city?:string
+  ){
+    this.validateDates(from,to);
+    const normalizedCountry=this.normalizeCountryCode(countryCode);
+    const normalizedCity=this.normalizeCity(city);
+
+    return this.db.withActor(actor,async client=>{
+      await this.assertReadRole(client);
+
+      const rows=await client.query<{
+        country_code:string;region_code:string|null;city:string;local_date:string;currency:string;
+        property_count:number;available_unit_nights:string;occupied_unit_nights:string;booking_count:string;
+        accommodation_revenue_minor:string;gross_revenue_minor:string;net_revenue_minor:string;
+        occupancy:string;adr_minor:string;revpar_minor:string;
+        avg_lead_time_days:string;avg_stay_nights:string;refreshed_at:Date;
+      }>(
+        `SELECT
+           country_code::text,region_code,city,local_date::text,currency,property_count,
+           available_unit_nights::text,occupied_unit_nights::text,booking_count::text,
+           accommodation_revenue_minor::text,gross_revenue_minor::text,net_revenue_minor::text,
+           occupancy::text,adr_minor::text,revpar_minor::text,
+           avg_lead_time_days::text,avg_stay_nights::text,refreshed_at
+         FROM analytics_city_daily_rollups
+        WHERE organization_id=$1
+          AND local_date BETWEEN $2::date AND $3::date
+          AND ($4::text IS NULL OR country_code::text=$4)
+          AND ($5::text IS NULL OR lower(city)=lower($5))
+        ORDER BY local_date,country_code,city,currency`,
+        [actor.organizationId,from,to,normalizedCountry,normalizedCity]
+      );
+
+      return rows.rows.map(row=>({
+        countryCode:row.country_code,
+        regionCode:row.region_code,
+        city:row.city,
+        date:row.local_date,
+        currency:row.currency,
+        propertyCount:Number(row.property_count),
+        availableUnitNights:Number(row.available_unit_nights),
+        occupiedUnitNights:Number(row.occupied_unit_nights),
+        bookingCount:Number(row.booking_count),
+        accommodationRevenueMinor:row.accommodation_revenue_minor,
+        grossRevenueMinor:row.gross_revenue_minor,
+        netRevenueMinor:row.net_revenue_minor,
+        occupancy:Number(row.occupancy),
+        adrMinor:row.adr_minor,
+        revparMinor:row.revpar_minor,
+        avgLeadTimeDays:Number(row.avg_lead_time_days),
+        avgStayNights:Number(row.avg_stay_nights),
+        refreshedAt:row.refreshed_at.toISOString()
+      }));
+    });
+  }
+
+  async countryDailyRollup(
+    actor:RequestActorContext,
+    from:string,
+    to:string,
+    countryCode?:string
+  ){
+    this.validateDates(from,to);
+    const normalizedCountry=this.normalizeCountryCode(countryCode);
+
+    return this.db.withActor(actor,async client=>{
+      await this.assertReadRole(client);
+
+      const rows=await client.query<{
+        country_code:string;local_date:string;currency:string;property_count:number;
+        available_unit_nights:string;occupied_unit_nights:string;booking_count:string;
+        accommodation_revenue_minor:string;gross_revenue_minor:string;net_revenue_minor:string;
+        occupancy:string;adr_minor:string;revpar_minor:string;
+        avg_lead_time_days:string;avg_stay_nights:string;refreshed_at:Date;
+      }>(
+        `SELECT
+           country_code::text,local_date::text,currency,property_count,
+           available_unit_nights::text,occupied_unit_nights::text,booking_count::text,
+           accommodation_revenue_minor::text,gross_revenue_minor::text,net_revenue_minor::text,
+           occupancy::text,adr_minor::text,revpar_minor::text,
+           avg_lead_time_days::text,avg_stay_nights::text,refreshed_at
+         FROM analytics_country_daily_rollups
+        WHERE organization_id=$1
+          AND local_date BETWEEN $2::date AND $3::date
+          AND ($4::text IS NULL OR country_code::text=$4)
+        ORDER BY local_date,country_code,currency`,
+        [actor.organizationId,from,to,normalizedCountry]
+      );
+
+      return rows.rows.map(row=>({
+        countryCode:row.country_code,
+        date:row.local_date,
+        currency:row.currency,
+        propertyCount:Number(row.property_count),
+        availableUnitNights:Number(row.available_unit_nights),
+        occupiedUnitNights:Number(row.occupied_unit_nights),
+        bookingCount:Number(row.booking_count),
+        accommodationRevenueMinor:row.accommodation_revenue_minor,
+        grossRevenueMinor:row.gross_revenue_minor,
+        netRevenueMinor:row.net_revenue_minor,
+        occupancy:Number(row.occupancy),
+        adrMinor:row.adr_minor,
+        revparMinor:row.revpar_minor,
+        avgLeadTimeDays:Number(row.avg_lead_time_days),
+        avgStayNights:Number(row.avg_stay_nights),
+        refreshedAt:row.refreshed_at.toISOString()
+      }));
+    });
+  }
+
   async projectionHealth(actor:RequestActorContext){
     return this.db.withActor(actor,async client=>{
       const role=(await client.query<{code:string|null}>(
@@ -320,6 +434,20 @@ export class AnalyticsQueryService{
     if(value===undefined)return null;
     const normalized=value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"_").slice(0,64);
     return normalized||null;
+  }
+
+  private normalizeCountryCode(value:string|undefined){
+    if(value===undefined)return null;
+    const normalized=value.trim().toUpperCase();
+    if(!/^[A-Z]{2}$/.test(normalized))throw new Error("INVALID_COUNTRY_CODE");
+    return normalized;
+  }
+
+  private normalizeCity(value:string|undefined){
+    if(value===undefined)return null;
+    const normalized=value.trim();
+    if(!normalized||normalized.length>120)throw new Error("INVALID_CITY");
+    return normalized;
   }
 
   private async assertPropertyReadAccess(
