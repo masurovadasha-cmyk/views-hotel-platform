@@ -94,10 +94,6 @@ export class AnalyticsExportController{
     }catch(error){throw mapExportError(error)}
   }
 
-  @Get()
-  connected(){
-    return {storageProviders:this.exports.connectedStorageProviders()};
-  }
 }
 
 function actorFromHeaders(
