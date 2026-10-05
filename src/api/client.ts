@@ -14,6 +14,10 @@ export const api={
   verifyLogin:(token:string)=>request<{authenticated:boolean;expiresAt:string}>("/api/auth-verify",{method:"POST",body:JSON.stringify({token})}),
   logout:()=>request<{ok:boolean}>("/api/logout",{method:"POST"}),
   bookings:()=>request<{items:import("./types").LiveBooking[]}>("/api/my-bookings"),
+  frontDeskReservations:(propertyId="utower")=>
+    request<{propertyId:string;items:import("./types").LiveFrontDeskReservation[]}>(`/api/frontdesk-reservations?propertyId=${encodeURIComponent(propertyId)}`),
+  frontDeskAction:(input:{id:string;action:"check_in"|"check_out";version:number})=>
+    request<{id:string;status:string;version:number;unitStatus:string;housekeepingCreated:boolean}>("/api/frontdesk-action",{method:"POST",body:JSON.stringify(input)}),
   serviceOrders:(propertyId="utower")=>request<{items:import("./types").LiveServiceOrder[]}>(`/api/service-orders?propertyId=${encodeURIComponent(propertyId)}`),
   createServiceOrder:(input:{propertyId:string;category:string;title:string;priority?:string},idempotencyKey:string)=>
     request<{id:string;status:string}>("/api/service-orders",{method:"POST",headers:{"Idempotency-Key":idempotencyKey},body:JSON.stringify(input)}),
