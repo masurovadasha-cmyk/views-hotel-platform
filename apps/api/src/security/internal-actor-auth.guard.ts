@@ -24,7 +24,7 @@ export class InternalActorAuthGuard implements CanActivate{
 
 export function assertTrustedInternalActorHeaders(
   headers:IncomingHttpHeaders,
-  expectedInternalKey:string
+  expectedInternalKey:string|readonly string[]
 ){
   const anyActorHeader=actorHeaders.some(name=>headers[name]!==undefined);
   if(!anyActorHeader)return;
