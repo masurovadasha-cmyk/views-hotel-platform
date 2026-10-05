@@ -95,77 +95,98 @@ WITH property_dates AS (
   ) gs
   GROUP BY p.organization_id,p.id,gs::date
 ),
-reservation_nights AS (
+reservation_night_facts AS (
   SELECT
     f.organization_id,
     f.property_id,
-    gs::date AS local_date,
+    f.reservation_id,
     f.currency,
-    COUNT(*)::integer AS occupied_unit_nights,
-    COUNT(DISTINCT f.reservation_id)::integer AS booking_count,
-    SUM(f.accommodation_minor/f.stay_nights)::bigint AS accommodation_revenue_minor,
-    SUM(f.gross_revenue_minor/f.stay_nights)::bigint AS gross_revenue_minor,
-    SUM(f.lead_time_days) AS lead_time_days_sum,
-    SUM(f.stay_nights)::bigint AS stay_nights_sum
+    gs.local_date::date AS local_date,
+    f.lead_time_days,
+    f.stay_nights,
+    (
+      f.accommodation_minor/f.stay_nights
+      + CASE
+          WHEN gs.ordinality<=mod(f.accommodation_minor,f.stay_nights) THEN 1
+          ELSE 0
+        END
+    )::bigint AS accommodation_revenue_minor,
+    (
+      f.gross_revenue_minor/f.stay_nights
+      + CASE
+          WHEN gs.ordinality<=mod(f.gross_revenue_minor,f.stay_nights) THEN 1
+          ELSE 0
+        END
+    )::bigint AS gross_revenue_minor,
+    (
+      COALESCE(p.net_collected_minor,0)/f.stay_nights
+      + CASE
+          WHEN gs.ordinality<=mod(COALESCE(p.net_collected_minor,0),f.stay_nights) THEN 1
+          ELSE 0
+        END
+    )::bigint AS net_revenue_minor
   FROM analytics_reservation_facts f
+  LEFT JOIN analytics_payment_facts p
+    ON p.reservation_id=f.reservation_id
+   AND p.organization_id=f.organization_id
   CROSS JOIN LATERAL generate_series(
     f.check_in_local_date::timestamp,
     (f.check_out_local_date-1)::timestamp,
     interval '1 day'
-  ) gs
+  ) WITH ORDINALITY AS gs(local_date,ordinality)
   WHERE f.status IN ('confirmed','checked_in','checked_out')
-  GROUP BY f.organization_id,f.property_id,gs::date,f.currency
 ),
-payment_totals AS (
+daily AS (
   SELECT
-    organization_id,property_id,currency,
-    SUM(captured_minor)::bigint AS captured_minor,
-    SUM(refunded_minor)::bigint AS refunded_minor,
-    SUM(net_collected_minor)::bigint AS net_collected_minor
-  FROM analytics_payment_facts
-  GROUP BY organization_id,property_id,currency
+    organization_id,
+    property_id,
+    local_date,
+    currency,
+    COUNT(*)::integer AS occupied_unit_nights,
+    COUNT(DISTINCT reservation_id)::integer AS booking_count,
+    SUM(accommodation_revenue_minor)::bigint AS accommodation_revenue_minor,
+    SUM(gross_revenue_minor)::bigint AS gross_revenue_minor,
+    SUM(net_revenue_minor)::bigint AS net_revenue_minor,
+    SUM(lead_time_days) AS lead_time_days_sum,
+    SUM(stay_nights)::bigint AS stay_nights_sum
+  FROM reservation_night_facts
+  GROUP BY organization_id,property_id,local_date,currency
 )
 SELECT
   d.organization_id,
   d.property_id,
   d.local_date,
-  r.currency,
+  a.currency,
   d.available_unit_nights,
-  COALESCE(r.occupied_unit_nights,0) AS occupied_unit_nights,
-  COALESCE(r.booking_count,0) AS booking_count,
-  COALESCE(r.accommodation_revenue_minor,0) AS accommodation_revenue_minor,
-  COALESCE(r.gross_revenue_minor,0) AS gross_revenue_minor,
+  COALESCE(a.occupied_unit_nights,0) AS occupied_unit_nights,
+  COALESCE(a.booking_count,0) AS booking_count,
+  COALESCE(a.accommodation_revenue_minor,0) AS accommodation_revenue_minor,
+  COALESCE(a.gross_revenue_minor,0) AS gross_revenue_minor,
+  COALESCE(a.net_revenue_minor,0) AS net_revenue_minor,
   CASE
     WHEN d.available_unit_nights=0 THEN 0::numeric
-    ELSE ROUND(COALESCE(r.occupied_unit_nights,0)::numeric/d.available_unit_nights,6)
+    ELSE ROUND(COALESCE(a.occupied_unit_nights,0)::numeric/d.available_unit_nights,6)
   END AS occupancy,
   CASE
-    WHEN COALESCE(r.occupied_unit_nights,0)=0 THEN 0::numeric
-    ELSE ROUND(COALESCE(r.accommodation_revenue_minor,0)::numeric/r.occupied_unit_nights,2)
+    WHEN COALESCE(a.occupied_unit_nights,0)=0 THEN 0::numeric
+    ELSE ROUND(COALESCE(a.accommodation_revenue_minor,0)::numeric/a.occupied_unit_nights,2)
   END AS adr_minor,
   CASE
     WHEN d.available_unit_nights=0 THEN 0::numeric
-    ELSE ROUND(COALESCE(r.accommodation_revenue_minor,0)::numeric/d.available_unit_nights,2)
+    ELSE ROUND(COALESCE(a.accommodation_revenue_minor,0)::numeric/d.available_unit_nights,2)
   END AS revpar_minor,
   CASE
-    WHEN COALESCE(r.booking_count,0)=0 THEN 0::numeric
-    ELSE ROUND(COALESCE(r.lead_time_days_sum,0)::numeric/r.booking_count,2)
+    WHEN COALESCE(a.booking_count,0)=0 THEN 0::numeric
+    ELSE ROUND(COALESCE(a.lead_time_days_sum,0)::numeric/a.booking_count,2)
   END AS avg_lead_time_days,
   CASE
-    WHEN COALESCE(r.booking_count,0)=0 THEN 0::numeric
-    ELSE ROUND(COALESCE(r.stay_nights_sum,0)::numeric/r.booking_count,2)
-  END AS avg_stay_nights,
-  COALESCE(p.captured_minor,0) AS property_captured_minor,
-  COALESCE(p.refunded_minor,0) AS property_refunded_minor,
-  COALESCE(p.net_collected_minor,0) AS property_net_collected_minor
+    WHEN COALESCE(a.booking_count,0)=0 THEN 0::numeric
+    ELSE ROUND(COALESCE(a.stay_nights_sum,0)::numeric/a.booking_count,2)
+  END AS avg_stay_nights
 FROM property_dates d
-LEFT JOIN reservation_nights r
-  ON r.organization_id=d.organization_id
- AND r.property_id=d.property_id
- AND r.local_date=d.local_date
-LEFT JOIN payment_totals p
-  ON p.organization_id=d.organization_id
- AND p.property_id=d.property_id
- AND p.currency=r.currency;
+LEFT JOIN daily a
+  ON a.organization_id=d.organization_id
+ AND a.property_id=d.property_id
+ AND a.local_date=d.local_date;
 
 COMMIT;
