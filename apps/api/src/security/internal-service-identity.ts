@@ -20,6 +20,9 @@ export type InternalServiceAuthConfig={
   legacyKeys:string|readonly string[];
   serviceKeys:Readonly<Record<string,readonly string[]>>;
   servicePublicKeys?:Readonly<Record<string,readonly InternalServicePublicKey[]>>;
+  serviceAuthModes?:Readonly<Record<
+    string,"internal_key_only"|"dual"|"signed_only"
+  >>;
 };
 
 export type InternalServiceRequestMeta={
@@ -48,7 +51,12 @@ export function trustedInternalServiceIdentity(
     throw new Error("INTERNAL_SERVICE_ID_REQUIRED");
   }
 
+  const authMode=authModeForService(serviceId,expected);
+
   if(rawToken!==undefined){
+    if(authMode==="internal_key_only"){
+      throw new Error("INTERNAL_SERVICE_TOKEN_NOT_ALLOWED");
+    }
     const token=singleHeader(rawToken);
     if(!token)throw new Error("INTERNAL_SERVICE_TOKEN_INVALID");
     if(!request)throw new Error("INTERNAL_SERVICE_TOKEN_BINDING_INVALID");
@@ -75,6 +83,9 @@ export function trustedInternalServiceIdentity(
 
   const internalKey=singleHeader(rawKey);
   if(!internalKey)return null;
+  if(authMode==="signed_only"){
+    throw new Error("INTERNAL_SERVICE_SIGNED_TOKEN_REQUIRED");
+  }
 
   const expectedKeys=keysForService(serviceId,expected);
   assertInternalApiKey(internalKey,expectedKeys);
@@ -100,7 +111,8 @@ export type InternalServiceIdentityRejectionReason=
   |"missing_service_identity"
   |"invalid_service_identity"
   |"invalid_service_token"
-  |"expired_service_token";
+  |"expired_service_token"
+  |"signed_token_required";
 
 export function classifyInternalServiceIdentityFailure(
   headers:IncomingHttpHeaders,
@@ -109,6 +121,9 @@ export function classifyInternalServiceIdentityFailure(
   const code=error instanceof Error?error.message:"";
   if(code==="INTERNAL_API_UNAUTHORIZED"){
     return "invalid_internal_key";
+  }
+  if(code==="INTERNAL_SERVICE_SIGNED_TOKEN_REQUIRED"){
+    return "signed_token_required";
   }
 
   const rawService=headers["x-views-service-id"];
@@ -126,6 +141,14 @@ export function classifyInternalServiceIdentityFailure(
   }
 
   return "invalid_service_identity";
+}
+
+function authModeForService(
+  serviceId:string,
+  expected:InternalServiceExpectedKeys
+):"internal_key_only"|"dual"|"signed_only"{
+  if(!isServiceAuthConfig(expected))return "dual";
+  return expected.serviceAuthModes?.[serviceId]??"dual";
 }
 
 function publicKeysForService(
