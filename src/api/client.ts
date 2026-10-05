@@ -35,6 +35,8 @@ export const api={
     request<{id:string;status:string;assignedUserId?:string|null}>("/api/maintenance-action",{method:"POST",body:JSON.stringify({id,action})}),
   health:()=>request<{status:string}>("/api/health"),
   operationsSummary:(propertyId="utower")=>request<{propertyId:string;lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}>(`/api/operations-summary?propertyId=${encodeURIComponent(propertyId)}`),
+  operationsExceptions:(propertyId="utower")=>request<{propertyId:string;lostFound:import("./types").LiveLostFoundItem[];damage:import("./types").LiveDamageReport[];lowStock:import("./types").LiveInventoryItem[]}>(`/api/operations-exceptions?propertyId=${encodeURIComponent(propertyId)}`),
+  handovers:(propertyId="utower")=>request<{propertyId:string;items:import("./types").LiveShiftHandover[]}>(`/api/shift-handover?propertyId=${encodeURIComponent(propertyId)}`),
   apartmentTimeline:(unitId:string)=>request<{unitId:string;items:unknown[]}>(`/api/apartment-timeline?unitId=${encodeURIComponent(unitId)}`),
   lostFoundAction:(id:string,action:"claim"|"return"|"close")=>request<{id:string;status:string}>("/api/lost-found-action",{method:"POST",body:JSON.stringify({id,action})}),
   damageAction:(id:string,action:"review"|"resolve"|"close")=>request<{id:string;status:string}>("/api/damage-action",{method:"POST",body:JSON.stringify({id,action})}),
