@@ -165,6 +165,22 @@ for spec in "accept:1:accepted:2" "complete:2:done:3"; do
 done
 
 
+
+FINANCE_FORBIDDEN_STATUS="$(curl -sS -o /tmp/views-finance-forbidden.json -w "%{http_code}" -b /tmp/views-frontdesk.cookies \
+  "$BASE/api/finance-summary?propertyId=utower")"
+test "$FINANCE_FORBIDDEN_STATUS" = "403"
+
+FINANCE_SUMMARY="$(curl -fsS -b /tmp/views-manager.cookies "$BASE/api/finance-summary?propertyId=utower")"
+FINANCE_SUMMARY="$FINANCE_SUMMARY" node -e '
+  const x=JSON.parse(process.env.FINANCE_SUMMARY);
+  if(x.sourceOfTruth!=="postgres-payments-ledger") throw new Error("remote finance source of truth mismatch");
+  if(x.projection!=="d1-finance-read-model") throw new Error("remote finance projection mismatch");
+  if(x.liveMoneyEnabled!==false) throw new Error("remote live money must remain disabled");
+  if(!Array.isArray(x.ledger?.unbalancedPostedJournals)||x.ledger.unbalancedPostedJournals.length!==0){
+    throw new Error("remote unbalanced posted finance journal detected");
+  }
+'
+
 OUTBOX_PROCESS="$(curl -fsS -b /tmp/views-manager.cookies \
   -H "Origin: $ORIGIN" -H "Content-Type: application/json" \
   --data '{"limit":50}' \
