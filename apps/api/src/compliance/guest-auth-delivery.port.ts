@@ -10,7 +10,6 @@ export type GuestAuthDeliveryInput={
 
 export type GuestAuthDeliveryResult={
   messageId?:string;
-  metadata?:Record<string,unknown>;
 };
 
 export interface GuestAuthDeliveryPort{
