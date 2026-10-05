@@ -24,3 +24,31 @@ export type LiveServiceOrder={
   version:number;
   created_at:string;
 };
+
+export type LiveHousekeepingJob={
+  id:string;
+  property_id:string;
+  unit_id:string;
+  unit_code:string;
+  reservation_id:string|null;
+  assigned_user_id:string|null;
+  status:string;
+  created_at:string;
+  started_at:string|null;
+  completed_at:string|null;
+  verified_at:string|null;
+};
+
+export type LiveMaintenanceTicket={
+  id:string;
+  property_id:string;
+  unit_id:string|null;
+  unit_code:string|null;
+  assigned_user_id:string|null;
+  title:string;
+  description:string|null;
+  priority:string;
+  status:string;
+  created_at:string;
+  resolved_at:string|null;
+};
