@@ -58,5 +58,6 @@ export const api={
   inventoryAdjust:(id:string,delta:number,note="")=>request<{id:string;quantity:number}>("/api/inventory-adjust",{method:"POST",body:JSON.stringify({id,delta,note})}),
   createHandover:(input:{propertyId:string;fromShift:string;toShift:string;unresolved:unknown[];risks:unknown[];followUp:unknown[]})=>request<{id:string;status:string}>("/api/shift-handover",{method:"POST",body:JSON.stringify(input)}),
   acknowledgeHandover:(id:string)=>request<{id:string;status:string}>("/api/shift-handover",{method:"PATCH",body:JSON.stringify({id})}),
+  financeSummary:(propertyId="utower")=>request<import("./types").LiveFinanceSummary>(`/api/finance-summary?propertyId=${encodeURIComponent(propertyId)}`),
   readiness:()=>request<{status:string;database:string;schema:string}>("/api/readiness")
 };
