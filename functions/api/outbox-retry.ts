@@ -22,7 +22,7 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
 
   await db.prepare([
     "UPDATE outbox_events SET attempt_count=0,available_at=CURRENT_TIMESTAMP,last_attempt_at=NULL,",
-    "last_error=NULL,dead_letter_at=NULL WHERE id=? AND organization_id=? AND processed_at IS NULL"
+    "last_error=NULL,dead_letter_at=NULL,lease_token=NULL,lease_expires_at=NULL WHERE id=? AND organization_id=? AND processed_at IS NULL"
   ].join("")).bind(id,session.organizationId).run();
 
   return json({id,status:"retry_scheduled",requestId:requestId(request)});
