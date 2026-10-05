@@ -59,6 +59,7 @@ describe("analytics dashboard BFF",()=>{
       const headers=new Headers(init?.headers);
       expect(headers.get("x-views-internal-key"))
         .toBe("fixture-core-internal-key-material-32chars");
+      expect(headers.get("x-views-service-id")).toBe("pages-bff");
       expect(headers.get("x-organization-id"))
         .toBe("00000000-0000-4000-8000-000000000001");
       expect(headers.get("x-user-id"))
