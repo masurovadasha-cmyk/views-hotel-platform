@@ -69,12 +69,26 @@ export function coreApiConfig(env:Env){
     throw new CoreBridgeError("CORE_API_URL_INVALID");
   }
 
-  const key=env.VIEWS_CORE_API_KEY?.trim();
-  if(!key||key.length<32)throw new CoreBridgeError("CORE_API_KEY_NOT_CONFIGURED");
+  const key=env.VIEWS_CORE_API_KEY?.trim()||null;
+  if(key&&key.length<32)throw new CoreBridgeError("CORE_API_KEY_NOT_CONFIGURED");
+
+  const signingPrivateKey=env.VIEWS_CORE_SIGNING_PRIVATE_KEY?.trim()||null;
+  const signingKid=env.VIEWS_CORE_SIGNING_KID?.trim()||null;
+  if(Boolean(signingPrivateKey)!==Boolean(signingKid)){
+    throw new CoreBridgeError("CORE_SIGNING_CONFIG_INCOMPLETE");
+  }
+  if(signingKid&&!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(signingKid)){
+    throw new CoreBridgeError("CORE_SIGNING_KID_INVALID");
+  }
+  if(!key&&!signingPrivateKey){
+    throw new CoreBridgeError("CORE_API_CREDENTIAL_NOT_CONFIGURED");
+  }
 
   return {
     baseUrl:url.origin,
-    internalKey:key
+    internalKey:key,
+    signingPrivateKey,
+    signingKid
   };
 }
 
