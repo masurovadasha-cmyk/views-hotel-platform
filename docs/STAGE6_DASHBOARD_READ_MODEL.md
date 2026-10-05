@@ -41,7 +41,7 @@ Property scope is enforced server-side.
 
 Schema version:
 
-- `1`
+- `2`
 
 Main sections:
 
@@ -52,6 +52,8 @@ Main sections:
 - `lifecycleByCurrency`
 - `marketplaceByCurrency`
 - `geography`
+- `channelSegmentBreakdown`
+- `comparison`
 - `cache`
 
 ### KPI section
@@ -102,6 +104,58 @@ Aggregates accessible property rollups by:
 - region;
 - city;
 - currency.
+
+## Channel / segment breakdown
+
+The dashboard aggregates canonical arrival cohorts and finalized marketplace economics by:
+
+- currency;
+- booking channel;
+- market segment.
+
+For each row it returns:
+
+- booking / active / cancellation / no-show counts;
+- cancellation and no-show rates;
+- finalized economics reservation count;
+- **economics coverage rate** = finalized economics reservations / booking count;
+- net collected;
+- platform commission;
+- owner payable;
+- commission and owner-payable rates.
+
+Missing attribution stays NULL.
+
+The coverage field is mandatory context: a zero economics amount must not be interpreted as
+"zero commission" when the reservation economics have simply not been finalized yet.
+
+## Previous-period comparison
+
+Schema v2 automatically compares the requested period with the immediately preceding period
+of the same number of calendar days.
+
+Example:
+
+- requested: 10–16 August;
+- comparison: 3–9 August.
+
+Comparison blocks are returned per currency for:
+
+- hospitality KPI;
+- lifecycle KPI;
+- marketplace economics.
+
+Money deltas remain exact strings in minor units.
+
+ADR/RevPAR deltas preserve two-decimal minor-unit precision.
+
+Rates/counts are numeric absolute deltas.
+
+If one side of a currency comparison is missing, delta is NULL rather than pretending the missing
+period is zero.
+
+The source fingerprint includes both current and comparison-period freshness, so a change in either
+period invalidates the cache.
 
 ## Cache
 
@@ -213,8 +267,7 @@ Acceptance verifies:
 
 ## Next work
 
-- dashboard channel/segment breakdown blocks;
 - cached report/export jobs;
 - dashboard ETag/conditional HTTP response;
-- period-over-period comparison;
+- year-over-year / custom comparison modes;
 - scheduled snapshot/export delivery.

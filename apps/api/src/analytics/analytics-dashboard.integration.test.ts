@@ -13,6 +13,7 @@ const ACTIVE_RESERVATION="f4000000-0000-4000-8000-000000000001";
 const CANCELLED_RESERVATION="f4000000-0000-4000-8000-000000000002";
 const ECONOMICS_SNAPSHOT="f5000000-0000-4000-8000-000000000001";
 const DATE="2032-08-10";
+const PREVIOUS_DATE="2032-08-09";
 
 const actor={
   organizationId:ORG,userId:USER,membershipId:MEMBERSHIP,requestId:"dashboard-read-model-test"
@@ -90,10 +91,16 @@ beforeAll(async()=>{
          available_unit_nights,occupied_unit_nights,booking_count,
          accommodation_revenue_minor,gross_revenue_minor,net_revenue_minor,
          occupancy,adr_minor,revpar_minor,avg_lead_time_days,avg_stay_nights,refreshed_at
-       ) VALUES(
+       ) VALUES
+       (
          $1,$2,$3::date,'UZS',
          10,1,1,5000,6000,5000,
          0.1,5000,500,10,2,now()
+       ),
+       (
+         $1,$2,$4::date,'UZS',
+         10,1,1,4000,5000,4000,
+         0.1,4000,400,9,2,now()
        )
        ON CONFLICT(organization_id,property_id,local_date,currency) DO UPDATE SET
          available_unit_nights=EXCLUDED.available_unit_nights,
@@ -108,7 +115,7 @@ beforeAll(async()=>{
          avg_lead_time_days=EXCLUDED.avg_lead_time_days,
          avg_stay_nights=EXCLUDED.avg_stay_nights,
          refreshed_at=now()`,
-      [ORG,PROPERTY,DATE]
+      [ORG,PROPERTY,DATE,PREVIOUS_DATE]
     );
 
     await client.query(
@@ -161,7 +168,7 @@ describe.sequential("Stage 6 dashboard read model",()=>{
       from:DATE,to:DATE,propertyId:PROPERTY
     }) as any;
 
-    expect(result.schemaVersion).toBe(1);
+    expect(result.schemaVersion).toBe(2);
     expect(result.cache.hit).toBe(false);
     expect(result.scope).toEqual({organizationId:ORG,propertyId:PROPERTY});
 
@@ -205,6 +212,45 @@ describe.sequential("Stage 6 dashboard read model",()=>{
 
     expect(result.geography).toHaveLength(1);
     expect(result.geography[0].city).toBe("Tashkent");
+
+    expect(result.channelSegmentBreakdown).toHaveLength(1);
+    expect(result.channelSegmentBreakdown[0]).toMatchObject({
+      currency:"UZS",
+      bookingChannel:"staff_crm",
+      marketSegment:"corporate_sales",
+      bookingCount:2,
+      activeOrStayedCount:1,
+      cancellationCount:1,
+      economicsReservationCount:1,
+      economicsCoverageRate:0.5,
+      netCollectedMinor:"10000",
+      platformCommissionMinor:"1000",
+      ownerPayableMinor:"8500",
+      platformCommissionRate:0.1,
+      ownerPayableRate:0.85
+    });
+
+    expect(result.comparison.mode).toBe("previous_equal_period");
+    expect(result.comparison.period).toEqual({
+      from:PREVIOUS_DATE,to:PREVIOUS_DATE
+    });
+    expect(result.comparison.kpisByCurrency).toHaveLength(1);
+    expect(result.comparison.kpisByCurrency[0]).toMatchObject({
+      currency:"UZS",
+      delta:{
+        bookingCount:0,
+        occupiedUnitNights:0,
+        accommodationRevenueMinor:"1000",
+        grossRevenueMinor:"1000",
+        netRevenueMinor:"1000",
+        occupancy:0,
+        adrMinor:"1000.00",
+        revparMinor:"100.00",
+        avgLeadTimeDays:1,
+        avgStayNights:0
+      }
+    });
+
     expect(result.freshness.sourceFingerprint).toMatch(/^[a-f0-9]{64}$/);
   });
 
