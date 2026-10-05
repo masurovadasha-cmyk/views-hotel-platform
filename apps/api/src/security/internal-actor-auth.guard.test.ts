@@ -96,6 +96,25 @@ describe("internal actor gateway boundary",()=>{
     },SIGNED_AUTH,REQUEST)).not.toThrow();
   });
 
+  it("classifies a legacy key attempt on a signed-only service",()=>{
+    const signedOnly={
+      ...SIGNED_AUTH,
+      serviceAuthModes:{"pages-bff":"signed_only" as const}
+    };
+    try{
+      assertTrustedInternalActorHeaders({
+        ...ACTOR,
+        ...SERVICE,
+        "x-views-internal-key":KEY,
+        "x-request-id":REQUEST.requestId
+      },signedOnly,REQUEST);
+      throw new Error("EXPECTED_SIGNED_ONLY_REJECTION");
+    }catch(error){
+      expect(error).toBeInstanceOf(UnauthorizedException);
+      expect((error as {reason?:string}).reason).toBe("signed_token_required");
+    }
+  });
+
   it("does not downgrade a bad signed token to a valid internal key",()=>{
     expect(()=>assertTrustedInternalActorHeaders({
       ...ACTOR,

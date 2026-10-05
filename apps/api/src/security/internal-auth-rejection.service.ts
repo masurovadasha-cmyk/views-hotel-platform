@@ -15,7 +15,8 @@ export type InternalAuthRejectionReason=
   |"invalid_service_identity"
   |"invalid_service_token"
   |"expired_service_token"
-  |"service_token_replay";
+  |"service_token_replay"
+  |"signed_token_required";
 
 @Injectable()
 export class InternalAuthRejectionService{

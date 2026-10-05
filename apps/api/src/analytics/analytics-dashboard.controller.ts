@@ -38,7 +38,8 @@ export class AnalyticsDashboardController{
         {
           legacyKeys:config.internalApiKeys,
           serviceKeys:config.internalServiceKeys,
-          servicePublicKeys:config.internalServicePublicKeys
+          servicePublicKeys:config.internalServicePublicKeys,
+          serviceAuthModes:config.internalServiceAuthModes
         },
         {
           method:"GET",
@@ -100,6 +101,7 @@ function mapDashboardError(error:unknown){
     message==="INTERNAL_API_UNAUTHORIZED"||
     message==="INTERNAL_SERVICE_ID_REQUIRED"||
     message==="INTERNAL_SERVICE_NOT_CONFIGURED"||
+    message==="INTERNAL_SERVICE_SIGNED_TOKEN_REQUIRED"||
     message.startsWith("INTERNAL_SERVICE_TOKEN_")
   ){
     return new UnauthorizedException("internal API authentication required");
