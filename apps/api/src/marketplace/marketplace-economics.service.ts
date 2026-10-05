@@ -49,7 +49,7 @@ export class MarketplaceEconomicsService{
     const requestHash=createHash("sha256").update(JSON.stringify(normalized)).digest("hex");
 
     return this.db.withActor(actor,async client=>{
-      await this.assertRole(client);
+      await this.assertWriteRole(client);
 
       const existing=(await client.query<{
         id:string;request_hash:string;status:string;version:number;
@@ -123,7 +123,7 @@ export class MarketplaceEconomicsService{
 
   async finalize(actor:RequestActorContext,snapshotId:string){
     return this.db.withActor(actor,async client=>{
-      await this.assertRole(client);
+      await this.assertWriteRole(client);
 
       const snapshot=(await client.query<{
         id:string;organization_id:string;property_id:string;reservation_id:string;version:number;
@@ -214,7 +214,7 @@ export class MarketplaceEconomicsService{
 
   async reservationSnapshots(actor:RequestActorContext,reservationId:string){
     return this.db.withActor(actor,async client=>{
-      await this.assertRole(client);
+      await this.assertReadRole(client);
       const reservation=(await client.query<{property_id:string}>(
         "SELECT property_id FROM reservations WHERE id=$1 AND organization_id=$2",
         [reservationId,actor.organizationId]
@@ -282,11 +282,20 @@ export class MarketplaceEconomicsService{
     return BigInt(value);
   }
 
-  private async assertRole(client:import("pg").PoolClient){
+  private async assertWriteRole(client:import("pg").PoolClient){
     const role=(await client.query<{code:string|null}>(
       "SELECT app.current_membership_role() AS code"
     )).rows[0]?.code;
     if(!role||!["owner","manager","accountant"].includes(role)){
+      throw new Error("ECONOMICS_ROLE_FORBIDDEN");
+    }
+  }
+
+  private async assertReadRole(client:import("pg").PoolClient){
+    const role=(await client.query<{code:string|null}>(
+      "SELECT app.current_membership_role() AS code"
+    )).rows[0]?.code;
+    if(!role||!["host","owner","manager","accountant"].includes(role)){
       throw new Error("ECONOMICS_ROLE_FORBIDDEN");
     }
   }
