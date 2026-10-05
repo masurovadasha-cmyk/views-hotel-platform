@@ -33,6 +33,10 @@ Stage 4 is accepted only when all mandatory gates are green on the same staging 
   - retry/dead-letter metrics remain clean
   - outbox processor claims events with short-lived leases
   - no active outbox leases remain after drain
+  - Finance read model identifies PostgreSQL as source of truth
+  - live money remains disabled in the D1 projection
+  - Front Desk cannot access Finance projection
+  - unbalanced posted finance journals = 0
 - [ ] VIEWS Staging Preview
 - [ ] Recovery command validation
 
@@ -49,6 +53,9 @@ Required before declaring remote staging complete:
 - [ ] remote Stage 4 Golden Flow passes
 - [ ] outbox pending/retrying/dead-letter are clean after processing
 - [ ] outbox active leases return to 0 after processing
+- [ ] Finance read model reports PostgreSQL source of truth
+- [ ] live money remains disabled in D1
+- [ ] unbalanced posted finance journals = 0
 
 If Cloudflare credentials are absent, the credential-aware workflow may be green while remote deployment steps are skipped. That is not equivalent to remote staging acceptance.
 
