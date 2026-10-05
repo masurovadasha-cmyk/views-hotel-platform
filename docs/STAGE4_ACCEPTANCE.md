@@ -31,6 +31,8 @@ Stage 4 is accepted only when all mandatory gates are green on the same staging 
   - integration status
   - outbox processing drains ready events
   - retry/dead-letter metrics remain clean
+  - outbox processor claims events with short-lived leases
+  - no active outbox leases remain after drain
 - [ ] VIEWS Staging Preview
 - [ ] Recovery command validation
 
@@ -46,6 +48,7 @@ Required before declaring remote staging complete:
 - [ ] /api/readiness passes
 - [ ] remote Stage 4 Golden Flow passes
 - [ ] outbox pending/retrying/dead-letter are clean after processing
+- [ ] outbox active leases return to 0 after processing
 
 If Cloudflare credentials are absent, the credential-aware workflow may be green while remote deployment steps are skipped. That is not equivalent to remote staging acceptance.
 
