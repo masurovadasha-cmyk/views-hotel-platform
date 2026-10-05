@@ -2,6 +2,7 @@ import {randomUUID} from "node:crypto";
 import {Injectable} from "@nestjs/common";
 import {DatabaseService} from "../database/database.service";
 import {AnalyticsProjectionService} from "./analytics-projection.service";
+import {AnalyticsRollupService} from "./analytics-rollup.service";
 
 const CONSUMER="analytics-core-v1";
 const LEASE_SECONDS=300;
@@ -10,7 +11,8 @@ const LEASE_SECONDS=300;
 export class AnalyticsWorkerService{
   constructor(
     private readonly db:DatabaseService,
-    private readonly projector:AnalyticsProjectionService
+    private readonly projector:AnalyticsProjectionService,
+    private readonly rollups:AnalyticsRollupService
   ){}
 
   async runCycle(tenantLimit=20,eventLimit=200){
@@ -32,12 +34,14 @@ export class AnalyticsWorkerService{
       status:"completed"|"failed";
       scanned?:number;
       projected?:number;
+      refreshedRollupProperties?:number;
       errorCode?:string;
     }>=[];
 
     for(const row of claimed.rows){
       try{
         const result=await this.projector.processOrganization(row.organization_id,eventLimit);
+        const rollupResult=await this.rollups.refreshOrganization(row.organization_id,50);
         const completed=await this.complete(row.organization_id,workerToken,null);
         if(!completed)throw new Error("ANALYTICS_WORKER_LEASE_LOST");
 
@@ -45,7 +49,8 @@ export class AnalyticsWorkerService{
           organizationId:row.organization_id,
           status:"completed",
           scanned:result.scanned,
-          projected:result.projected
+          projected:result.projected,
+          refreshedRollupProperties:rollupResult.refreshedProperties
         });
       }catch(error){
         const code=this.errorCode(error);
