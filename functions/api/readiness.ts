@@ -2,7 +2,7 @@ import {json,type Env} from "./_shared";
 
 const REQUIRED_TABLES=[
   "organizations","properties","reservations","service_orders","app_sessions",
-  "stays","operations_events","outbox_events","integrations"
+  "stays","operations_events","outbox_events","outbox_deliveries","integrations"
 ];
 
 export const onRequestGet=async({env}:{env:Env})=>{
