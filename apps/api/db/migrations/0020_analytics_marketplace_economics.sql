@@ -77,6 +77,84 @@ GROUP BY
   r.booking_channel,
   r.market_segment;
 
+CREATE OR REPLACE VIEW analytics_marketplace_stay_daily
+WITH (security_invoker=true) AS
+WITH nightly AS (
+  SELECT
+    e.organization_id,
+    e.property_id,
+    e.reservation_id,
+    e.currency,
+    r.booking_channel,
+    r.market_segment,
+    gs.local_date::date AS local_date,
+    (
+      e.net_collected_minor/r.stay_nights
+      + CASE
+          WHEN gs.ordinality<=mod(e.net_collected_minor,r.stay_nights) THEN 1
+          ELSE 0
+        END
+    )::bigint AS net_collected_minor,
+    (
+      e.platform_commission_minor/r.stay_nights
+      + CASE
+          WHEN gs.ordinality<=mod(e.platform_commission_minor,r.stay_nights) THEN 1
+          ELSE 0
+        END
+    )::bigint AS platform_commission_minor,
+    (
+      e.owner_payable_minor/r.stay_nights
+      + CASE
+          WHEN gs.ordinality<=mod(e.owner_payable_minor,r.stay_nights) THEN 1
+          ELSE 0
+        END
+    )::bigint AS owner_payable_minor,
+    (
+      e.taxes_withheld_minor/r.stay_nights
+      + CASE
+          WHEN gs.ordinality<=mod(e.taxes_withheld_minor,r.stay_nights) THEN 1
+          ELSE 0
+        END
+    )::bigint AS taxes_withheld_minor,
+    (
+      e.other_deductions_minor/r.stay_nights
+      + CASE
+          WHEN gs.ordinality<=mod(e.other_deductions_minor,r.stay_nights) THEN 1
+          ELSE 0
+        END
+    )::bigint AS other_deductions_minor
+  FROM analytics_marketplace_economic_facts e
+  JOIN analytics_reservation_facts r
+    ON r.reservation_id=e.reservation_id
+   AND r.organization_id=e.organization_id
+  CROSS JOIN LATERAL generate_series(
+    r.check_in_local_date::timestamp,
+    (r.check_out_local_date-1)::timestamp,
+    interval '1 day'
+  ) WITH ORDINALITY AS gs(local_date,ordinality)
+)
+SELECT
+  organization_id,
+  property_id,
+  local_date,
+  currency,
+  booking_channel,
+  market_segment,
+  COUNT(DISTINCT reservation_id)::integer AS reservation_count,
+  SUM(net_collected_minor)::bigint AS net_collected_minor,
+  SUM(platform_commission_minor)::bigint AS platform_commission_minor,
+  SUM(owner_payable_minor)::bigint AS owner_payable_minor,
+  SUM(taxes_withheld_minor)::bigint AS taxes_withheld_minor,
+  SUM(other_deductions_minor)::bigint AS other_deductions_minor
+FROM nightly
+GROUP BY
+  organization_id,
+  property_id,
+  local_date,
+  currency,
+  booking_channel,
+  market_segment;
+
 CREATE OR REPLACE VIEW analytics_projection_health
 WITH (security_invoker=true) AS
 WITH relevant AS (
