@@ -104,7 +104,9 @@ Return not found without leaking another reservation when:
 
 ## Production boundary
 
-This layer is an authorization boundary, not a complete consumer authentication product.
-Before public launch, delivery of the guest token must be connected to an authenticated booking channel
-(for example verified email/phone magic-link flow) with rate limits, replay controls and channel audit.
-Do not place the guest access token in analytics, error telemetry, logs, or persistent browser storage.
+Stage 5.2 adds the one-time verified-channel exchange foundation described in
+`docs/STAGE5_GUEST_AUTH_EXCHANGE.md`.
+
+Real email/SMS adapters are still intentionally not faked or assumed connected. Before public launch,
+connect an approved provider, add distributed rate limits and complete token/telemetry redaction.
+Do not place guest access or exchange tokens in analytics, error telemetry, logs, or persistent browser storage.
