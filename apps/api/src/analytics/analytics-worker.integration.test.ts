@@ -3,6 +3,7 @@ import {DatabaseService} from "../database/database.service";
 import {AnalyticsProjectionService} from "./analytics-projection.service";
 import {AnalyticsWorkerService} from "./analytics-worker.service";
 import {AnalyticsQueryService} from "./analytics-query.service";
+import {AnalyticsRollupService} from "./analytics-rollup.service";
 
 const ORG="00000000-0000-0000-0000-000000000001";
 const PROPERTY="00000000-0000-0000-0000-000000000002";
@@ -18,7 +19,8 @@ const actor={
 
 const db=new DatabaseService();
 const projector=new AnalyticsProjectionService(db);
-const worker=new AnalyticsWorkerService(db,projector);
+const rollups=new AnalyticsRollupService(db);
+const worker=new AnalyticsWorkerService(db,projector,rollups);
 const queries=new AnalyticsQueryService(db);
 
 beforeAll(async()=>{
@@ -82,7 +84,20 @@ describe.sequential("Stage 6 analytics worker",()=>{
         [ORG]
       )).rows[0];
 
-      return {workerState,consumed:Number(consumed.count)};
+      const rollup=(await client.query<{count:string}>(
+        `SELECT count(*)::text AS count
+           FROM analytics_property_daily_rollups
+          WHERE organization_id=$1
+            AND property_id=$2
+            AND local_date BETWEEN '2027-02-10'::date AND '2027-02-11'::date`,
+        [ORG,PROPERTY]
+      )).rows[0];
+
+      return {
+        workerState,
+        consumed:Number(consumed.count),
+        rollupRows:Number(rollup.count)
+      };
     });
 
     expect(state.workerState.lease_token).toBeNull();
@@ -91,6 +106,30 @@ describe.sequential("Stage 6 analytics worker",()=>{
     expect(state.workerState.consecutive_failures).toBe(0);
     expect(state.workerState.last_error_code).toBeNull();
     expect(state.consumed).toBe(1);
+    expect(state.rollupRows).toBeGreaterThanOrEqual(2);
+  });
+
+  it("serves materialized property and organization rollups",async()=>{
+    const propertyRows=await queries.propertyDailyRollup(
+      actor,PROPERTY,"2027-02-10","2027-02-11"
+    );
+    const organizationRows=await queries.organizationDailyRollup(
+      actor,"2027-02-10","2027-02-11"
+    );
+
+    const propertyUzs=propertyRows.filter(row=>row.currency==="UZS");
+    const organizationUzs=organizationRows.filter(row=>row.currency==="UZS");
+
+    expect(propertyUzs).toHaveLength(2);
+    expect(organizationUzs).toHaveLength(2);
+
+    expect(propertyUzs[0].accommodationRevenueMinor).toBe("500");
+    expect(propertyUzs[1].accommodationRevenueMinor).toBe("500");
+    expect(organizationUzs[0].accommodationRevenueMinor)
+      .toBe(propertyUzs[0].accommodationRevenueMinor);
+    expect(organizationUzs[0].occupancy).toBe(propertyUzs[0].occupancy);
+    expect(organizationUzs[0].adrMinor).toBe(propertyUzs[0].adrMinor);
+    expect(organizationUzs[0].revparMinor).toBe(propertyUzs[0].revparMinor);
   });
 
   it("does not reclaim a tenant when no relevant pending event remains",async()=>{
