@@ -7,6 +7,7 @@ export type ApiConfig={
   trustedProxyMode:TrustedProxyMode;
   guestAuthRateLimitSecret:string;
   internalApiKey:string;
+  internalApiKeys:string[];
 };
 
 export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
@@ -44,8 +45,17 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
   const internalApiKey=configuredInternalKey
     ??"views-development-only-internal-api-key-not-for-production";
 
+  const configuredPreviousKey=env.VIEWS_INTERNAL_API_KEY_PREVIOUS?.trim();
+  if(configuredPreviousKey&&configuredPreviousKey.length<32){
+    throw new Error("VIEWS_INTERNAL_API_KEY_PREVIOUS must be at least 32 characters");
+  }
+
+  const internalApiKeys=[...new Set(
+    [internalApiKey,configuredPreviousKey].filter((value):value is string=>Boolean(value))
+  )];
+
   return {
     port,databaseUrl,nodeEnv,trustedProxyMode,
-    guestAuthRateLimitSecret,internalApiKey
+    guestAuthRateLimitSecret,internalApiKey,internalApiKeys
   };
 }

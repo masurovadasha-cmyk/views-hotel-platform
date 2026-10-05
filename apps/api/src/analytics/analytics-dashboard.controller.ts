@@ -26,7 +26,7 @@ export class AnalyticsDashboardController{
     @Res({passthrough:true}) response:Response
   ){
     try{
-      assertInternalApiKey(internalApiKey,loadConfig().internalApiKey);
+      assertInternalApiKey(internalApiKey,loadConfig().internalApiKeys);
       if(!from||!to)throw new BadRequestException("from and to are required");
       const result=await this.dashboard.summary(
         actorFromHeaders(organizationId,userId,membershipId,requestId),
