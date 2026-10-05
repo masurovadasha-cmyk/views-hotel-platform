@@ -1,5 +1,6 @@
 import {afterAll,beforeAll,describe,expect,it} from "vitest";
 import {DatabaseService} from "../database/database.service";
+import {SecurityRateLimitService} from "../security/rate-limit.service";
 import {GuestAccessService} from "./guest-access.service";
 import type {GuestAuthDeliveryInput,GuestAuthDeliveryPort} from "./guest-auth-delivery.port";
 import {GuestAuthProviderRegistry} from "./guest-auth-provider.registry";
@@ -16,6 +17,7 @@ const GUEST_PROFILE="b1000000-0000-4000-8000-000000000001";
 const RESERVATION="b2000000-0000-4000-8000-000000000001";
 const RESERVATION_GUEST="b3000000-0000-4000-8000-000000000001";
 const EMAIL="guest.auth@example.test";
+const NETWORK_KEY="c".repeat(64);
 
 const actor={
   organizationId:ORG,userId:USER,membershipId:MEMBERSHIP,requestId:"guest-auth-integration"
@@ -35,7 +37,8 @@ const db=new DatabaseService();
 const delivery=new TestEmailDelivery();
 const providers=new GuestAuthProviderRegistry();
 providers.register(delivery);
-const auth=new GuestAuthService(db,providers);
+const rateLimits=new SecurityRateLimitService(db);
+const auth=new GuestAuthService(db,providers,rateLimits);
 const access=new GuestAccessService(db);
 
 beforeAll(async()=>{
@@ -111,7 +114,7 @@ describe.sequential("Stage 5 one-time guest auth exchange",()=>{
     const rawToken=delivery.lastInput?.exchangeToken;
     if(!rawToken)throw new Error("EXPECTED_DELIVERED_EXCHANGE_TOKEN");
 
-    const exchanged=await auth.exchange(rawToken,60);
+    const exchanged=await auth.exchange(rawToken,60,NETWORK_KEY);
     expect(exchanged.accessToken.startsWith("vga_")).toBe(true);
     expect(exchanged.reservationId).toBe(RESERVATION);
 
@@ -146,17 +149,17 @@ describe.sequential("Stage 5 one-time guest auth exchange",()=>{
     expect(state.sessionRow.token_hash).not.toContain(exchanged.accessToken);
     expect(state.eventRow.event_type).toBe("identity.guest_access_exchanged");
 
-    await expect(auth.exchange(rawToken,60)).rejects.toThrow("GUEST_AUTH_CHALLENGE_INVALID");
+    await expect(auth.exchange(rawToken,60,NETWORK_KEY)).rejects.toThrow("GUEST_AUTH_CHALLENGE_INVALID");
   });
 
   it("rejects malformed exchange tokens",async()=>{
-    await expect(auth.exchange("vge_not-a-real-token",60))
+    await expect(auth.exchange("vge_not-a-real-token",60,NETWORK_KEY))
       .rejects.toThrow("GUEST_AUTH_CHALLENGE_INVALID");
   });
 
   it("reports an unconnected channel truthfully before creating a challenge",async()=>{
     const emptyProviders=new GuestAuthProviderRegistry();
-    const isolatedAuth=new GuestAuthService(db,emptyProviders);
+    const isolatedAuth=new GuestAuthService(db,emptyProviders,rateLimits);
 
     await expect(isolatedAuth.createChallenge(actor,RESERVATION,"sms",15))
       .rejects.toThrow("GUEST_AUTH_DELIVERY_NOT_CONNECTED");
