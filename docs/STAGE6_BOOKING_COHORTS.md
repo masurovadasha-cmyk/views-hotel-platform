@@ -1,141 +1,107 @@
 # Stage 6.2 — Truthful Booking Cohorts
 
-Status: implementation on top of Analytics Worker/SLO + Rollups.
+Status: implementation on top of the current Worker/SLO + Rollups stack.
 
-## Objective
+## Purpose
 
-Make booking-source and market-segment analytics truthful while preserving the current
-event-driven worker, projection health/SLO, and materialized daily rollups.
+Make booking-channel and market-segment analytics truthful and cohort-oriented.
 
-## Compatibility
+The earlier dimensions layer used the synthetic fallback `unknown`. Stage 6.2 removes that
+ambiguity: when attribution was not explicitly captured in the frozen reservation snapshot,
+the analytical dimension remains NULL.
 
-This slice keeps:
+## Migration order
 
-- analytics consumer: `analytics-core-v1`;
-- tenant worker leases;
-- projection health/SLO;
-- property daily rollups;
-- organization daily rollups;
-- dirty-range refresh behavior.
+- 0015 — analytics dimensions + health
+- 0016 — analytics worker leases + SLO
+- 0017 — analytics daily rollups
+- 0018 — truthful booking cohorts
 
-No parallel analytics consumer is introduced.
+No migration number is reused.
 
-## Migration
+## Explicit attribution
 
-`0018_analytics_booking_cohorts.sql`
+Booking channel may be read only from explicit snapshot fields such as:
 
-It runs after:
-- 0015 analytics dimensions/health;
-- 0016 analytics worker/SLO;
-- 0017 analytics rollups.
-
-## Removing synthetic attribution
-
-The prior dimensions layer used:
-
-- `booking_channel='unknown'`
-- `market_segment='unknown'`
-
-Those defaults are removed.
-
-Existing synthetic `unknown` values are converted to NULL.
-
-New projections return NULL when the frozen reservation snapshot does not explicitly contain
-a source/channel or market/guest segment.
-
-## Recognized explicit fields
-
-Booking channel:
 - `bookingChannel`
 - `sourceChannel`
 - `pricingSnapshot.bookingChannel`
 - `pricingSnapshot.sourceChannel`
 
-Market segment:
+Market segment may be read only from:
+
 - `marketSegment`
 - `guestSegment`
 - `guestContext.marketSegment`
 - `guestContext.guestSegment`
 
-Values are normalized into lowercase dimension codes.
+Values are normalized to lowercase dimension codes. Missing values remain NULL.
 
-## Lifecycle facts
+## Lifecycle provenance
 
-Reservation facts gain:
+Cancellation:
+- `reservations.cancelled_at` first;
+- otherwise first booking-state event whose `to_status='cancelled'`.
 
-- `booking_local_date`
-- `cancellation_lead_days`
+No-show:
+- first booking-state event whose `to_status='no_show'`.
 
-Cancellation provenance:
-1. reservation cancelled_at;
-2. first booking-state event with to_status=cancelled.
+Cancellation lead time is the non-negative interval between cancellation and local arrival.
 
-No-show provenance:
-- first booking-state event with to_status=no_show.
-
-## Canonical arrival cohort view
+## Canonical cohort view
 
 `analytics_booking_cohorts_daily`
 
 Dimensions:
-- organization;
-- property;
-- arrival date;
-- currency;
-- booking channel;
-- market segment.
+- organization
+- property
+- arrival date
+- currency
+- booking channel
+- market segment
 
 Metrics:
-- booking count;
-- active/stayed count;
-- cancellation count;
-- no-show count;
-- cancellation rate;
-- no-show rate;
-- average booking lead time;
-- average stay length;
-- average cancellation lead time.
+- booking count
+- active/stayed count
+- cancellation count
+- no-show count
+- cancellation rate
+- no-show rate
+- average lead time
+- average stay length
+- average cancellation lead time
 
-Lifecycle rates must be read from this arrival cohort view rather than inferred from stay-night rollups.
+Cancellation/no-show rates belong to the arrival cohort view, not the stay-night KPI view.
 
 ## API
 
 `GET /v1/analytics/properties/:propertyId/booking-cohorts?from=YYYY-MM-DD&to=YYYY-MM-DD`
 
-Optional:
+Optional filters:
 - `bookingChannel`
 - `marketSegment`
 
-The API uses the same normalization rules as projection.
+Filters use the same normalization rules as projection.
 
-## Rollup interaction
+## Compatibility
 
-Reservation projection still marks `analytics_rollup_dirty_ranges`.
+The consumer remains `analytics-core-v1`.
 
-The existing worker continues to:
+This preserves:
+- Analytics Worker leases
+- projection health
+- SLO status
+- rollup refresh
+- dirty-range tracking
 
-1. consume outbox events;
-2. refresh reservation/payment facts;
-3. mark dirty property date ranges;
-4. refresh daily rollups;
-5. update worker lease/SLO state.
-
-The new cohort view reads canonical reservation facts and does not fork the worker pipeline.
+The projector still marks affected property/date ranges dirty after reservation changes.
 
 ## Acceptance
 
-The integration fixture includes one arrival date with:
-
-- active Direct Web / Leisure booking;
-- cancelled Direct Web / Leisure booking;
-- unattributed no-show.
-
-Expected:
-- attributed bookings = 2;
-- cancellation count = 1;
-- cancellation rate = 0.5;
-- unattributed bookings = 1;
-- no-show count = 1;
-- no-show rate = 1.0;
-- missing dimensions remain NULL;
-- no response reintroduces synthetic `unknown`.
+Integration coverage verifies:
+- active + cancelled + no-show in one arrival cohort;
+- explicit Direct Web / Leisure normalizes to `direct_web` / `leisure`;
+- missing attribution remains NULL;
+- cancellation rate = 0.5 for the attributed cohort;
+- no-show rate = 1.0 for the unattributed cohort;
+- synthetic `unknown` is not returned.
