@@ -83,7 +83,9 @@ fallback. Production requires the reference-based boundary.
 The Stage 7.2 legacy Core-wide ring remains available for development/test compatibility when no
 service-specific map exists.
 
-Runtime callers do not change. They still present their own service identity and current key.
+Stage 7.6 itself keeps the existing caller protocol. Stage 7.7 then adds short-lived signed service
+tokens as the preferred path for migrated callers while retaining these service-specific symmetric
+references as the rollback/migration fallback.
 
 ## Secret-store boundary
 
@@ -115,7 +117,8 @@ Tests cover:
 
 ## Next work
 
-- short-lived signed service identity tokens;
+- short-lived signed service identity tokens (implemented as the Stage 7.7 candidate);
+- retire the symmetric production requirement after every trusted sender migrates;
 - key age / rotation SLO alerts;
 - network ingress allowlists;
 - mTLS when the deployment infrastructure supports it.
