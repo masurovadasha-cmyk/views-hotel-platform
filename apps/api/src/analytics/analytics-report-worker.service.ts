@@ -30,7 +30,7 @@ export class AnalyticsReportWorkerService{
 
     const results:Array<{
       reportJobId:string;
-      status:"completed"|"queued"|"failed";
+      status:"completed"|"queued"|"failed"|"lease_lost";
       attempts:number;
       errorCode?:string;
     }>=[];
@@ -93,7 +93,11 @@ export class AnalyticsReportWorkerService{
         const status=failed.rows[0]?.status;
         results.push({
           reportJobId:job.job_id,
-          status:status==="failed"?"failed":"queued",
+          status:status==="failed"
+            ?"failed"
+            :status==="queued"
+              ?"queued"
+              :"lease_lost",
           attempts:Number(job.attempt_count),
           errorCode
         });
@@ -106,6 +110,7 @@ export class AnalyticsReportWorkerService{
       completed:results.filter(x=>x.status==="completed").length,
       queuedForRetry:results.filter(x=>x.status==="queued").length,
       failed:results.filter(x=>x.status==="failed").length,
+      leaseLost:results.filter(x=>x.status==="lease_lost").length,
       results
     };
   }
@@ -129,6 +134,6 @@ function reportFilename(
 
 function normalizeError(error:unknown){
   const raw=error instanceof Error?error.message:"REPORT_JOB_ERROR";
-  const normalized=raw.toUpperCase().replace(/[^A-Z0-9_:-]+/g,"_").slice(0,120);
-  return normalized||"REPORT_JOB_ERROR";
+  if(/^[A-Z][A-Z0-9_:-]{1,119}$/.test(raw))return raw;
+  return "REPORT_JOB_ERROR";
 }
