@@ -99,7 +99,8 @@ jobs:
 
           INSERT INTO users(id,email,display_name)
           VALUES('20000000-0000-4000-8000-000000000001','manager@views.test','Manager A'),
-                ('20000000-0000-4000-8000-000000000002','frontdesk@views.test','Front Desk A');
+                ('20000000-0000-4000-8000-000000000002','frontdesk@views.test','Front Desk A'),
+                ('20000000-0000-4000-8000-000000000003','owner@views.test','Owner A');
 
           INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
           SELECT '30000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000001',id,'active',now()
@@ -108,6 +109,10 @@ jobs:
           INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
           SELECT '30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000002',id,'active',now()
           FROM roles WHERE code='front_desk';
+
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000003','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000003',id,'active',now()
+          FROM roles WHERE code='owner';
 
           INSERT INTO membership_property_scopes(membership_id,property_id)
           VALUES('30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000002');
