@@ -127,12 +127,13 @@ export class LedgerService{
     const debit=await this.ensureAccount(
       client,input.organizationId,"guest_deposits",input.currency
     );
-    const credits:Array<{code:LedgerAccountCode;amount:bigint;memo:string}>=[
+    const creditCandidates:Array<{code:LedgerAccountCode;amount:bigint;memo:string}>=[
       {code:"platform_commission_revenue",amount:input.platformCommissionMinor,memo:"Platform commission earned"},
       {code:"owner_payable",amount:input.ownerPayableMinor,memo:"Owner settlement payable"},
       {code:"taxes_payable",amount:input.taxesWithheldMinor,memo:"Taxes withheld for settlement"},
       {code:"other_deductions_payable",amount:input.otherDeductionsMinor,memo:"Other settlement deductions"}
-    ].filter(x=>x.amount>0n);
+    ];
+    const credits=creditCandidates.filter(x=>x.amount>0n);
 
     const journalId=(await client.query<{id:string}>(
       `INSERT INTO ledger_journals(
