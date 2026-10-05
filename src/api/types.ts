@@ -139,3 +139,24 @@ export type LiveIntegrationStatus={
   lastErrorCode:string|null;
   updatedAt:string;
 };
+
+export type LiveObservabilityEvent={
+  source:"operations"|"reservation"|"service_order";
+  event_type:string;
+  aggregate_id:string;
+  from_status:string|null;
+  to_status:string|null;
+  actor_user_id:string|null;
+  created_at:string;
+};
+
+export type LiveOperationsObservability={
+  propertyId:string;
+  outboxPending:number;
+  stale:{
+    serviceOrders:number;
+    housekeeping:number;
+    maintenance:number;
+  };
+  recentEvents:LiveObservabilityEvent[];
+};
