@@ -18,7 +18,8 @@ on:
       - "functions/**"
       - "migrations/**"
       - "src/**"
-      - "scripts/stage4-local-e2e.sh"\n      - "scripts/stage4-remote-smoke.sh"
+      - "scripts/stage4-local-e2e.sh"
+      - "scripts/stage4-remote-smoke.sh"
       - "wrangler.local.toml"
 
 permissions:
