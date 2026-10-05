@@ -52,6 +52,7 @@ export class AnalyticsProjectionService{
           AND (
             o.aggregate_type='reservation'
             OR o.event_type='finance.payment_intent.v1'
+            OR o.event_type='marketplace.reservation_economics.v1'
           )
         ORDER BY o.occurred_at,o.id
         LIMIT $3`,
@@ -63,7 +64,10 @@ export class AnalyticsProjectionService{
       let reservationId:string|null=null;
       if(event.aggregate_type==="reservation"){
         reservationId=event.aggregate_id;
-      }else if(event.event_type==="finance.payment_intent.v1"){
+      }else if(
+        event.event_type==="finance.payment_intent.v1"||
+        event.event_type==="marketplace.reservation_economics.v1"
+      ){
         reservationId=typeof event.payload?.reservationId==="string"
           ?event.payload.reservationId
           :null;
@@ -72,6 +76,7 @@ export class AnalyticsProjectionService{
       if(reservationId){
         await this.projectReservation(client,organizationId,reservationId);
         await this.projectPayments(client,organizationId,reservationId);
+        await this.projectMarketplaceEconomics(client,organizationId,reservationId);
       }
 
       const inserted=await client.query(
@@ -242,6 +247,65 @@ export class AnalyticsProjectionService{
     if(typeof value!=="string")return null;
     const normalized=value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"_").slice(0,64);
     return normalized||null;
+  }
+
+  private async projectMarketplaceEconomics(
+    client:import("pg").PoolClient,
+    organizationId:string,
+    reservationId:string
+  ){
+    const row=(await client.query<{
+      snapshot_id:string;organization_id:string;property_id:string;reservation_id:string;
+      version:number;currency:string;net_collected_minor:string;platform_commission_minor:string;
+      owner_payable_minor:string;taxes_withheld_minor:string;other_deductions_minor:string;
+      finalized_at:Date;
+    }>(
+      `SELECT
+          s.id AS snapshot_id,s.organization_id,s.property_id,s.reservation_id,
+          s.version,s.currency,s.net_collected_minor::text,
+          s.platform_commission_minor::text,s.owner_payable_minor::text,
+          s.taxes_withheld_minor::text,s.other_deductions_minor::text,
+          s.finalized_at
+        FROM reservation_economic_snapshots s
+       WHERE s.organization_id=$1
+         AND s.reservation_id=$2
+         AND s.status='finalized'
+       LIMIT 1`,
+      [organizationId,reservationId]
+    )).rows[0];
+
+    if(!row)return;
+
+    await client.query(
+      `INSERT INTO analytics_marketplace_economic_facts(
+         reservation_id,organization_id,property_id,currency,
+         net_collected_minor,platform_commission_minor,owner_payable_minor,
+         taxes_withheld_minor,other_deductions_minor,
+         source_snapshot_id,source_version,source_finalized_at,projected_at
+       ) VALUES(
+         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now()
+       )
+       ON CONFLICT(reservation_id) DO UPDATE SET
+         organization_id=EXCLUDED.organization_id,
+         property_id=EXCLUDED.property_id,
+         currency=EXCLUDED.currency,
+         net_collected_minor=EXCLUDED.net_collected_minor,
+         platform_commission_minor=EXCLUDED.platform_commission_minor,
+         owner_payable_minor=EXCLUDED.owner_payable_minor,
+         taxes_withheld_minor=EXCLUDED.taxes_withheld_minor,
+         other_deductions_minor=EXCLUDED.other_deductions_minor,
+         source_snapshot_id=EXCLUDED.source_snapshot_id,
+         source_version=EXCLUDED.source_version,
+         source_finalized_at=EXCLUDED.source_finalized_at,
+         projected_at=now()
+       WHERE analytics_marketplace_economic_facts.source_version<=EXCLUDED.source_version`,
+      [
+        row.reservation_id,row.organization_id,row.property_id,row.currency,
+        row.net_collected_minor,row.platform_commission_minor,row.owner_payable_minor,
+        row.taxes_withheld_minor,row.other_deductions_minor,
+        row.snapshot_id,row.version,row.finalized_at
+      ]
+    );
   }
 
   private async projectPayments(
