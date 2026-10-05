@@ -36,9 +36,13 @@ export class InternalServiceAuditInterceptor implements NestInterceptor{
 
     let identity;
     try{
+      const config=loadConfig();
       identity=trustedInternalServiceIdentity(
         request.headers,
-        loadConfig().internalApiKeys
+        {
+          legacyKeys:config.internalApiKeys,
+          serviceKeys:config.internalServiceKeys
+        }
       );
     }catch(error){
       const reason=classifyInternalServiceIdentityFailure(
