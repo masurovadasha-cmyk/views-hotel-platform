@@ -34,7 +34,8 @@ export class AnalyticsInternalJobsController{
         {
           legacyKeys:config.internalApiKeys,
           serviceKeys:config.internalServiceKeys,
-          servicePublicKeys:config.internalServicePublicKeys
+          servicePublicKeys:config.internalServicePublicKeys,
+          serviceAuthModes:config.internalServiceAuthModes
         },
         {
           method:"POST",
@@ -71,7 +72,8 @@ export class AnalyticsInternalJobsController{
           [
             "INTERNAL_API_UNAUTHORIZED",
             "INTERNAL_SERVICE_ID_REQUIRED",
-            "INTERNAL_SERVICE_NOT_CONFIGURED"
+            "INTERNAL_SERVICE_NOT_CONFIGURED",
+            "INTERNAL_SERVICE_SIGNED_TOKEN_REQUIRED"
           ].includes(error.message)||
           error.message.startsWith("INTERNAL_SERVICE_TOKEN_")
         )
