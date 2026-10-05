@@ -2,15 +2,23 @@ import {createHash,randomBytes,randomUUID} from "node:crypto";
 import {Injectable} from "@nestjs/common";
 import {DatabaseService} from "../database/database.service";
 import type {RequestActorContext} from "../identity/actor-context";
+import {SecurityRateLimitService} from "../security/rate-limit.service";
 import {assertComplianceRole} from "./compliance-authorization";
 import type {GuestAuthChannel} from "./guest-auth-delivery.port";
 import {GuestAuthProviderRegistry} from "./guest-auth-provider.registry";
+
+const CHALLENGE_LIMIT=5;
+const CHALLENGE_WINDOW_SECONDS=15*60;
+const EXCHANGE_NETWORK_LIMIT=60;
+const EXCHANGE_TOKEN_LIMIT=6;
+const EXCHANGE_WINDOW_SECONDS=5*60;
 
 @Injectable()
 export class GuestAuthService{
   constructor(
     private readonly db:DatabaseService,
-    private readonly providers:GuestAuthProviderRegistry
+    private readonly providers:GuestAuthProviderRegistry,
+    private readonly rateLimits:SecurityRateLimitService
   ){}
 
   connectedProviders(){return this.providers.connected()}
@@ -66,18 +74,27 @@ export class GuestAuthService{
       const destination=this.normalizeDestination(channel,rawDestination);
       if(!destination)throw new Error("GUEST_AUTH_DESTINATION_MISSING");
 
+      return {destination};
+    });
+
+    await this.rateLimits.consume(
+      "guest_auth.challenge.reservation",
+      this.hash(actor.organizationId+":"+reservationId+":"+channel),
+      CHALLENGE_LIMIT,
+      CHALLENGE_WINDOW_SECONDS
+    );
+
+    await this.db.withActor(actor,async client=>{
       await client.query(
         `INSERT INTO guest_access_challenges(
            id,organization_id,reservation_id,channel,destination_hash,token_hash,
            delivery_status,expires_at,created_by_user_id,created_by_membership_id
          ) VALUES($1,$2,$3,$4,$5,$6,'pending',$7,$8,$9)`,
         [
-          challengeId,actor.organizationId,reservationId,channel,this.hash(destination),
+          challengeId,actor.organizationId,reservationId,channel,this.hash(context.destination),
           tokenHash,expiresAt,actor.userId,actor.membershipId
         ]
       );
-
-      return {destination};
     });
 
     try{
@@ -132,7 +149,18 @@ export class GuestAuthService{
     }
   }
 
-  async exchange(exchangeToken:string,sessionTtlMinutes=24*60){
+  async exchange(
+    exchangeToken:string,
+    sessionTtlMinutes=24*60,
+    clientNetworkKeyHash:string
+  ){
+    await this.rateLimits.consume(
+      "guest_auth.exchange.network",
+      clientNetworkKeyHash,
+      EXCHANGE_NETWORK_LIMIT,
+      EXCHANGE_WINDOW_SECONDS
+    );
+
     const token=String(exchangeToken||"").trim();
     if(token.length<32||token.length>256||!token.startsWith("vge_")){
       throw new Error("GUEST_AUTH_CHALLENGE_INVALID");
@@ -141,12 +169,20 @@ export class GuestAuthService{
       throw new Error("INVALID_GUEST_ACCESS_TTL");
     }
 
+    const tokenHash=this.hash(token);
+    await this.rateLimits.consume(
+      "guest_auth.exchange.token",
+      tokenHash,
+      EXCHANGE_TOKEN_LIMIT,
+      EXCHANGE_WINDOW_SECONDS
+    );
+
     const accessToken="vga_"+randomBytes(32).toString("base64url");
     const result=await this.db.query<{
       session_id:string;organization_id:string;reservation_id:string;property_id:string;expires_at:Date;
     }>(
       "SELECT * FROM app.exchange_guest_access_challenge($1,$2,$3)",
-      [this.hash(token),this.hash(accessToken),sessionTtlMinutes]
+      [tokenHash,this.hash(accessToken),sessionTtlMinutes]
     );
     const row=result.rows[0];
     if(!row)throw new Error("GUEST_AUTH_CHALLENGE_INVALID");
