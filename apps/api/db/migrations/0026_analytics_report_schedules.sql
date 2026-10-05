@@ -27,6 +27,7 @@ CREATE TABLE analytics_report_schedules (
   max_failures integer NOT NULL DEFAULT 5 CHECK (max_failures BETWEEN 1 AND 10),
   last_error_code text,
   last_enqueued_at timestamptz,
+  last_report_job_id uuid REFERENCES analytics_report_jobs(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CHECK (length(idempotency_key) BETWEEN 1 AND 160),
@@ -293,7 +294,8 @@ REVOKE ALL ON FUNCTION app.claim_due_analytics_report_schedules(
 CREATE OR REPLACE FUNCTION app.complete_analytics_report_schedule(
   target_schedule_id uuid,
   target_worker_token text,
-  target_scheduled_for timestamptz
+  target_scheduled_for timestamptz,
+  target_report_job_id uuid
 )
 RETURNS timestamptz
 LANGUAGE plpgsql
@@ -320,6 +322,7 @@ BEGIN
 
   UPDATE analytics_report_schedules
   SET last_enqueued_at=target_scheduled_for,
+      last_report_job_id=target_report_job_id,
       next_run_at=v_next_run,
       next_attempt_at=v_next_run,
       lease_token=NULL,
@@ -337,7 +340,7 @@ END
 $$;
 
 REVOKE ALL ON FUNCTION app.complete_analytics_report_schedule(
-  uuid,text,timestamptz
+  uuid,text,timestamptz,uuid
 ) FROM PUBLIC;
 
 CREATE OR REPLACE FUNCTION app.fail_analytics_report_schedule(
