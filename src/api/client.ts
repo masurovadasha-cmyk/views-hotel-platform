@@ -31,6 +31,11 @@ export const api={
     request<{id:string;status:string}>("/api/guest-service-orders",{method:"POST",headers:{"Idempotency-Key":idempotencyKey},body:JSON.stringify(input)}),
   serviceOrderAction:(input:{id:string;action:"accept"|"start"|"complete"|"cancel";version:number})=>
     request<{id:string;status:string;version:number}>("/api/service-order-action",{method:"POST",body:JSON.stringify(input)}),
+  assignServiceOrder:(input:{id:string;assignedUserId:string;version:number})=>
+    request<{id:string;status:string;version:number;assignedUserId:string;assigneeRole:string}>("/api/service-order-assign",{method:"POST",body:JSON.stringify(input)}),
+  teamWorkload:(propertyId="utower")=>
+    request<{propertyId:string;staff:import("./types").LiveStaffWorkload[];summary:import("./types").LiveTeamSummary}>(`/api/team-workload?propertyId=${encodeURIComponent(propertyId)}`),
+  integrationsStatus:()=>request<{items:import("./types").LiveIntegrationStatus[]}>("/api/integrations-status"),
   housekeepingJobs:(propertyId="utower")=>
     request<{propertyId:string;items:import("./types").LiveHousekeepingJob[]}>(`/api/housekeeping-jobs?propertyId=${encodeURIComponent(propertyId)}`),
   housekeepingAction:(id:string,action:"start"|"complete"|"verify"|"dnd"|"decline")=>
