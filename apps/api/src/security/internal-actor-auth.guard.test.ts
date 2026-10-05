@@ -2,7 +2,8 @@ import {UnauthorizedException} from "@nestjs/common";
 import {describe,expect,it} from "vitest";
 import {assertTrustedInternalActorHeaders} from "./internal-actor-auth.guard";
 
-const KEY="fixture-internal-api-key-material-32chars";
+const KEY="fixture-current-internal-api-key-material";
+const PREVIOUS="fixture-previous-internal-api-key-material";
 const ACTOR={
   "x-organization-id":"00000000-0000-4000-8000-000000000001",
   "x-user-id":"20000000-0000-4000-8000-000000000001",
@@ -11,10 +12,10 @@ const ACTOR={
 
 describe("internal actor gateway boundary",()=>{
   it("allows public routes that send no actor context",()=>{
-    expect(()=>assertTrustedInternalActorHeaders({},KEY)).not.toThrow();
+    expect(()=>assertTrustedInternalActorHeaders({},[KEY,PREVIOUS])).not.toThrow();
     expect(()=>assertTrustedInternalActorHeaders(
       {"x-views-internal-key":KEY},
-      KEY
+      [KEY,PREVIOUS]
     )).not.toThrow();
   });
 
@@ -22,11 +23,11 @@ describe("internal actor gateway boundary",()=>{
     expect(()=>assertTrustedInternalActorHeaders({
       "x-organization-id":ACTOR["x-organization-id"],
       "x-views-internal-key":KEY
-    },KEY)).toThrowError(UnauthorizedException);
+    },[KEY,PREVIOUS])).toThrowError(UnauthorizedException);
   });
 
   it("rejects actor context without the internal key",()=>{
-    expect(()=>assertTrustedInternalActorHeaders(ACTOR,KEY))
+    expect(()=>assertTrustedInternalActorHeaders(ACTOR,[KEY,PREVIOUS]))
       .toThrow("internal API authentication required");
   });
 
@@ -34,20 +35,20 @@ describe("internal actor gateway boundary",()=>{
     expect(()=>assertTrustedInternalActorHeaders({
       ...ACTOR,
       "x-views-internal-key":"different-internal-key-material-32chars"
-    },KEY)).toThrow("internal API authentication required");
+    },[KEY,PREVIOUS])).toThrow("internal API authentication required");
   });
 
   it("accepts a complete actor context only with the internal key",()=>{
     expect(()=>assertTrustedInternalActorHeaders({
       ...ACTOR,
       "x-views-internal-key":KEY
-    },KEY)).not.toThrow();
+    },[KEY,PREVIOUS])).not.toThrow();
   });
 
   it("rejects duplicated security headers instead of picking one",()=>{
     expect(()=>assertTrustedInternalActorHeaders({
       ...ACTOR,
       "x-views-internal-key":[KEY,"different-internal-key-material-32chars"]
-    },KEY)).toThrow("internal API authentication required");
+    },[KEY,PREVIOUS])).toThrow("internal API authentication required");
   });
 });
