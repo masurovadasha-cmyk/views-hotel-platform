@@ -243,7 +243,7 @@ function resolveInternalServicePublicKeyRefs(
         throw new Error("Referenced internal service public key "+ref+" is required");
       }
 
-      let key;
+      let key:ReturnType<typeof createPublicKey>;
       try{
         key=createPublicKey(pem);
       }catch{
