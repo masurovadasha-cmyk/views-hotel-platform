@@ -1,3 +1,4 @@
+import {generateKeyPairSync,randomUUID,sign} from "node:crypto";
 import {UnauthorizedException} from "@nestjs/common";
 import {describe,expect,it} from "vitest";
 import {assertTrustedInternalActorHeaders} from "./internal-actor-auth.guard";
@@ -10,6 +11,36 @@ const ACTOR={
   "x-membership-id":"30000000-0000-4000-8000-000000000001"
 };
 const SERVICE={"x-views-service-id":"pages-bff"};
+const SIGNING=generateKeyPairSync("ed25519");
+const SIGNING_PUBLIC=SIGNING.publicKey.export({format:"pem",type:"spki"}).toString();
+const NOW=1_800_000_000;
+const REQUEST={
+  method:"GET",
+  path:"/v1/analytics/dashboard/summary",
+  requestId:"stage7-guard-signed-request",
+  nowSeconds:NOW
+};
+const SIGNED_AUTH={
+  legacyKeys:[KEY,PREVIOUS],
+  serviceKeys:{"pages-bff":[KEY]},
+  servicePublicKeys:{
+    "pages-bff":[{kid:"pages-2026-10",publicKeyPem:SIGNING_PUBLIC}]
+  }
+};
+
+function signedToken(overrides:Record<string,unknown>={}){
+  const header={alg:"EdDSA",typ:"views-service+jwt",kid:"pages-2026-10"};
+  const claims={
+    iss:"pages-bff",sub:"pages-bff",aud:"views-core",
+    iat:NOW,exp:NOW+30,jti:randomUUID(),
+    htm:"GET",htp:"/v1/analytics/dashboard/summary",
+    rid:"stage7-guard-signed-request",...overrides
+  };
+  const h=Buffer.from(JSON.stringify(header)).toString("base64url");
+  const p=Buffer.from(JSON.stringify(claims)).toString("base64url");
+  const input=h+"."+p;
+  return input+"."+sign(null,Buffer.from(input),SIGNING.privateKey).toString("base64url");
+}
 
 describe("internal actor gateway boundary",()=>{
   it("allows public routes that send no actor context",()=>{
@@ -54,6 +85,25 @@ describe("internal actor gateway boundary",()=>{
       ...SERVICE,
       "x-views-internal-key":PREVIOUS
     },[KEY,PREVIOUS])).not.toThrow();
+  });
+
+  it("accepts a request-bound signed token for a complete actor context",()=>{
+    expect(()=>assertTrustedInternalActorHeaders({
+      ...ACTOR,
+      ...SERVICE,
+      "x-views-service-token":signedToken(),
+      "x-request-id":REQUEST.requestId
+    },SIGNED_AUTH,REQUEST)).not.toThrow();
+  });
+
+  it("does not downgrade a bad signed token to a valid internal key",()=>{
+    expect(()=>assertTrustedInternalActorHeaders({
+      ...ACTOR,
+      ...SERVICE,
+      "x-views-service-token":signedToken({aud:"wrong-core"}),
+      "x-views-internal-key":KEY,
+      "x-request-id":REQUEST.requestId
+    },SIGNED_AUTH,REQUEST)).toThrow("internal API authentication required");
   });
 
   it("rejects a valid key when trusted service identity is missing",()=>{
