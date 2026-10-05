@@ -72,3 +72,24 @@ export type LiveFrontDeskReservation={
   checked_in_at:string|null;
   checked_out_at:string|null;
 };
+
+export type LiveLostFoundItem={
+  id:string; unit_id:string|null; unit_code:string|null; item_name:string; description:string|null;
+  found_location:string|null; found_at:string; status:string; created_at:string;
+};
+
+export type LiveDamageReport={
+  id:string; unit_id:string|null; unit_code:string|null; severity:string; title:string;
+  description:string|null; status:string; created_at:string; resolved_at:string|null;
+};
+
+export type LiveInventoryItem={
+  id:string; category:string; name:string; sku:string|null; quantity:number; par_level:number;
+  unit_of_measure:string; updated_at:string;
+};
+
+export type LiveShiftHandover={
+  id:string; property_id:string; from_shift:string; to_shift:string;
+  unresolved:unknown[]; risks:unknown[]; followUp:unknown[];
+  created_by:string|null; acknowledged_by:string|null; created_at:string; acknowledged_at:string|null;
+};
