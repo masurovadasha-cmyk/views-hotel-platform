@@ -176,6 +176,231 @@ $$;
 REVOKE ALL ON FUNCTION app.claim_analytics_report_jobs(text,integer,integer)
   FROM PUBLIC;
 
+CREATE OR REPLACE FUNCTION app.complete_analytics_report_job(
+  target_job_id uuid,
+  target_worker_token text,
+  target_source_fingerprint text,
+  target_snapshot jsonb,
+  target_content_text text,
+  target_content_type text,
+  target_file_name text,
+  target_content_sha256 text
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, app
+AS $
+DECLARE
+  v_updated integer;
+BEGIN
+  IF target_source_fingerprint !~ '^[a-f0-9]{64}
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF OLD.status='completed' THEN
+    RAISE EXCEPTION 'completed analytics report job is immutable';
+  END IF;
+  RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER analytics_report_jobs_immutable_after_complete
+BEFORE UPDATE ON analytics_report_jobs
+FOR EACH ROW
+EXECUTE FUNCTION app.prevent_completed_report_job_update();
+
+CREATE OR REPLACE FUNCTION app.prune_analytics_report_jobs(
+  target_limit integer DEFAULT 10000,
+  target_now timestamptz DEFAULT now()
+)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, app
+AS $$
+DECLARE
+  v_deleted integer;
+BEGIN
+  IF target_limit<1 OR target_limit>100000 THEN
+    RAISE EXCEPTION 'INVALID_REPORT_PRUNE_LIMIT';
+  END IF;
+
+  WITH doomed AS (
+    SELECT id
+    FROM analytics_report_jobs
+    WHERE
+      (status='completed' AND expires_at<target_now)
+      OR
+      (status='failed' AND created_at<target_now-interval '30 days')
+    ORDER BY COALESCE(expires_at,created_at),id
+    LIMIT target_limit
+  )
+  DELETE FROM analytics_report_jobs j
+  USING doomed d
+  WHERE j.id=d.id;
+
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END
+$$;
+
+REVOKE ALL ON FUNCTION app.prune_analytics_report_jobs(integer,timestamptz)
+  FROM PUBLIC;
+
+COMMIT;
+ THEN
+    RAISE EXCEPTION 'INVALID_REPORT_SOURCE_FINGERPRINT';
+  END IF;
+  IF target_content_sha256 !~ '^[a-f0-9]{64}
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF OLD.status='completed' THEN
+    RAISE EXCEPTION 'completed analytics report job is immutable';
+  END IF;
+  RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER analytics_report_jobs_immutable_after_complete
+BEFORE UPDATE ON analytics_report_jobs
+FOR EACH ROW
+EXECUTE FUNCTION app.prevent_completed_report_job_update();
+
+CREATE OR REPLACE FUNCTION app.prune_analytics_report_jobs(
+  target_limit integer DEFAULT 10000,
+  target_now timestamptz DEFAULT now()
+)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, app
+AS $$
+DECLARE
+  v_deleted integer;
+BEGIN
+  IF target_limit<1 OR target_limit>100000 THEN
+    RAISE EXCEPTION 'INVALID_REPORT_PRUNE_LIMIT';
+  END IF;
+
+  WITH doomed AS (
+    SELECT id
+    FROM analytics_report_jobs
+    WHERE
+      (status='completed' AND expires_at<target_now)
+      OR
+      (status='failed' AND created_at<target_now-interval '30 days')
+    ORDER BY COALESCE(expires_at,created_at),id
+    LIMIT target_limit
+  )
+  DELETE FROM analytics_report_jobs j
+  USING doomed d
+  WHERE j.id=d.id;
+
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END
+$$;
+
+REVOKE ALL ON FUNCTION app.prune_analytics_report_jobs(integer,timestamptz)
+  FROM PUBLIC;
+
+COMMIT;
+ THEN
+    RAISE EXCEPTION 'INVALID_REPORT_CONTENT_HASH';
+  END IF;
+
+  UPDATE analytics_report_jobs
+     SET status='completed',
+         source_fingerprint=target_source_fingerprint,
+         snapshot=target_snapshot,
+         content_text=target_content_text,
+         content_type=target_content_type,
+         file_name=target_file_name,
+         content_sha256=target_content_sha256,
+         completed_at=now(),
+         expires_at=now()+interval '30 days',
+         lease_token=NULL,
+         lease_until=NULL,
+         last_error_code=NULL
+   WHERE id=target_job_id
+     AND status='processing'
+     AND lease_token=target_worker_token;
+
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  RETURN v_updated=1;
+END
+$;
+
+REVOKE ALL ON FUNCTION app.complete_analytics_report_job(
+  uuid,text,text,jsonb,text,text,text,text
+) FROM PUBLIC;
+
+CREATE OR REPLACE FUNCTION app.fail_analytics_report_job(
+  target_job_id uuid,
+  target_worker_token text,
+  target_error_code text,
+  target_max_attempts integer DEFAULT 5
+)
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, app
+AS $
+DECLARE
+  v_attempts integer;
+  v_status text;
+  v_delay_seconds integer;
+BEGIN
+  IF target_max_attempts<1 OR target_max_attempts>20 THEN
+    RAISE EXCEPTION 'INVALID_REPORT_MAX_ATTEMPTS';
+  END IF;
+
+  SELECT attempt_count
+    INTO v_attempts
+    FROM analytics_report_jobs
+   WHERE id=target_job_id
+     AND status='processing'
+     AND lease_token=target_worker_token
+   FOR UPDATE;
+
+  IF v_attempts IS NULL THEN
+    RETURN 'lease_lost';
+  END IF;
+
+  IF v_attempts>=target_max_attempts THEN
+    v_status:='failed';
+    UPDATE analytics_report_jobs
+       SET status='failed',
+           last_error_code=left(COALESCE(target_error_code,'REPORT_JOB_ERROR'),120),
+           lease_token=NULL,
+           lease_until=NULL
+     WHERE id=target_job_id;
+  ELSE
+    v_status:='queued';
+    v_delay_seconds:=LEAST(
+      3600,
+      30*power(2,GREATEST(0,v_attempts-1))::integer
+    );
+    UPDATE analytics_report_jobs
+       SET status='queued',
+           last_error_code=left(COALESCE(target_error_code,'REPORT_JOB_ERROR'),120),
+           next_attempt_at=now()+make_interval(secs=>v_delay_seconds),
+           lease_token=NULL,
+           lease_until=NULL
+     WHERE id=target_job_id;
+  END IF;
+
+  RETURN v_status;
+END
+$;
+
+REVOKE ALL ON FUNCTION app.fail_analytics_report_job(uuid,text,text,integer)
+  FROM PUBLIC;
+
 CREATE OR REPLACE FUNCTION app.prevent_completed_report_job_update()
 RETURNS trigger
 LANGUAGE plpgsql
