@@ -19,8 +19,9 @@ export class BookingHoldService{
     const {ttl}=validateHoldInput(input);
     const hash=requestHash(input,ttl);
 
-    try{
-      return await this.db.withActor(input.actor,async client=>{
+    for(let attempt=0;attempt<2;attempt++){
+      try{
+        return await this.db.withActor(input.actor,async client=>{
         const inserted=await client.query<{id:string}>(
           `INSERT INTO booking_commands(id,organization_id,idempotency_key,command_type,request_hash)
            VALUES(gen_random_uuid(),$1,$2,'create_hold',$3)
@@ -156,11 +157,17 @@ export class BookingHoldService{
           holdExpiresAt:expires.toISOString(),totalMinor:BigInt(quote.total_minor),
           currency:quote.currency,idempotentReplay:false
         };
-      });
-    }catch(error){
-      if(isPgCode(error,"23P01"))throw new BookingConflictError();
-      throw error;
+        });
+      }catch(error){
+        if(isPgCode(error,"23P01"))throw new BookingConflictError();
+        if(isPgCode(error,"40P01")){
+          if(attempt===0)continue;
+          throw new BookingConflictError();
+        }
+        throw error;
+      }
     }
+    throw new BookingConflictError();
   }
 
   private async replayExisting(
