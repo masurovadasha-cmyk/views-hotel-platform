@@ -9,19 +9,30 @@ export type TrustedInternalServiceIdentity={
   keyFingerprint:string;
 };
 
+export type InternalServiceAuthConfig={
+  legacyKeys:string|readonly string[];
+  serviceKeys:Readonly<Record<string,readonly string[]>>;
+};
+
+export type InternalServiceExpectedKeys=
+  |string
+  |readonly string[]
+  |InternalServiceAuthConfig;
+
 export function trustedInternalServiceIdentity(
   headers:IncomingHttpHeaders,
-  expectedKeys:string|readonly string[]
+  expected:InternalServiceExpectedKeys
 ):TrustedInternalServiceIdentity|null{
   const internalKey=singleHeader(headers["x-views-internal-key"]);
   if(!internalKey)return null;
-
-  assertInternalApiKey(internalKey,expectedKeys);
 
   const serviceId=singleHeader(headers["x-views-service-id"]);
   if(!serviceId||!SERVICE_ID.test(serviceId)){
     throw new Error("INTERNAL_SERVICE_ID_REQUIRED");
   }
+
+  const expectedKeys=keysForService(serviceId,expected);
+  assertInternalApiKey(internalKey,expectedKeys);
 
   return {
     serviceId,
@@ -35,18 +46,6 @@ export function trustedInternalServiceIdentity(
 export function singleInternalHeader(value:string|string[]|undefined){
   return singleHeader(value);
 }
-
-function singleHeader(value:string|string[]|undefined){
-  if(value===undefined)return null;
-  if(Array.isArray(value)){
-    if(value.length!==1)return null;
-    const normalized=value[0].trim();
-    return normalized||null;
-  }
-  const normalized=value.trim();
-  return normalized||null;
-}
-
 
 export type InternalServiceIdentityRejectionReason=
   |"invalid_internal_key"
@@ -66,4 +65,38 @@ export function classifyInternalServiceIdentityFailure(
 
   const serviceId=singleHeader(rawService);
   return serviceId?"invalid_service_identity":"missing_service_identity";
+}
+
+function keysForService(
+  serviceId:string,
+  expected:InternalServiceExpectedKeys
+){
+  if(isServiceAuthConfig(expected)){
+    const services=Object.keys(expected.serviceKeys);
+    if(services.length>0){
+      const keys=expected.serviceKeys[serviceId];
+      if(!keys?.length)throw new Error("INTERNAL_SERVICE_NOT_CONFIGURED");
+      return keys;
+    }
+    return expected.legacyKeys;
+  }
+  return expected;
+}
+
+function isServiceAuthConfig(
+  value:InternalServiceExpectedKeys
+):value is InternalServiceAuthConfig{
+  return typeof value==="object"&&!Array.isArray(value)&&
+    "legacyKeys" in value&&"serviceKeys" in value;
+}
+
+function singleHeader(value:string|string[]|undefined){
+  if(value===undefined)return null;
+  if(Array.isArray(value)){
+    if(value.length!==1)return null;
+    const normalized=value[0].trim();
+    return normalized||null;
+  }
+  const normalized=value.trim();
+  return normalized||null;
 }
