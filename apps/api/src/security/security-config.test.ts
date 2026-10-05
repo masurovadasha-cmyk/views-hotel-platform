@@ -41,6 +41,10 @@ function base(){
 function managed(){
   return {
     ...base(),
+    VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:JSON.stringify({
+      "pages-bff":"internal_key_only",
+      "analytics-cron":"internal_key_only"
+    }),
     VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON:SERVICE_REFS,
     VIEWS_SECRET_PAGES_CURRENT:PAGES_CURRENT,
     VIEWS_SECRET_PAGES_PREVIOUS:PAGES_PREVIOUS,
@@ -66,9 +70,9 @@ describe("production security config",()=>{
     })).toThrow("GUEST_AUTH_RATE_LIMIT_SECRET must be at least 32 characters");
   });
 
-  it("requires managed service-key references in production",()=>{
+  it("requires explicit per-service auth modes in production",()=>{
     expect(()=>loadConfig(base()))
-      .toThrow("VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON is required in production");
+      .toThrow("VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON is required in production");
   });
 
   it("resolves production service rings from individually injected secrets",()=>{
@@ -79,11 +83,15 @@ describe("production security config",()=>{
     });
   });
 
-  it("rejects raw service-key JSON as a production replacement for secret references",()=>{
+  it("rejects raw service-key JSON in production",()=>{
     expect(()=>loadConfig({
       ...base(),
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:JSON.stringify({
+        "pages-bff":"internal_key_only",
+        "analytics-cron":"internal_key_only"
+      }),
       VIEWS_INTERNAL_SERVICE_KEYS_JSON:RAW_SERVICE_KEYS
-    })).toThrow("VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON is required in production");
+    })).toThrow("VIEWS_INTERNAL_SERVICE_KEYS_JSON is not allowed in production");
   });
 
   it("rejects ambiguous raw and reference configuration",()=>{
@@ -202,6 +210,9 @@ describe("production security config",()=>{
   it("deduplicates a repeated reference inside one service rotation ring",()=>{
     const config=loadConfig({
       ...base(),
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:JSON.stringify({
+        "pages-bff":"internal_key_only"
+      }),
       VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON:JSON.stringify({
         "pages-bff":["VIEWS_SECRET_PAGES_CURRENT","VIEWS_SECRET_PAGES_CURRENT"]
       }),
@@ -315,6 +326,75 @@ describe("production security config",()=>{
       VIEWS_PAGES_PUBLIC:PAGES_PUBLIC,
       VIEWS_CRON_PUBLIC:PAGES_PUBLIC
     })).toThrow("Resolved internal service public key cannot be shared across services");
+  });
+
+  it("supports signed-only production services without symmetric secrets",()=>{
+    const config=loadConfig({
+      ...base(),
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:JSON.stringify({
+        "pages-bff":"signed_only"
+      }),
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
+        "pages-bff":[signingRef("pages-2026-10","VIEWS_PAGES_PUBLIC")]
+      }),
+      VIEWS_PAGES_PUBLIC:PAGES_PUBLIC
+    });
+
+    expect(config.internalServiceKeys).toEqual({});
+    expect(config.internalServiceAuthModes).toEqual({
+      "pages-bff":"signed_only"
+    });
+    expect(config.internalServicePublicKeys["pages-bff"]).toHaveLength(1);
+  });
+
+  it("requires both credential types for dual mode",()=>{
+    expect(()=>loadConfig({
+      ...base(),
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:JSON.stringify({
+        "pages-bff":"dual"
+      }),
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
+        "pages-bff":[signingRef("pages-2026-10","VIEWS_PAGES_PUBLIC")]
+      }),
+      VIEWS_PAGES_PUBLIC:PAGES_PUBLIC
+    })).toThrow("dual service requires symmetric and signing credentials");
+  });
+
+  it("requires a signing key for signed-only mode",()=>{
+    expect(()=>loadConfig({
+      ...base(),
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:JSON.stringify({
+        "pages-bff":"signed_only"
+      })
+    })).toThrow("signed_only service requires signing public keys");
+  });
+
+  it("requires a symmetric key for internal-key-only mode",()=>{
+    expect(()=>loadConfig({
+      ...base(),
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:JSON.stringify({
+        "pages-bff":"internal_key_only"
+      })
+    })).toThrow("internal_key_only service requires a symmetric service key");
+  });
+
+  it("rejects undeclared or invalid production auth modes",()=>{
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:JSON.stringify({
+        "pages-bff":"not-a-mode",
+        "analytics-cron":"internal_key_only"
+      })
+    })).toThrow("VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON contains invalid auth mode");
+
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:JSON.stringify({
+        "pages-bff":"internal_key_only"
+      })
+    })).toThrow(
+      "VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON must declare every production service"
+    );
   });
 
   it("continues validating the non-production raw service-key fallback",()=>{
