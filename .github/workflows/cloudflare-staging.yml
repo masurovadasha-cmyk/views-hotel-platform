@@ -16,7 +16,6 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ vars.CLOUDFLARE_STAGING_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     environment: views-cloudflare-staging
     env:
@@ -30,14 +29,26 @@ jobs:
         with:
           node-version: 22
 
-      - name: Validate Cloudflare credentials
+      - name: Detect Cloudflare credentials
+        id: gate
         run: |
           set -euo pipefail
-          test -n "${CLOUDFLARE_API_TOKEN:-}" || { echo "CLOUDFLARE_API_TOKEN is missing"; exit 1; }
-          test -n "${CLOUDFLARE_ACCOUNT_ID:-}" || { echo "CLOUDFLARE_ACCOUNT_ID is missing"; exit 1; }
+          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare staging credentials are configured."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare staging credentials are not configured; live deploy will be skipped safely."
+          fi
+
+      - name: Validate Cloudflare credentials
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          set -euo pipefail
           npx --yes wrangler@4 --version
 
       - name: Install and verify
+        if: steps.gate.outputs.enabled == 'true'
         run: |
           set -euo pipefail
           npm install
@@ -46,6 +57,7 @@ jobs:
           npm run build
 
       - name: Ensure D1 staging database
+        if: steps.gate.outputs.enabled == 'true'
         id: d1
         run: |
           set -euo pipefail
@@ -72,6 +84,7 @@ jobs:
           echo "database_id=$DB_ID" >> "$GITHUB_OUTPUT"
 
       - name: Ensure Pages project and resolve preview origin
+        if: steps.gate.outputs.enabled == 'true'
         id: pages
         run: |
           set -euo pipefail
@@ -100,6 +113,7 @@ jobs:
           echo "staging_origin=$STAGING_ORIGIN" >> "$GITHUB_OUTPUT"
 
       - name: Build preview-only Wrangler config
+        if: steps.gate.outputs.enabled == 'true'
         env:
           DB_ID: ${{ steps.d1.outputs.database_id }}
           STAGING_ORIGIN: ${{ steps.pages.outputs.staging_origin }}
@@ -128,12 +142,15 @@ jobs:
           EOF
 
       - name: Apply D1 migrations
+        if: steps.gate.outputs.enabled == 'true'
         run: npx --yes wrangler@4 d1 migrations apply views-staging --remote
 
       - name: Deploy Pages staging
+        if: steps.gate.outputs.enabled == 'true'
         run: npx --yes wrangler@4 pages deploy dist --project-name=views-hotel-platform --branch=staging --config=.wrangler.staging.generated.toml
 
       - name: Smoke health and readiness
+        if: steps.gate.outputs.enabled == 'true'
         env:
           STAGING_ORIGIN: ${{ steps.pages.outputs.staging_origin }}
         run: |
@@ -155,6 +172,7 @@ jobs:
           exit 1
 
       - name: Smoke live staff session and operational workflow
+        if: steps.gate.outputs.enabled == 'true'
         env:
           STAGING_ORIGIN: ${{ steps.pages.outputs.staging_origin }}
         run: |
@@ -193,6 +211,7 @@ jobs:
           '
 
       - name: Deployment summary
+        if: steps.gate.outputs.enabled == 'true'
         env:
           STAGING_ORIGIN: ${{ steps.pages.outputs.staging_origin }}
         run: |
@@ -202,3 +221,11 @@ jobs:
           echo "- Health: PASS" >> "$GITHUB_STEP_SUMMARY"
           echo "- Live staff session: PASS" >> "$GITHUB_STEP_SUMMARY"
           echo "- Service-order transition smoke: PASS" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Staging credential status
+        if: steps.gate.outputs.enabled != 'true'
+        run: |
+          echo "### VIEWS Cloudflare staging" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Live deploy: NOT RUN" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Reason: CLOUDFLARE_API_TOKEN and/or CLOUDFLARE_ACCOUNT_ID are not configured in the views-cloudflare-staging environment." >> "$GITHUB_STEP_SUMMARY"
+          echo "- GitHub Pages preview and all repository CI remain unaffected." >> "$GITHUB_STEP_SUMMARY"
