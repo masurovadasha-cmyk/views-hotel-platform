@@ -8,7 +8,8 @@ import {
 import {
   classifyInternalServiceIdentityFailure,
   singleInternalHeader,
-  trustedInternalServiceIdentity
+  trustedInternalServiceIdentity,
+  type InternalServiceRequestMeta
 } from "./internal-service-identity";
 
 const actorHeaders=[
@@ -32,7 +33,12 @@ export class InternalActorAuthGuard implements CanActivate{
 
   async canActivate(context:ExecutionContext){
     if(context.getType()!=="http")return true;
-    const request=context.switchToHttp().getRequest<{headers:IncomingHttpHeaders}>();
+    const request=context.switchToHttp().getRequest<{
+      headers:IncomingHttpHeaders;
+      method?:string;
+      originalUrl?:string;
+      url?:string;
+    }>();
 
     try{
       const config=loadConfig();
@@ -40,7 +46,13 @@ export class InternalActorAuthGuard implements CanActivate{
         request.headers,
         {
           legacyKeys:config.internalApiKeys,
-          serviceKeys:config.internalServiceKeys
+          serviceKeys:config.internalServiceKeys,
+          servicePublicKeys:config.internalServicePublicKeys
+        },
+        {
+          method:String(request.method||"GET"),
+          path:requestPath(request),
+          requestId:singleInternalHeader(request.headers["x-request-id"])||""
         }
       );
       return true;
@@ -55,7 +67,8 @@ export class InternalActorAuthGuard implements CanActivate{
 
 export function assertTrustedInternalActorHeaders(
   headers:IncomingHttpHeaders,
-  expectedInternalKey:import("./internal-service-identity").InternalServiceExpectedKeys
+  expectedInternalKey:import("./internal-service-identity").InternalServiceExpectedKeys,
+  request?:InternalServiceRequestMeta
 ){
   const anyActorHeader=actorHeaders.some(name=>headers[name]!==undefined);
   if(!anyActorHeader)return;
@@ -72,14 +85,14 @@ export function assertTrustedInternalActorHeaders(
   }
 
   const rawKey=headers["x-views-internal-key"];
-  if(rawKey===undefined){
+  const rawToken=headers["x-views-service-token"];
+  if(rawKey===undefined&&rawToken===undefined){
     throw new InternalActorAuthFailure(
       "missing_internal_key",
       "internal API authentication required"
     );
   }
-  const internalKey=singleInternalHeader(rawKey);
-  if(!internalKey){
+  if(rawToken===undefined&&rawKey!==undefined&&!singleInternalHeader(rawKey)){
     throw new InternalActorAuthFailure(
       "invalid_internal_key",
       "internal API authentication required"
@@ -89,7 +102,8 @@ export function assertTrustedInternalActorHeaders(
   try{
     const identity=trustedInternalServiceIdentity(
       headers,
-      expectedInternalKey
+      expectedInternalKey,
+      request
     );
     if(!identity){
       throw new Error("INTERNAL_API_UNAUTHORIZED");
@@ -102,5 +116,14 @@ export function assertTrustedInternalActorHeaders(
         ?"trusted internal service identity required"
         :"internal API authentication required"
     );
+  }
+}
+
+function requestPath(request:{originalUrl?:string;url?:string}){
+  const raw=request.originalUrl||request.url||"/";
+  try{
+    return new URL(raw,"http://views.internal").pathname;
+  }catch{
+    return "/";
   }
 }
