@@ -46,6 +46,8 @@ export const api={
     request<{id:string;status:string;assignedUserId?:string|null}>("/api/maintenance-action",{method:"POST",body:JSON.stringify({id,action})}),
   health:()=>request<{status:string}>("/api/health"),
   operationsSummary:(propertyId="utower")=>request<{propertyId:string;lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}>(`/api/operations-summary?propertyId=${encodeURIComponent(propertyId)}`),
+  operationsObservability:(propertyId="utower")=>
+    request<import("./types").LiveOperationsObservability>(`/api/operations-observability?propertyId=${encodeURIComponent(propertyId)}`),
   operationsExceptions:(propertyId="utower")=>request<{propertyId:string;lostFound:import("./types").LiveLostFoundItem[];damage:import("./types").LiveDamageReport[];lowStock:import("./types").LiveInventoryItem[]}>(`/api/operations-exceptions?propertyId=${encodeURIComponent(propertyId)}`),
   handovers:(propertyId="utower")=>request<{propertyId:string;items:import("./types").LiveShiftHandover[]}>(`/api/shift-handover?propertyId=${encodeURIComponent(propertyId)}`),
   apartmentTimeline:(unitId:string)=>request<{unit:{id:string;propertyId:string;code:string;name:string;status:string};items:import("./types").LiveTimelineEvent[]}>(`/api/apartment-timeline?unitId=${encodeURIComponent(unitId)}`),
@@ -54,5 +56,5 @@ export const api={
   inventoryAdjust:(id:string,delta:number,note="")=>request<{id:string;quantity:number}>("/api/inventory-adjust",{method:"POST",body:JSON.stringify({id,delta,note})}),
   createHandover:(input:{propertyId:string;fromShift:string;toShift:string;unresolved:unknown[];risks:unknown[];followUp:unknown[]})=>request<{id:string;status:string}>("/api/shift-handover",{method:"POST",body:JSON.stringify(input)}),
   acknowledgeHandover:(id:string)=>request<{id:string;status:string}>("/api/shift-handover",{method:"PATCH",body:JSON.stringify({id})}),
-  readiness:()=>request<{status:string;database:string}>("/api/readiness")
+  readiness:()=>request<{status:string;database:string;schema:string}>("/api/readiness")
 };
