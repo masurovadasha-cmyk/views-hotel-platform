@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: views-stage4-local-e2e-\${{ github.ref }}
+  group: views-stage4-local-e2e-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -40,6 +40,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Build Pages assets
         run: npm run build
