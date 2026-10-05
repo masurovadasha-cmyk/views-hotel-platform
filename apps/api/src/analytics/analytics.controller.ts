@@ -28,6 +28,40 @@ export class AnalyticsController{
     }catch(error){throw mapAnalyticsError(error)}
   }
 
+  @Get("health")
+  async health(
+    @Headers("x-organization-id") organizationId:string|undefined,
+    @Headers("x-user-id") userId:string|undefined,
+    @Headers("x-membership-id") membershipId:string|undefined,
+    @Headers("x-request-id") requestId:string|undefined
+  ){
+    try{
+      return await this.queries.projectionHealth(
+        actorFromHeaders(organizationId,userId,membershipId,requestId)
+      );
+    }catch(error){throw mapAnalyticsError(error)}
+  }
+
+  @Get("properties/:id/dimensions")
+  async propertyDimensions(
+    @Param("id") id:string,
+    @Query("from") from:string|undefined,
+    @Query("to") to:string|undefined,
+    @Headers("x-organization-id") organizationId:string|undefined,
+    @Headers("x-user-id") userId:string|undefined,
+    @Headers("x-membership-id") membershipId:string|undefined,
+    @Headers("x-request-id") requestId:string|undefined
+  ){
+    try{
+      if(!from||!to)throw new BadRequestException("from and to are required");
+      return await this.queries.propertyDimensions(
+        actorFromHeaders(organizationId,userId,membershipId,requestId),
+        requireUuid(id,"property_id"),
+        from,to
+      );
+    }catch(error){throw mapAnalyticsError(error)}
+  }
+
   @Get("properties/:id/daily")
   async propertyDaily(
     @Param("id") id:string,
