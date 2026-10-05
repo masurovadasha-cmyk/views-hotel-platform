@@ -53,7 +53,7 @@ describe.sequential("Stage 6 recurring report scheduler",()=>{
   it("calculates timezone-local daily/weekly/monthly recurrence and period boundaries",async()=>{
     const row=await db.withActor(MANAGER,async client=>{
       return (await client.query<{
-        daily:timestamptz;weekly:timestamptz;monthly:timestamptz;
+        daily:Date;weekly:Date;monthly:Date;
         daily_time:string;weekly_dow:number;monthly_day:number;
         month_from:string;month_to:string;
       }>(
