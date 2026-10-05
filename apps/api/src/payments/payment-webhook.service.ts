@@ -6,6 +6,7 @@ import {LedgerService} from "./ledger.service";
 import {PaymentProviderRegistry} from "./payment-provider.registry";
 import {PaymentRecoveryService} from "./payment-recovery.service";
 import type {SupportedPaymentProvider,VerifiedWebhookEvent} from "./payment-provider.port";
+import {publishPaymentProjection} from "./finance-projection-outbox";
 
 @Injectable()
 export class PaymentWebhookService{
@@ -89,6 +90,7 @@ export class PaymentWebhookService{
             WHERE id=$1 AND captured_minor=0`,
           [intent.id]
         );
+        await publishPaymentProjection(client,intent.organization_id,intent.id);
         await this.markWebhookProcessed(client,event.organizationId,provider,event.externalEventId,{status:"authorized"});
         return {status:"authorized" as const};
       }
@@ -154,6 +156,7 @@ export class PaymentWebhookService{
             currency:intent.currency,
             reservationId:intent.reservation_id
           });
+          await publishPaymentProjection(client,intent.organization_id,intent.id);
           await this.markWebhookProcessed(
             client,event.organizationId,provider,event.externalEventId,{status:"refund_pending"}
           );
@@ -228,6 +231,7 @@ export class PaymentWebhookService{
           );
         }
 
+        await publishPaymentProjection(client,intent.organization_id,intent.id);
         await this.markWebhookProcessed(
           client,event.organizationId,provider,event.externalEventId,{status:nextStatus}
         );
@@ -294,6 +298,7 @@ export class PaymentWebhookService{
           );
         }
 
+        await publishPaymentProjection(client,intent.organization_id,intent.id);
         await this.markWebhookProcessed(
           client,event.organizationId,provider,event.externalEventId,{status:nextStatus}
         );
@@ -309,6 +314,7 @@ export class PaymentWebhookService{
             [event.eventType==="failed"?"failed":"cancelled",intent.id]
           );
         }
+        await publishPaymentProjection(client,intent.organization_id,intent.id);
         await this.markWebhookProcessed(
           client,event.organizationId,provider,event.externalEventId,{status:event.eventType}
         );
