@@ -17,16 +17,27 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
     .bind(propertyId,session.organizationId).first<Record<string,unknown>>();
   if(!property)return json({error:"PROPERTY_NOT_FOUND",requestId:requestId(request)},404);
 
-  const staff=await db.prepare([
-    "SELECT u.id AS user_id,u.display_name,u.email,s.role,",
+  const roleFilter=session.role==="housekeeping_supervisor"
+    ?["cleaner","housekeeping_supervisor"]
+    :session.role==="maintenance_manager"
+      ?["technician","maintenance_manager"]
+      :null;
+  const roleClause=roleFilter?"AND s.role IN (?,?) ":"";
+
+  const staffSql=[
+    "SELECT u.id AS user_id,u.display_name,s.role,",
     "(SELECT COUNT(*) FROM service_orders o WHERE o.organization_id=u.organization_id AND o.property_id=s.property_id AND o.assigned_user_id=u.id AND o.status NOT IN ('done','closed','cancelled')) AS open_service_orders,",
     "(SELECT COUNT(*) FROM housekeeping_jobs h WHERE h.property_id=s.property_id AND h.assigned_user_id=u.id AND h.status NOT IN ('ready','service_declined')) AS open_housekeeping,",
     "(SELECT COUNT(*) FROM maintenance_tickets m WHERE m.property_id=s.property_id AND m.assigned_user_id=u.id AND m.status!='closed') AS open_maintenance,",
     "(SELECT COUNT(*) FROM service_orders o WHERE o.organization_id=u.organization_id AND o.property_id=s.property_id AND o.assigned_user_id=u.id AND o.status IN ('done','closed') AND date(o.updated_at)=date('now')) AS service_done_today ",
     "FROM app_users u JOIN staff_roles s ON s.user_id=u.id ",
     "WHERE u.organization_id=? AND s.property_id=? AND u.is_active=1 ",
+    roleClause,
     "ORDER BY s.role,u.display_name,u.id"
-  ].join("")).bind(session.organizationId,propertyId).all();
+  ].join("");
+  const staff=roleFilter
+    ?await db.prepare(staffSql).bind(session.organizationId,propertyId,...roleFilter).all()
+    :await db.prepare(staffSql).bind(session.organizationId,propertyId).all();
 
   const summary=await db.prepare([
     "SELECT ",
@@ -51,7 +62,6 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
       return {
         userId:String(row.user_id),
         displayName:String(row.display_name),
-        email:String(row.email),
         role:String(row.role),
         openServiceOrders,
         openHousekeeping,
