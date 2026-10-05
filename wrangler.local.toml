@@ -1,0 +1,16 @@
+name = "views-hotel-platform-local"
+compatibility_date = "2026-10-04"
+pages_build_output_dir = "dist"
+
+[vars]
+VIEWS_ENV = "staging"
+VIEWS_ALLOW_DEMO_HEADERS = "false"
+VIEWS_EXPOSE_LOGIN_TOKEN = "true"
+VIEWS_ALLOWED_ORIGINS = "https://127.0.0.1:8788"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "views-local"
+database_id = "00000000-0000-0000-0000-000000000001"
+preview_database_id = "DB"
+migrations_dir = "migrations"
