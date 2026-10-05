@@ -12,6 +12,7 @@ export type TrustedInternalServiceIdentity={
   serviceId:string;
   keyFingerprint:string;
   authScheme:"internal_key"|"signed_token";
+  credentialId:string|null;
   tokenJti:string|null;
 };
 
@@ -67,6 +68,7 @@ export function trustedInternalServiceIdentity(
       serviceId,
       keyFingerprint:verified.credentialFingerprint,
       authScheme:"signed_token",
+      credentialId:verified.kid,
       tokenJti:verified.jti
     };
   }
@@ -84,6 +86,7 @@ export function trustedInternalServiceIdentity(
       .digest("hex")
       .slice(0,32),
     authScheme:"internal_key",
+    credentialId:null,
     tokenJti:null
   };
 }
