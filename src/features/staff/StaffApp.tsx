@@ -14,6 +14,7 @@ import {HousekeepingLive,MaintenanceLive} from "./LiveOperations";
 import {LiveFrontDesk} from "./LiveFrontDesk";
 import {ExceptionsLive,OperationsOverviewLive,ShiftHandoverLive} from "./LiveOperationsControl";
 import {ApartmentTimelineLive,Guest360Live,StayCardLive} from "./LiveGuestStay";
+import {IntegrationHubLive,TeamWorkloadLive} from "./LiveTeamIntegrations";
 
 const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","general_manager","super_admin"];
 const labels:Record<string,string>={
@@ -81,8 +82,8 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="host")return <HostDesk step={hostStep} setStep={setHostStep}/>;
     if(current==="finance")return <Finance/>;
     if(current==="admin")return <AdminPanel orders={orders} act={act}/>;
-    if(current==="integrations")return <IntegrationHub/>;
-    if(current==="team")return <TeamPanel orders={orders}/>;
+    if(current==="integrations")return live?<IntegrationHubLive/>:<IntegrationHub/>;
+    if(current==="team")return live?<TeamWorkloadLive role={role}/>:<TeamPanel orders={orders}/>;
     return <Panel title={labels[current]??current}><div className="notice">Module foundation ready for the next backend slice.</div></Panel>;
   };
 
