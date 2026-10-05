@@ -12,6 +12,12 @@ const PAGES_SIGNING=generateKeyPairSync("ed25519");
 const CRON_SIGNING=generateKeyPairSync("ed25519");
 const PAGES_PUBLIC=PAGES_SIGNING.publicKey.export({format:"pem",type:"spki"}).toString();
 const CRON_PUBLIC=CRON_SIGNING.publicKey.export({format:"pem",type:"spki"}).toString();
+const ACTIVATED="2026-10-01T00:00:00.000Z";
+const ROTATE_BY="2027-01-01T00:00:00.000Z";
+
+function signingRef(kid:string,ref:string){
+  return {kid,ref,activatedAt:ACTIVATED,rotateBy:ROTATE_BY};
+}
 
 const SERVICE_REFS=JSON.stringify({
   "pages-bff":["VIEWS_SECRET_PAGES_CURRENT","VIEWS_SECRET_PAGES_PREVIOUS"],
@@ -208,19 +214,72 @@ describe("production security config",()=>{
     const config=loadConfig({
       ...managed(),
       VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
-        "pages-bff":[{kid:"pages-2026-10",ref:"VIEWS_PAGES_PUBLIC"}],
-        "analytics-cron":[{kid:"cron-2026-10",ref:"VIEWS_CRON_PUBLIC"}]
+        "pages-bff":[signingRef("pages-2026-10","VIEWS_PAGES_PUBLIC")],
+        "analytics-cron":[signingRef("cron-2026-10","VIEWS_CRON_PUBLIC")]
       }),
       VIEWS_PAGES_PUBLIC:PAGES_PUBLIC,
       VIEWS_CRON_PUBLIC:CRON_PUBLIC
     });
 
     expect(config.internalServicePublicKeys["pages-bff"]).toEqual([
-      {kid:"pages-2026-10",publicKeyPem:PAGES_PUBLIC.trim()}
+      {
+        kid:"pages-2026-10",
+        publicKeyPem:PAGES_PUBLIC.trim(),
+        activatedAt:ACTIVATED,
+        rotateBy:ROTATE_BY
+      }
     ]);
     expect(config.internalServicePublicKeys["analytics-cron"]).toEqual([
-      {kid:"cron-2026-10",publicKeyPem:CRON_PUBLIC.trim()}
+      {
+        kid:"cron-2026-10",
+        publicKeyPem:CRON_PUBLIC.trim(),
+        activatedAt:ACTIVATED,
+        rotateBy:ROTATE_BY
+      }
     ]);
+  });
+
+  it("requires valid signing-key rotation metadata in production",()=>{
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
+        "pages-bff":[{kid:"pages-2026-10",ref:"VIEWS_PAGES_PUBLIC"}]
+      }),
+      VIEWS_PAGES_PUBLIC:PAGES_PUBLIC
+    })).toThrow(
+      "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON production keys require activatedAt and rotateBy"
+    );
+
+    expect(()=>loadConfig({
+      ...managed(),
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
+        "pages-bff":[{
+          kid:"pages-2026-10",
+          ref:"VIEWS_PAGES_PUBLIC",
+          activatedAt:ROTATE_BY,
+          rotateBy:ACTIVATED
+        }]
+      }),
+      VIEWS_PAGES_PUBLIC:PAGES_PUBLIC
+    })).toThrow(
+      "VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON rotateBy must be after activatedAt"
+    );
+  });
+
+  it("keeps rotation metadata optional for non-production signing fixtures",()=>{
+    const config=loadConfig({
+      DATABASE_URL:"postgresql://example.invalid/views",
+      NODE_ENV:"test",
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
+        "pages-bff":[{kid:"pages-2026-10",ref:"VIEWS_PAGES_PUBLIC"}]
+      }),
+      VIEWS_PAGES_PUBLIC:PAGES_PUBLIC
+    });
+    expect(config.internalServicePublicKeys["pages-bff"][0]).toMatchObject({
+      kid:"pages-2026-10",
+      activatedAt:null,
+      rotateBy:null
+    });
   });
 
   it("rejects malformed signing-key references and non-Ed25519 keys",()=>{
@@ -238,7 +297,7 @@ describe("production security config",()=>{
     expect(()=>loadConfig({
       ...managed(),
       VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
-        "pages-bff":[{kid:"pages-2026-10",ref:"VIEWS_PAGES_PUBLIC"}]
+        "pages-bff":[signingRef("pages-2026-10","VIEWS_PAGES_PUBLIC")]
       }),
       VIEWS_PAGES_PUBLIC:rsa.publicKey.export({format:"pem",type:"spki"}).toString()
     })).toThrow(
@@ -250,8 +309,8 @@ describe("production security config",()=>{
     expect(()=>loadConfig({
       ...managed(),
       VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:JSON.stringify({
-        "pages-bff":[{kid:"pages-2026-10",ref:"VIEWS_PAGES_PUBLIC"}],
-        "analytics-cron":[{kid:"cron-2026-10",ref:"VIEWS_CRON_PUBLIC"}]
+        "pages-bff":[signingRef("pages-2026-10","VIEWS_PAGES_PUBLIC")],
+        "analytics-cron":[signingRef("cron-2026-10","VIEWS_CRON_PUBLIC")]
       }),
       VIEWS_PAGES_PUBLIC:PAGES_PUBLIC,
       VIEWS_CRON_PUBLIC:PAGES_PUBLIC

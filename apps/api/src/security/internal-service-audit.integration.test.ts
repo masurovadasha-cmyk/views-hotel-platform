@@ -32,6 +32,7 @@ describe.sequential("Stage 7 trusted-service request audit",()=>{
       httpMethod:"GET",
       routePath:"AnalyticsDashboardController.summary",
       authScheme:"internal_key",
+      credentialId:null,
       tokenJti:null
     });
 
@@ -70,6 +71,7 @@ describe.sequential("Stage 7 trusted-service request audit",()=>{
       httpMethod:"POST",
       routePath:"AnalyticsInternalJobsController.reportCycle",
       authScheme:"internal_key",
+      credentialId:null,
       tokenJti:null
     });
     await audit.complete(failedId,500,"REPORT_WORKER_FAILURE");
@@ -96,6 +98,7 @@ describe.sequential("Stage 7 trusted-service request audit",()=>{
       httpMethod:"GET",
       routePath:"AnalyticsDashboardController.summary",
       authScheme:"signed_token" as const,
+      credentialId:"pages-2026-10",
       tokenJti
     };
 

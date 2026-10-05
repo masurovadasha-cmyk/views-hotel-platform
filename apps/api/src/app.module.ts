@@ -15,16 +15,24 @@ import {InternalAuthRejectionService} from "./security/internal-auth-rejection.s
 import {InternalServiceAuditController} from "./security/internal-service-audit.controller";
 import {InternalServiceAuditInterceptor} from "./security/internal-service-audit.interceptor";
 import {InternalServiceAuditService} from "./security/internal-service-audit.service";
+import {InternalServicePostureController} from "./security/internal-service-posture.controller";
+import {InternalServicePostureService} from "./security/internal-service-posture.service";
 
 @Module({
   imports:[
     DatabaseModule,InventoryModule,RatesModule,BookingModule,
     PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule
   ],
-  controllers:[HealthController,InternalServiceAuditController,InternalAuthRejectionController],
+  controllers:[
+    HealthController,
+    InternalServiceAuditController,
+    InternalAuthRejectionController,
+    InternalServicePostureController
+  ],
   providers:[
     InternalServiceAuditService,
     InternalAuthRejectionService,
+    InternalServicePostureService,
     {provide:APP_GUARD,useClass:InternalActorAuthGuard},
     {provide:APP_INTERCEPTOR,useClass:InternalServiceAuditInterceptor}
   ]

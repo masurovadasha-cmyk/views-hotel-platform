@@ -91,7 +91,9 @@ Example:
   "analytics-cron": [
     {
       "kid": "analytics-cron-2026-10",
-      "ref": "VIEWS_INTERNAL_ANALYTICS_CRON_PUBLIC_KEY"
+      "ref": "VIEWS_INTERNAL_ANALYTICS_CRON_PUBLIC_KEY",
+      "activatedAt": "2026-10-06T00:00:00Z",
+      "rotateBy": "2027-01-04T00:00:00Z"
     }
   ]
 }
@@ -160,7 +162,7 @@ release evidence confirms every deployed sender is using signed tokens.
 
 ## Next work
 
-- record/alert credential age and rotation SLO;
+- credential age / rotation SLO and migration posture (implemented as the Stage 7.9 candidate);
 - add deployment acceptance proving no symmetric-key traffic remains;
 - remove the production symmetric service-key requirement after that acceptance gate;
 - add network ingress allowlists;

@@ -68,6 +68,7 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0028_internal_service_request_audit.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0029_internal_auth_rejection_metrics.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0030_signed_service_tokens.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0031_internal_service_credential_posture.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
@@ -114,7 +115,8 @@ jobs:
           VALUES('20000000-0000-4000-8000-000000000001','manager@views.test','Manager A'),
                 ('20000000-0000-4000-8000-000000000002','frontdesk@views.test','Front Desk A'),
                 ('20000000-0000-4000-8000-000000000003','owner@views.test','Owner A'),
-                ('20000000-0000-4000-8000-000000000004','host@views.test','Scoped Host A');
+                ('20000000-0000-4000-8000-000000000004','host@views.test','Scoped Host A'),
+                ('20000000-0000-4000-8000-000000000005','platform@views.test','Platform Admin A');
 
           INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
           SELECT '30000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000001',id,'active',now()
@@ -131,6 +133,10 @@ jobs:
           INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
           SELECT '30000000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000004',id,'active',now()
           FROM roles WHERE code='host';
+
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000005','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000005',id,'active',now()
+          FROM roles WHERE code='platform_admin';
 
           INSERT INTO membership_property_scopes(membership_id,property_id)
           VALUES
