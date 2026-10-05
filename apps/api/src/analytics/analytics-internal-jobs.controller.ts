@@ -18,7 +18,9 @@ export class AnalyticsInternalJobsController{
   @Post("report-cycle")
   async reportCycle(
     @Headers("x-views-internal-key") internalApiKey:string|undefined,
+    @Headers("x-views-service-token") serviceToken:string|undefined,
     @Headers("x-views-service-id") serviceId:string|undefined,
+    @Headers("x-request-id") requestId:string|undefined,
     @Body() body:{scheduleLimit?:number;reportLimit?:number;pruneLimit?:number}
   ){
     try{
@@ -26,11 +28,18 @@ export class AnalyticsInternalJobsController{
       const identity=trustedInternalServiceIdentity(
         {
           "x-views-internal-key":internalApiKey,
+          "x-views-service-token":serviceToken,
           "x-views-service-id":serviceId
         },
         {
           legacyKeys:config.internalApiKeys,
-          serviceKeys:config.internalServiceKeys
+          serviceKeys:config.internalServiceKeys,
+          servicePublicKeys:config.internalServicePublicKeys
+        },
+        {
+          method:"POST",
+          path:"/v1/internal/analytics/report-cycle",
+          requestId:requestId||""
         }
       );
       if(!identity)throw new Error("INTERNAL_API_UNAUTHORIZED");
@@ -58,11 +67,14 @@ export class AnalyticsInternalJobsController{
         throw error;
       }
       if(
-        error instanceof Error&&[
-          "INTERNAL_API_UNAUTHORIZED",
-          "INTERNAL_SERVICE_ID_REQUIRED",
-          "INTERNAL_SERVICE_NOT_CONFIGURED"
-        ].includes(error.message)
+        error instanceof Error&&(
+          [
+            "INTERNAL_API_UNAUTHORIZED",
+            "INTERNAL_SERVICE_ID_REQUIRED",
+            "INTERNAL_SERVICE_NOT_CONFIGURED"
+          ].includes(error.message)||
+          error.message.startsWith("INTERNAL_SERVICE_TOKEN_")
+        )
       ){
         throw new UnauthorizedException("internal API authentication required");
       }
