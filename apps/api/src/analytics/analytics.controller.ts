@@ -47,6 +47,28 @@ export class AnalyticsController{
       );
     }catch(error){throw mapAnalyticsError(error)}
   }
+
+  @Get("properties/:id/booking-cohorts")
+  async bookingCohorts(
+    @Param("id") id:string,
+    @Query("from") from:string|undefined,
+    @Query("to") to:string|undefined,
+    @Query("sourceChannel") sourceChannel:string|undefined,
+    @Query("guestSegment") guestSegment:string|undefined,
+    @Headers("x-organization-id") organizationId:string|undefined,
+    @Headers("x-user-id") userId:string|undefined,
+    @Headers("x-membership-id") membershipId:string|undefined,
+    @Headers("x-request-id") requestId:string|undefined
+  ){
+    try{
+      if(!from||!to)throw new BadRequestException("from and to are required");
+      return await this.queries.propertyBookingCohorts(
+        actorFromHeaders(organizationId,userId,membershipId,requestId),
+        requireUuid(id,"property_id"),
+        from,to,sourceChannel,guestSegment
+      );
+    }catch(error){throw mapAnalyticsError(error)}
+  }
 }
 
 function actorFromHeaders(
