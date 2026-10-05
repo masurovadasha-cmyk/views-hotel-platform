@@ -317,6 +317,23 @@ OUTBOX_BEFORE="$OUTBOX_BEFORE" node -e '
   if(typeof x.outboxRetrying!=="number"||typeof x.outboxDeadLetter!=="number"||typeof x.outboxLeased!=="number") throw new Error("outbox recovery metrics missing");
 '
 
+
+FINANCE_FORBIDDEN_STATUS="$(curl -ksS -o /tmp/views-finance-forbidden.json -w "%{http_code}" -b /tmp/frontdesk.cookies \
+  "$BASE/api/finance-summary?propertyId=utower")"
+test "$FINANCE_FORBIDDEN_STATUS" = "403"
+
+FINANCE_SUMMARY="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/finance-summary?propertyId=utower")"
+FINANCE_SUMMARY="$FINANCE_SUMMARY" node -e '
+  const x=JSON.parse(process.env.FINANCE_SUMMARY);
+  if(x.sourceOfTruth!=="postgres-payments-ledger") throw new Error("finance source of truth mismatch");
+  if(x.projection!=="d1-finance-read-model") throw new Error("finance projection mismatch");
+  if(x.liveMoneyEnabled!==false) throw new Error("live money must remain disabled in staging projection");
+  if(!Array.isArray(x.payments)||!Array.isArray(x.ledger?.accounts)) throw new Error("finance projection shape invalid");
+  if(!Array.isArray(x.ledger?.unbalancedPostedJournals)||x.ledger.unbalancedPostedJournals.length!==0){
+    throw new Error("unbalanced posted finance journal detected");
+  }
+'
+
 OUTBOX_PROCESS="$(curl -kfsS -b /tmp/manager.cookies \
   -H "Origin: $ORIGIN" -H "Content-Type: application/json" \
   --data '{"limit":50}' \
