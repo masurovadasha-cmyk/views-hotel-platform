@@ -79,6 +79,7 @@ ON analytics_report_jobs
 USING (
   organization_id=app.current_organization_id()
   AND membership_id=app.current_membership_id()
+  AND app.current_membership_role() IN ('host','owner','manager','accountant')
   AND (
     property_id IS NULL
     OR app.can_access_property(property_id)
@@ -88,6 +89,7 @@ WITH CHECK (
   organization_id=app.current_organization_id()
   AND membership_id=app.current_membership_id()
   AND requested_by_user_id=app.current_user_id()
+  AND app.current_membership_role() IN ('host','owner','manager','accountant')
   AND (
     property_id IS NULL
     OR app.can_access_property(property_id)
@@ -136,7 +138,6 @@ BEGIN
       ON m.id=j.membership_id
      AND m.organization_id=j.organization_id
      AND m.user_id=j.requested_by_user_id
-     AND m.status='active'
     WHERE j.status IN ('queued','processing')
       AND j.next_attempt_at<=now()
       AND (j.lease_until IS NULL OR j.lease_until<=now())
@@ -328,7 +329,8 @@ COMMIT;
          last_error_code=NULL
    WHERE id=target_job_id
      AND status='processing'
-     AND lease_token=target_worker_token;
+     AND lease_token=target_worker_token
+     AND lease_until>now();
 
   GET DIAGNOSTICS v_updated = ROW_COUNT;
   RETURN v_updated=1;
@@ -365,6 +367,7 @@ BEGIN
    WHERE id=target_job_id
      AND status='processing'
      AND lease_token=target_worker_token
+     AND lease_until>now()
    FOR UPDATE;
 
   IF v_attempts IS NULL THEN
