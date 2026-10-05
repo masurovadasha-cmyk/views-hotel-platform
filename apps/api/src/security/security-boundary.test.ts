@@ -16,6 +16,8 @@ describe("security telemetry redaction",()=>{
     const output=redactTelemetryValue({
       authorization:"fixture-auth-value",
       "x-views-internal-key":"fixture-internal-key-value",
+      "x-views-service-token":"fixture.signed.token",
+      VIEWS_CORE_SIGNING_PRIVATE_KEY:"fixture-private-key",
       nested:{
         accessToken:"fixture-access-value",
         email:"user@example.test",
@@ -25,6 +27,8 @@ describe("security telemetry redaction",()=>{
 
     expect(output.authorization).toBe("[REDACTED]");
     expect(output["x-views-internal-key"]).toBe("[REDACTED]");
+    expect(output["x-views-service-token"]).toBe("[REDACTED]");
+    expect(output.VIEWS_CORE_SIGNING_PRIVATE_KEY).toBe("[REDACTED]");
     expect(output.nested.accessToken).toBe("[REDACTED]");
     expect(output.nested.email).toBe("[REDACTED]");
     expect(output.nested.safe).toBe("ok");
