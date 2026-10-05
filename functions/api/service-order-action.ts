@@ -38,16 +38,42 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
   if(!to)return json({error:"INVALID_TRANSITION",from:order.status,action,requestId:requestId(request)},409);
 
   const assignee=order.assigned_user_id||(["accept","start"].includes(action)?session.userId:null);
-  const result=await db.prepare("UPDATE service_orders SET status=?,assigned_user_id=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=?")
-    .bind(to,assignee,id,expectedVersion).run();
-  if(!result.meta?.changes)return json({error:"VERSION_CONFLICT",requestId:requestId(request)},409);
+  const nextVersion=expectedVersion+1;
+  const eventKey="order:"+id+":v"+nextVersion+":"+action;
+  const payload=JSON.stringify({role:session.role,version:nextVersion});
+  const outboxPayload=JSON.stringify({id,from:order.status,to,version:nextVersion});
 
-  const eventKey="order:"+id+":v"+(expectedVersion+1)+":"+action;
-  await db.batch([
-    db.prepare("INSERT INTO service_order_events(id,service_order_id,event_type,from_status,to_status,actor_user_id,payload) VALUES(?,?,?,?,?,?,?)")
-      .bind(crypto.randomUUID(),id,"service_order."+action,order.status,to,session.userId,JSON.stringify({role:session.role,version:expectedVersion+1})),
-    db.prepare("INSERT INTO outbox_events(id,organization_id,event_type,aggregate_type,aggregate_id,idempotency_key,payload) VALUES(?,?,?,?,?,?,?)")
-      .bind(crypto.randomUUID(),session.organizationId,"service_order."+action,"service_order",id,eventKey,JSON.stringify({id,from:order.status,to,version:expectedVersion+1}))
-  ]);
-  return json({id,status:to,version:expectedVersion+1,assignedUserId:assignee,requestId:requestId(request)});
+  try{
+    const results=await db.batch([
+      db.prepare("UPDATE service_orders SET status=?,assigned_user_id=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND organization_id=? AND version=?")
+        .bind(to,assignee,id,session.organizationId,expectedVersion),
+      db.prepare([
+        "INSERT INTO service_order_events(id,service_order_id,event_type,from_status,to_status,actor_user_id,payload) ",
+        "SELECT ?,id,?,?,?,?,? FROM service_orders ",
+        "WHERE id=? AND organization_id=? AND version=? AND status=?"
+      ].join(""))
+        .bind(crypto.randomUUID(),"service_order."+action,order.status,to,session.userId,payload,id,session.organizationId,nextVersion,to),
+      db.prepare([
+        "INSERT INTO outbox_events(id,organization_id,event_type,aggregate_type,aggregate_id,idempotency_key,payload) ",
+        "SELECT ?,organization_id,?,'service_order',id,?,? FROM service_orders ",
+        "WHERE id=? AND organization_id=? AND version=? AND status=?"
+      ].join(""))
+        .bind(crypto.randomUUID(),"service_order."+action,eventKey,outboxPayload,id,session.organizationId,nextVersion,to)
+    ]);
+
+    if(!results[0]?.meta?.changes){
+      const current=await db.prepare("SELECT version,status FROM service_orders WHERE id=? AND organization_id=? LIMIT 1")
+        .bind(id,session.organizationId).first<Record<string,unknown>>();
+      return json({error:"VERSION_CONFLICT",currentVersion:current?.version,currentStatus:current?.status,requestId:requestId(request)},409);
+    }
+  }catch(error){
+    const current=await db.prepare("SELECT version,status FROM service_orders WHERE id=? AND organization_id=? LIMIT 1")
+      .bind(id,session.organizationId).first<Record<string,unknown>>();
+    if(current&&Number(current.version)!==expectedVersion){
+      return json({error:"VERSION_CONFLICT",currentVersion:current.version,currentStatus:current.status,requestId:requestId(request)},409);
+    }
+    return json({error:"TRANSITION_WRITE_FAILED",detail:String(error),requestId:requestId(request)},409);
+  }
+
+  return json({id,status:to,version:nextVersion,assignedUserId:assignee,requestId:requestId(request)});
 };
