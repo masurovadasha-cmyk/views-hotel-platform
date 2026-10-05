@@ -1,3 +1,4 @@
+import {generateKeyPairSync,randomUUID,sign} from "node:crypto";
 import {describe,expect,it} from "vitest";
 import {trustedInternalServiceIdentity} from "./internal-service-identity";
 
@@ -6,13 +7,49 @@ const PREVIOUS="fixture-previous-internal-api-key-material";
 const PAGES_CURRENT="fixture-pages-bff-current-key-material";
 const PAGES_PREVIOUS="fixture-pages-bff-previous-key-material";
 const CRON_CURRENT="fixture-analytics-cron-current-key-material";
+const SIGNING=generateKeyPairSync("ed25519");
+const SIGNING_PUBLIC=SIGNING.publicKey.export({format:"pem",type:"spki"}).toString();
+const NOW=1_800_000_000;
+const REQUEST={
+  method:"GET",
+  path:"/v1/analytics/dashboard/summary",
+  requestId:"stage7-service-identity-request",
+  nowSeconds:NOW
+};
 const SERVICE_AUTH={
   legacyKeys:[CURRENT,PREVIOUS],
   serviceKeys:{
     "pages-bff":[PAGES_CURRENT,PAGES_PREVIOUS],
     "analytics-cron":[CRON_CURRENT]
+  },
+  servicePublicKeys:{
+    "pages-bff":[{kid:"pages-2026-10",publicKeyPem:SIGNING_PUBLIC}]
   }
 };
+
+function signedToken(overrides:Record<string,unknown>={}){
+  const header={
+    alg:"EdDSA",
+    typ:"views-service+jwt",
+    kid:"pages-2026-10"
+  };
+  const payload={
+    iss:"pages-bff",
+    sub:"pages-bff",
+    aud:"views-core",
+    iat:NOW,
+    exp:NOW+30,
+    jti:randomUUID(),
+    htm:"GET",
+    htp:"/v1/analytics/dashboard/summary",
+    rid:"stage7-service-identity-request",
+    ...overrides
+  };
+  const h=Buffer.from(JSON.stringify(header)).toString("base64url");
+  const p=Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const input=h+"."+p;
+  return input+"."+sign(null,Buffer.from(input),SIGNING.privateKey).toString("base64url");
+}
 
 describe("trusted internal service identity",()=>{
   it("accepts current and previous rotation keys and fingerprints the presented key",()=>{
@@ -92,4 +129,27 @@ describe("trusted internal service identity",()=>{
       "x-views-service-id":"pages-bff"
     },[CURRENT,PREVIOUS])).toThrow("INTERNAL_API_UNAUTHORIZED");
   });
+
+  it("accepts a request-bound signed token without a legacy internal key",()=>{
+    const identity=trustedInternalServiceIdentity({
+      "x-views-service-token":signedToken(),
+      "x-views-service-id":"pages-bff"
+    },SERVICE_AUTH,REQUEST);
+
+    expect(identity).toMatchObject({
+      serviceId:"pages-bff",
+      authScheme:"signed_token"
+    });
+    expect(identity?.tokenJti).toMatch(/^[0-9a-f-]{36}$/);
+    expect(identity?.keyFingerprint).toMatch(/^[a-f0-9]{32}$/);
+  });
+
+  it("does not downgrade to a valid API key when a token header is present but invalid",()=>{
+    expect(()=>trustedInternalServiceIdentity({
+      "x-views-service-token":signedToken({aud:"wrong-audience"}),
+      "x-views-internal-key":PAGES_CURRENT,
+      "x-views-service-id":"pages-bff"
+    },SERVICE_AUTH,REQUEST)).toThrow("INTERNAL_SERVICE_TOKEN_BINDING_INVALID");
+  });
+
 });
