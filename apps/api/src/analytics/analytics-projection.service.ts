@@ -9,7 +9,7 @@ export class AnalyticsProjectionService{
   constructor(private readonly db:DatabaseService){}
 
   async processBatch(actor:RequestActorContext,limit=100){
-    if(!Number.isInteger(limit)||limit<1||limit>500)throw new Error("INVALID_BATCH_LIMIT");
+    this.validateLimit(limit);
 
     return this.db.withActor(actor,async client=>{
       const role=(await client.query<{code:string|null}>(
@@ -18,55 +18,74 @@ export class AnalyticsProjectionService{
       if(!role||!["owner","manager","accountant"].includes(role)){
         throw new Error("ANALYTICS_ROLE_FORBIDDEN");
       }
+      return this.processClient(client,actor.organizationId,limit);
+    });
+  }
 
-      const events=await client.query<{
-        id:string;aggregate_type:string;aggregate_id:string;event_type:string;payload:Record<string,unknown>;
-      }>(
-        `SELECT o.id,o.aggregate_type,o.aggregate_id,o.event_type,o.payload
-           FROM outbox_events o
-           LEFT JOIN analytics_projection_consumptions c
-             ON c.outbox_event_id=o.id
-            AND c.consumer=$2
-          WHERE o.organization_id=$1
-            AND c.outbox_event_id IS NULL
-            AND (
-              o.aggregate_type='reservation'
-              OR o.event_type='finance.payment_intent.v1'
-            )
-          ORDER BY o.occurred_at,o.id
-          LIMIT $3`,
-        [actor.organizationId,ANALYTICS_CONSUMER,limit]
-      );
+  async processOrganization(organizationId:string,limit=100){
+    this.validateLimit(limit);
+    return this.db.withOrganization(
+      organizationId,
+      client=>this.processClient(client,organizationId,limit)
+    );
+  }
 
-      let projected=0;
-      for(const event of events.rows){
-        let reservationId:string|null=null;
-        if(event.aggregate_type==="reservation"){
-          reservationId=event.aggregate_id;
-        }else if(event.event_type==="finance.payment_intent.v1"){
-          reservationId=typeof event.payload?.reservationId==="string"
-            ?event.payload.reservationId
-            :null;
-        }
+  private validateLimit(limit:number){
+    if(!Number.isInteger(limit)||limit<1||limit>500)throw new Error("INVALID_BATCH_LIMIT");
+  }
 
-        if(reservationId){
-          await this.projectReservation(client,actor.organizationId,reservationId);
-          await this.projectPayments(client,actor.organizationId,reservationId);
-        }
+  private async processClient(
+    client:import("pg").PoolClient,
+    organizationId:string,
+    limit:number
+  ){
+    const events=await client.query<{
+      id:string;aggregate_type:string;aggregate_id:string;event_type:string;payload:Record<string,unknown>;
+    }>(
+      `SELECT o.id,o.aggregate_type,o.aggregate_id,o.event_type,o.payload
+         FROM outbox_events o
+         LEFT JOIN analytics_projection_consumptions c
+           ON c.outbox_event_id=o.id
+          AND c.consumer=$2
+        WHERE o.organization_id=$1
+          AND c.outbox_event_id IS NULL
+          AND (
+            o.aggregate_type='reservation'
+            OR o.event_type='finance.payment_intent.v1'
+          )
+        ORDER BY o.occurred_at,o.id
+        LIMIT $3`,
+      [organizationId,ANALYTICS_CONSUMER,limit]
+    );
 
-        const inserted=await client.query(
-          `INSERT INTO analytics_projection_consumptions(
-             id,organization_id,outbox_event_id,consumer,event_type
-           ) VALUES(gen_random_uuid(),$1,$2,$3,$4)
-           ON CONFLICT(outbox_event_id,consumer) DO NOTHING
-           RETURNING id`,
-          [actor.organizationId,event.id,ANALYTICS_CONSUMER,event.event_type]
-        );
-        if(inserted.rowCount)projected++;
+    let projected=0;
+    for(const event of events.rows){
+      let reservationId:string|null=null;
+      if(event.aggregate_type==="reservation"){
+        reservationId=event.aggregate_id;
+      }else if(event.event_type==="finance.payment_intent.v1"){
+        reservationId=typeof event.payload?.reservationId==="string"
+          ?event.payload.reservationId
+          :null;
       }
 
-      return {scanned:events.rowCount??0,projected,consumer:ANALYTICS_CONSUMER};
-    });
+      if(reservationId){
+        await this.projectReservation(client,organizationId,reservationId);
+        await this.projectPayments(client,organizationId,reservationId);
+      }
+
+      const inserted=await client.query(
+        `INSERT INTO analytics_projection_consumptions(
+           id,organization_id,outbox_event_id,consumer,event_type
+         ) VALUES(gen_random_uuid(),$1,$2,$3,$4)
+         ON CONFLICT(outbox_event_id,consumer) DO NOTHING
+         RETURNING id`,
+        [organizationId,event.id,ANALYTICS_CONSUMER,event.event_type]
+      );
+      if(inserted.rowCount)projected++;
+    }
+
+    return {scanned:events.rowCount??0,projected,consumer:ANALYTICS_CONSUMER};
   }
 
   private async projectReservation(

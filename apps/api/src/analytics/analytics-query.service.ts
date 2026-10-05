@@ -139,19 +139,27 @@ export class AnalyticsQueryService{
       const row=(await client.query<{
         pending_events:number;oldest_pending_at:Date|null;
         last_processed_at:Date|null;oldest_pending_age_seconds:string;
+        consecutive_failures:number;last_error_code:string|null;
+        last_started_at:Date|null;last_completed_at:Date|null;status:string;
       }>(
         `SELECT pending_events,oldest_pending_at,last_processed_at,
-                oldest_pending_age_seconds::text
-           FROM analytics_projection_health
+                oldest_pending_age_seconds::text,consecutive_failures,last_error_code,
+                last_started_at,last_completed_at,status
+           FROM analytics_projection_slo
           WHERE organization_id=$1`,
         [actor.organizationId]
       )).rows[0];
 
       return {
+        status:row?.status??"healthy",
         pendingEvents:Number(row?.pending_events??0),
         oldestPendingAt:row?.oldest_pending_at?.toISOString()??null,
         lastProcessedAt:row?.last_processed_at?.toISOString()??null,
-        oldestPendingAgeSeconds:Number(row?.oldest_pending_age_seconds??0)
+        oldestPendingAgeSeconds:Number(row?.oldest_pending_age_seconds??0),
+        consecutiveFailures:Number(row?.consecutive_failures??0),
+        lastErrorCode:row?.last_error_code??null,
+        lastStartedAt:row?.last_started_at?.toISOString()??null,
+        lastCompletedAt:row?.last_completed_at?.toISOString()??null
       };
     });
   }
