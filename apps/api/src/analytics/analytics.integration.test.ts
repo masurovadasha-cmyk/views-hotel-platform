@@ -13,6 +13,8 @@ const MEMBERSHIP="30000000-0000-4000-8000-000000000001";
 const QUOTE="c1000000-0000-4000-8000-000000000001";
 const RESERVATION="c2000000-0000-4000-8000-000000000001";
 const PAYMENT_INTENT="c3000000-0000-4000-8000-000000000001";
+const CANCELLED_RESERVATION="c2000000-0000-4000-8000-000000000002";
+const NOSHOW_RESERVATION="c2000000-0000-4000-8000-000000000003";
 
 const actor={
   organizationId:ORG,userId:USER,membershipId:MEMBERSHIP,requestId:"analytics-integration"
@@ -51,7 +53,41 @@ beforeAll(async()=>{
          '2027-01-01T12:00:00+05','2027-01-02T12:00:00+05',3
        )
        ON CONFLICT(id) DO NOTHING`,
-      [RESERVATION,ORG,PROPERTY,UNIT,RATE,JSON.stringify({quoteId:QUOTE})]
+      [RESERVATION,ORG,PROPERTY,UNIT,RATE,JSON.stringify({quoteId:QUOTE,bookingChannel:"direct",marketSegment:"leisure"})]
+    );
+
+    await client.query(
+      `INSERT INTO reservations(
+         id,organization_id,property_id,unit_id,rate_plan_id,confirmation_code,status,
+         check_in_at,check_out_at,currency,accommodation_minor,total_minor,
+         cancellation_policy_snapshot,quote_snapshot,created_at,updated_at,version,cancelled_at
+       ) VALUES
+       ($1,$3,$4,$5,$6,'VW-ANALYTICS-CANCEL','cancelled',
+        '2027-01-10T14:00:00+05','2027-01-12T12:00:00+05',
+        'UZS',800,900,'{}'::jsonb,$7::jsonb,
+        '2026-12-20T12:00:00+05','2027-01-05T12:00:00+05',2,'2027-01-05T12:00:00+05'),
+       ($2,$3,$4,$5,$6,'VW-ANALYTICS-NOSHOW','no_show',
+        '2027-01-10T14:00:00+05','2027-01-12T12:00:00+05',
+        'UZS',700,700,'{}'::jsonb,$8::jsonb,
+        '2026-12-25T12:00:00+05','2027-01-10T18:00:00+05',2,NULL)
+       ON CONFLICT(id) DO NOTHING`,
+      [
+        CANCELLED_RESERVATION,NOSHOW_RESERVATION,ORG,PROPERTY,UNIT,RATE,
+        JSON.stringify({bookingChannel:"ota",marketSegment:"leisure"}),
+        JSON.stringify({bookingChannel:"corporate_portal",marketSegment:"business"})
+      ]
+    );
+
+    await client.query(
+      `INSERT INTO booking_state_events(
+         id,organization_id,reservation_id,event_type,from_status,to_status,
+         idempotency_key,payload,created_at
+       ) VALUES(
+         gen_random_uuid(),$1,$2,'booking.no_show','confirmed','no_show',
+         'analytics-stage6-noshow-state','{}'::jsonb,'2027-01-10T18:00:00+05'
+       )
+       ON CONFLICT DO NOTHING`,
+      [ORG,NOSHOW_RESERVATION]
     );
 
     await client.query(
@@ -72,13 +108,19 @@ beforeAll(async()=>{
          id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload,occurred_at
        ) VALUES
        (gen_random_uuid(),$1,'reservation',$2,'booking.confirmed',$3,$4::jsonb,'2027-01-02T12:00:00+05'),
-       (gen_random_uuid(),$1,'payment_intent',$5,'finance.payment_intent.v1',$6,$7::jsonb,'2027-01-03T12:00:00+05')
+       (gen_random_uuid(),$1,'payment_intent',$5,'finance.payment_intent.v1',$6,$7::jsonb,'2027-01-03T12:00:00+05'),
+       (gen_random_uuid(),$1,'reservation',$8,'booking.cancelled',$9,$10::jsonb,'2027-01-05T12:00:00+05'),
+       (gen_random_uuid(),$1,'reservation',$11,'booking.no_show',$12,$13::jsonb,'2027-01-10T18:00:00+05')
        ON CONFLICT(idempotency_key) DO NOTHING`,
       [
         ORG,RESERVATION,
         "analytics-stage6-booking-event",JSON.stringify({reservationId:RESERVATION}),
         PAYMENT_INTENT,
-        "analytics-stage6-payment-event",JSON.stringify({reservationId:RESERVATION,paymentIntentId:PAYMENT_INTENT})
+        "analytics-stage6-payment-event",JSON.stringify({reservationId:RESERVATION,paymentIntentId:PAYMENT_INTENT}),
+        CANCELLED_RESERVATION,
+        "analytics-stage6-cancelled-event",JSON.stringify({reservationId:CANCELLED_RESERVATION}),
+        NOSHOW_RESERVATION,
+        "analytics-stage6-noshow-event",JSON.stringify({reservationId:NOSHOW_RESERVATION})
       ]
     );
   });
@@ -159,6 +201,46 @@ describe.sequential("Stage 6 analytics projections",()=>{
     expect(accommodationTotal).toBe(1001n);
     expect(grossTotal).toBe(1201n);
     expect(netTotal).toBe(1000n);
+  });
+
+  it("exposes truthful channel/segment cancellation and no-show dimensions",async()=>{
+    await projector.processBatch(actor,500);
+    const rows=await queries.propertyDimensions(actor,PROPERTY,"2027-01-10","2027-01-10");
+
+    const direct=rows.find(row=>row.bookingChannel==="direct"&&row.marketSegment==="leisure");
+    const ota=rows.find(row=>row.bookingChannel==="ota"&&row.marketSegment==="leisure");
+    const corporate=rows.find(row=>row.bookingChannel==="corporate_portal"&&row.marketSegment==="business");
+
+    expect(direct?.activeBookingCount).toBe(1);
+    expect(ota?.cancelledBookingCount).toBe(1);
+    expect(ota?.cancellationRate).toBe(1);
+    expect(corporate?.noShowBookingCount).toBe(1);
+    expect(corporate?.noShowRate).toBe(1);
+  });
+
+  it("reports analytics projection lag from unconsumed relevant events",async()=>{
+    await projector.processBatch(actor,500);
+
+    await db.withActor(actor,async client=>{
+      await client.query(
+        `INSERT INTO outbox_events(
+           id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload,occurred_at
+         ) VALUES(
+           gen_random_uuid(),$1,'reservation',$2,'booking.analytics_health_probe',
+           $3,$4::jsonb,now()-interval '10 minutes'
+         )
+         ON CONFLICT(idempotency_key) DO NOTHING`,
+        [
+          ORG,RESERVATION,
+          "analytics-stage6-health-probe",
+          JSON.stringify({reservationId:RESERVATION})
+        ]
+      );
+    });
+
+    const health=await queries.projectionHealth(actor);
+    expect(health.pendingEvents).toBeGreaterThanOrEqual(1);
+    expect(health.oldestPendingAgeSeconds).toBeGreaterThanOrEqual(500);
   });
 
   it("calculates occupancy, ADR, RevPAR, lead time and stay length centrally",async()=>{
