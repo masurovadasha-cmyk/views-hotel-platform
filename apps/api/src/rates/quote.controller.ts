@@ -17,6 +17,7 @@ export class QuoteController{
     @Headers("x-user-id") userId:string|undefined,
     @Headers("x-membership-id") membershipId:string|undefined,
     @Headers("x-request-id") requestId:string|undefined,
+    @Headers("x-market-segment") marketSegment:string|undefined,
     @Body() body:QuoteBody
   ){
     try{
@@ -38,7 +39,12 @@ export class QuoteController{
         guests:body.guests.map(x=>({
           age:Number(x.age),
           residency:x.residency==="nonresident"?"nonresident":"resident"
-        }))
+        })),
+        attribution:{
+          bookingChannel:"staff_crm",
+          marketSegment,
+          source:"staff_actor"
+        }
       });
       return JSON.parse(JSON.stringify(result,(_,v)=>typeof v==="bigint"?v.toString():v));
     }catch(error){
