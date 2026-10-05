@@ -20,6 +20,8 @@ CREATE TABLE reservation_economic_snapshots (
   source_reference text,
   idempotency_key text NOT NULL,
   request_hash char(64) NOT NULL,
+  payment_state_hash char(64) NOT NULL,
+  ledger_journal_id uuid REFERENCES ledger_journals(id),
   created_by_user_id uuid NOT NULL REFERENCES users(id),
   created_by_membership_id uuid NOT NULL REFERENCES organization_memberships(id),
   finalized_by_user_id uuid REFERENCES users(id),
@@ -31,6 +33,7 @@ CREATE TABLE reservation_economic_snapshots (
   UNIQUE(reservation_id,version),
   CHECK (length(idempotency_key) BETWEEN 1 AND 160),
   CHECK (length(request_hash)=64),
+  CHECK (length(payment_state_hash)=64),
   CHECK (source_reference IS NULL OR length(source_reference)<=200),
   CHECK (
     net_collected_minor =
@@ -107,5 +110,43 @@ CREATE POLICY reservation_economic_tenant
 ON reservation_economic_snapshots
 USING (organization_id=app.current_organization_id())
 WITH CHECK (organization_id=app.current_organization_id());
+
+CREATE OR REPLACE VIEW reservation_economic_reconciliation
+WITH (security_invoker=true) AS
+WITH payment_state AS (
+  SELECT
+    r.organization_id,
+    r.id AS reservation_id,
+    r.currency,
+    COALESCE(SUM(pi.captured_minor),0)::bigint AS captured_minor,
+    COALESCE(SUM(pi.refunded_minor),0)::bigint AS refunded_minor
+  FROM reservations r
+  LEFT JOIN payment_intents pi
+    ON pi.reservation_id=r.id
+   AND pi.organization_id=r.organization_id
+  GROUP BY r.organization_id,r.id,r.currency
+)
+SELECT
+  s.organization_id,
+  s.property_id,
+  s.reservation_id,
+  s.id AS economics_snapshot_id,
+  s.version,
+  s.currency,
+  s.net_collected_minor AS snapshot_net_collected_minor,
+  (p.captured_minor-p.refunded_minor)::bigint AS current_net_collected_minor,
+  (
+    (p.captured_minor-p.refunded_minor)-s.net_collected_minor
+  )::bigint AS net_drift_minor,
+  CASE
+    WHEN (p.captured_minor-p.refunded_minor)=s.net_collected_minor THEN 'reconciled'
+    ELSE 'drifted'
+  END AS reconciliation_status,
+  s.finalized_at
+FROM reservation_economic_snapshots s
+JOIN payment_state p
+  ON p.organization_id=s.organization_id
+ AND p.reservation_id=s.reservation_id
+WHERE s.status='finalized';
 
 COMMIT;
