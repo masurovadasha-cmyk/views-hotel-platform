@@ -25,7 +25,8 @@ export class InternalAuthRejectionService{
 
   async record(
     context:ExecutionContext,
-    reason:InternalAuthRejectionReason
+    reason:InternalAuthRejectionReason,
+    options:{networkMode?:"configured"|"direct"}={}
   ){
     if(context.getType()!=="http")return null;
 
@@ -37,7 +38,7 @@ export class InternalAuthRejectionService{
     const networkHash=this.networkHash(
       request.headers,
       request.socket?.remoteAddress??null,
-      config.trustedProxyMode,
+      options.networkMode==="direct"?"direct":config.trustedProxyMode,
       config.guestAuthRateLimitSecret
     );
     const endpoint=(

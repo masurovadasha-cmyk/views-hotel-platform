@@ -67,7 +67,9 @@ export class InternalIngressGuard implements CanActivate{
     }catch(error){
       if(error instanceof InternalIngressFailure){
         await this.rejections.record(
-          context,"service_ingress_denied"
+          context,
+          "service_ingress_denied",
+          {networkMode:"direct"}
         ).catch(()=>undefined);
       }
       throw error;
