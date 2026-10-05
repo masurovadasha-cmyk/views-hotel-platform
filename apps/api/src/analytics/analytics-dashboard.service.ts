@@ -4,7 +4,7 @@ import type {PoolClient} from "pg";
 import {DatabaseService} from "../database/database.service";
 import type {RequestActorContext} from "../identity/actor-context";
 
-const DASHBOARD_SCHEMA_VERSION=1;
+const DASHBOARD_SCHEMA_VERSION=2;
 const CACHE_TTL_SECONDS=300;
 const MAX_RANGE_DAYS=366;
 
@@ -21,9 +21,15 @@ export class AnalyticsDashboardService{
     return this.db.withActor(actor,async client=>{
       await this.assertAccess(client,input.propertyId??null);
 
-      const sources=await this.sourceState(
-        client,actor.organizationId,input.from,input.to,input.propertyId??null
-      );
+      const comparisonPeriod=this.previousPeriod(input.from,input.to);
+      const [sources,comparisonSources]=await Promise.all([
+        this.sourceState(
+          client,actor.organizationId,input.from,input.to,input.propertyId??null
+        ),
+        this.sourceState(
+          client,actor.organizationId,comparisonPeriod.from,comparisonPeriod.to,input.propertyId??null
+        )
+      ]);
       const sourceFingerprint=this.hash({
         schemaVersion:DASHBOARD_SCHEMA_VERSION,
         organizationId:actor.organizationId,
@@ -31,7 +37,9 @@ export class AnalyticsDashboardService{
         propertyId:input.propertyId??null,
         from:input.from,
         to:input.to,
-        sources
+        sources,
+        comparisonPeriod,
+        comparisonSources
       });
       const cacheKey=this.hash({
         schemaVersion:DASHBOARD_SCHEMA_VERSION,
@@ -71,12 +79,28 @@ export class AnalyticsDashboardService{
         kpisByCurrency,
         lifecycleByCurrency,
         marketplaceByCurrency,
-        geography
+        geography,
+        channelSegmentBreakdown,
+        previousKpis,
+        previousLifecycle,
+        previousMarketplace
       ]=await Promise.all([
         this.kpis(client,actor.organizationId,input.from,input.to,input.propertyId??null),
         this.lifecycle(client,actor.organizationId,input.from,input.to,input.propertyId??null),
         this.marketplace(client,actor.organizationId,input.from,input.to,input.propertyId??null),
-        this.geography(client,actor.organizationId,input.from,input.to,input.propertyId??null)
+        this.geography(client,actor.organizationId,input.from,input.to,input.propertyId??null),
+        this.channelSegmentBreakdown(
+          client,actor.organizationId,input.from,input.to,input.propertyId??null
+        ),
+        this.kpis(
+          client,actor.organizationId,comparisonPeriod.from,comparisonPeriod.to,input.propertyId??null
+        ),
+        this.lifecycle(
+          client,actor.organizationId,comparisonPeriod.from,comparisonPeriod.to,input.propertyId??null
+        ),
+        this.marketplace(
+          client,actor.organizationId,comparisonPeriod.from,comparisonPeriod.to,input.propertyId??null
+        )
       ]);
 
       const generatedAt=new Date();
@@ -103,7 +127,26 @@ export class AnalyticsDashboardService{
         kpisByCurrency,
         lifecycleByCurrency,
         marketplaceByCurrency,
-        geography
+        geography,
+        channelSegmentBreakdown,
+        comparison:{
+          mode:"previous_equal_period",
+          period:comparisonPeriod,
+          freshness:{
+            projectionStatus:comparisonSources.projectionStatus,
+            pendingEvents:comparisonSources.pendingEvents,
+            oldestPendingAt:comparisonSources.oldestPendingAt,
+            lastProcessedAt:comparisonSources.lastProcessedAt,
+            rollupRefreshedAt:comparisonSources.rollupRefreshedAt,
+            reservationProjectedAt:comparisonSources.reservationProjectedAt,
+            economicsProjectedAt:comparisonSources.economicsProjectedAt
+          },
+          kpisByCurrency:this.compareKpis(kpisByCurrency,previousKpis),
+          lifecycleByCurrency:this.compareLifecycle(lifecycleByCurrency,previousLifecycle),
+          marketplaceByCurrency:this.compareMarketplace(
+            marketplaceByCurrency,previousMarketplace
+          )
+        }
       };
       const expiresAt=new Date(generatedAt.getTime()+CACHE_TTL_SECONDS*1000);
 
