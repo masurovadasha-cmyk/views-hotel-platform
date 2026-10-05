@@ -7,6 +7,7 @@ on:
       - "functions/**"
       - "migrations/**"
       - "src/**"
+      - "scripts/stage4-remote-smoke.sh"
       - "wrangler.toml"
       - "package.json"
       - ".github/workflows/cloudflare-staging.yml"
@@ -162,7 +163,7 @@ jobs:
                 const health=JSON.parse(process.env.HEALTH);
                 const ready=JSON.parse(process.env.READY);
                 if(health.status!=="ok") throw new Error("health endpoint is not ok");
-                if(ready.status!=="ready"||ready.database!=="ok") throw new Error("D1 readiness failed");
+                if(ready.status!=="ready"||ready.database!=="ok"||ready.schema!=="ok") throw new Error("D1 readiness failed");
               '
               exit 0
             fi
@@ -171,44 +172,11 @@ jobs:
           echo "Staging health/readiness did not become ready" >&2
           exit 1
 
-      - name: Smoke live staff session and operational workflow
+      - name: Smoke Stage 4 remote Golden Flow
         if: steps.gate.outputs.enabled == 'true'
         env:
           STAGING_ORIGIN: ${{ steps.pages.outputs.staging_origin }}
-        run: |
-          set -euo pipefail
-          TOKEN="$(node -e 'const c=require("node:crypto");process.stdout.write(c.randomUUID()+c.randomUUID())')"
-          TOKEN_HASH="$(node -e 'const c=require("node:crypto");process.stdout.write(c.createHash("sha256").update(process.argv[1]).digest("hex"))' "$TOKEN")"
-          NOW="$(date +%s)"
-          EXPIRES="$((NOW+900))"
-          TOKEN_ID="ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-
-          npx --yes wrangler@4 d1 execute views-staging --remote --yes --command "DELETE FROM email_login_tokens WHERE email='frontdesk.staging@views.invalid'; DELETE FROM app_sessions WHERE user_id='u-front'; INSERT INTO email_login_tokens(id,email,token_hash,expires_unix) VALUES('$TOKEN_ID','frontdesk.staging@views.invalid','$TOKEN_HASH',$EXPIRES);"
-
-          VERIFY="$(curl -fsS -c /tmp/views.cookies -H "Origin: $STAGING_ORIGIN" -H "Content-Type: application/json" --data "{\"token\":\"$TOKEN\"}" "$STAGING_ORIGIN/api/auth-verify")"
-          SESSION="$(curl -fsS -b /tmp/views.cookies "$STAGING_ORIGIN/api/session")"
-          export VERIFY SESSION
-          node -e '
-            const verify=JSON.parse(process.env.VERIFY);
-            const session=JSON.parse(process.env.SESSION);
-            if(!verify.authenticated) throw new Error("verification failed");
-            if(!session.authenticated||session.session?.mode!=="staff"||session.session?.role!=="front_desk") throw new Error("live staff session failed");
-          '
-
-          IDEMPOTENCY_KEY="stage4-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          ORDER="$(curl -fsS -b /tmp/views.cookies -H "Origin: $STAGING_ORIGIN" -H "Content-Type: application/json" -H "Idempotency-Key: $IDEMPOTENCY_KEY" --data '{"propertyId":"utower","category":"concierge","title":"Stage 4 CI smoke"}' "$STAGING_ORIGIN/api/service-orders")"
-          export ORDER
-          ORDER_ID="$(node -e 'const x=JSON.parse(process.env.ORDER);if(!x.id||x.status!=="new")process.exit(2);process.stdout.write(x.id)')"
-
-          ACCEPT="$(curl -fsS -b /tmp/views.cookies -H "Origin: $STAGING_ORIGIN" -H "Content-Type: application/json" --data "{\"id\":\"$ORDER_ID\",\"action\":\"accept\",\"version\":1}" "$STAGING_ORIGIN/api/service-order-action")"
-          COMPLETE="$(curl -fsS -b /tmp/views.cookies -H "Origin: $STAGING_ORIGIN" -H "Content-Type: application/json" --data "{\"id\":\"$ORDER_ID\",\"action\":\"complete\",\"version\":2}" "$STAGING_ORIGIN/api/service-order-action")"
-          export ACCEPT COMPLETE
-          node -e '
-            const accept=JSON.parse(process.env.ACCEPT);
-            const complete=JSON.parse(process.env.COMPLETE);
-            if(accept.status!=="accepted"||accept.version!==2) throw new Error("accept transition failed");
-            if(complete.status!=="done"||complete.version!==3) throw new Error("complete transition failed");
-          '
+        run: bash scripts/stage4-remote-smoke.sh
 
       - name: Deployment summary
         if: steps.gate.outputs.enabled == 'true'
@@ -220,7 +188,7 @@ jobs:
           echo "- D1: views-staging / DB" >> "$GITHUB_STEP_SUMMARY"
           echo "- Health: PASS" >> "$GITHUB_STEP_SUMMARY"
           echo "- Live staff session: PASS" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Service-order transition smoke: PASS" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Stage 4 remote Golden Flow: PASS" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Staging credential status
         if: steps.gate.outputs.enabled != 'true'
