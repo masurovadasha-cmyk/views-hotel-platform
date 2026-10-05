@@ -59,7 +59,7 @@ HEALTH="$HEALTH" node -e '
 READY="$(curl -kfsS "$BASE/api/readiness")"
 READY="$READY" node -e '
   const x=JSON.parse(process.env.READY);
-  if(x.status!=="ready"||x.database!=="ok") throw new Error("readiness failed");
+  if(x.status!=="ready"||x.database!=="ok"||x.schema!=="ok") throw new Error("readiness failed");
 '
 
 login(){
@@ -191,6 +191,19 @@ SUMMARY="$SUMMARY" node -e '
   const x=JSON.parse(process.env.SUMMARY);
   for(const key of ["lostFoundOpen","damageOpen","inventoryLow","serviceOrdersOpen"]){
     if(typeof x[key]!=="number") throw new Error("invalid operations summary: "+key);
+  }
+'
+
+OBSERVABILITY="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/operations-observability?propertyId=utower")"
+OBSERVABILITY="$OBSERVABILITY" node -e '
+  const x=JSON.parse(process.env.OBSERVABILITY);
+  if(typeof x.outboxPending!=="number") throw new Error("outbox backlog missing");
+  for(const key of ["serviceOrders","housekeeping","maintenance"]){
+    if(typeof x.stale?.[key]!=="number") throw new Error("stale metric missing: "+key);
+  }
+  const events=new Set((x.recentEvents||[]).map(e=>e.event_type));
+  for(const required of ["reservation.check_in","reservation.check_out","housekeeping.start","housekeeping.complete","housekeeping.verify"]){
+    if(!events.has(required)) throw new Error("observability missing "+required);
   }
 '
 
