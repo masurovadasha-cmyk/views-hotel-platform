@@ -2,6 +2,7 @@ import {Injectable} from "@nestjs/common";
 import type {PoolClient} from "pg";
 import {DatabaseService} from "../database/database.service";
 import {LedgerService} from "./ledger.service";
+import {publishPaymentProjection} from "./finance-projection-outbox";
 
 type RecoverableIntent={
   id:string;
@@ -87,6 +88,7 @@ export class PaymentRecoveryService{
             WHERE id=$1 AND status<>'refunded'`,
           [intent.id]
         );
+        await publishPaymentProjection(client,organizationId,intent.id);
 
         const ensured=await this.ensureRefundsForIntent(client,{
           organizationId,
