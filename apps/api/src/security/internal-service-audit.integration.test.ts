@@ -28,7 +28,6 @@ describe.sequential("Stage 7 trusted-service request audit",()=>{
       actorMembershipId:MANAGER.membershipId,
       serviceId:"pages-bff",
       keyFingerprint:"a".repeat(32),
-      authScheme:"internal_key",
       requestId:"stage7-audit-success",
       httpMethod:"GET",
       routePath:"AnalyticsDashboardController.summary",
