@@ -49,14 +49,38 @@ describe("client network identity",()=>{
   });
 
   it("uses CF client address only in explicit cloudflare mode",()=>{
+    const trusted=["10.0.0.0/8"];
     expect(resolveClientAddress(
       {remoteAddress:"10.0.0.5",cfConnectingIp:"198.51.100.7"},
-      "cloudflare"
+      "cloudflare",
+      trusted
     )).toBe("198.51.100.7");
 
     expect(()=>resolveClientAddress(
       {remoteAddress:"10.0.0.5",cfConnectingIp:null},
-      "cloudflare"
+      "cloudflare",
+      trusted
     )).toThrow("CLIENT_NETWORK_IDENTITY_UNAVAILABLE");
+  });
+
+  it("does not trust forwarded client identity from a direct origin peer",()=>{
+    expect(()=>resolveClientAddress(
+      {
+        remoteAddress:"198.51.100.200",
+        cfConnectingIp:"203.0.113.55"
+      },
+      "cloudflare",
+      ["10.0.0.0/8"]
+    )).toThrow("CLIENT_PROXY_NOT_TRUSTED");
+
+    expect(()=>clientNetworkKey(
+      {
+        remoteAddress:"198.51.100.200",
+        cfConnectingIp:"203.0.113.55"
+      },
+      "cloudflare",
+      "fixture-rate-limit-key-material-32chars",
+      ["10.0.0.0/8"]
+    )).toThrow("CLIENT_PROXY_NOT_TRUSTED");
   });
 });

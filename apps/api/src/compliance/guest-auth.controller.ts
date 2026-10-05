@@ -51,7 +51,8 @@ export class GuestAuthController{
           cfConnectingIp:typeof cfHeader==="string"?cfHeader:null
         },
         config.trustedProxyMode,
-        config.guestAuthRateLimitSecret
+        config.guestAuthRateLimitSecret,
+        config.trustedProxyCidrs
       );
       return await this.auth.exchange(body.token,body.sessionTtlMinutes,networkKey);
     }catch(error){throw mapGuestAuthError(error)}
@@ -98,6 +99,9 @@ function mapGuestAuthError(error:unknown){
   }
   if(message==="RESERVATION_NOT_FOUND")return new NotFoundException(message);
   if(message==="GUEST_ACCESS_NOT_AVAILABLE")return new ConflictException(message);
+  if(message==="CLIENT_PROXY_NOT_TRUSTED"){
+    return new ForbiddenException("CLIENT_NETWORK_NOT_TRUSTED");
+  }
   if(
     message==="GUEST_AUTH_DELIVERY_NOT_CONNECTED"||
     message==="GUEST_AUTH_DELIVERY_FAILED"||
