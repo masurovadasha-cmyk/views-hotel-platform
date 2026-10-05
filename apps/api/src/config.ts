@@ -12,6 +12,7 @@ export type ApiConfig={
 };
 
 const SERVICE_ID=/^[a-z0-9][a-z0-9._:-]{1,63}$/;
+const SECRET_REF=/^[A-Z][A-Z0-9_]{2,127}$/;
 
 export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
   const databaseUrl=env.DATABASE_URL?.trim();
@@ -54,12 +55,25 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
     [internalApiKey,configuredPreviousKey].filter((value):value is string=>Boolean(value))
   )];
 
-  const internalServiceKeys=parseInternalServiceKeys(
+  const serviceKeyRefs=parseInternalServiceKeyRefs(
+    env.VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON
+  );
+  const rawServiceKeys=parseInternalServiceKeys(
     env.VIEWS_INTERNAL_SERVICE_KEYS_JSON
   );
-  if(nodeEnv==="production"&&Object.keys(internalServiceKeys).length===0){
-    throw new Error("VIEWS_INTERNAL_SERVICE_KEYS_JSON is required in production");
+
+  if(Object.keys(serviceKeyRefs).length>0&&Object.keys(rawServiceKeys).length>0){
+    throw new Error(
+      "Configure either VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON or VIEWS_INTERNAL_SERVICE_KEYS_JSON, not both"
+    );
   }
+  if(nodeEnv==="production"&&Object.keys(serviceKeyRefs).length===0){
+    throw new Error("VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON is required in production");
+  }
+
+  const internalServiceKeys=Object.keys(serviceKeyRefs).length>0
+    ?resolveInternalServiceKeyRefs(serviceKeyRefs,env)
+    :rawServiceKeys;
 
   return {
     port,databaseUrl,nodeEnv,trustedProxyMode,
@@ -67,27 +81,93 @@ export function loadConfig(env:NodeJS.ProcessEnv=process.env):ApiConfig{
   };
 }
 
-function parseInternalServiceKeys(raw:string|undefined){
-  const value=raw?.trim();
-  if(!value)return {} as Record<string,string[]>;
-
-  let parsed:unknown;
-  try{
-    parsed=JSON.parse(value);
-  }catch{
-    throw new Error("VIEWS_INTERNAL_SERVICE_KEYS_JSON must be valid JSON");
-  }
-  if(!parsed||typeof parsed!=="object"||Array.isArray(parsed)){
-    throw new Error("VIEWS_INTERNAL_SERVICE_KEYS_JSON must be an object");
-  }
-
+function parseInternalServiceKeyRefs(raw:string|undefined){
+  const parsed=parseServiceMap(
+    raw,
+    "VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON"
+  );
   const result:Record<string,string[]>={};
   const owners=new Map<string,string>();
 
-  for(const [serviceId,keysValue] of Object.entries(parsed as Record<string,unknown>)){
-    if(!SERVICE_ID.test(serviceId)){
-      throw new Error("VIEWS_INTERNAL_SERVICE_KEYS_JSON contains invalid service id");
+  for(const [serviceId,refsValue] of Object.entries(parsed)){
+    if(!Array.isArray(refsValue)||refsValue.length<1||refsValue.length>2){
+      throw new Error(
+        "VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON service key ring must contain 1 or 2 references"
+      );
     }
+
+    const refs:string[]=[];
+    for(const item of refsValue){
+      if(typeof item!=="string"||!SECRET_REF.test(item.trim())){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON references must be environment variable names"
+        );
+      }
+      const ref=item.trim();
+      if(!refs.includes(ref))refs.push(ref);
+    }
+
+    for(const ref of refs){
+      const owner=owners.get(ref);
+      if(owner&&owner!==serviceId){
+        throw new Error(
+          "VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON reference cannot be shared across services"
+        );
+      }
+      owners.set(ref,serviceId);
+    }
+    result[serviceId]=refs;
+  }
+
+  return result;
+}
+
+function resolveInternalServiceKeyRefs(
+  refs:Record<string,string[]>,
+  env:NodeJS.ProcessEnv
+){
+  const result:Record<string,string[]>={};
+  const owners=new Map<string,string>();
+
+  for(const [serviceId,serviceRefs] of Object.entries(refs)){
+    const keys:string[]=[];
+    for(const ref of serviceRefs){
+      const key=env[ref]?.trim();
+      if(!key){
+        throw new Error(
+          "Referenced internal service key "+ref+" is required"
+        );
+      }
+      if(key.length<32){
+        throw new Error(
+          "Referenced internal service key "+ref+" must be at least 32 characters"
+        );
+      }
+      if(!keys.includes(key))keys.push(key);
+    }
+
+    for(const key of keys){
+      const owner=owners.get(key);
+      if(owner&&owner!==serviceId){
+        throw new Error("Resolved internal service key cannot be shared across services");
+      }
+      owners.set(key,serviceId);
+    }
+    result[serviceId]=keys;
+  }
+
+  return result;
+}
+
+function parseInternalServiceKeys(raw:string|undefined){
+  const parsed=parseServiceMap(
+    raw,
+    "VIEWS_INTERNAL_SERVICE_KEYS_JSON"
+  );
+  const result:Record<string,string[]>={};
+  const owners=new Map<string,string>();
+
+  for(const [serviceId,keysValue] of Object.entries(parsed)){
     if(!Array.isArray(keysValue)||keysValue.length<1||keysValue.length>2){
       throw new Error("VIEWS_INTERNAL_SERVICE_KEYS_JSON service key ring must contain 1 or 2 keys");
     }
@@ -115,4 +195,30 @@ function parseInternalServiceKeys(raw:string|undefined){
   }
 
   return result;
+}
+
+function parseServiceMap(
+  raw:string|undefined,
+  name:"VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON"|"VIEWS_INTERNAL_SERVICE_KEYS_JSON"
+){
+  const value=raw?.trim();
+  if(!value)return {} as Record<string,unknown>;
+
+  let parsed:unknown;
+  try{
+    parsed=JSON.parse(value);
+  }catch{
+    throw new Error(name+" must be valid JSON");
+  }
+  if(!parsed||typeof parsed!=="object"||Array.isArray(parsed)){
+    throw new Error(name+" must be an object");
+  }
+
+  for(const serviceId of Object.keys(parsed)){
+    if(!SERVICE_ID.test(serviceId)){
+      throw new Error(name+" contains invalid service id");
+    }
+  }
+
+  return parsed as Record<string,unknown>;
 }
