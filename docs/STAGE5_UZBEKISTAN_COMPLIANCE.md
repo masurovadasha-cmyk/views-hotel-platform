@@ -207,12 +207,22 @@ Provider/infrastructure:
 - verify webhook/provider retry semantics
 - verify no decrypted document content reaches application logs, Sentry or analytics
 
-## Known boundary
+## Guest Identity / Guest App boundary
 
-Current production-core compliance endpoints use the staff membership actor context.
-Guest self-service online check-in is not yet exposed through a public guest-auth adapter.
-The storage/verification backend is ready; guest authorization and limited reservation-scoped access
-will be added with the production Guest Identity / Guest App layer.
+Stage 5.1 adds a reservation-scoped guest access layer for online check-in document upload.
+
+- staff issues/revokes short-lived guest access sessions;
+- raw tokens are returned once; PostgreSQL stores only SHA-256;
+- public guest endpoints authorize with Bearer tokens, not staff tenant headers;
+- guest access is restricted to one reservation;
+- cross-reservation document access is explicitly rejected;
+- guest can begin/finalize document upload but cannot verify documents or submit compliance registration;
+- direct regional vault upload remains unchanged.
+
+Detailed contract: `docs/STAGE5_GUEST_SELF_SERVICE.md`.
+
+Remaining production boundary: connect token delivery to a verified guest authentication channel
+(email/phone magic link or equivalent), add rate limiting and telemetry redaction before public launch.
 
 Do not expose staff tenant headers directly to a public browser.
 

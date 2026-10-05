@@ -1,14 +1,14 @@
 name: VIEWS Production Core
 on:
   push:
-    branches: [main, "staging/**", "stage4/**"]
+    branches: [main, "staging/**", "stage4/**", "stage5/**"]
     paths:
       - "apps/api/**"
       - "infra/postgres/**"
       - "docker-compose.production-dev.yml"
       - ".github/workflows/production-core.yml"
   pull_request:
-    branches: [main]
+    branches: [main, "staging/master-reference-v1"]
     paths:
       - "apps/api/**"
       - "infra/postgres/**"
@@ -48,6 +48,7 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0008_payments_ledger.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0009_uzbekistan_compliance.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0010_identity_rls_role_helpers.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0011_guest_access_sessions.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
