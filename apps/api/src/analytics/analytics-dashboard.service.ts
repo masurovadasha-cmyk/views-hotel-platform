@@ -93,6 +93,8 @@ export class AnalyticsDashboardService{
           pendingEvents:sources.pendingEvents,
           oldestPendingAt:sources.oldestPendingAt,
           lastProcessedAt:sources.lastProcessedAt,
+          consecutiveFailures:sources.consecutiveFailures,
+          lastErrorCode:sources.lastErrorCode,
           rollupRefreshedAt:sources.rollupRefreshedAt,
           reservationProjectedAt:sources.reservationProjectedAt,
           economicsProjectedAt:sources.economicsProjectedAt
