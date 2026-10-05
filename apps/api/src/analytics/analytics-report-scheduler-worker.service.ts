@@ -64,7 +64,7 @@ export class AnalyticsReportSchedulerWorkerService{
           `SELECT app.complete_analytics_report_schedule(
              $1,$2,$3
            ) AS next_run_at`,
-          [schedule.schedule_id,workerToken,schedule.scheduled_for]
+          [schedule.schedule_id,workerToken,schedule.scheduled_for,report.reportJobId]
         );
         const nextRun=completed.rows[0]?.next_run_at;
         if(!nextRun)throw new Error("REPORT_SCHEDULE_LEASE_LOST");
