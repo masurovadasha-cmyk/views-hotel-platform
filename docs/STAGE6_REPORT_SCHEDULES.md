@@ -157,6 +157,7 @@ POST /v1/internal/analytics/report-cycle
 Required:
 
 - X-Views-Internal-Key
+- X-Views-Service-Id: analytics-cron
 
 Optional body:
 
@@ -172,7 +173,9 @@ The endpoint runs:
 1. due schedule enqueue cycle;
 2. report render worker cycle.
 
-It uses the Stage 6.9 internal server-to-server authentication key.
+It uses the Stage 6.9/7.x server-to-server authentication boundary.
+
+Stage 7.3 requires an explicit trusted service identity and durably audits the call.
 
 A browser must never call this endpoint directly.
 
