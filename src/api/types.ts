@@ -111,3 +111,31 @@ export type LiveTimelineEvent={
   source:"reservation"|"service_order"|"housekeeping"|"maintenance";
   event_type:string; from_status:string|null; to_status:string|null; payload:string; created_at:string;
 };
+
+export type LiveStaffWorkload={
+  userId:string;
+  displayName:string;
+  role:string;
+  openServiceOrders:number;
+  openHousekeeping:number;
+  openMaintenance:number;
+  activeTasks:number;
+  serviceDoneToday:number;
+};
+
+export type LiveTeamSummary={
+  activeServiceOrders:number;
+  unassignedServiceOrders:number;
+  activeHousekeeping:number;
+  activeMaintenance:number;
+};
+
+export type LiveIntegrationStatus={
+  provider:string;
+  status:string;
+  scopes:string[];
+  lastHealthAt:string|null;
+  lastSyncAt:string|null;
+  lastErrorCode:string|null;
+  updatedAt:string;
+};
