@@ -13,6 +13,7 @@ import {api} from "../../api/client";
 import {HousekeepingLive,MaintenanceLive} from "./LiveOperations";
 import {LiveFrontDesk} from "./LiveFrontDesk";
 import {ExceptionsLive,OperationsOverviewLive,ShiftHandoverLive} from "./LiveOperationsControl";
+import {ApartmentTimelineLive,Guest360Live,StayCardLive} from "./LiveGuestStay";
 
 const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","general_manager","super_admin"];
 const labels:Record<string,string>={
@@ -70,13 +71,13 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="inbox")return <UnifiedInbox orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/>;
     if(current==="operations")return live?<OperationsOverviewLive/>:<Panel title="Operations"><div className="notice">Live operations data is available in the authenticated staging runtime.</div></Panel>;
     if(current==="front-desk")return live?<LiveFrontDesk role={role}/>:<FrontDesk/>;
-    if(current==="guests")return <Guest360/>;
+    if(current==="guests")return live?<Guest360Live/>:<Guest360/>;
     if(current==="housekeeping")return live?<HousekeepingLive role={role}/>:<Housekeeping/>;
     if(current==="maintenance")return live?<MaintenanceLive role={role}/>:<Maintenance/>;
     if(current==="handover")return live?<ShiftHandoverLive/>:<ShiftHandover/>;
     if(current==="exceptions")return live?<ExceptionsLive/>:<ExceptionsPanel/>;
-    if(current==="stay-card")return <StayCard/>;
-    if(current==="timeline")return <ApartmentTimeline/>;
+    if(current==="stay-card")return live?<StayCardLive/>:<StayCard/>;
+    if(current==="timeline")return live?<ApartmentTimelineLive/>:<ApartmentTimeline/>;
     if(current==="host")return <HostDesk step={hostStep} setStep={setHostStep}/>;
     if(current==="finance")return <Finance/>;
     if(current==="admin")return <AdminPanel orders={orders} act={act}/>;
