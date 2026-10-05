@@ -149,6 +149,15 @@ describe.sequential("Stage 6 durable report exports",()=>{
     expect(parsed.freshness.sourceFingerprint).toBe(job.sourceFingerprint);
   });
 
+  it("rejects artifact access after the retention deadline",async()=>{
+    const artifact=await reports.artifact(MANAGER,jsonJobId);
+    const afterExpiry=new Date(new Date(artifact.expiresAt).getTime()+1);
+
+    await expect(
+      reports.artifact(MANAGER,jsonJobId,afterExpiry)
+    ).rejects.toThrow("REPORT_EXPIRED");
+  });
+
   it("records a minimal download audit without report content",async()=>{
     const artifact=await reports.artifact(MANAGER,jsonJobId);
     await reports.recordDownload(MANAGER,jsonJobId,artifact);
