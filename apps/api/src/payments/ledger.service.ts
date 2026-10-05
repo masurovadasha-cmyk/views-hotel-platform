@@ -173,6 +173,59 @@ export class LedgerService{
     return journalId;
   }
 
+  async postOwnerPayout(
+    client:PoolClient,
+    input:{
+      organizationId:string;
+      payoutInstructionId:string;
+      amountMinor:bigint;
+      currency:string;
+      idempotencyKey:string;
+    }
+  ){
+    if(input.amountMinor<=0n)throw new Error("INVALID_LEDGER_AMOUNT");
+
+    const existing=await client.query<{id:string}>(
+      "SELECT id FROM ledger_journals WHERE organization_id=$1 AND idempotency_key=$2",
+      [input.organizationId,input.idempotencyKey]
+    );
+    if(existing.rows[0])return existing.rows[0].id;
+
+    const ownerPayable=await this.ensureAccount(
+      client,input.organizationId,"owner_payable",input.currency
+    );
+    const clearing=await this.ensureAccount(
+      client,input.organizationId,"provider_clearing",input.currency
+    );
+
+    const journalId=(await client.query<{id:string}>(
+      `INSERT INTO ledger_journals(
+         id,organization_id,reference_type,reference_id,idempotency_key,description
+       ) VALUES(
+         gen_random_uuid(),$1,'owner_payout',$2,$3,'Confirmed owner payout'
+       )
+       RETURNING id`,
+      [input.organizationId,input.payoutInstructionId,input.idempotencyKey]
+    )).rows[0].id;
+
+    await client.query(
+      `INSERT INTO ledger_entries(id,journal_id,account_id,side,amount_minor,currency,memo)
+       VALUES
+       (gen_random_uuid(),$1,$2,'debit',$4,$5,'Settle owner payable liability'),
+       (gen_random_uuid(),$1,$3,'credit',$4,$5,'Reduce provider clearing for owner payout')`,
+      [
+        journalId,ownerPayable,clearing,input.amountMinor.toString(),input.currency
+      ]
+    );
+
+    await client.query(
+      "UPDATE ledger_journals SET status='posted',posted_at=now() WHERE id=$1",
+      [journalId]
+    );
+    await publishLedgerProjection(client,input.organizationId,journalId);
+    return journalId;
+  }
+
   private async postTwoSided(
     client:PoolClient,
     input:{
