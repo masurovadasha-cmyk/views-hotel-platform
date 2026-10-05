@@ -1,7 +1,9 @@
 import {
-  BadRequestException,Controller,ForbiddenException,Get,Headers,Query,UnauthorizedException
+  BadRequestException,Controller,ForbiddenException,Get,Headers,Query,Res,UnauthorizedException
 } from "@nestjs/common";
+import type {Response} from "express";
 import {requireUuid} from "../identity/actor-context";
+import {dashboardEtag,matchesIfNoneMatch} from "./analytics-dashboard-http";
 import {AnalyticsDashboardService} from "./analytics-dashboard.service";
 
 @Controller("v1/analytics/dashboard")
@@ -13,20 +15,38 @@ export class AnalyticsDashboardController{
     @Query("from") from:string|undefined,
     @Query("to") to:string|undefined,
     @Query("propertyId") propertyId:string|undefined,
+    @Headers("if-none-match") ifNoneMatch:string|undefined,
     @Headers("x-organization-id") organizationId:string|undefined,
     @Headers("x-user-id") userId:string|undefined,
     @Headers("x-membership-id") membershipId:string|undefined,
-    @Headers("x-request-id") requestId:string|undefined
+    @Headers("x-request-id") requestId:string|undefined,
+    @Res({passthrough:true}) response:Response
   ){
     try{
       if(!from||!to)throw new BadRequestException("from and to are required");
-      return await this.dashboard.summary(
+      const result=await this.dashboard.summary(
         actorFromHeaders(organizationId,userId,membershipId,requestId),
         {
           from,to,
           propertyId:propertyId?requireUuid(propertyId,"property_id"):null
         }
       );
+
+      const fingerprint=String(
+        (result as {freshness?:{sourceFingerprint?:string}})
+          .freshness?.sourceFingerprint??""
+      );
+      const etag=dashboardEtag(fingerprint);
+
+      response.setHeader("ETag",etag);
+      response.setHeader("Cache-Control","private, no-cache, must-revalidate");
+
+      if(matchesIfNoneMatch(ifNoneMatch,etag)){
+        response.status(304);
+        return;
+      }
+
+      return result;
     }catch(error){throw mapDashboardError(error)}
   }
 }
