@@ -9,6 +9,8 @@ export type Env={
   VIEWS_EXPOSE_LOGIN_TOKEN?:string;
   VIEWS_CORE_API_URL?:string;
   VIEWS_CORE_API_KEY?:string;
+  VIEWS_CORE_SIGNING_PRIVATE_KEY?:string;
+  VIEWS_CORE_SIGNING_KID?:string;
 };
 
 export function json(data:unknown,status=200){
