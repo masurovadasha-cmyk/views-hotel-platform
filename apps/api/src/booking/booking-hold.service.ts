@@ -19,7 +19,7 @@ export class BookingHoldService{
     const {ttl}=validateHoldInput(input);
     const hash=requestHash(input,ttl);
 
-    for(let attempt=0;attempt<2;attempt++){
+    for(let attempt=0;attempt<3;attempt++){
       try{
         return await this.db.withActor(input.actor,async client=>{
         const inserted=await client.query<{id:string}>(
@@ -160,9 +160,12 @@ export class BookingHoldService{
         });
       }catch(error){
         if(isPgCode(error,"23P01"))throw new BookingConflictError();
-        if(isPgCode(error,"40P01")){
-          if(attempt===0)continue;
-          throw new BookingConflictError();
+        if(isRetryableTransactionError(error)){
+          if(attempt<2){
+            await delay((attempt+1)*15);
+            continue;
+          }
+          throw error;
         }
         throw error;
       }
@@ -204,4 +207,12 @@ export class BookingHoldService{
 
 function isPgCode(error:unknown,code:string){
   return typeof error==="object"&&error!==null&&"code" in error&&(error as {code?:string}).code===code;
+}
+
+function isRetryableTransactionError(error:unknown){
+  return isPgCode(error,"40P01")||isPgCode(error,"40001");
+}
+
+function delay(ms:number){
+  return new Promise<void>(resolve=>setTimeout(resolve,ms));
 }
