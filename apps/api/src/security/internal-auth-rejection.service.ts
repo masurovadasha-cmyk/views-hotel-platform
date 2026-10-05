@@ -35,11 +35,15 @@ export class InternalAuthRejectionService{
       socket?:{remoteAddress?:string|null};
     }>();
     const config=loadConfig();
+    const networkMode=options.networkMode==="direct"
+      ?"direct"
+      :config.trustedProxyMode;
     const networkHash=this.networkHash(
       request.headers,
       request.socket?.remoteAddress??null,
-      options.networkMode==="direct"?"direct":config.trustedProxyMode,
-      config.guestAuthRateLimitSecret
+      networkMode,
+      config.guestAuthRateLimitSecret,
+      networkMode==="cloudflare"?config.trustedProxyCidrs:[]
     );
     const endpoint=(
       context.getClass().name+"."+context.getHandler().name
@@ -106,13 +110,14 @@ export class InternalAuthRejectionService{
     headers:IncomingHttpHeaders,
     remoteAddress:string|null,
     proxyMode:"direct"|"cloudflare",
-    secret:string
+    secret:string,
+    trustedProxyCidrs:readonly string[]
   ){
     try{
       return clientNetworkKey({
         remoteAddress,
         cfConnectingIp:singleInternalHeader(headers["cf-connecting-ip"])
-      },proxyMode,secret);
+      },proxyMode,secret,trustedProxyCidrs);
     }catch{
       return createHmac("sha256",secret)
         .update("network-unavailable")
