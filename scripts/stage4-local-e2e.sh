@@ -230,4 +230,70 @@ TIMELINE="$TIMELINE" node -e '
   }
 '
 
+INTEGRATIONS="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/integrations-status")"
+INTEGRATIONS="$INTEGRATIONS" node -e '
+  const x=JSON.parse(process.env.INTEGRATIONS);
+  const byProvider=new Map((x.items||[]).map(i=>[i.provider,i]));
+  for(const provider of ["airbnb","booking_com","ai_concierge"]){
+    const item=byProvider.get(provider);
+    if(!item) throw new Error("integration missing: "+provider);
+    if(!Array.isArray(item.scopes)||!item.scopes.length) throw new Error("integration scopes missing: "+provider);
+  }
+  if(byProvider.get("airbnb").status!=="partner_access_required") throw new Error("airbnb status fabricated or stale");
+  if(byProvider.get("booking_com").status!=="credentials_required") throw new Error("booking status fabricated or stale");
+'
+
+TEAM_BEFORE="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/team-workload?propertyId=utower")"
+TEAM_BEFORE="$TEAM_BEFORE" node -e '
+  const x=JSON.parse(process.env.TEAM_BEFORE);
+  for(const user of ["u-cleaner","u-tech","u-front","u-manager"]){
+    if(!(x.staff||[]).some(p=>p.userId===user)) throw new Error("team member missing: "+user);
+  }
+  if(typeof x.summary?.unassignedServiceOrders!=="number") throw new Error("team summary invalid");
+'
+
+ASSIGN_KEY="stage4-team-$RANDOM-$RANDOM"
+TEAM_ORDER="$(curl -kfsS -b /tmp/manager.cookies \
+  -H "Origin: $ORIGIN" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $ASSIGN_KEY" \
+  --data '{"propertyId":"utower","category":"cleaning","title":"Stage 4 assignment smoke","priority":"normal"}' \
+  "$BASE/api/service-orders")"
+TEAM_ORDER_ID="$(TEAM_ORDER="$TEAM_ORDER" node -e '
+  const x=JSON.parse(process.env.TEAM_ORDER);
+  if(!x.id||x.status!=="new") process.exit(2);
+  process.stdout.write(x.id);
+')"
+
+BAD_ASSIGN_STATUS="$(curl -ksS -o /tmp/views-bad-assign.json -w "%{http_code}" -b /tmp/manager.cookies \
+  -H "Origin: $ORIGIN" \
+  -H "Content-Type: application/json" \
+  --data "$(printf '{"id":"%s","assignedUserId":"u-tech","version":1}' "$TEAM_ORDER_ID")" \
+  "$BASE/api/service-order-assign")"
+test "$BAD_ASSIGN_STATUS" = "409"
+BAD_ASSIGN="$(cat /tmp/views-bad-assign.json)"
+BAD_ASSIGN="$BAD_ASSIGN" node -e '
+  const x=JSON.parse(process.env.BAD_ASSIGN);
+  if(x.error!=="ASSIGNEE_ROLE_MISMATCH") throw new Error("role mismatch assignment was not rejected");
+'
+
+ASSIGN="$(curl -kfsS -b /tmp/manager.cookies \
+  -H "Origin: $ORIGIN" \
+  -H "Content-Type: application/json" \
+  --data "$(printf '{"id":"%s","assignedUserId":"u-cleaner","version":1}' "$TEAM_ORDER_ID")" \
+  "$BASE/api/service-order-assign")"
+ASSIGN="$ASSIGN" node -e '
+  const x=JSON.parse(process.env.ASSIGN);
+  if(x.status!=="assigned"||x.version!==2||x.assignedUserId!=="u-cleaner"||x.assigneeRole!=="cleaner"){
+    throw new Error("valid team assignment failed");
+  }
+'
+
+TEAM_AFTER="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/team-workload?propertyId=utower")"
+TEAM_AFTER="$TEAM_AFTER" node -e '
+  const x=JSON.parse(process.env.TEAM_AFTER);
+  const cleaner=(x.staff||[]).find(p=>p.userId==="u-cleaner"&&p.role==="cleaner");
+  if(!cleaner||cleaner.openServiceOrders<1) throw new Error("assigned order missing from cleaner workload");
+'
+
 echo "PASS: Stage 4 local Pages + D1 golden flow"
