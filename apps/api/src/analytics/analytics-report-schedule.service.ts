@@ -57,13 +57,13 @@ export class AnalyticsReportScheduleService{
            idempotency_key,request_hash,created_by_user_id,created_by_membership_id,
            next_run_at,next_attempt_at
          ) VALUES(
-           gen_random_uuid(),$1,$2,$3,$4,$5,$6,$7,$8::time,$9,$10,
+           gen_random_uuid(),$1,$2,$3,$4,$5,$6,$7,$8::time,$9::smallint,$10::smallint,
            $11,$12,$13,$14,
            app.next_analytics_report_schedule_run(
-             $5,$7,$8::time,$9,$10,now()
+             $5,$7,$8::time,$9::integer,$10::integer,now()
            ),
            app.next_analytics_report_schedule_run(
-             $5,$7,$8::time,$9,$10,now()
+             $5,$7,$8::time,$9::integer,$10::integer,now()
            )
          )
          ON CONFLICT(
