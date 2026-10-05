@@ -35,9 +35,13 @@ export class InternalActorAuthGuard implements CanActivate{
     const request=context.switchToHttp().getRequest<{headers:IncomingHttpHeaders}>();
 
     try{
+      const config=loadConfig();
       assertTrustedInternalActorHeaders(
         request.headers,
-        loadConfig().internalApiKeys
+        {
+          legacyKeys:config.internalApiKeys,
+          serviceKeys:config.internalServiceKeys
+        }
       );
       return true;
     }catch(error){
@@ -51,7 +55,7 @@ export class InternalActorAuthGuard implements CanActivate{
 
 export function assertTrustedInternalActorHeaders(
   headers:IncomingHttpHeaders,
-  expectedInternalKey:string|readonly string[]
+  expectedInternalKey:import("./internal-service-identity").InternalServiceExpectedKeys
 ){
   const anyActorHeader=actorHeaders.some(name=>headers[name]!==undefined);
   if(!anyActorHeader)return;
