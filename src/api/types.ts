@@ -139,3 +139,24 @@ export type LiveIntegrationStatus={
   lastErrorCode:string|null;
   updatedAt:string;
 };
+
+export type LiveStaffOverview={
+  property:{id:string;name:string;city:string};
+  role:string;
+  counts:{
+    serviceOrdersOpen:number;
+    housekeepingOpen:number|null;
+    maintenanceOpen:number|null;
+    arrivals:number|null;
+    inHouse:number|null;
+    readyUnits:number|null;
+  };
+  recentServiceOrders:Array<{
+    id:string;title:string;category:string;status:string;priority:string;
+    assigned_user_id:string|null;unit_id:string|null;version:number;created_at:string;
+  }>;
+  arrivalItems:Array<{
+    id:string;confirmation_code:string;status:string;check_in_date:string;check_out_date:string;
+    unit_code:string|null;first_name:string;last_name:string;vip:number;
+  }>;
+};
