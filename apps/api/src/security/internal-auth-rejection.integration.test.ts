@@ -53,6 +53,8 @@ describe.sequential("Stage 7 internal auth rejection telemetry",()=>{
       .resolves.toBeGreaterThanOrEqual(1);
     await expect(service.record(context(),"service_token_replay"))
       .resolves.toBeGreaterThanOrEqual(1);
+    await expect(service.record(context(),"signed_token_required"))
+      .resolves.toBeGreaterThanOrEqual(1);
   });
 
   it("fails closed for non-platform roles reading rejection telemetry",async()=>{
