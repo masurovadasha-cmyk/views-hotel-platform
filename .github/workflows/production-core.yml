@@ -47,7 +47,8 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0007_rates_quotes_cancellation.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0008_payments_ledger.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0009_uzbekistan_compliance.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0010_identity_rls_role_helpers.sql\n          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0011_guest_access_sessions.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0010_identity_rls_role_helpers.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0011_guest_access_sessions.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
