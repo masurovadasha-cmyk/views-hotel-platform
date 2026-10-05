@@ -144,6 +144,17 @@ export class AnalyticsReportService{
     });
   }
 
+  async pruneExpiredArtifacts(limit=1000){
+    if(!Number.isInteger(limit)||limit<1||limit>10000){
+      throw new Error("INVALID_REPORT_PRUNE_LIMIT");
+    }
+    const row=(await this.db.query<{pruned:number}>(
+      "SELECT app.prune_analytics_report_artifacts($1,now()) AS pruned",
+      [limit]
+    )).rows[0];
+    return {pruned:Number(row?.pruned??0)};
+  }
+
   async recordDownload(
     actor:RequestActorContext,
     jobId:string,
