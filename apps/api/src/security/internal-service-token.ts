@@ -16,18 +16,6 @@ export type InternalServicePublicKey={
   publicKeyPem:string;
 };
 
-export type InternalServiceTokenClaims={
-  iss:string;
-  sub:string;
-  aud:"views-core";
-  iat:number;
-  exp:number;
-  jti:string;
-  htm:string;
-  htp:string;
-  rid:string;
-};
-
 export type VerifiedInternalServiceToken={
   serviceId:string;
   kid:string;
@@ -57,51 +45,66 @@ export function verifyInternalServiceToken(input:{
 
   const header=parseJsonSegment(parts[0]);
   const claims=parseJsonSegment(parts[1]);
+  const alg=header.alg;
+  const typ=header.typ;
+  const kid=header.kid;
 
   if(
-    header.alg!=="EdDSA"||
-    header.typ!==TOKEN_TYP||
-    typeof header.kid!=="string"||
-    !KID.test(header.kid)
+    alg!=="EdDSA"||
+    typ!==TOKEN_TYP||
+    typeof kid!=="string"||
+    !KID.test(kid)
   ){
     throw new Error("INTERNAL_SERVICE_TOKEN_INVALID");
   }
 
-  const keyConfig=input.keys.find(item=>item.kid===header.kid);
+  const keyConfig=input.keys.find(item=>item.kid===kid);
   if(!keyConfig)throw new Error("INTERNAL_SERVICE_TOKEN_KEY_UNKNOWN");
 
   const normalizedMethod=String(input.method||"").toUpperCase();
   const normalizedPath=normalizePath(input.path);
   const normalizedRequestId=String(input.requestId||"").trim();
 
+  const iss=claims.iss;
+  const sub=claims.sub;
+  const aud=claims.aud;
+  const htm=claims.htm;
+  const htp=claims.htp;
+  const rid=claims.rid;
   if(
-    claims.iss!==input.serviceId||
-    claims.sub!==input.serviceId||
-    claims.aud!==TOKEN_AUD||
-    claims.htm!==normalizedMethod||
-    claims.htp!==normalizedPath||
-    claims.rid!==normalizedRequestId
+    iss!==input.serviceId||
+    sub!==input.serviceId||
+    aud!==TOKEN_AUD||
+    htm!==normalizedMethod||
+    htp!==normalizedPath||
+    rid!==normalizedRequestId
   ){
     throw new Error("INTERNAL_SERVICE_TOKEN_BINDING_INVALID");
   }
   if(!REQUEST_ID.test(normalizedRequestId)){
     throw new Error("INTERNAL_SERVICE_TOKEN_BINDING_INVALID");
   }
+
+  const iat=claims.iat;
+  const exp=claims.exp;
+  const jti=claims.jti;
   if(
-    !Number.isInteger(claims.iat)||
-    !Number.isInteger(claims.exp)||
-    typeof claims.jti!=="string"||
-    !UUID.test(claims.jti)
+    typeof iat!=="number"||
+    typeof exp!=="number"||
+    !Number.isInteger(iat)||
+    !Number.isInteger(exp)||
+    typeof jti!=="string"||
+    !UUID.test(jti)
   ){
     throw new Error("INTERNAL_SERVICE_TOKEN_CLAIMS_INVALID");
   }
 
   const now=input.nowSeconds??Math.floor(Date.now()/1000);
   if(
-    claims.exp<=claims.iat||
-    claims.exp-claims.iat>MAX_TTL_SECONDS||
-    claims.iat>now+CLOCK_SKEW_SECONDS||
-    claims.exp<now-CLOCK_SKEW_SECONDS
+    exp<=iat||
+    exp-iat>MAX_TTL_SECONDS||
+    iat>now+CLOCK_SKEW_SECONDS||
+    exp<now-CLOCK_SKEW_SECONDS
   ){
     throw new Error("INTERNAL_SERVICE_TOKEN_EXPIRED");
   }
@@ -116,14 +119,14 @@ export function verifyInternalServiceToken(input:{
 
   return {
     serviceId:input.serviceId,
-    kid:header.kid,
+    kid,
     credentialFingerprint:createHash("sha256")
       .update(key.export({format:"der",type:"spki"}))
       .digest("hex")
       .slice(0,32),
-    jti:claims.jti,
-    issuedAt:claims.iat,
-    expiresAt:claims.exp
+    jti,
+    issuedAt:iat,
+    expiresAt:exp
   };
 }
 
