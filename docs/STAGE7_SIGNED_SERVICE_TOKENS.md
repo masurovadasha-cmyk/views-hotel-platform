@@ -294,7 +294,7 @@ No third-party JWT library or remote JWKS fetch is introduced in this stage.
 
 ## Next work
 
-- migrate analytics-cron to signed tokens;
+- migrate analytics-cron to signed tokens (implemented as the Stage 7.8 candidate);
 - add signing-key age / rotation SLO alerts;
 - retire the production symmetric service-key requirement after all senders migrate;
 - add network ingress allowlists;
