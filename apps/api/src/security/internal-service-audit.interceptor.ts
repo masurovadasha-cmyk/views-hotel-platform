@@ -48,7 +48,8 @@ export class InternalServiceAuditInterceptor implements NestInterceptor{
         {
           legacyKeys:config.internalApiKeys,
           serviceKeys:config.internalServiceKeys,
-          servicePublicKeys:config.internalServicePublicKeys
+          servicePublicKeys:config.internalServicePublicKeys,
+          serviceAuthModes:config.internalServiceAuthModes
         },
         {
           method,
