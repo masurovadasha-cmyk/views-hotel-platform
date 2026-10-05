@@ -309,4 +309,31 @@ TEAM_AFTER="$TEAM_AFTER" node -e '
   if(!cleaner||cleaner.openServiceOrders<1) throw new Error("assigned order missing from cleaner workload");
 '
 
+
+OUTBOX_BEFORE="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/operations-observability?propertyId=utower")"
+OUTBOX_BEFORE="$OUTBOX_BEFORE" node -e '
+  const x=JSON.parse(process.env.OUTBOX_BEFORE);
+  if(typeof x.outboxPending!=="number"||x.outboxPending<1) throw new Error("expected pending outbox events before processing");
+  if(typeof x.outboxRetrying!=="number"||typeof x.outboxDeadLetter!=="number") throw new Error("outbox recovery metrics missing");
+'
+
+OUTBOX_PROCESS="$(curl -kfsS -b /tmp/manager.cookies \
+  -H "Origin: $ORIGIN" -H "Content-Type: application/json" \
+  --data '{"limit":50}' \
+  "$BASE/api/outbox-process")"
+OUTBOX_PROCESS="$OUTBOX_PROCESS" node -e '
+  const x=JSON.parse(process.env.OUTBOX_PROCESS);
+  if(x.processed<1) throw new Error("outbox processor did not deliver events");
+  if(x.deadLettered!==0) throw new Error("outbox unexpectedly dead-lettered events");
+  if(x.remaining!==0) throw new Error("outbox still has ready pending events");
+'
+
+OUTBOX_AFTER="$(curl -kfsS -b /tmp/manager.cookies "$BASE/api/operations-observability?propertyId=utower")"
+OUTBOX_AFTER="$OUTBOX_AFTER" node -e '
+  const x=JSON.parse(process.env.OUTBOX_AFTER);
+  if(x.outboxPending!==0) throw new Error("outbox pending was not drained");
+  if(x.outboxRetrying!==0) throw new Error("outbox retry queue should be empty");
+  if(x.outboxDeadLetter!==0) throw new Error("outbox dead-letter queue should be empty");
+'
+
 echo "PASS: Stage 4 local Pages + D1 golden flow"
