@@ -256,13 +256,14 @@ export class AnalyticsProjectionService{
   ){
     const row=(await client.query<{
       snapshot_id:string;organization_id:string;property_id:string;reservation_id:string;
-      version:number;currency:string;net_collected_minor:string;platform_commission_minor:string;
+      version:number;currency:string;source_kind:string;
+      net_collected_minor:string;platform_commission_minor:string;
       owner_payable_minor:string;taxes_withheld_minor:string;other_deductions_minor:string;
       finalized_at:Date;
     }>(
       `SELECT
           s.id AS snapshot_id,s.organization_id,s.property_id,s.reservation_id,
-          s.version,s.currency,s.net_collected_minor::text,
+          s.version,s.currency,s.source_kind,s.net_collected_minor::text,
           s.platform_commission_minor::text,s.owner_payable_minor::text,
           s.taxes_withheld_minor::text,s.other_deductions_minor::text,
           s.finalized_at
@@ -278,17 +279,18 @@ export class AnalyticsProjectionService{
 
     await client.query(
       `INSERT INTO analytics_marketplace_economic_facts(
-         reservation_id,organization_id,property_id,currency,
+         reservation_id,organization_id,property_id,currency,source_kind,
          net_collected_minor,platform_commission_minor,owner_payable_minor,
          taxes_withheld_minor,other_deductions_minor,
          source_snapshot_id,source_version,source_finalized_at,projected_at
        ) VALUES(
-         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now()
+         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now()
        )
        ON CONFLICT(reservation_id) DO UPDATE SET
          organization_id=EXCLUDED.organization_id,
          property_id=EXCLUDED.property_id,
          currency=EXCLUDED.currency,
+         source_kind=EXCLUDED.source_kind,
          net_collected_minor=EXCLUDED.net_collected_minor,
          platform_commission_minor=EXCLUDED.platform_commission_minor,
          owner_payable_minor=EXCLUDED.owner_payable_minor,
@@ -300,7 +302,7 @@ export class AnalyticsProjectionService{
          projected_at=now()
        WHERE analytics_marketplace_economic_facts.source_version<=EXCLUDED.source_version`,
       [
-        row.reservation_id,row.organization_id,row.property_id,row.currency,
+        row.reservation_id,row.organization_id,row.property_id,row.currency,row.source_kind,
         row.net_collected_minor,row.platform_commission_minor,row.owner_payable_minor,
         row.taxes_withheld_minor,row.other_deductions_minor,
         row.snapshot_id,row.version,row.finalized_at
