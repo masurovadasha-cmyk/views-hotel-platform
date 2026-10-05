@@ -169,14 +169,15 @@ export class AnalyticsReportScheduleService{
       timezone:string;local_time:string;iso_weekday:number|null;day_of_month:number|null;
       status:string;next_run_at:Date;next_attempt_at:Date;
       consecutive_failures:number;max_failures:number;last_error_code:string|null;
-      last_enqueued_at:Date|null;created_at:Date;updated_at:Date;
+      last_enqueued_at:Date|null;last_report_job_id:string|null;
+      created_at:Date;updated_at:Date;
     }>(
       `SELECT
          id,organization_id,property_id,report_type,format,cadence,period_kind,
          timezone,to_char(local_time,'HH24:MI') AS local_time,
          iso_weekday,day_of_month,status,next_run_at,next_attempt_at,
          consecutive_failures,max_failures,last_error_code,last_enqueued_at,
-         created_at,updated_at
+         last_report_job_id,created_at,updated_at
        FROM analytics_report_schedules
        WHERE id=$1`,
       [scheduleId]
@@ -203,6 +204,7 @@ export class AnalyticsReportScheduleService{
       maxFailures:Number(row.max_failures),
       lastErrorCode:row.last_error_code,
       lastEnqueuedAt:row.last_enqueued_at?.toISOString()??null,
+      lastReportJobId:row.last_report_job_id,
       createdAt:row.created_at.toISOString(),
       updatedAt:row.updated_at.toISOString(),
       idempotentReplay
