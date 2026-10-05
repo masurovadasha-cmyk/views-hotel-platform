@@ -182,6 +182,17 @@ export class AnalyticsProjectionService{
         bookingChannel,marketSegment,row.cancelled_at,row.no_show_at
       ]
     );
+
+    await client.query(
+      `INSERT INTO analytics_rollup_dirty_ranges(
+         organization_id,property_id,dirty_from,dirty_to,updated_at
+       ) VALUES($1,$2,$3::date,($4::date-1),now())
+       ON CONFLICT(organization_id,property_id) DO UPDATE SET
+         dirty_from=LEAST(analytics_rollup_dirty_ranges.dirty_from,EXCLUDED.dirty_from),
+         dirty_to=GREATEST(analytics_rollup_dirty_ranges.dirty_to,EXCLUDED.dirty_to),
+         updated_at=now()`,
+      [organizationId,row.property_id,row.check_in_local_date,row.check_out_local_date]
+    );
   }
 
   private dimensionCode(value:unknown){
