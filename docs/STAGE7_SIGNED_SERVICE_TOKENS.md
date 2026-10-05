@@ -169,7 +169,9 @@ Example:
   "pages-bff": [
     {
       "kid": "pages-bff-2026-10",
-      "ref": "VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY"
+      "ref": "VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY",
+      "activatedAt": "2026-10-06T00:00:00Z",
+      "rotateBy": "2027-01-04T00:00:00Z"
     }
   ]
 }
@@ -295,7 +297,7 @@ No third-party JWT library or remote JWKS fetch is introduced in this stage.
 ## Next work
 
 - migrate analytics-cron to signed tokens (implemented as the Stage 7.8 candidate);
-- add signing-key age / rotation SLO alerts;
-- retire the production symmetric service-key requirement after all senders migrate;
+- signing-key age / rotation SLO posture (implemented as the Stage 7.9 candidate);
+- retire the production symmetric service-key requirement only after Stage 7.9 reports signed-only traffic;
 - add network ingress allowlists;
 - evaluate mTLS when the deployment topology supports it.
