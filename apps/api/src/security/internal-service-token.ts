@@ -44,6 +44,7 @@ export function verifyInternalServiceToken(input:{
   }
 
   const header=parseJsonSegment(parts[0]);
+  assertExactKeys(header,["alg","typ","kid"],"INTERNAL_SERVICE_TOKEN_INVALID");
   const alg=header.alg;
   const typ=header.typ;
   const kid=header.kid;
@@ -68,6 +69,11 @@ export function verifyInternalServiceToken(input:{
   }
 
   const claims=parseJsonSegment(parts[1]);
+  assertExactKeys(
+    claims,
+    ["iss","sub","aud","iat","exp","jti","htm","htp","rid"],
+    "INTERNAL_SERVICE_TOKEN_CLAIMS_INVALID"
+  );
   const normalizedMethod=String(input.method||"").toUpperCase();
   const normalizedPath=normalizePath(input.path);
   const normalizedRequestId=String(input.requestId||"").trim();
@@ -167,6 +173,21 @@ function decodeBase64Url(value:string){
     return Buffer.from(value,"base64url");
   }catch{
     throw new Error("INTERNAL_SERVICE_TOKEN_INVALID");
+  }
+}
+
+function assertExactKeys(
+  value:Record<string,unknown>,
+  expected:readonly string[],
+  code:string
+){
+  const actual=Object.keys(value).sort();
+  const required=[...expected].sort();
+  if(
+    actual.length!==required.length||
+    actual.some((key,index)=>key!==required[index])
+  ){
+    throw new Error(code);
   }
 }
 
