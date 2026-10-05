@@ -2,6 +2,7 @@ import {afterAll,beforeAll,describe,expect,it} from "vitest";
 import {DatabaseService} from "../database/database.service";
 import {AnalyticsProjectionService} from "../analytics/analytics-projection.service";
 import {MarketplaceAnalyticsQueryService} from "../analytics/marketplace-analytics-query.service";
+import {LedgerService} from "../payments/ledger.service";
 import {MarketplaceEconomicsService} from "./marketplace-economics.service";
 
 const ORG="00000000-0000-0000-0000-000000000001";
@@ -23,7 +24,8 @@ const actor={
 };
 
 const db=new DatabaseService();
-const economics=new MarketplaceEconomicsService(db);
+const ledger=new LedgerService();
+const economics=new MarketplaceEconomicsService(db,ledger);
 const projector=new AnalyticsProjectionService(db);
 const analytics=new MarketplaceAnalyticsQueryService(db);
 
@@ -98,6 +100,34 @@ describe.sequential("marketplace reservation economics",()=>{
     expect(finalized.status).toBe("finalized");
     expect(finalized.idempotentReplay).toBe(false);
     expect(replay.idempotentReplay).toBe(true);
+    expect(finalized.ledgerJournalId).toBeTruthy();
+
+    const ledgerState=await db.withActor(actor,async client=>{
+      const entries=(await client.query<{code:string;side:string;amount_minor:string}>(
+        `SELECT a.code,e.side,e.amount_minor::text
+           FROM ledger_entries e
+           JOIN ledger_accounts a ON a.id=e.account_id
+          WHERE e.journal_id=$1
+          ORDER BY e.side,a.code`,
+        [finalized.ledgerJournalId]
+      )).rows;
+      const reconciliation=(await client.query<{reconciliation_status:string;net_drift_minor:string}>(
+        `SELECT reconciliation_status,net_drift_minor::text
+           FROM reservation_economic_reconciliation
+          WHERE economics_snapshot_id=$1`,
+        [draft.snapshotId]
+      )).rows[0];
+      return {entries,reconciliation};
+    });
+    expect(ledgerState.entries).toEqual(expect.arrayContaining([
+      expect.objectContaining({code:"guest_deposits",side:"debit",amount_minor:"1000"}),
+      expect.objectContaining({code:"platform_commission_revenue",side:"credit",amount_minor:"150"}),
+      expect.objectContaining({code:"owner_payable",side:"credit",amount_minor:"800"}),
+      expect.objectContaining({code:"taxes_payable",side:"credit",amount_minor:"30"}),
+      expect.objectContaining({code:"other_deductions_payable",side:"credit",amount_minor:"20"})
+    ]));
+    expect(ledgerState.reconciliation.reconciliation_status).toBe("reconciled");
+    expect(ledgerState.reconciliation.net_drift_minor).toBe("0");
 
     const event=await db.withActor(actor,async client=>
       (await client.query<{payload:{
@@ -172,7 +202,7 @@ describe.sequential("marketplace reservation economics",()=>{
     });
 
     await expect(economics.finalize(actor,draft.snapshotId))
-      .rejects.toThrow("ECONOMICS_NET_COLLECTED_CHANGED");
+      .rejects.toThrow("ECONOMICS_PAYMENT_STATE_CHANGED");
   });
 });
 
