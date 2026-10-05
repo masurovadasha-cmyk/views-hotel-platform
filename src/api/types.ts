@@ -155,6 +155,7 @@ export type LiveOperationsObservability={
   outboxPending:number;
   outboxRetrying:number;
   outboxDeadLetter:number;
+  outboxLeased:number;
   stale:{
     serviceOrders:number;
     housekeeping:number;
