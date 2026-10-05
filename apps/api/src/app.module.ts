@@ -10,6 +10,8 @@ import {RatesModule} from "./rates/rates.module";
 import {PaymentsModule} from "./payments/payments.module";
 import {ComplianceModule} from "./compliance/compliance.module";
 import {InternalActorAuthGuard} from "./security/internal-actor-auth.guard";
+import {InternalAuthRejectionController} from "./security/internal-auth-rejection.controller";
+import {InternalAuthRejectionService} from "./security/internal-auth-rejection.service";
 import {InternalServiceAuditController} from "./security/internal-service-audit.controller";
 import {InternalServiceAuditInterceptor} from "./security/internal-service-audit.interceptor";
 import {InternalServiceAuditService} from "./security/internal-service-audit.service";
@@ -19,9 +21,10 @@ import {InternalServiceAuditService} from "./security/internal-service-audit.ser
     DatabaseModule,InventoryModule,RatesModule,BookingModule,
     PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule
   ],
-  controllers:[HealthController,InternalServiceAuditController],
+  controllers:[HealthController,InternalServiceAuditController,InternalAuthRejectionController],
   providers:[
     InternalServiceAuditService,
+    InternalAuthRejectionService,
     {provide:APP_GUARD,useClass:InternalActorAuthGuard},
     {provide:APP_INTERCEPTOR,useClass:InternalServiceAuditInterceptor}
   ]
