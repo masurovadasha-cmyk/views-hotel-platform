@@ -1,15 +1,27 @@
 {
-  "name":"views-hotel-platform",
-  "private":true,
-  "version":"0.1.0",
-  "type":"module",
-  "scripts":{
-    "dev":"vite",
-    "build":"npm run typecheck && vite build",
-    "build:pages":"npm run typecheck && vite build --base=/views-hotel-platform/",
-    "typecheck":"tsc --noEmit",
-    "test":"vitest run"
+  "name": "views-hotel-platform",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run typecheck && vite build",
+    "build:pages": "npm run typecheck && vite build --base=/views-hotel-platform/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "analytics:report-cycle": "node scripts/analytics-report-cycle.mjs"
   },
-  "dependencies":{"lucide-react":"^0.468.0","react":"^18.3.1","react-dom":"^18.3.1"},
-  "devDependencies":{"@types/react":"^18.3.12","@types/react-dom":"^18.3.1","@vitejs/plugin-react":"^4.3.4","typescript":"^5.7.2","vite":"^6.0.5","vitest":"^2.1.8"}
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8"
+  }
 }
