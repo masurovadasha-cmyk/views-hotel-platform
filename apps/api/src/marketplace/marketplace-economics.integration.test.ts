@@ -1,5 +1,7 @@
 import {afterAll,beforeAll,describe,expect,it} from "vitest";
 import {DatabaseService} from "../database/database.service";
+import {AnalyticsProjectionService} from "../analytics/analytics-projection.service";
+import {MarketplaceAnalyticsQueryService} from "../analytics/marketplace-analytics-query.service";
 import {MarketplaceEconomicsService} from "./marketplace-economics.service";
 
 const ORG="00000000-0000-0000-0000-000000000001";
@@ -22,6 +24,8 @@ const actor={
 
 const db=new DatabaseService();
 const economics=new MarketplaceEconomicsService(db);
+const projector=new AnalyticsProjectionService(db);
+const analytics=new MarketplaceAnalyticsQueryService(db);
 
 beforeAll(async()=>{
   await db.withActor(actor,async client=>{
@@ -119,6 +123,40 @@ describe.sequential("marketplace reservation economics",()=>{
     })).rejects.toThrow(/finalized reservation economics are immutable/i);
   });
 
+  it("projects finalized economics into truthful arrival analytics",async()=>{
+    for(let i=0;i<12;i++){
+      const result=await projector.processBatch(actor,500);
+      if(result.scanned===0)break;
+    }
+
+    const rows=await analytics.propertyEconomics(
+      actor,PROPERTY,"2028-05-10","2028-05-10","Direct Web","Leisure"
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      arrivalDate:"2028-05-10",
+      currency:"UZS",
+      bookingChannel:"direct_web",
+      marketSegment:"leisure",
+      reservationCount:1,
+      netCollectedMinor:"1000",
+      platformCommissionMinor:"150",
+      ownerPayableMinor:"800",
+      taxesWithheldMinor:"30",
+      otherDeductionsMinor:"20"
+    });
+    expect(rows[0].platformCommissionRate).toBe(0.15);
+    expect(rows[0].ownerPayableRate).toBe(0.8);
+
+    const fact=await db.withActor(actor,async client=>
+      (await client.query<{source_version:number;source_snapshot_id:string}>(
+        "SELECT source_version,source_snapshot_id FROM analytics_marketplace_economic_facts WHERE reservation_id=$1",
+        [RESERVATION]
+      )).rows[0]
+    );
+    expect(fact.source_version).toBe(1);
+    expect(fact.source_snapshot_id).toBeTruthy();
+  });
   it("blocks finalization when collected money changed after draft creation",async()=>{
     const draft=await economics.createDraft(actor,STALE_RESERVATION,"economics-stale-v1",{
       platformCommissionMinor:"100",
