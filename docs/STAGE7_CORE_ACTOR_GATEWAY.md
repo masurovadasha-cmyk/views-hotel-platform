@@ -47,6 +47,7 @@ A public route that accidentally receives actor headers without the internal key
 Any BFF or trusted service forwarding Core actor context must send:
 
 - `X-Views-Internal-Key`
+- `X-Views-Service-Id`
 - `X-Organization-Id`
 - `X-User-Id`
 - `X-Membership-Id`
@@ -139,5 +140,5 @@ Before exposing the Core API on a network reachable outside the trusted BFF/serv
 - route/network policy documentation for Core ingress;
 - service-to-service key rotation strategy;
 - optional signed service identity/JWT or mTLS upgrade;
-- centralized request audit for trusted-service actor calls;
+- centralized request audit for trusted-service actor calls (implemented in Stage 7.3);
 - provider webhook rate/replay hardening where provider contracts allow it.
