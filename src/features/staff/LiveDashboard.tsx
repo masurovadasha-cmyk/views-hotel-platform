@@ -1,11 +1,36 @@
 import {useEffect,useMemo,useState} from "react";
 import type {HospitalityRole} from "../../domain/types";
-import type {LiveFrontDeskReservation,LiveHousekeepingJob,LiveMaintenanceTicket,LivePropertyUnit,LiveServiceOrder} from "../../api/types";
+import type {LiveAnalyticsDashboardSummary,LiveFrontDeskReservation,LiveHousekeepingJob,LiveMaintenanceTicket,LivePropertyUnit,LiveServiceOrder} from "../../api/types";
 import {api,ApiError} from "../../api/client";
 
 function errorText(error:unknown){
   if(error instanceof ApiError)return error.body.error||error.message;
   return error instanceof Error?error.message:"Request failed";
+}
+
+function analyticsErrorText(error:unknown){
+  const code=errorText(error);
+  if(code==="CORE_IDENTITY_NOT_LINKED")return "Core analytics identity is not linked for this staff account.";
+  if(code==="CORE_API_NOT_CONFIGURED"||code==="CORE_API_KEY_NOT_CONFIGURED"){
+    return "Core analytics connection is not configured.";
+  }
+  if(code==="CORE_API_UNAVAILABLE")return "Core analytics is temporarily unavailable.";
+  return code;
+}
+
+function dashboardRange(now=new Date()){
+  const year=now.getFullYear();
+  const month=String(now.getMonth()+1).padStart(2,"0");
+  const day=String(now.getDate()).padStart(2,"0");
+  return {from:`${year}-${month}-01`,to:`${year}-${month}-${day}`};
+}
+
+function minorUnits(value:string){
+  try{return BigInt(value).toLocaleString("en-US")}catch{return value}
+}
+
+function percent(value:number){
+  return (value*100).toFixed(1)+"%";
 }
 
 function Panel({title,children}:{title:string;children:React.ReactNode}){
@@ -23,6 +48,8 @@ export function LiveDashboard({role}:{role:HospitalityRole}){
   const [reservations,setReservations]=useState<LiveFrontDeskReservation[]>([]);
   const [housekeeping,setHousekeeping]=useState<LiveHousekeepingJob[]>([]);
   const [maintenance,setMaintenance]=useState<LiveMaintenanceTicket[]>([]);
+  const [analytics,setAnalytics]=useState<LiveAnalyticsDashboardSummary|null>(null);
+  const [analyticsError,setAnalyticsError]=useState("");
   const [error,setError]=useState("");
 
   useEffect(()=>{
@@ -57,6 +84,28 @@ export function LiveDashboard({role}:{role:HospitalityRole}){
         if(!cancelled)setError(errorText(err));
       }
     })();
+    return ()=>{cancelled=true};
+  },[role]);
+
+  useEffect(()=>{
+    if(!management(role)){
+      setAnalytics(null);
+      setAnalyticsError("");
+      return;
+    }
+    let cancelled=false;
+    const range=dashboardRange();
+    void api.analyticsDashboard(range.from,range.to)
+      .then(result=>{
+        if(cancelled)return;
+        setAnalytics(result);
+        setAnalyticsError("");
+      })
+      .catch(err=>{
+        if(cancelled)return;
+        setAnalytics(null);
+        setAnalyticsError(analyticsErrorText(err));
+      });
     return ()=>{cancelled=true};
   },[role]);
 
@@ -111,6 +160,38 @@ export function LiveDashboard({role}:{role:HospitalityRole}){
       </Panel>
     </div>
 
-    {management(role)&&<div className="notice">Overview contains only persisted operational data; no occupancy, revenue or SLA KPI is synthesized.</div>}
+    {management(role)&&<Panel title="Analytics · canonical Core read model">
+      {analyticsError?<div className="notice">{analyticsError}</div>:
+      !analytics?<div className="emptyLine">Loading canonical analytics…</div>:
+      <div>
+        <div className="compactRows">
+          {analytics.kpisByCurrency.length===0?<div>
+            <span>{analytics.period.from} → {analytics.period.to}</span>
+            <b>No materialized KPI rows yet</b>
+            <small>Projection status: {analytics.freshness.projectionStatus}</small>
+          </div>:
+          analytics.kpisByCurrency.map(kpi=><div key={kpi.currency}>
+            <span>{kpi.currency} · {analytics.period.from} → {analytics.period.to}</span>
+            <b>Occupancy {percent(kpi.occupancy)} · ADR {minorUnits(kpi.adrMinor)} minor · RevPAR {minorUnits(kpi.revparMinor)} minor</b>
+            <small>
+              Gross {minorUnits(kpi.grossRevenueMinor)} minor · Net {minorUnits(kpi.netRevenueMinor)} minor ·
+              {" "}Bookings {kpi.bookingCount} · Properties {kpi.propertyCount}
+            </small>
+            <i className={"status "+(analytics.freshness.projectionStatus==="healthy"?"ready":"waiting")}>
+              {analytics.freshness.projectionStatus}
+            </i>
+          </div>)}
+        </div>
+        <div className="emptyLine">
+          Core projection · pending events {analytics.freshness.pendingEvents} ·
+          {" "}scope properties {analytics.freshness.scopePropertyCount} ·
+          {" "}cache {analytics.cache.hit?"hit":"miss"}
+        </div>
+      </div>}
+    </Panel>}
+
+    {management(role)&&<div className="notice">
+      Operational panels use persisted Pages/D1 data. Occupancy, ADR, RevPAR and revenue above come only from the canonical PostgreSQL analytics projection through the server-side BFF.
+    </div>}
   </div>;
 }
