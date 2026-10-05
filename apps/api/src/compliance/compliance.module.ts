@@ -10,18 +10,19 @@ import {GuestDocumentService} from "./guest-document.service";
 import {GuestRegistrationService} from "./guest-registration.service";
 import {GuestSelfController} from "./guest-self.controller";
 import {GuestSelfService} from "./guest-self.service";
+import {SecurityRateLimitService} from "../security/rate-limit.service";
 import {RegistrationDeadlineService} from "./registration-deadline.service";
 import {ComplianceProviderRegistry} from "./provider.registry";
 
 @Module({
   controllers:[ComplianceController,GuestAccessController,GuestAuthController,GuestSelfController],
   providers:[
-    ComplianceProviderRegistry,GuestAuthProviderRegistry,GuestAccessService,GuestAuthService,
+    ComplianceProviderRegistry,GuestAuthProviderRegistry,SecurityRateLimitService,GuestAccessService,GuestAuthService,
     GuestSelfService,GuestDocumentService,GuestRegistrationService,
     RegistrationDeadlineService,FiscalizationService
   ],
   exports:[
-    ComplianceProviderRegistry,GuestAuthProviderRegistry,GuestAccessService,GuestAuthService,
+    ComplianceProviderRegistry,GuestAuthProviderRegistry,SecurityRateLimitService,GuestAccessService,GuestAuthService,
     GuestSelfService,GuestDocumentService,GuestRegistrationService,
     RegistrationDeadlineService,FiscalizationService
   ]
