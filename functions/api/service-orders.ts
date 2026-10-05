@@ -1,6 +1,7 @@
 import {json,requestId,requireDatabase,type Env} from "./_shared";
 import {requireMutationOrigin,resolveSession} from "./_auth";
 import {canAccessProperty,isManagement,serviceCategoriesByRole} from "./_authorization";
+import {scopedIdempotencyKey} from "./_idempotency";
 
 const safeColumns=[
   "id","organization_id","property_id","unit_id","guest_id","reservation_id","stay_id",
@@ -15,6 +16,9 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
 
   const propertyId=new URL(request.url).searchParams.get("propertyId")||session.propertyIds[0]||"";
   if(!canAccessProperty(session,propertyId))return json({error:"PROPERTY_FORBIDDEN",requestId:requestId(request)},403);
+  const property=await db.prepare("SELECT id FROM properties WHERE id=? AND organization_id=? AND is_active=1 LIMIT 1")
+    .bind(propertyId,session.organizationId).first<Record<string,unknown>>();
+  if(!property)return json({error:"PROPERTY_NOT_FOUND",requestId:requestId(request)},404);
 
   if(isManagement(session.role)){
     const rows=await db.prepare("SELECT * FROM service_orders WHERE organization_id=? AND property_id=? ORDER BY created_at DESC LIMIT 100")
@@ -49,6 +53,9 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
 
   const propertyId=String(body.propertyId||session.propertyIds[0]||"");
   if(!canAccessProperty(session,propertyId))return json({error:"PROPERTY_FORBIDDEN",requestId:requestId(request)},403);
+  const property=await db.prepare("SELECT id FROM properties WHERE id=? AND organization_id=? AND is_active=1 LIMIT 1")
+    .bind(propertyId,session.organizationId).first<Record<string,unknown>>();
+  if(!property)return json({error:"PROPERTY_NOT_FOUND",requestId:requestId(request)},404);
 
   const title=String(body.title||"").trim();
   const priority=String(body.priority||"normal");
@@ -56,10 +63,10 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
     return json({error:"INVALID_REQUEST",requestId:requestId(request)},400);
   }
 
-  const idem=String(request.headers.get("idempotency-key")||"").trim();
-  if(idem.length<8||idem.length>200)return json({error:"IDEMPOTENCY_KEY_REQUIRED",requestId:requestId(request)},400);
-  const existing=await db.prepare("SELECT id,status FROM service_orders WHERE idempotency_key=? AND organization_id=? LIMIT 1")
-    .bind(idem,session.organizationId).first<Record<string,unknown>>();
+  const idem=scopedIdempotencyKey(session.organizationId,request.headers.get("idempotency-key"));
+  if(!idem)return json({error:"IDEMPOTENCY_KEY_REQUIRED",requestId:requestId(request)},400);
+  const existing=await db.prepare("SELECT id,status FROM service_orders WHERE idempotency_key=? LIMIT 1")
+    .bind(idem).first<Record<string,unknown>>();
   if(existing)return json({id:existing.id,status:existing.status,idempotentReplay:true,requestId:requestId(request)});
 
   const id=crypto.randomUUID();
@@ -73,6 +80,8 @@ export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
         .bind(crypto.randomUUID(),session.organizationId,"service_order.created","service_order",id,"outbox:"+idem,JSON.stringify({id,propertyId,category}))
     ]);
   }catch(error){
+    const replay=await db.prepare("SELECT id,status FROM service_orders WHERE idempotency_key=? LIMIT 1").bind(idem).first<Record<string,unknown>>();
+    if(replay)return json({id:replay.id,status:replay.status,idempotentReplay:true,requestId:requestId(request)});
     return json({error:"WRITE_FAILED",detail:String(error),requestId:requestId(request)},409);
   }
   return json({id,status:"new",idempotentReplay:false,requestId:requestId(request)},201);
