@@ -70,8 +70,10 @@ jobs:
             const db=rows.find(x=>x&&x.name==="views-staging");
             process.stdout.write(String(db?.uuid||db?.id||""));
           ')"
+          DB_CREATED="false"
           if [ -z "$DB_ID" ]; then
             npx --yes wrangler@4 d1 create views-staging
+            DB_CREATED="true"
             DB_JSON="$(npx --yes wrangler@4 d1 list --json)"
             export DB_JSON
             DB_ID="$(node -e '
@@ -83,6 +85,18 @@ jobs:
           fi
           test -n "$DB_ID" || { echo "Unable to resolve views-staging D1 id"; exit 1; }
           echo "database_id=$DB_ID" >> "$GITHUB_OUTPUT"
+          echo "created=$DB_CREATED" >> "$GITHUB_OUTPUT"
+
+      - name: Capture D1 pre-migration recovery point
+        if: steps.gate.outputs.enabled == 'true' && steps.d1.outputs.created != 'true'
+        id: recovery
+        run: |
+          set -euo pipefail
+          RECOVERY_TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          npx --yes wrangler@4 d1 time-travel info views-staging --timestamp="$RECOVERY_TIMESTAMP" --json >/tmp/views-d1-recovery.json
+          test -s /tmp/views-d1-recovery.json
+          echo "timestamp=$RECOVERY_TIMESTAMP" >> "$GITHUB_OUTPUT"
+          echo "Validated D1 recovery point at $RECOVERY_TIMESTAMP"
 
       - name: Ensure Pages project and resolve preview origin
         if: steps.gate.outputs.enabled == 'true'
@@ -189,6 +203,11 @@ jobs:
           echo "- Health: PASS" >> "$GITHUB_STEP_SUMMARY"
           echo "- Live staff session: PASS" >> "$GITHUB_STEP_SUMMARY"
           echo "- Stage 4 remote Golden Flow: PASS" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ steps.recovery.outputs.timestamp }}" ]; then
+            echo "- Pre-migration recovery timestamp: ${{ steps.recovery.outputs.timestamp }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Pre-migration recovery timestamp: fresh D1 / not required" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Staging credential status
         if: steps.gate.outputs.enabled != 'true'
