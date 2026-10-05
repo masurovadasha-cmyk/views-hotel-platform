@@ -199,7 +199,7 @@ the secret is removed.
 
 ## Next work
 
-- rejected internal-auth attempt metrics without persisting attacker-controlled payloads;
+- rejected internal-auth attempt metrics without persisting attacker-controlled payloads (implemented in Stage 7.4);
 - service-specific key separation instead of one shared key ring;
 - asymmetric signed service identity / short-lived JWT;
 - network ingress allowlists / mTLS when infrastructure supports it;
