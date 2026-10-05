@@ -60,7 +60,7 @@ BEGIN
        o.aggregate_type='reservation'
        OR o.event_type='finance.payment_intent.v1'
      )
-  ON CONFLICT(organization_id,consumer) DO NOTHING;
+  ON CONFLICT ON CONSTRAINT analytics_worker_state_pkey DO NOTHING;
 
   RETURN QUERY
   WITH candidates AS (
