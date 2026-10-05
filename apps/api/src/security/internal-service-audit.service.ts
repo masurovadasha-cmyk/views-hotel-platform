@@ -11,6 +11,8 @@ export type InternalServiceAuditStart={
   requestId:string;
   httpMethod:string;
   routePath:string;
+  authScheme:"internal_key"|"signed_token";
+  tokenJti:string|null;
 };
 
 @Injectable()
@@ -18,18 +20,29 @@ export class InternalServiceAuditService{
   constructor(private readonly db:DatabaseService){}
 
   async begin(input:InternalServiceAuditStart){
-    const row=(await this.db.query<{audit_id:string}>(
-      `SELECT app.begin_internal_service_request_audit(
-         $1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7,$8
-       ) AS audit_id`,
-      [
-        input.organizationId,input.actorUserId,input.actorMembershipId,
-        input.serviceId,input.keyFingerprint,input.requestId,
-        input.httpMethod,input.routePath
-      ]
-    )).rows[0];
-    if(!row?.audit_id)throw new Error("INTERNAL_AUDIT_BEGIN_FAILED");
-    return row.audit_id;
+    try{
+      const row=(await this.db.query<{audit_id:string}>(
+        `SELECT app.begin_internal_service_request_audit_v2(
+           $1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7,$8,$9,$10::uuid
+         ) AS audit_id`,
+        [
+          input.organizationId,input.actorUserId,input.actorMembershipId,
+          input.serviceId,input.keyFingerprint,input.requestId,
+          input.httpMethod,input.routePath,input.authScheme,input.tokenJti
+        ]
+      )).rows[0];
+      if(!row?.audit_id)throw new Error("INTERNAL_AUDIT_BEGIN_FAILED");
+      return row.audit_id;
+    }catch(error){
+      const pg=error as {code?:string;constraint?:string};
+      if(
+        pg?.code==="23505"&&
+        pg.constraint==="internal_service_request_audit_token_replay_idx"
+      ){
+        throw new Error("INTERNAL_SERVICE_TOKEN_REPLAY");
+      }
+      throw error;
+    }
   }
 
   async complete(
@@ -73,12 +86,13 @@ export class InternalServiceAuditService{
         actor_membership_id:string|null;service_id:string;key_fingerprint:string;
         request_id:string;http_method:string;route_path:string;status_code:number|null;
         outcome:string;error_code:string|null;started_at:Date;completed_at:Date|null;
-        duration_ms:number|null;
+        duration_ms:number|null;auth_scheme:"internal_key"|"signed_token";
       }>(
         `SELECT
            id,organization_id,actor_user_id,actor_membership_id,
            service_id,key_fingerprint,request_id,http_method,route_path,
-           status_code,outcome,error_code,started_at,completed_at,duration_ms
+           status_code,outcome,error_code,started_at,completed_at,duration_ms,
+           auth_scheme
          FROM internal_service_request_audit
         WHERE organization_id=$1
           AND ($2::text IS NULL OR service_id=$2)
@@ -94,6 +108,7 @@ export class InternalServiceAuditService{
         actorMembershipId:row.actor_membership_id,
         serviceId:row.service_id,
         keyFingerprint:row.key_fingerprint,
+        authScheme:row.auth_scheme,
         requestId:row.request_id,
         method:row.http_method,
         endpoint:row.route_path,
