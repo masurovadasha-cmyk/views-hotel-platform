@@ -79,6 +79,12 @@ NODE
 echo "[5/8] Prove Core can reach only the private relay"
 RELAY_READY=false
 for attempt in $(seq 1 45); do
+  RELAY_STATE="$(docker inspect --format '{{.State.Status}}' "$RELAY" 2>/dev/null || true)"
+  if [ "$RELAY_STATE" != "running" ]; then
+    echo "egress relay exited before becoming ready: $RELAY_STATE" >&2
+    compose logs egress-relay >&2 || true
+    exit 1
+  fi
   if docker exec -i "$CORE" node --input-type=module - tcp egress-relay 3128 1500 \
       < scripts/core-egress-probe.mjs >"$WORK/relay.json" 2>"$WORK/relay.err"; then
     if node - "$WORK/relay.json" <<'NODE'
