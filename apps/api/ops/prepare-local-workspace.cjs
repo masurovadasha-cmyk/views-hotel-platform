@@ -1,14 +1,15 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path');
 const {Client}=require('pg');
+const {localState}=require('./local-state.cjs');
 const ORG='74240000-0000-4000-8000-000000000001',PROP='74240000-0000-4000-8000-000000000002',USER='74240000-0000-4000-8000-000000000003',MEMBER='74240000-0000-4000-8000-000000000004';
 const POLICY='74240000-0000-4000-8000-000000000005',TYPE='74240000-0000-4000-8000-000000000006',RATE='74240000-0000-4000-8000-000000000009';
 const units=[{unitId:'74240000-0000-4000-8000-000000000007',code:'LOCAL-235',ratePlanId:RATE,maxGuests:2},{unitId:'74240000-0000-4000-8000-000000000008',code:'LOCAL-250',ratePlanId:RATE,maxGuests:2}];
 (async()=>{
-  if(process.platform!=='win32'||process.argv[2]!=='--ack=LOCAL_SYNTHETIC_WORKSPACE')throw Error('LOCAL_WORKSPACE_ACK_REQUIRED');
-  const root=path.join(process.env.LOCALAPPDATA,'VIEWS-Staging','private');
+  if(process.argv[2]!=='--ack=LOCAL_SYNTHETIC_WORKSPACE')throw Error('LOCAL_WORKSPACE_ACK_REQUIRED');
+  const {privateDir:root,scope}=localState();
   const secret=JSON.parse(fs.readFileSync(path.join(root,'runtime.json'),'utf8'));
-  if(secret.scope!=='views-windows-local-rehearsal')throw Error('LOCAL_SCOPE_REQUIRED');
+  if(secret.scope!==scope)throw Error('LOCAL_SCOPE_REQUIRED');
   const client=new Client({host:'127.0.0.1',port:55432,database:'views_local',user:'views_owner',password:secret.ownerPassword,connectionTimeoutMillis:5000});
   await client.connect();
   try{
@@ -31,7 +32,7 @@ const units=[{unitId:'74240000-0000-4000-8000-000000000007',code:'LOCAL-235',rat
     await client.query(`INSERT INTO rate_plans(id,property_id,unit_type_id,name,currency,base_nightly_minor,cancellation_policy_id)
       VALUES($1,$2,$3,'{"ru":"Тестовый тариф — 650 000 UZS"}','UZS',65000000,$4) ON CONFLICT(id) DO NOTHING`,[RATE,PROP,TYPE,POLICY]);
     const membership=(await client.query(`SELECT m.organization_id,m.user_id,m.status,r.code FROM organization_memberships m JOIN roles r ON r.id=m.role_id WHERE m.id=$1`,[MEMBER])).rows[0];
-    if(membership?.organization_id!==ORG||membership.user_id!==USER||membership.status!=='active'||membership.code!=='front_desk')throw Error('FIXTURE_ACTOR_CONFLICT');
+    if(membership?.organization_id!==ORG||membership.user_id!==USER||!['active','invited','suspended'].includes(membership.status)||membership.code!=='front_desk')throw Error('FIXTURE_ACTOR_CONFLICT');
     await client.query('COMMIT');
     const fixture={schemaVersion:1,scope:'views-local-core-workspace',organizationId:ORG,userId:USER,membershipId:MEMBER,propertyId:PROP,units};
     fs.writeFileSync(path.join(root,'workspace.json'),JSON.stringify(fixture,null,2)+'\n',{mode:0o600});

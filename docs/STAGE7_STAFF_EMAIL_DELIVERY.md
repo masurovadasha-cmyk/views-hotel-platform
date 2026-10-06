@@ -10,11 +10,10 @@ SMTP external mode requires explicit approved recipients, sender, zero-new-spend
 acknowledgement, verified TLS and a fixed HTTPS origin. These are configuration
 gates, not proof that a domain has actually been verified or a cloud plan is free.
 
-The user's Windows computer stopped answering during work. Migration 0040 and
-mail code were written there, but the outcome of the queued backup/migration/
-package-install process could not be read. Do not claim the workstation updated.
-On reconnection, inspect git diff and views_local_migrations before any pull or
-migration. Preserve local changes; never rewrite an applied migration checksum.
+The handoff later confirmed migration 0040 applied on Windows, with its checksum
+matching source. Its bytes remain unchanged. Corrections are in migration 0041.
+The current cloud verification is recorded in `STAGE7_STAFF_EMAIL_VERIFICATION.md`;
+it does not update the owner's Windows installation.
 
 ## Queue and identity binding
 
@@ -91,10 +90,11 @@ Reports explicitly distinguish this from real capture transport and never claim
 external mailbox ownership. No live cloud deployment or external deliverability,
 DNS/SPF/DKIM/DMARC, bounce processing or long-running worker availability is proven.
 
-Migration 0040 is applied by the dedicated all-migrations workflow. The older
-Production Core workflow's fixed list remains a separate regression against the
-previous schema until it is updated during the next integration step. Do not
-mislabel that job as evidence for 0040.
+Both mail CI and Production Core now include migration 0041. That migration
+permanently revokes links on offboarding/role changes, validates current mail
+identity and credential version before dispatch, and checks lease expiry after
+acquiring the completion row lock. The browser handles new fragments in an
+already open tab and removes encoded token parameter names as well.
 
 ## Next activation requirements
 

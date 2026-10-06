@@ -36,7 +36,12 @@ jobs:
           node-version: 22
       - name: Install existing Core plus pinned SMTP library
         working-directory: apps/api
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build web and install isolated browser
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+          npx playwright install --with-deps chromium
       - name: Compile actual Core
         working-directory: apps/api
         run: |
@@ -47,6 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -f infra/postgres/init/001_extensions.sql
+          psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE views_local IS 'VIEWS_DISPOSABLE_STAFF_MAIL'"
           for file in apps/api/db/migrations/*.sql; do
             psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -f "$file"
           done
@@ -56,6 +62,8 @@ jobs:
           set -o pipefail
           node --test scripts/staff-mail.acceptance.cjs | tee mail-evidence/unit.tap
       - name: Real loopback SMTP, Core HTTP and restricted PostgreSQL proof
+        env:
+          VIEWS_MAIL_TEST_CONTAINER: ${{ job.services.postgres.id }}
         run: node scripts/staff-mail.integration.cjs
       - name: Preserve exact source without secrets or captured email bodies
         if: always()

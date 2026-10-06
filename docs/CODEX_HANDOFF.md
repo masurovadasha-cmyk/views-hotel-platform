@@ -180,3 +180,13 @@ push, database writes or restarting the running web/Core. The local additions
 include migration 0040 in Production Core CI and disabled mail env examples.
 Untracked lockfiles were deliberately left untouched. Current source != the
 already running Stage 7.25 build until a later deliberate build/restart.
+
+## 9. Cloud continuation after handoff
+
+Stage 7.26 was continued in the existing branch and combined with the Linux
+launcher. See `STAGE7_STAFF_EMAIL_VERIFICATION.md` for fresh executed results,
+corrections and the next MFA design sequence. Applied migration 0040 remains
+unchanged; 0041 contains revocation/lease fixes. Mail-link browser and private
+schema restore proofs now run in the disposable mail workflow. Earlier WIP and
+unverified-browser statements above describe the original checkpoint.
+External delivery, privileged MFA, Windows rollout and production remain OFF.

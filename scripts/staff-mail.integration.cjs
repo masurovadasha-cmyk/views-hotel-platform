@@ -68,6 +68,7 @@ async function setup(){
  assert.equal(process.env.VIEWS_MAIL_PROOF_ACK,'DISPOSABLE_MAIL_ONLY');
  assert.equal(process.env.STAFF_MAIL_PROOF_OWNER_URL,ownerURL);
  owner=new Pool({connectionString:ownerURL,max:4});
+ assert.equal((await owner.query("SELECT shobj_description(oid,'pg_database') AS marker FROM pg_database WHERE datname=current_database()")).rows[0].marker,'VIEWS_DISPOSABLE_STAFF_MAIL','DISPOSABLE_DATABASE_MARKER_REQUIRED');
  await owner.query("CREATE ROLE views_app LOGIN PASSWORD 'fixture-runtime' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS; CREATE ROLE views_mailer LOGIN PASSWORD 'fixture-mailer' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;");
  await owner.query('GRANT CONNECT ON DATABASE views_local TO views_app,views_mailer; GRANT USAGE ON SCHEMA public,app TO views_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO views_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO views_app; GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app; REVOKE INSERT,UPDATE,DELETE ON provider_egress_attempts,provider_egress_reconciliation_queue FROM views_app; GRANT USAGE ON SCHEMA staff_mail_ops TO views_mailer; GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA staff_mail_ops TO views_mailer');
  runtime=new Pool({connectionString:runtimeURL,max:4});worker=new Pool({connectionString:workerURL,max:8});
@@ -83,7 +84,7 @@ async function setup(){
  assert.equal(ready,true,'CORE_NOT_READY');await smtpFixture();
 }
 (async()=>{
- const report={schemaVersion:1,stage:'7.26',result:'fail',sourceCommit:process.env.GITHUB_SHA||null,checks,externalEmailsSent:0,
+ const report={schemaVersion:1,stage:'7.26',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim().length>0,checks,externalEmailsSent:0,
  externalMailboxOwnershipProven:false,productionEnabled:false,privilegedMfaEnabled:false,hostDeploymentConfirmed:false};
  try{
   await setup();
@@ -150,6 +151,29 @@ async function setup(){
    assert.equal((await send(x)).state,'idle');assert.equal((await rpc('activate',{token:q.token,password})).status,400);
    const y=await staff();await enqueue(y);await owner.query("UPDATE organization_memberships SET status='suspended' WHERE id=$1",[y.member]);assert.equal((await send(y)).state,'idle');
   });
+  await check('offboarding_permanently_revokes_accepted_invitation',async()=>{
+   const x=await staff(),q=await enqueue(x);assert.equal((await send(x)).state,'accepted');
+   await owner.query("UPDATE organization_memberships SET status='suspended' WHERE id=$1",[x.member]);
+   await owner.query("UPDATE organization_memberships SET status='invited' WHERE id=$1",[x.member]);
+   assert.equal((await rpc('activate',{token:q.token,password})).status,400);
+  });
+  await check('finish_rechecks_lease_after_waiting_for_row_lock',async()=>{
+   const x=await staff(),q=await enqueue(x),claimed=await claim(x),lock=await owner.connect();
+   let result;
+   try{
+    await owner.query("UPDATE staff_private.mail_jobs SET lease_until=clock_timestamp()+interval '1 second' WHERE id=$1",[q.job.id]);
+    await lock.query('BEGIN');await lock.query('SELECT 1 FROM staff_private.mail_jobs WHERE id=$1 FOR UPDATE',[q.job.id]);
+    result=worker.query("SELECT staff_mail_ops.finish($1,$2,$3,'accepted','LOCK_WAIT_PROOF') AS ok",[ORG,q.job.id,claimed.lease_id]);
+    let waiting=false;
+    for(let i=0;i<30;i++){
+     waiting=(await owner.query("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND usename='views_mailer' AND wait_event_type='Lock') AS waiting")).rows[0].waiting;
+     if(waiting)break;await new Promise(r=>setTimeout(r,10));
+    }
+    assert.equal(waiting,true,'MAIL_WORKER_DID_NOT_REACH_LOCK');
+    await owner.query('SELECT pg_sleep(1.1)');await lock.query('COMMIT');
+    assert.equal((await result).rows[0].ok,false);
+   }finally{await lock.query('ROLLBACK');lock.release();if(result)await result.catch(()=>{});}
+  });
   await check('worker_tenant_filter_and_separation_of_database_privileges',async()=>{
    const x=await staff(OTHER),q=await enqueue(x);assert.equal((await send({config:x.config,org:ORG})).state,'idle');
    for(const pool of [runtime,worker])await assert.rejects(pool.query('SELECT * FROM staff_private.mail_jobs'),e=>e.code==='42501');
@@ -174,6 +198,8 @@ async function setup(){
    assert.ok(rows.length>5);assert.ok(!JSON.stringify(rows).includes(a.token));assert.ok(!JSON.stringify(rows).includes(password));
    assert.ok(rows.every(r=>!r.after_state?.recipient_email&&!r.after_state?.token));
   });
+  await require('./staff-mail.browser.cjs')({owner,staff,enqueue,send,rpc,messages,decodedText,internalKey,ORG,password,check});
+  await check('private_auth_backup_restore_with_separate_keyring',async()=>{report.restore=await require('./staff-mail.restore.cjs')({owner,ownerURL,keys});});
   Object.assign(report,{result:'pass',checkCount:checks.length,httpCalls,smtpMessagesCaptured:messages.length,
    actualSMTPTransportExercised:true,SMTPReceiptPositiveBranchSimulated:true,queueReplaysPrevented:true,
    mailerRuntimeSeparated:true,uncertainDeliveryNotRetried:true,checkedAt:new Date().toISOString(),
