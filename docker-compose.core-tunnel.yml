@@ -1,0 +1,160 @@
+name: views-core-tunnel
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: views
+      POSTGRES_USER: views
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - views_core_pg:/var/lib/postgresql/data
+    networks:
+      - core_data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U views -d views"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt:
+      - no-new-privileges:true
+
+  core:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL for the restricted runtime role is required}
+      GUEST_AUTH_RATE_LIMIT_SECRET: ${GUEST_AUTH_RATE_LIMIT_SECRET:?GUEST_AUTH_RATE_LIMIT_SECRET is required}
+      TRUSTED_PROXY_MODE: cloudflare_tunnel
+      VIEWS_TRUSTED_PROXY_CIDRS_JSON: '["172.30.0.2/32","172.30.0.4/32"]'
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:
+      VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY:
+      VIEWS_INTERNAL_ANALYTICS_CRON_PUBLIC_KEY:
+      VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON:
+    expose:
+      - "3001"
+    networks:
+      core_ingress:
+        ipv4_address: 172.30.0.3
+      core_data: {}
+      core_egress: {}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  cloudflared-a:
+    image: cloudflare/cloudflared:latest
+    pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      core:
+        condition: service_healthy
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --loglevel
+      - info
+      - --metrics
+      - 0.0.0.0:2000
+      - run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN is required}
+    networks:
+      core_ingress:
+        ipv4_address: 172.30.0.2
+      tunnel_egress: {}
+      tunnel_metrics: {}
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  cloudflared-b:
+    image: cloudflare/cloudflared:latest
+    pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      core:
+        condition: service_healthy
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --loglevel
+      - info
+      - --metrics
+      - 0.0.0.0:2000
+      - run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN is required}
+    networks:
+      core_ingress:
+        ipv4_address: 172.30.0.4
+      tunnel_egress: {}
+      tunnel_metrics: {}
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  tunnel-observer:
+    image: node:22-alpine
+    profiles: ["ops"]
+    command:
+      - node
+      - /ops/tunnel-replica-observer.mjs
+    environment:
+      VIEWS_TUNNEL_METRICS_ENDPOINTS_JSON: '{"cloudflared-a":"http://cloudflared-a:2000/metrics","cloudflared-b":"http://cloudflared-b:2000/metrics"}'
+    volumes:
+      - ./scripts/tunnel-replica-observer.mjs:/ops/tunnel-replica-observer.mjs:ro
+    networks:
+      tunnel_metrics: {}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  core_ingress:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.0.0/29
+  core_data:
+    internal: true
+  core_egress:
+    driver: bridge
+  tunnel_egress:
+    driver: bridge
+  tunnel_metrics:
+    internal: true
+
+volumes:
+  views_core_pg:

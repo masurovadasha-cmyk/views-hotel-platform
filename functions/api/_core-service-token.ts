@@ -66,9 +66,11 @@ async function importEd25519PrivateKey(pem:string){
   }
 
   try{
+    const keyData=new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(keyData).set(bytes);
     return await crypto.subtle.importKey(
       "pkcs8",
-      bytes,
+      keyData,
       {name:"Ed25519"},
       false,
       ["sign"]

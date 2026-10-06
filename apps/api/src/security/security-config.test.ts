@@ -406,6 +406,28 @@ describe("production security config",()=>{
     );
   });
 
+  it("supports tunnel mode only with exact connector host CIDRs",()=>{
+    const config=loadConfig({
+      ...managed(),
+      TRUSTED_PROXY_MODE:"cloudflare_tunnel",
+      VIEWS_TRUSTED_PROXY_CIDRS_JSON:JSON.stringify([
+        "172.30.0.2/32","172.30.0.4/32"
+      ])
+    });
+    expect(config.trustedProxyMode).toBe("cloudflare_tunnel");
+    expect(config.trustedProxyCidrs).toEqual([
+      "172.30.0.2/32","172.30.0.4/32"
+    ]);
+
+    expect(()=>loadConfig({
+      ...managed(),
+      TRUSTED_PROXY_MODE:"cloudflare_tunnel",
+      VIEWS_TRUSTED_PROXY_CIDRS_JSON:JSON.stringify(["172.30.0.0/29"])
+    })).toThrow(
+      "cloudflare_tunnel production mode requires exact connector host CIDRs"
+    );
+  });
+
   it("requires per-service source CIDRs in direct production mode",()=>{
     expect(()=>loadConfig({
       ...managed(),

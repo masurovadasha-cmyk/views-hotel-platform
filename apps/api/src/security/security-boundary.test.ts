@@ -63,6 +63,26 @@ describe("client network identity",()=>{
     )).toThrow("CLIENT_NETWORK_IDENTITY_UNAVAILABLE");
   });
 
+  it("trusts forwarded identity only from configured tunnel replicas",()=>{
+    const connectors=["172.30.0.2/32","172.30.0.4/32"];
+    expect(resolveClientAddress(
+      {remoteAddress:"172.30.0.2",cfConnectingIp:"198.51.100.18"},
+      "cloudflare_tunnel",
+      connectors
+    )).toBe("198.51.100.18");
+    expect(resolveClientAddress(
+      {remoteAddress:"172.30.0.4",cfConnectingIp:"198.51.100.19"},
+      "cloudflare_tunnel",
+      connectors
+    )).toBe("198.51.100.19");
+
+    expect(()=>resolveClientAddress(
+      {remoteAddress:"172.30.0.5",cfConnectingIp:"198.51.100.18"},
+      "cloudflare_tunnel",
+      connectors
+    )).toThrow("CLIENT_PROXY_NOT_TRUSTED");
+  });
+
   it("does not trust forwarded client identity from a direct origin peer",()=>{
     expect(()=>resolveClientAddress(
       {

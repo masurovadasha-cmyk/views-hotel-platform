@@ -67,6 +67,12 @@ The runtime remains free of provider network calls. Core continues using its alr
 
 Stage 7.14 is therefore a deployment/operations control, not an availability dependency for guest requests or internal service traffic.
 
+## Stage 7.15 tunnel compatibility
+
+This provider-range gate applies only to `TRUSTED_PROXY_MODE=cloudflare`, where Cloudflare edge addresses connect directly to a public origin.
+
+When `TRUSTED_PROXY_MODE=cloudflare_tunnel`, the immediate Core peer is the local `cloudflared` connector on a private network. In that mode the gate exits successfully as not applicable; Stage 7.15 instead pins exact connector host CIDRs and validates the tunnel deployment topology.
+
 ## Acceptance
 
 Automated tests cover:

@@ -93,6 +93,24 @@ export async function runTrustedProxyCidrGate(
   output=process.stdout
 ){
   const options=parseArgs(argv);
+  const proxyMode=String(env.TRUSTED_PROXY_MODE||"cloudflare").trim();
+  if(!["direct","cloudflare","cloudflare_tunnel"].includes(proxyMode)){
+    throw new TrustedProxyCidrGateError("INVALID_TRUSTED_PROXY_MODE");
+  }
+  if(proxyMode!=="cloudflare"){
+    output.write(JSON.stringify({
+      ok:true,
+      applicable:false,
+      schemaVersion:1,
+      provider:"cloudflare",
+      proxyMode,
+      reason:proxyMode==="cloudflare_tunnel"
+        ?"TUNNEL_CONNECTOR_BOUNDARY"
+        :"DIRECT_ORIGIN_MODE"
+    })+"\n");
+    return 0;
+  }
+
   const configured=parseConfiguredCidrs(
     env.VIEWS_TRUSTED_PROXY_CIDRS_JSON
   );

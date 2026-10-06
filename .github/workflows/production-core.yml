@@ -6,12 +6,16 @@ on:
       - "apps/api/**"
       - "infra/postgres/**"
       - "docker-compose.production-dev.yml"
+      - "docker-compose.core-tunnel.yml"
+      - "scripts/core-origin-isolation-gate.mjs"
       - ".github/workflows/production-core.yml"
   pull_request:
     branches: [main, "staging/master-reference-v1"]
     paths:
       - "apps/api/**"
       - "infra/postgres/**"
+      - "docker-compose.core-tunnel.yml"
+      - "scripts/core-origin-isolation-gate.mjs"
 
 jobs:
   postgres-core:
@@ -71,6 +75,7 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0031_internal_service_credential_posture.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0032_signed_only_auth_mode.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0033_internal_ingress_boundary.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0034_internal_service_posture_type_fix.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'

@@ -11,7 +11,9 @@
     "test": "vitest run",
     "analytics:report-cycle": "node scripts/analytics-report-cycle.mjs",
     "security:service-cutover-gate": "node scripts/internal-service-cutover-gate.mjs",
-    "security:trusted-proxy-cidr-gate": "node scripts/trusted-proxy-cidr-gate.mjs"
+    "security:trusted-proxy-cidr-gate": "node scripts/trusted-proxy-cidr-gate.mjs",
+    "security:core-origin-isolation": "node scripts/core-origin-isolation-gate.mjs",
+    "security:tunnel-replica-health": "node scripts/tunnel-replica-observer.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

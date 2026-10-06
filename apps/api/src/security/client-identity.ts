@@ -30,7 +30,8 @@ export function resolveClientAddress(
   proxyMode:TrustedProxyMode,
   trustedProxyCidrs:readonly string[]=[]
 ){
-  if(proxyMode==="cloudflare"){
+  const forwardedIdentity=proxyMode!=="direct";
+  if(forwardedIdentity){
     if(!networkAddressAllowed(
       input.remoteAddress,
       trustedProxyCidrs
@@ -39,7 +40,7 @@ export function resolveClientAddress(
     }
   }
 
-  const raw=proxyMode==="cloudflare"
+  const raw=forwardedIdentity
     ?String(input.cfConnectingIp||"").trim()
     :String(input.remoteAddress||"").trim();
 

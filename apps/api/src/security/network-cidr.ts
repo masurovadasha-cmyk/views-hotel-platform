@@ -7,6 +7,11 @@ export function validateNetworkRange(value:string){
   return value.trim();
 }
 
+export function networkRangeIsHost(value:string){
+  const parsed=parseNetworkRange(value);
+  return parsed.prefix===(parsed.family==="ipv4"?32:128);
+}
+
 export function networkAddressAllowed(
   address:string|null|undefined,
   ranges:readonly string[]

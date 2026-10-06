@@ -43,7 +43,7 @@ export class InternalAuthRejectionService{
       request.socket?.remoteAddress??null,
       networkMode,
       config.guestAuthRateLimitSecret,
-      networkMode==="cloudflare"?config.trustedProxyCidrs:[]
+      networkMode==="direct"?[]:config.trustedProxyCidrs
     );
     const endpoint=(
       context.getClass().name+"."+context.getHandler().name
@@ -109,7 +109,7 @@ export class InternalAuthRejectionService{
   private networkHash(
     headers:IncomingHttpHeaders,
     remoteAddress:string|null,
-    proxyMode:"direct"|"cloudflare",
+    proxyMode:"direct"|"cloudflare"|"cloudflare_tunnel",
     secret:string,
     trustedProxyCidrs:readonly string[]
   ){
