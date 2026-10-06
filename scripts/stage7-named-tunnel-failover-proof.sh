@@ -11,6 +11,25 @@ compose() {
   docker compose -f "$BASE_FILE" "$@"
 }
 
+wait_tunnel_observer() {
+  local output_file="$1"
+  local error_file="${output_file}.err"
+
+  for attempt in $(seq 1 60); do
+    if compose --profile ops run --rm tunnel-observer \
+        >"$output_file" 2>"$error_file"; then
+      cat "$output_file"
+      return 0
+    fi
+    sleep 2
+  done
+
+  echo "Tunnel replica metrics SLO did not become healthy" >&2
+  cat "$output_file" >&2 2>/dev/null || true
+  cat "$error_file" >&2 2>/dev/null || true
+  return 1
+}
+
 restore_connectors() {
   compose up -d cloudflared-a cloudflared-b >/dev/null 2>&1 || true
 }
@@ -136,8 +155,7 @@ wait_container_running cloudflared-a
 wait_container_running cloudflared-b
 
 echo "[3/10] Establish stable-hostname baseline with both replicas"
-compose --profile ops run --rm tunnel-observer \
-  >/tmp/stage7.15-named-tunnel-metrics-baseline.json
+wait_tunnel_observer /tmp/stage7.15-named-tunnel-metrics-baseline.json
 IFS=',' read -r BASE_HEALTH BASE_READY BASE_GUEST   <<<"$(prove_public_stack baseline)"
 echo "PASS: stable staging hostname and replica metrics are healthy"
 
@@ -160,8 +178,7 @@ echo "[7/10] Restore replica A and prove both replicas healthy again"
 compose up -d cloudflared-a
 wait_container_running cloudflared-a
 IFS=',' read -r FINAL_HEALTH FINAL_READY FINAL_GUEST   <<<"$(prove_public_stack restored)"
-compose --profile ops run --rm tunnel-observer \
-  >/tmp/stage7.15-named-tunnel-metrics-restored.json
+wait_tunnel_observer /tmp/stage7.15-named-tunnel-metrics-restored.json
 echo "PASS: both named-tunnel replicas and metrics SLO restored"
 
 echo "[8/10] Re-prove no direct Core host listener and no proxy spoof bypass"

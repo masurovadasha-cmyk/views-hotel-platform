@@ -38,6 +38,19 @@ VIEWS_NAMED_TUNNEL_PROOF_ACK=I_UNDERSTAND_STAGING_CONNECTORS_WILL_BE_RESTARTED
 
 This prevents accidental execution against a production host because the script intentionally stops connector replicas one at a time.
 
+## Replica health SLO
+
+Before the public-hostname baseline and again after both replicas are restored, the proof runs the internal tunnel observer.
+
+Persistent staging requires:
+
+- at least 4 active HA connections on cloudflared-a;
+- at least 4 active HA connections on cloudflared-b;
+- zero heartbeat retries at observation time;
+- metrics endpoints reachable only on the internal tunnel_metrics network.
+
+A stable hostname that still returns HTTP 200 is not enough to close the proof if one replica has already degraded below this redundancy target.
+
 ## What the script proves
 
 scripts/stage7-named-tunnel-failover-proof.sh:
@@ -51,7 +64,9 @@ scripts/stage7-named-tunnel-failover-proof.sh:
 7. stops replica A and proves the same hostname remains healthy through replica B;
 8. restores A and proves the baseline is healthy again;
 9. confirms Core still has no host port binding;
-10. confirms an untrusted private peer forging CF-Connecting-IP still receives HTTP 403.
+10. confirms an untrusted private peer forging CF-Connecting-IP still receives HTTP 403;
+11. requires both replica metrics to satisfy the HA connection SLO before failover;
+12. requires both replica metrics to satisfy the same SLO again after recovery.
 
 A passing result writes:
 
@@ -60,6 +75,10 @@ A passing result writes:
 and sets:
 
 sameNamedTunnelFailoverProven=true
+
+and:
+
+replicaMetricsSloProven=true
 
 ## Why this proves same-tunnel failover
 

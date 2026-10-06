@@ -25,6 +25,28 @@ pull_with_retry() {
   done
 }
 
+wait_tunnel_observer() {
+  local min_connections="$1"
+  local output_file="$2"
+  local error_file="${output_file}.err"
+
+  for attempt in $(seq 1 60); do
+    if compose --profile ops run --rm tunnel-observer \
+        node /ops/tunnel-replica-observer.mjs \
+        --min-connections="$min_connections" \
+        >"$output_file" 2>"$error_file"; then
+      cat "$output_file"
+      return 0
+    fi
+    sleep 2
+  done
+
+  echo "Tunnel replica observer did not become healthy" >&2
+  cat "$output_file" >&2 2>/dev/null || true
+  cat "$error_file" >&2 2>/dev/null || true
+  return 1
+}
+
 cleanup() {
   compose down -v --remove-orphans >/dev/null 2>&1 || true
 }
@@ -134,10 +156,7 @@ for attempt in $(seq 1 45); do
 done
 
 echo "[4/9] Prove both replica metrics endpoints are reachable"
-compose --profile ops run --rm tunnel-observer \
-  node /ops/tunnel-replica-observer.mjs --min-connections=1 \
-  >/tmp/stage7.15-tunnel-metrics-proof.json
-cat /tmp/stage7.15-tunnel-metrics-proof.json
+wait_tunnel_observer 1 /tmp/stage7.15-tunnel-metrics-proof.json
 
 echo "[5/9] Prove the host has no direct Core origin listener"
 CORE_CONTAINER_ID="$(compose ps -q core)"
