@@ -19,7 +19,10 @@ CREATE TABLE payme_merchant_transactions (
   CHECK (
     jsonb_typeof(account)='object'
     AND account ? 'payment_intent_id'
-    AND jsonb_object_length(account)=1
+    AND jsonb_typeof(account->'payment_intent_id')='string'
+    AND account=jsonb_build_object(
+      'payment_intent_id',account->>'payment_intent_id'
+    )
   )
 );
 

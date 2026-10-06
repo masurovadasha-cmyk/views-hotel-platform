@@ -22,7 +22,7 @@ describe("PaymeSandboxPaymentProvider",()=>{
   it("registers only when explicitly enabled",()=>{
     const registered:unknown[]=[];
     const provider=new PaymeSandboxPaymentProvider({
-      register:value=>registered.push(value)
+      register:(value:unknown)=>registered.push(value)
     } as never);
     provider.onModuleInit();
     expect(registered).toEqual([provider]);
