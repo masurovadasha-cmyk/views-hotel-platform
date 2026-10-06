@@ -15,7 +15,9 @@
     "security:core-origin-isolation": "node scripts/core-origin-isolation-gate.mjs",
     "security:tunnel-replica-health": "node scripts/tunnel-replica-observer.mjs",
     "security:core-egress-boundary": "node scripts/core-egress-boundary-gate.mjs",
-    "security:core-network-primitives": "node scripts/core-network-primitive-gate.mjs"
+    "security:core-network-primitives": "node scripts/core-network-primitive-gate.mjs",
+    "security:egress-domain-policy": "node scripts/egress-domain-policy-gate.mjs",
+    "security:core-egress-relay": "node scripts/core-egress-relay-gate.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

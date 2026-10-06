@@ -53,10 +53,8 @@ export function evaluateCoreEgressBoundary(model){
   }
 
   const egressMembers=membersOfNetwork(model.services,"core_egress");
-  if(
-    egressMembers.length!==1||
-    egressMembers[0]!=="core"
-  ){
+  const expected=["core","egress-relay"].filter(name=>model.services[name]).sort();
+  if(JSON.stringify(egressMembers)!==JSON.stringify(expected)){
     add(blockers,{
       code:"CORE_EGRESS_NETWORK_MEMBERSHIP_INVALID",
       members:egressMembers
@@ -68,10 +66,14 @@ export function evaluateCoreEgressBoundary(model){
     add(blockers,{code:"CORE_EGRESS_NETWORK_MUST_BE_INTERNAL"});
   }
 
+  if(networkNames(core.networks).includes("egress_public")){
+    add(blockers,{code:"CORE_PUBLIC_EGRESS_FORBIDDEN"});
+  }
+
   return {
     ok:blockers.length===0,
-    schemaVersion:1,
-    mode:"default_deny",
+    schemaVersion:2,
+    mode:model.services["egress-relay"]?"relay_only":"default_deny",
     coreNetworks,
     networkPosture,
     egressMembers,
