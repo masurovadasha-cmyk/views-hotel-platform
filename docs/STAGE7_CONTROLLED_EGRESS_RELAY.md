@@ -35,7 +35,7 @@ Caching is disabled.
 
 infra/egress/allowed-domains.txt initially contains only:
 
-.invalid
+.views.invalid
 
 This is intentional. Stage 7.17 proves the boundary without opening a real provider endpoint.
 
