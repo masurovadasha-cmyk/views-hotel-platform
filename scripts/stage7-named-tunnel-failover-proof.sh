@@ -126,7 +126,7 @@ echo "[1/9] Validate the rendered production HA topology"
 umask 077
 TOPOLOGY_FILE="$(mktemp)"
 trap 'rm -f "$TOPOLOGY_FILE"; restore_connectors' EXIT
-docker compose -f "$BASE_FILE" config --format json >"$TOPOLOGY_FILE"
+docker compose --profile ops -f "$BASE_FILE" config --format json >"$TOPOLOGY_FILE"
 node scripts/core-origin-isolation-gate.mjs --file="$TOPOLOGY_FILE"
 
 echo "[2/9] Ensure Core and both named-tunnel replicas are running"

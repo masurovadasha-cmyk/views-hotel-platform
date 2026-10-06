@@ -108,7 +108,7 @@ require_env VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY
 export CLOUDFLARE_TUNNEL_TOKEN="${CLOUDFLARE_TUNNEL_TOKEN:-proof-unused}"
 
 echo "[1/8] Render and validate the production HA isolation profile"
-docker compose -f "$BASE_FILE" config --format json   >/tmp/views-core-tunnel-production.json
+docker compose --profile ops -f "$BASE_FILE" config --format json   >/tmp/views-core-tunnel-production.json
 node scripts/core-origin-isolation-gate.mjs   --file=/tmp/views-core-tunnel-production.json
 
 echo "[2/8] Start ephemeral Postgres and apply migrations in foreground"

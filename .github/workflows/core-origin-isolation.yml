@@ -38,7 +38,7 @@ jobs:
       - name: Render hardened tunnel topology
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.core-tunnel.yml config --format json > /tmp/views-core-tunnel.json
+          docker compose --profile ops -f docker-compose.core-tunnel.yml config --format json > /tmp/views-core-tunnel.json
           test -s /tmp/views-core-tunnel.json
 
       - name: Enforce origin-isolation invariants
