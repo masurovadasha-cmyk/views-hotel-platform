@@ -2,6 +2,8 @@ import {isIP} from "node:net";
 import {readFile} from "node:fs/promises";
 import {pathToFileURL} from "node:url";
 
+const CONNECTOR_NAME=/^cloudflared(?:-[a-z0-9][a-z0-9-]*)?$/;
+
 export class CoreOriginIsolationGateError extends Error{
   constructor(code){
     super(code);
@@ -17,17 +19,34 @@ export function evaluateCoreOriginIsolation(model){
 
   const services=model.services;
   const core=requiredService(services,"core");
-  const connector=requiredService(services,"cloudflared");
+  const connectors=Object.entries(services)
+    .filter(([name])=>CONNECTOR_NAME.test(name))
+    .sort(([a],[b])=>a.localeCompare(b));
   const blockers=[];
 
-  for(const name of ["core","cloudflared","postgres"]){
+  if(connectors.length<2||connectors.length>25){
+    add(blockers,{
+      code:"HA_CONNECTOR_REPLICA_COUNT_INVALID",
+      service:null
+    });
+  }
+
+  const protectedNames=[
+    "core",
+    "postgres",
+    ...connectors.map(([name])=>name)
+  ];
+  for(const name of protectedNames){
     const service=services[name];
     if(service&&publishedPorts(service).length>0){
       add(blockers,{code:"HOST_PORT_PUBLISHED",service:name});
     }
   }
 
-  for(const [name,service] of [["core",core],["cloudflared",connector]]){
+  for(const [name,service] of [
+    ["core",core],
+    ...connectors
+  ]){
     if(service.network_mode==="host"){
       add(blockers,{code:"HOST_NETWORK_FORBIDDEN",service:name});
     }
@@ -51,30 +70,87 @@ export function evaluateCoreOriginIsolation(model){
   }
 
   const coreNetworks=networkEntries(core.networks);
-  const connectorNetworks=networkEntries(connector.networks);
-  if(!coreNetworks.has("core_ingress")||!connectorNetworks.has("core_ingress")){
+  if(!coreNetworks.has("core_ingress")){
     add(blockers,{code:"CORE_CONNECTOR_SHARED_INGRESS_REQUIRED",service:null});
   }
 
+  const expectedMembers=[
+    "core",
+    ...connectors.map(([name])=>name)
+  ].sort();
   const ingressMembers=Object.entries(services)
     .filter(([,service])=>networkEntries(service.networks).has("core_ingress"))
     .map(([name])=>name)
     .sort();
-  if(
-    ingressMembers.length!==2||
-    ingressMembers[0]!=="cloudflared"||
-    ingressMembers[1]!=="core"
-  ){
+  if(JSON.stringify(ingressMembers)!==JSON.stringify(expectedMembers)){
     add(blockers,{code:"INGRESS_NETWORK_MEMBERSHIP_INVALID",service:null});
   }
 
-  const connectorIp=networkIpv4(connector.networks,"core_ingress");
   const coreIp=networkIpv4(core.networks,"core_ingress");
-  if(!connectorIp||isIP(connectorIp)!==4){
-    add(blockers,{code:"CONNECTOR_STATIC_IP_REQUIRED",service:"cloudflared"});
-  }
-  if(!coreIp||isIP(coreIp)!==4||coreIp===connectorIp){
+  if(!coreIp||isIP(coreIp)!==4){
     add(blockers,{code:"CORE_STATIC_IP_REQUIRED",service:"core"});
+  }
+
+  const connectorIps=[];
+  const tokenValues=[];
+  for(const [name,connector] of connectors){
+    const networks=networkEntries(connector.networks);
+    if(!networks.has("core_ingress")){
+      add(blockers,{code:"CORE_CONNECTOR_SHARED_INGRESS_REQUIRED",service:name});
+    }
+
+    const ip=networkIpv4(connector.networks,"core_ingress");
+    if(!ip||isIP(ip)!==4){
+      add(blockers,{code:"CONNECTOR_STATIC_IP_REQUIRED",service:name});
+    }else{
+      connectorIps.push(ip);
+    }
+
+    if(!networks.has("tunnel_egress")){
+      add(blockers,{code:"TUNNEL_EGRESS_NETWORK_REQUIRED",service:name});
+    }
+
+    const command=list(connector.command).join(" ");
+    if(!/\btunnel\b/.test(command)||!/\brun\b/.test(command)){
+      add(blockers,{code:"TUNNEL_RUN_COMMAND_REQUIRED",service:name});
+    }
+    if(!command.includes("--no-autoupdate")){
+      add(blockers,{code:"TUNNEL_NO_AUTOUPDATE_REQUIRED",service:name});
+    }
+    if(command.includes("--token")){
+      add(blockers,{
+        code:"TUNNEL_TOKEN_MUST_NOT_BE_IN_PROCESS_ARGS",
+        service:name
+      });
+    }
+
+    const env=environmentMap(connector.environment);
+    const token=String(env.TUNNEL_TOKEN||"").trim();
+    if(!token){
+      add(blockers,{code:"TUNNEL_TOKEN_ENV_REQUIRED",service:name});
+    }else{
+      tokenValues.push(token);
+    }
+
+    const image=String(connector.image||"");
+    if(!image.startsWith("cloudflare/cloudflared:")){
+      add(blockers,{code:"CLOUDFLARED_IMAGE_REQUIRED",service:name});
+    }
+  }
+
+  if(
+    connectorIps.length!==new Set(connectorIps).size||
+    (coreIp&&connectorIps.includes(coreIp))
+  ){
+    add(blockers,{code:"CONNECTOR_IP_COLLISION",service:null});
+  }
+
+  if(tokenValues.length>1&&new Set(tokenValues).size!==1){
+    add(blockers,{code:"CONNECTOR_TUNNEL_TOKEN_MISMATCH",service:null});
+  }
+
+  if(model.networks.tunnel_egress?.internal===true){
+    add(blockers,{code:"TUNNEL_EGRESS_MUST_ALLOW_OUTBOUND",service:null});
   }
 
   const coreEnv=environmentMap(core.environment);
@@ -86,45 +162,19 @@ export function evaluateCoreOriginIsolation(model){
     coreEnv.VIEWS_TRUSTED_PROXY_CIDRS_JSON,
     blockers
   );
-  if(connectorIp){
-    const expected=connectorIp+"/32";
-    if(configured.length!==1||configured[0]!==expected){
-      add(blockers,{code:"CONNECTOR_TRUST_PIN_MISMATCH",service:"core"});
-    }
-  }
-
-  const connectorCommand=list(connector.command).join(" ");
-  if(!/\btunnel\b/.test(connectorCommand)||!/\brun\b/.test(connectorCommand)){
-    add(blockers,{code:"TUNNEL_RUN_COMMAND_REQUIRED",service:"cloudflared"});
-  }
-  if(!connectorCommand.includes("--no-autoupdate")){
-    add(blockers,{code:"TUNNEL_NO_AUTOUPDATE_REQUIRED",service:"cloudflared"});
-  }
-  if(connectorCommand.includes("--token")){
-    add(blockers,{code:"TUNNEL_TOKEN_MUST_NOT_BE_IN_PROCESS_ARGS",service:"cloudflared"});
-  }
-
-  const connectorEnv=environmentMap(connector.environment);
-  if(!connectorEnv.TUNNEL_TOKEN){
-    add(blockers,{code:"TUNNEL_TOKEN_ENV_REQUIRED",service:"cloudflared"});
-  }
-
-  const connectorImage=String(connector.image||"");
-  if(!connectorImage.startsWith("cloudflare/cloudflared:")){
-    add(blockers,{code:"CLOUDFLARED_IMAGE_REQUIRED",service:"cloudflared"});
-  }
-
-  if(!connectorNetworks.has("tunnel_egress")){
-    add(blockers,{code:"TUNNEL_EGRESS_NETWORK_REQUIRED",service:"cloudflared"});
-  }else if(model.networks.tunnel_egress?.internal===true){
-    add(blockers,{code:"TUNNEL_EGRESS_MUST_ALLOW_OUTBOUND",service:"cloudflared"});
+  const expectedCidrs=connectorIps
+    .map(ip=>ip+"/32")
+    .sort();
+  if(JSON.stringify(configured)!==JSON.stringify(expectedCidrs)){
+    add(blockers,{code:"CONNECTOR_TRUST_PIN_MISMATCH",service:"core"});
   }
 
   return {
     ok:blockers.length===0,
-    schemaVersion:1,
+    schemaVersion:2,
     mode:"cloudflare_tunnel",
-    connectorIp:connectorIp||null,
+    connectorCount:connectors.length,
+    connectorIps:connectorIps.sort(),
     coreIp:coreIp||null,
     ingressMembers,
     blockers

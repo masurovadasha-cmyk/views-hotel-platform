@@ -1,60 +1,65 @@
 # Stage 7.15 — Core Origin Isolation via Cloudflare Tunnel
 
-Status: implementation candidate.
+Status: implementation candidate with dual-connector HA baseline.
 
 ## Goal
 
-Remove the VIEWS Core API from direct Internet ingress rather than relying only on application-level source checks.
+Remove the VIEWS Core API from direct Internet ingress and keep the origin available if one cloudflared connector process fails.
 
-Stage 7.12-7.14 protected a public-origin topology. Stage 7.15 adds a Cloudflare Tunnel deployment profile where `cloudflared` establishes the outbound connection to Cloudflare and Core publishes no host port.
-
-## Why Tunnel
-
-Cloudflare Tunnel uses outbound-only connector sessions. The origin does not need a publicly routable IP or inbound firewall opening.
-
-This topology is intentionally separate from Authenticated Origin Pulls. AOP is for public HTTPS origins that accept Cloudflare client certificates. Tunnel already authenticates the connector using its tunnel credential and should not be combined with AOP for the same hostname.
+Stage 7.12-7.14 protected a public-origin topology. Stage 7.15 uses Cloudflare Tunnel so cloudflared establishes outbound connections to Cloudflare and Core publishes no host port.
 
 ## Trust topology
 
-The reference Compose topology creates four logical networks:
+The reference Compose topology has:
 
-- `core_ingress` — internal-only network shared by exactly Core and cloudflared.
-- `core_data` — internal-only database network.
-- `core_egress` — Core outbound network for provider integrations; no host port is published.
-- `tunnel_egress` — cloudflared outbound network used to reach Cloudflare.
+- core_ingress — internal-only ingress network;
+- core_data — internal-only database network;
+- core_egress — Core outbound network;
+- tunnel_egress — connector outbound network.
 
-Pinned addresses:
+Pinned ingress addresses:
 
-- cloudflared: `172.30.0.2`
-- Core: `172.30.0.3`
+- cloudflared-a: 172.30.0.2
+- Core: 172.30.0.3
+- cloudflared-b: 172.30.0.4
 
 Core runs with:
 
-`TRUSTED_PROXY_MODE=cloudflare_tunnel`
+TRUSTED_PROXY_MODE=cloudflare_tunnel
 
-and:
+and trusts exactly:
 
-`VIEWS_TRUSTED_PROXY_CIDRS_JSON=["172.30.0.2/32"]`
+VIEWS_TRUSTED_PROXY_CIDRS_JSON=["172.30.0.2/32","172.30.0.4/32"]
 
-Only the exact connector address may supply `CF-Connecting-IP`.
+Only these exact peers may supply forwarded Cloudflare client identity.
+
+## Replica model
+
+Both production connector containers receive the same remotely managed tunnel credential through TUNNEL_TOKEN.
+
+Cloudflare supports multiple cloudflared replicas on one tunnel. Each replica establishes additional outbound connections and Cloudflare can continue through remaining replicas when one connector fails.
+
+The Stage 7.15 baseline requires two connector processes. This protects against a connector process/container failure on the reference host. It does not protect against complete loss of that host.
+
+Host-level high availability requires moving the second replica to a separate failure domain while preserving a private route to Core.
 
 ## Runtime behavior
 
-`cloudflare_tunnel` behaves like the existing Cloudflare proxy mode for forwarded client identity, but the immediate-peer boundary is the local connector instead of Cloudflare public edge ranges.
+cloudflare_tunnel behaves like the existing Cloudflare proxy mode for forwarded client identity, but the immediate trusted peers are the pinned connector addresses rather than Cloudflare public edge ranges.
 
-Production startup fails when tunnel mode has no trusted connector CIDR or when a tunnel CIDR is broader than a single host. This avoids accidentally trusting an entire Docker/private subnet.
+Production startup still rejects subnet-wide connector trust: every trusted tunnel CIDR must be a single host CIDR.
 
-Signed Ed25519 service authentication from Stage 7.7-7.11 remains mandatory. Network isolation does not replace service identity.
+Signed Ed25519 service authentication remains mandatory. Tunnel isolation does not replace service identity.
 
 ## Database boundary
 
-The bundled Postgres container is the database owner/bootstrap service only. Core does not construct a superuser connection string from that password.
+The bundled PostgreSQL container is the database owner/bootstrap service only.
 
-`DATABASE_URL` is a required deployment secret and must identify the restricted runtime database role created by the existing migration/bootstrap process. This preserves RLS and least-privilege behavior from the previous stages.
+Core receives DATABASE_URL as a deployment secret for the restricted runtime role and does not construct an owner connection from POSTGRES_PASSWORD. RLS and least-privilege behavior therefore remain active.
 
 ## Container hardening
 
-Core and cloudflared:
+Core and both cloudflared replicas:
 
 - publish no host ports;
 - use read-only root filesystems;
@@ -62,76 +67,69 @@ Core and cloudflared:
 - enable no-new-privileges;
 - do not use host networking or privileged mode.
 
-The tunnel token is injected through `TUNNEL_TOKEN`; it is not placed in cloudflared command-line arguments.
+The tunnel token is injected via TUNNEL_TOKEN and is never placed in process arguments.
 
-## Deployment
+## Isolation gate v2
 
-Use a remotely managed Cloudflare Tunnel.
+scripts/core-origin-isolation-gate.mjs validates rendered Compose JSON and fails closed if the topology weakens.
 
-Configure the tunnel's published application route to send the Core hostname to:
+It requires:
 
-`http://core:3001`
+- 2..25 cloudflared replicas;
+- no published host ports for Core, PostgreSQL, or replicas;
+- core_ingress marked internal;
+- only Core and cloudflared replicas on core_ingress;
+- unique static connector addresses;
+- exact Core CIDR trust equal to the complete connector address set;
+- the same non-empty tunnel token on all production replicas;
+- cloudflared tunnel run with --no-autoupdate;
+- no --token command-line secret;
+- outbound tunnel_egress connectivity;
+- hardened Core and replica containers.
 
-The connector container and Core must be deployed from the same Compose project so the private service name resolves on `core_ingress`.
-
-Required deployment secrets/config include:
-
-- `CLOUDFLARE_TUNNEL_TOKEN`
-- `POSTGRES_PASSWORD`
-- `DATABASE_URL` for the restricted Core runtime role
-- `GUEST_AUTH_RATE_LIMIT_SECRET`
-- Stage 7 signed-service public-key configuration and referenced values.
-
-Do not publish port 3001 on the host or add the Core container to host networking.
-
-## Validation gate
-
-`scripts/core-origin-isolation-gate.mjs` evaluates rendered Docker Compose JSON and fails closed if the isolation contract is weakened.
-
-It verifies:
-
-- Core, cloudflared and Postgres have no published host ports;
-- `core_ingress` is internal;
-- only Core and cloudflared join that ingress network;
-- both connector and Core have pinned distinct addresses;
-- Core is in `cloudflare_tunnel` mode;
-- Core trusts exactly the connector `/32`;
-- cloudflared uses `TUNNEL_TOKEN`, not `--token` process arguments;
-- Core and cloudflared container hardening remains enabled.
-
-GitHub Actions renders the actual Compose model and runs this gate on relevant changes, then builds the Core image.
+The gate does not emit tunnel-token values.
 
 ## Stage 7.14 interaction
 
-The Cloudflare public edge CIDR drift gate is applicable only to `TRUSTED_PROXY_MODE=cloudflare`.
+The public Cloudflare CIDR drift gate applies to TRUSTED_PROXY_MODE=cloudflare.
 
-In `cloudflare_tunnel` mode, the immediate peer is the pinned local connector, so the provider public-CIDR drift checker reports itself as not applicable. The Stage 7.15 isolation gate becomes the relevant network topology control.
+In cloudflare_tunnel mode, the immediate peers are the local connector replicas, so Stage 7.15 topology validation is the relevant network control.
 
-## Automated remote staging proof
+## Automated staging proof
 
-Before a persistent named tunnel is provisioned, the branch runs a real Cloudflare Quick Tunnel acceptance test in GitHub Actions.
+The branch uses two temporary Cloudflare Quick Tunnels in CI because Quick Tunnels need no Cloudflare account credential.
 
-The proof uses docker-compose.core-tunnel-proof.yml and scripts/stage7-tunnel-proof.sh to exercise Cloudflare edge -> cloudflared -> private Core while proving the runner host has no direct listener on Core port 3001.
+CI proves:
 
-It also injects an untrusted container into the private ingress network and confirms a forged CF-Connecting-IP is rejected with HTTP 403. The same intentionally invalid guest-auth token sent through the real Cloudflare tunnel must reach application auth logic and return HTTP 401 instead.
+- all migrations and restricted runtime DB readiness;
+- no host listener for Core;
+- spoofed CF-Connecting-IP from an untrusted private peer returns 403;
+- connector A reaches Core through Cloudflare;
+- connector B reaches Core through Cloudflare;
+- both connector paths reach guest-auth logic and return 401 for an intentionally invalid token;
+- connector B remains healthy after connector A is stopped.
 
-Quick Tunnels are test-only. They do not replace the named staging/production tunnel.
+Quick Tunnels are independent temporary tunnels. This proves the VIEWS dual-connector trust and process-resilience behavior but does not claim same-named-tunnel failover.
 
-## Activation proof required before production cutover
+## Persistent activation required
 
-1. Create a dedicated staging/production remotely managed tunnel.
-2. Store the tunnel token in the deployment secret manager.
-3. Route the Core hostname to `http://core:3001`.
-4. Start the hardened Compose profile with the restricted runtime `DATABASE_URL`.
-5. Verify the public hostname reaches `/health` through Cloudflare.
-6. Verify the host has no published Core port.
-7. Verify direct requests to the server IP cannot reach Core.
-8. Verify spoofed `CF-Connecting-IP` from any non-connector peer is rejected.
-9. Keep service-token and ingress-rejection telemetry clean before retargeting the stacked PR.
+To complete the persistent same-tunnel proof:
+
+1. choose a persistent Docker runtime;
+2. create one remotely managed staging tunnel;
+3. inject the same tunnel token into both replicas;
+4. publish the staging Core hostname to http://core:3001;
+5. verify both replica connector IDs appear under that one tunnel;
+6. verify the hostname returns health/readiness 200;
+7. stop replica A;
+8. verify the same hostname remains available through replica B;
+9. repeat with replica B stopped;
+10. keep direct origin access closed throughout.
 
 ## Next work
 
-- remote staging activation and direct-origin negative proof;
-- tunnel replica/high-availability strategy;
+- persistent named-tunnel activation when a no-surprise-cost runtime is selected;
+- move the second replica to a separate failure domain for host-level HA;
 - controlled Core outbound egress policy;
-- per-host WAF/rate-limit policy at the Cloudflare edge.
+- tunnel health/replica observability and alerts;
+- edge WAF and API rate-limit policy.

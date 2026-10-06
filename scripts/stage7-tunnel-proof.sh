@@ -38,6 +38,66 @@ require_env() {
   fi
 }
 
+resolve_tunnel_url() {
+  local service="$1"
+  local url=""
+  for attempt in $(seq 1 60); do
+    url="$(
+      compose logs --no-color "$service" 2>/dev/null         | grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com'         | tail -n 1 || true
+    )"
+    if [ -n "$url" ]; then
+      printf '%s' "$url"
+      return 0
+    fi
+    sleep 2
+  done
+  echo "Quick Tunnel URL was not emitted for $service" >&2
+  compose logs "$service" >&2 || true
+  return 1
+}
+
+prove_tunnel_path() {
+  local label="$1"
+  local url="$2"
+  local health_status=""
+  local readiness_status=""
+
+  for attempt in $(seq 1 45); do
+    health_status="$(
+      curl --silent --output "/tmp/${label}-health.json"         --write-out '%{http_code}'         --max-time 10         "$url/health" || true
+    )"
+    readiness_status="$(
+      curl --silent --output "/tmp/${label}-readiness.json"         --write-out '%{http_code}'         --max-time 10         "$url/readiness" || true
+    )"
+    if [ "$health_status" = "200" ] && [ "$readiness_status" = "200" ]; then
+      break
+    fi
+    if [ "$attempt" -eq 45 ]; then
+      echo "$label did not reach healthy Core" >&2
+      echo "health=$health_status readiness=$readiness_status" >&2
+      return 1
+    fi
+    sleep 2
+  done
+
+  local guest_status
+  guest_status="$(
+    curl --silent --output "/tmp/${label}-guest-auth.json"       --write-out '%{http_code}'       --max-time 10       --request POST       --header 'content-type: application/json'       --data '{"token":"fixture"}'       "$url/v1/guest-auth/exchange"
+  )"
+  if [ "$guest_status" = "403" ]; then
+    echo "$label was rejected as an untrusted connector" >&2
+    cat "/tmp/${label}-guest-auth.json" >&2 || true
+    return 1
+  fi
+  if [ "$guest_status" != "401" ]; then
+    echo "Expected $label invalid guest token to return 401, got $guest_status" >&2
+    cat "/tmp/${label}-guest-auth.json" >&2 || true
+    return 1
+  fi
+
+  printf '%s,%s,%s' "$health_status" "$readiness_status" "$guest_status"
+}
+
 require_env POSTGRES_PASSWORD
 require_env DATABASE_URL
 require_env GUEST_AUTH_RATE_LIMIT_SECRET
@@ -47,20 +107,21 @@ require_env VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY
 
 export CLOUDFLARE_TUNNEL_TOKEN="${CLOUDFLARE_TUNNEL_TOKEN:-proof-unused}"
 
-echo "[1/7] Render and validate the production isolation profile"
-docker compose -f "$BASE_FILE" config --format json >/tmp/views-core-tunnel-production.json
+echo "[1/8] Render and validate the production HA isolation profile"
+docker compose -f "$BASE_FILE" config --format json   >/tmp/views-core-tunnel-production.json
 node scripts/core-origin-isolation-gate.mjs   --file=/tmp/views-core-tunnel-production.json
 
-echo "[2/7] Start ephemeral Postgres and apply migrations in foreground"
+echo "[2/8] Start ephemeral Postgres and apply migrations in foreground"
 compose up -d postgres
 compose run --rm migrate
 
-echo "[3/7] Start Core and Cloudflare Quick Tunnel, then verify private readiness"
+echo "[3/8] Start Core and both Cloudflare connector processes"
 pull_with_retry "cloudflare/cloudflared:latest"
 pull_with_retry "$CURL_IMAGE"
-compose up -d --build core cloudflared
+compose up -d --build core cloudflared-a cloudflared-b
+
 for attempt in $(seq 1 45); do
-  if docker run --rm --network "$INGRESS_NETWORK" "$CURL_IMAGE"       --fail --silent --show-error       http://core:3001/readiness >/tmp/views-core-readiness.json 2>/dev/null; then
+  if docker run --rm --network "$INGRESS_NETWORK" "$CURL_IMAGE"       --fail --silent --show-error       http://core:3001/readiness       >/tmp/views-core-readiness.json 2>/dev/null; then
     cat /tmp/views-core-readiness.json
     break
   fi
@@ -72,25 +133,27 @@ for attempt in $(seq 1 45); do
   sleep 2
 done
 
-echo "[4/7] Prove the host has no direct Core origin listener"
+echo "[4/8] Prove the host has no direct Core origin listener"
 CORE_CONTAINER_ID="$(compose ps -q core)"
 if [ -z "$CORE_CONTAINER_ID" ]; then
   echo "Core container id is unavailable" >&2
   exit 1
 fi
-PORT_BINDINGS="$(docker inspect --format '{{json .HostConfig.PortBindings}}' "$CORE_CONTAINER_ID")"
+PORT_BINDINGS="$(
+  docker inspect --format '{{json .HostConfig.PortBindings}}' "$CORE_CONTAINER_ID"
+)"
 if [ "$PORT_BINDINGS" != "{}" ] && [ "$PORT_BINDINGS" != "null" ]; then
   echo "Core unexpectedly has host port bindings: $PORT_BINDINGS" >&2
   exit 1
 fi
-if curl --silent --show-error --fail --max-time 2     http://127.0.0.1:3001/health >/tmp/direct-origin-body 2>/tmp/direct-origin-error; then
+if curl --silent --show-error --fail --max-time 2     http://127.0.0.1:3001/health     >/tmp/direct-origin-body 2>/tmp/direct-origin-error; then
   echo "Direct host access unexpectedly reached Core" >&2
   cat /tmp/direct-origin-body >&2 || true
   exit 1
 fi
 echo "PASS: 127.0.0.1:3001 is not reachable from the host"
 
-echo "[5/7] Prove an untrusted private peer cannot forge CF client identity"
+echo "[5/8] Prove an untrusted private peer cannot forge CF client identity"
 UNTRUSTED_STATUS="$(
   docker run --rm --network "$INGRESS_NETWORK" "$CURL_IMAGE"     --silent --output /dev/null --write-out '%{http_code}'     --request POST     --header 'content-type: application/json'     --header 'cf-connecting-ip: 203.0.113.55'     --data '{"token":"fixture"}'     http://core:3001/v1/guest-auth/exchange
 )"
@@ -100,69 +163,54 @@ if [ "$UNTRUSTED_STATUS" != "403" ]; then
 fi
 echo "PASS: spoofed forwarded identity from non-connector peer is denied"
 
-echo "[6/7] Resolve the temporary Cloudflare Quick Tunnel URL"
-TUNNEL_URL=""
-for attempt in $(seq 1 60); do
-  TUNNEL_URL="$(
-    compose logs --no-color cloudflared 2>/dev/null       | grep -Eo 'https://[a-z0-9-]+\.trycloudflare\.com'       | tail -n 1 || true
-  )"
-  if [ -n "$TUNNEL_URL" ]; then
-    break
-  fi
-  if [ "$attempt" -eq 60 ]; then
-    echo "Quick Tunnel URL was not emitted" >&2
-    compose logs cloudflared >&2 || true
-    exit 1
-  fi
-  sleep 2
-done
-echo "Tunnel: $TUNNEL_URL"
+echo "[6/8] Resolve independent Quick Tunnel URLs for both pinned connectors"
+TUNNEL_A="$(resolve_tunnel_url cloudflared-a)"
+TUNNEL_B="$(resolve_tunnel_url cloudflared-b)"
+if [ "$TUNNEL_A" = "$TUNNEL_B" ]; then
+  echo "Proof connectors unexpectedly resolved to the same Quick Tunnel URL" >&2
+  exit 1
+fi
+echo "Connector A tunnel: $TUNNEL_A"
+echo "Connector B tunnel: $TUNNEL_B"
 
-echo "[7/7] Prove Cloudflare edge reaches Core only through the trusted connector"
-for attempt in $(seq 1 45); do
-  HEALTH_STATUS="$(
-    curl --silent --output /tmp/tunnel-health.json       --write-out '%{http_code}'       --max-time 10       "$TUNNEL_URL/health" || true
-  )"
-  READY_STATUS="$(
-    curl --silent --output /tmp/tunnel-readiness.json       --write-out '%{http_code}'       --max-time 10       "$TUNNEL_URL/readiness" || true
-  )"
-  if [ "$HEALTH_STATUS" = "200" ] && [ "$READY_STATUS" = "200" ]; then
-    break
-  fi
-  if [ "$attempt" -eq 45 ]; then
-    echo "Cloudflare Quick Tunnel did not reach healthy Core" >&2
-    echo "health=$HEALTH_STATUS readiness=$READY_STATUS" >&2
-    compose logs cloudflared core >&2 || true
-    exit 1
-  fi
-  sleep 2
-done
+echo "[7/8] Prove both pinned connector paths reach Core"
+IFS=',' read -r A_HEALTH A_READY A_GUEST   <<<"$(prove_tunnel_path connector-a "$TUNNEL_A")"
+IFS=',' read -r B_HEALTH B_READY B_GUEST   <<<"$(prove_tunnel_path connector-b "$TUNNEL_B")"
+echo "PASS: connector A and B both reached Core through Cloudflare"
 
-TRUSTED_STATUS="$(
-  curl --silent --output /tmp/tunnel-guest-auth.json     --write-out '%{http_code}'     --max-time 10     --request POST     --header 'content-type: application/json'     --data '{"token":"fixture"}'     "$TUNNEL_URL/v1/guest-auth/exchange"
+echo "[8/8] Stop connector A and prove connector B remains healthy"
+compose stop cloudflared-a
+SURVIVOR_STATUS="$(
+  curl --silent --output /tmp/survivor-health.json     --write-out '%{http_code}'     --max-time 10     "$TUNNEL_B/health" || true
 )"
-if [ "$TRUSTED_STATUS" = "403" ]; then
-  echo "Trusted Cloudflare connector path was rejected as an untrusted network" >&2
-  cat /tmp/tunnel-guest-auth.json >&2 || true
+if [ "$SURVIVOR_STATUS" != "200" ]; then
+  echo "Connector B did not survive connector A stop: $SURVIVOR_STATUS" >&2
+  compose logs cloudflared-b core >&2 || true
   exit 1
 fi
-if [ "$TRUSTED_STATUS" != "401" ]; then
-  echo "Expected invalid guest token to reach auth logic and return 401, got $TRUSTED_STATUS" >&2
-  cat /tmp/tunnel-guest-auth.json >&2 || true
-  exit 1
-fi
+echo "PASS: connector B remains healthy after connector A is stopped"
 
 cat >/tmp/stage7.15-tunnel-proof.json <<JSON
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "stage": "7.15",
   "result": "pass",
-  "transport": "cloudflare_quick_tunnel",
+  "transport": "cloudflare_quick_tunnel_dual_connector",
+  "connectorCount": 2,
   "directOriginReachable": false,
   "untrustedPeerSpoofStatus": $UNTRUSTED_STATUS,
-  "trustedTunnelGuestAuthStatus": $TRUSTED_STATUS,
-  "healthStatus": $HEALTH_STATUS,
-  "readinessStatus": $READY_STATUS
+  "connectorA": {
+    "healthStatus": $A_HEALTH,
+    "readinessStatus": $A_READY,
+    "trustedGuestAuthStatus": $A_GUEST
+  },
+  "connectorB": {
+    "healthStatus": $B_HEALTH,
+    "readinessStatus": $B_READY,
+    "trustedGuestAuthStatus": $B_GUEST
+  },
+  "survivingConnectorStatus": $SURVIVOR_STATUS,
+  "sameNamedTunnelFailoverProven": false
 }
 JSON
 cat /tmp/stage7.15-tunnel-proof.json

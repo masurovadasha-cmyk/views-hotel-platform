@@ -91,10 +91,10 @@ describe("trusted service ingress boundary",()=>{
     })).toThrow("trusted service ingress denied");
   });
 
-  it("accepts only the pinned cloudflared connector in tunnel mode",()=>{
+  it("accepts only the pinned cloudflared replicas in tunnel mode",()=>{
     const config={
       trustedProxyMode:"cloudflare_tunnel" as const,
-      trustedProxyCidrs:["172.30.0.2/32"],
+      trustedProxyCidrs:["172.30.0.2/32","172.30.0.4/32"],
       internalServiceSourceCidrs:{}
     };
 
@@ -107,7 +107,14 @@ describe("trusted service ingress boundary",()=>{
 
     expect(()=>assertInternalServiceIngress({
       serviceId:"pages-bff",
-      remoteAddress:"172.30.0.3",
+      remoteAddress:"172.30.0.4",
+      cfConnectingIp:"198.51.100.51",
+      config
+    })).not.toThrow();
+
+    expect(()=>assertInternalServiceIngress({
+      serviceId:"pages-bff",
+      remoteAddress:"172.30.0.5",
       cfConnectingIp:"198.51.100.50",
       config
     })).toThrow("trusted service ingress denied");

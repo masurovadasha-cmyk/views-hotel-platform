@@ -410,10 +410,14 @@ describe("production security config",()=>{
     const config=loadConfig({
       ...managed(),
       TRUSTED_PROXY_MODE:"cloudflare_tunnel",
-      VIEWS_TRUSTED_PROXY_CIDRS_JSON:JSON.stringify(["172.30.0.2/32"])
+      VIEWS_TRUSTED_PROXY_CIDRS_JSON:JSON.stringify([
+        "172.30.0.2/32","172.30.0.4/32"
+      ])
     });
     expect(config.trustedProxyMode).toBe("cloudflare_tunnel");
-    expect(config.trustedProxyCidrs).toEqual(["172.30.0.2/32"]);
+    expect(config.trustedProxyCidrs).toEqual([
+      "172.30.0.2/32","172.30.0.4/32"
+    ]);
 
     expect(()=>loadConfig({
       ...managed(),

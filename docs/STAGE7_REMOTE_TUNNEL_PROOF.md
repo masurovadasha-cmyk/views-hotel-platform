@@ -1,56 +1,67 @@
-# Stage 7.15 — Remote Staging Proof
-
-This acceptance test exercises the real Cloudflare transport without requiring a persistent host or Cloudflare account credential.
+# Stage 7.15 — Dual-Connector Remote Staging Proof
 
 ## Purpose
 
-The Stage 7.15 production profile is designed for a named, remotely managed Cloudflare Tunnel. Before a permanent tunnel token and host are introduced, CI uses a temporary Cloudflare Quick Tunnel to prove the same network shape:
+Exercise the real Cloudflare transport while preserving the hardened Core origin boundary and testing two independently pinned connector paths.
 
-Internet -> Cloudflare edge -> cloudflared -> private Core
-
-Cloudflare Quick Tunnels are development/testing transports only. Their random trycloudflare.com hostname is destroyed with the CI job and is never used as a production endpoint.
+The production topology uses two replicas of one named tunnel. CI cannot create that named tunnel without a Cloudflare account credential, so the automated proof uses two independent temporary Quick Tunnels.
 
 ## Proof topology
 
-The test composes PostgreSQL on core_data, a one-shot migration/bootstrap container, Core on core_ingress with no host port, and cloudflared pinned to 172.30.0.2 while Core is pinned to 172.30.0.3.
+CI composes:
 
-The production isolation profile is validated first with core-origin-isolation-gate.mjs.
+- PostgreSQL on core_data;
+- a one-shot migration/bootstrap container;
+- Core at 172.30.0.3 on core_ingress;
+- cloudflared-a at 172.30.0.2;
+- cloudflared-b at 172.30.0.4.
 
-The proof override only replaces the named-tunnel command with:
+Core trusts exactly both connector /32 addresses.
 
-cloudflared tunnel --no-autoupdate --url http://core:3001
-
-No Cloudflare account, API token, DNS zone, or tunnel token is used by the proof.
+The production Compose model is rendered and checked by core-origin-isolation-gate.mjs before any proof containers start.
 
 ## Database proof
 
-The one-shot migration service applies the same PostgreSQL extension bootstrap and all ordered API migrations.
+All ordered migrations are applied.
 
-Core then connects as the restricted views_app runtime role rather than the database owner. This keeps RLS/least-privilege behavior active during the network proof.
+Core then connects as the restricted views_app role, not as the PostgreSQL owner.
 
 ## Assertions
 
-scripts/stage7-tunnel-proof.sh fails unless all of the following are true:
+scripts/stage7-tunnel-proof.sh fails unless:
 
-1. the production Compose profile passes the Stage 7.15 isolation gate;
-2. Core becomes ready from the private ingress network;
-3. Docker reports no host binding for Core port 3001;
-4. 127.0.0.1:3001 is unreachable from the GitHub runner host;
-5. a non-connector container that forges CF-Connecting-IP receives HTTP 403;
-6. Cloudflare emits a temporary trycloudflare.com URL;
-7. /health and /readiness return 200 through Cloudflare;
-8. the same guest-auth request through the trusted connector reaches application auth logic and returns 401 for the intentionally invalid token, not the network-boundary 403.
+1. the production dual-replica topology passes isolation gate v2;
+2. Core becomes ready on the private ingress network;
+3. Core has no Docker host port binding;
+4. 127.0.0.1:3001 is unreachable from the runner host;
+5. an untrusted private peer forging CF-Connecting-IP gets HTTP 403;
+6. cloudflared-a receives a Quick Tunnel URL;
+7. cloudflared-b receives a different Quick Tunnel URL;
+8. connector A /health and /readiness return 200 through Cloudflare;
+9. connector B /health and /readiness return 200 through Cloudflare;
+10. invalid guest-auth tokens through each trusted connector return 401 rather than network-boundary 403;
+11. connector B remains healthy after connector A is stopped.
 
-The final machine-readable evidence is written to /tmp/stage7.15-tunnel-proof.json.
+Final evidence is written to:
 
-## Security interpretation
+/tmp/stage7.15-tunnel-proof.json
 
-This proves that the application can be reached through an outbound Cloudflare Tunnel while the host itself exposes no Core listener.
+Schema version 2 records sameNamedTunnelFailoverProven=false so the CI result cannot be mistaken for the final persistent named-tunnel failover proof.
 
-It also proves the Stage 7.13 forwarded-client identity hardening survives the Stage 7.15 topology change: an arbitrary peer on the private network cannot become a trusted proxy simply by sending CF-Connecting-IP.
+## Interpretation
+
+A successful run proves the VIEWS application side of connector redundancy:
+
+- multiple exact connector peers can be trusted without trusting their subnet;
+- unrelated private peers cannot forge forwarded identity;
+- each connector can independently reach Core through Cloudflare;
+- one connector process can disappear while another path remains healthy;
+- Core still has no public origin listener.
 
 ## Limitation
 
-A Quick Tunnel is not persistent and has no uptime guarantee. Passing this proof does not activate the stable staging hostname.
+Two Quick Tunnels are not replicas of one named tunnel.
 
-The remaining activation step is to replace the Quick Tunnel with a named staging tunnel on a persistent Docker host, then repeat the same negative-origin assertions against that host.
+The final same-hostname Cloudflare failover check requires one remotely managed staging tunnel and its credential on a persistent runtime.
+
+For complete host-level high availability, the two production replicas must ultimately be split across separate failure domains.
