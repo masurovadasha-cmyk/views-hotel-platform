@@ -48,7 +48,7 @@ services:
     user: "1000:1000"
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    tmpfs: [/tmp:rw,noexec,nosuid,size=16m]
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m"]
     stop_grace_period: 10s
     healthcheck:
       test: [CMD, node, /app/ops/staging-maintenance.mjs, --healthcheck]

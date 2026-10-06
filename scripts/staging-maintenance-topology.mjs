@@ -12,6 +12,7 @@ export function evaluateStagingMaintenance(model){
   if(s.ports?.length||s.network_mode||s.privileged||s.cap_add?.length||s.devices?.length||s.pid||s.ipc||s.entrypoint||s.extra_hosts||s.dns)add('UNREVIEWED_RUNTIME_ESCAPE');
   if(s.read_only!==true||String(s.user)!=='1000:1000'||!s.cap_drop?.includes('ALL')||
     !s.security_opt?.some(v=>v.replace(/=/g,':')==='no-new-privileges:true')||s.init!==true)add('MAINTENANCE_HARDENING_REQUIRED');
+  if(JSON.stringify(s.tmpfs)!==JSON.stringify(['/tmp:rw,noexec,nosuid,size=16m']))add('MAINTENANCE_TMPFS_INVALID');
   if(s.pull_policy!=='never'||s.restart!=='no'||(s.deploy?.replicas??1)!==1)add('EXPLICIT_SINGLE_INSTANCE_REQUIRED');
   if(JSON.stringify(s.command)!==JSON.stringify(['node','/app/ops/staging-maintenance.mjs','--watch','--ack=STAGING_MAINTENANCE_ONLY']))add('MAINTENANCE_COMMAND_CHANGED');
   const volumes=s.volumes||[];
