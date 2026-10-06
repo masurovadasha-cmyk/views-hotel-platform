@@ -41,6 +41,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install policy/test dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
       - name: Generate ephemeral Ed25519 verification key
         shell: bash
         run: |
