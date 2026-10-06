@@ -150,7 +150,7 @@ networks:
   core_data:
     internal: true
   core_egress:
-    driver: bridge
+    internal: true
   tunnel_egress:
     driver: bridge
   tunnel_metrics:
