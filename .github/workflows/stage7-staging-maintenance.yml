@@ -1,0 +1,102 @@
+name: Stage 7.22 Staging Maintenance Control
+on:
+  push:
+    branches: ['stage7/staging-maintenance-control-v1']
+  pull_request:
+    branches: ['stage7/payme-expiry-maintenance-v1']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stage7-22-maintenance-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      POSTGRES_PASSWORD: proof_owner_password_2026
+      DATABASE_URL: postgresql://views_app:views_app_proof_2026@postgres:5432/views
+      GUEST_AUTH_RATE_LIMIT_SECRET: stage7-22-fixture-only-secret-material
+      CLOUDFLARE_TUNNEL_TOKEN: proof-unused
+      VIEWS_EGRESS_PROOF_ACK: DISPOSABLE_DATABASE_ONLY
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test supervisor processes and topology rejection cases
+        run: |
+          mkdir -p maintenance-evidence
+          set -o pipefail
+          node --test scripts/staging-maintenance.acceptance.mjs scripts/staging-maintenance-topology.acceptance.mjs | tee maintenance-evidence/acceptance.tap
+          bash -n scripts/stage7-staging-maintenance-proof.sh
+      - name: Generate ephemeral signed-service verification fixture
+        run: |
+          node <<'NODE'
+          const {generateKeyPairSync}=require('node:crypto'),fs=require('node:fs');
+          const pem=generateKeyPairSync('ed25519').publicKey.export({type:'spki',format:'pem'}).toString().trim();
+          const refs={'pages-bff':[{kid:'stage7-22-proof',ref:'VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY',activatedAt:new Date(Date.now()-60000).toISOString(),rotateBy:new Date(Date.now()+86400000).toISOString()}]};
+          fs.appendFileSync(process.env.GITHUB_ENV,'VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY<<KEY\n'+pem+'\nKEY\n'+
+            'VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON={"pages-bff":"signed_only"}\nVIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON='+JSON.stringify(refs)+'\n');
+          NODE
+      - name: Run isolated controller on real restricted PostgreSQL
+        run: bash scripts/stage7-staging-maintenance-proof.sh
+      - name: Preserve exact source
+        if: always()
+        run: git archive --format=zip HEAD -o /tmp/views-stage7.22-source.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staging-maintenance-evidence
+          path: |
+            maintenance-evidence/acceptance.tap
+            /tmp/stage7.22-staging-maintenance-proof.json
+            /tmp/views-stage7.22-source.zip
+          if-no-files-found: error
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      POSTGRES_PASSWORD: proof_owner_password_2026
+      DATABASE_URL: postgresql://views_app:views_app_proof_2026@postgres:5432/views
+      GUEST_AUTH_RATE_LIMIT_SECRET: stage7-22-fixture-only-rate-limit-secret
+      CLOUDFLARE_TUNNEL_TOKEN: proof-unused
+      VIEWS_PAYME_EXPIRY_PROOF: 'true'
+      VIEWS_PAYME_PROOF_OUTPUT: /tmp/stage7.21-payme-expiry-proof.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Actual SQL audit and payment-expiry regression
+        run: |
+          bash scripts/stage7-provider-egress-audit-proof.sh
+          bash scripts/stage7-payme-sandbox-proof.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staging-maintenance-regression
+          path: |
+            /tmp/stage7.19-provider-egress-audit-proof.json
+            /tmp/stage7.21-payme-expiry-proof.json
+          if-no-files-found: error
+  cloudflare-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Reproduce config mismatch and compile existing Pages functions without deployment
+        run: node scripts/cloudflare-build-diagnostic.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cloudflare-build-diagnostic
+          path: |
+            diagnostic-evidence/cloudflare-build-diagnostic.json
+            diagnostic-evidence/workers-dry-run.log
+            diagnostic-evidence/pages-functions-build.log
+          if-no-files-found: error
