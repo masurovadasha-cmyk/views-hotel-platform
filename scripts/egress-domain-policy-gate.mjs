@@ -13,7 +13,7 @@ export class EgressDomainPolicyError extends Error{
 export function parseEgressDomainPolicy(raw){
   const entries=String(raw??"")
     .split(/\r?\n/)
-    .map(line=>line.replace(/\s+#.*$/,"").trim())
+    .map(line=>line.replace(/#.*$/,"").trim())
     .filter(Boolean);
 
   if(entries.length===0){
