@@ -1,0 +1,3 @@
+# Production starts fail-closed.
+# Replace only after a reviewed provider integration change.
+.invalid

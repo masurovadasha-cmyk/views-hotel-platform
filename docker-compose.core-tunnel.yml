@@ -46,7 +46,8 @@ services:
       core_ingress:
         ipv4_address: 172.30.0.3
       core_data: {}
-      core_egress: {}
+      core_egress:
+        ipv4_address: 172.31.0.2
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
@@ -64,6 +65,25 @@ services:
       timeout: 3s
       retries: 12
       start_period: 10s
+
+  egress-relay:
+    image: ubuntu/squid:6.6-24.04_beta@sha256:6a097f68bae708cedbabd6188d68c7e2e7a38cedd05a176e1cc0ba29e3bbe029
+    restart: unless-stopped
+    volumes:
+      - ./infra/egress/squid.conf:/etc/squid/squid.conf:ro
+      - ./infra/egress/allowed-domains.txt:/etc/squid/allowed-domains.txt:ro
+    networks:
+      core_egress:
+        ipv4_address: 172.31.0.3
+      egress_public: {}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+      - /run:rw,noexec,nosuid,size=16m
+      - /var/log/squid:rw,nosuid,size=32m
+      - /var/spool/squid:rw,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
 
   cloudflared-a:
     image: cloudflare/cloudflared:latest
@@ -151,6 +171,11 @@ networks:
     internal: true
   core_egress:
     internal: true
+    ipam:
+      config:
+        - subnet: 172.31.0.0/29
+  egress_public:
+    driver: bridge
   tunnel_egress:
     driver: bridge
   tunnel_metrics:

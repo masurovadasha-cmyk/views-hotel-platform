@@ -18,6 +18,8 @@ jobs:
       - run: npm test
       - name: Enforce Core network primitive boundary
         run: npm run security:core-network-primitives
+      - name: Enforce production egress domain policy
+        run: npm run security:egress-domain-policy
       - name: Validate Stage 7 shell proofs
         run: |
           bash -n scripts/stage7-tunnel-proof.sh
@@ -25,4 +27,5 @@ jobs:
           bash -n scripts/stage7-tunnel-slo-check.sh
           bash -n scripts/stage7-external-synthetic-check.sh
           bash -n scripts/stage7-core-egress-proof.sh
+          bash -n scripts/stage7-egress-relay-proof.sh
       - run: npm run build
