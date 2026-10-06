@@ -77,12 +77,29 @@ if(v.outcome!=="unreachable")process.exit(1);
 NODE
 
 echo "[5/8] Prove Core can reach only the private relay"
-docker exec -i "$CORE" node --input-type=module - tcp egress-relay 3128 2500   < scripts/core-egress-probe.mjs >"$WORK/relay.json"
-node - "$WORK/relay.json" <<'NODE'
+RELAY_READY=false
+for attempt in $(seq 1 45); do
+  if docker exec -i "$CORE" node --input-type=module - tcp egress-relay 3128 1500 \
+      < scripts/core-egress-probe.mjs >"$WORK/relay.json" 2>"$WORK/relay.err"; then
+    if node - "$WORK/relay.json" <<'NODE'
 const fs=require("node:fs");
 const v=JSON.parse(fs.readFileSync(process.argv[2],"utf8"));
-if(v.outcome!=="connected")process.exit(1);
+process.exit(v.outcome==="connected"?0:1);
 NODE
+    then
+      RELAY_READY=true
+      break
+    fi
+  fi
+  sleep 2
+done
+if [ "$RELAY_READY" != true ]; then
+  echo "egress relay did not become reachable from Core" >&2
+  cat "$WORK/relay.json" >&2 2>/dev/null || true
+  cat "$WORK/relay.err" >&2 2>/dev/null || true
+  compose logs egress-relay >&2 || true
+  exit 1
+fi
 
 echo "[6/8] Prove allowlisted HTTPS CONNECT succeeds"
 docker exec -i "$CORE" node --input-type=module -   connect egress-relay 3128 example.com 443   < scripts/egress-relay-probe.mjs >"$WORK/allowed.json"
