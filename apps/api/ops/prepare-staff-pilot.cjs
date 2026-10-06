@@ -1,12 +1,13 @@
 'use strict';
 // Local operator tooling only. Does not create an administrator or send email.
 const fs=require('fs'),path=require('path'),{randomBytes,createHash}=require('crypto'),{Client}=require('pg');
+const {localState}=require('./local-state.cjs');
 (async()=>{
- if(process.platform!=='win32'||process.argv[2]!=='--ack=LOCAL_STAFF_PILOT'||process.argv.slice(3).some(x=>x!=='--reset'))throw Error('LOCAL_STAFF_ACK_REQUIRED');
- const dir=path.join(process.env.LOCALAPPDATA,'VIEWS-Staging','private');
+ if(process.argv[2]!=='--ack=LOCAL_STAFF_PILOT'||process.argv.slice(3).some(x=>x!=='--reset'))throw Error('LOCAL_STAFF_ACK_REQUIRED');
+ const {privateDir:dir,scope}=localState();
  const secret=JSON.parse(fs.readFileSync(path.join(dir,'runtime.json'),'utf8'));
  const fixture=JSON.parse(fs.readFileSync(path.join(dir,'workspace.json'),'utf8'));
- if(secret.scope!=='views-windows-local-rehearsal'||fixture.scope!=='views-local-core-workspace'||fixture.organizationId!=='74240000-0000-4000-8000-000000000001')throw Error('LOCAL_SCOPE_REQUIRED');
+ if(secret.scope!==scope||fixture.scope!=='views-local-core-workspace'||fixture.organizationId!=='74240000-0000-4000-8000-000000000001')throw Error('LOCAL_SCOPE_REQUIRED');
  const c=new Client({host:'127.0.0.1',port:55432,database:'views_local',user:'views_owner',password:secret.ownerPassword,connectionTimeoutMillis:5000});await c.connect();
  const reset=process.argv.includes('--reset'),purpose=reset?'reset':'invite',file=path.join(dir,reset?'staff-reset.txt':'staff-invitation.txt');
  try{

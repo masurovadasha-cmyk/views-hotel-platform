@@ -4,12 +4,12 @@
 const fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict');
 const {randomUUID,randomBytes,createHash}=require('crypto'),{spawnSync}=require('child_process');
 const API=path.resolve(__dirname,'../apps/api'),{Client}=require(path.join(API,'node_modules/pg'));
-const ROOT=path.join(process.env.LOCALAPPDATA||'','VIEWS-Staging'),PRIVATE=path.join(ROOT,'private');
+const {root:ROOT,privateDir:PRIVATE,scope}=require('../apps/api/ops/local-state.cjs').localState();
 async function run(){
- if(process.platform!=='win32'||process.argv[2]!=='--ack=LOCAL_SYNTHETIC_AUTH_PROOF')throw Error('LOCAL_PROOF_ACK_REQUIRED');
+ if(process.argv[2]!=='--ack=LOCAL_SYNTHETIC_AUTH_PROOF')throw Error('LOCAL_PROOF_ACK_REQUIRED');
  const configuration=JSON.parse(fs.readFileSync(path.join(PRIVATE,'runtime.json'),'utf8'));
  const workspace=JSON.parse(fs.readFileSync(path.join(PRIVATE,'workspace.json'),'utf8'));
- if(configuration.scope!=='views-windows-local-rehearsal'||workspace.organizationId!=='74240000-0000-4000-8000-000000000001')throw Error('LOCAL_FIXTURE_SCOPE_REQUIRED');
+ if(configuration.scope!==scope||workspace.organizationId!=='74240000-0000-4000-8000-000000000001')throw Error('LOCAL_FIXTURE_SCOPE_REQUIRED');
  const db=new Client({host:'127.0.0.1',port:55432,database:'views_local',user:'views_owner',password:configuration.ownerPassword,connectionTimeoutMillis:5000});
  await db.connect();const checks=[];let calls=0;
  const report={schemaVersion:1,stage:'7.25',result:'fail',checks,sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).stdout.trim(),

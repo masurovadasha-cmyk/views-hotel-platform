@@ -1,19 +1,19 @@
 'use strict';
 const fs=require('fs'),path=require('path'),assert=require('assert/strict'),{spawnSync}=require('child_process');
-const root=path.join(process.env.LOCALAPPDATA||'','VIEWS-Staging'),evidence=path.join(root,'evidence');
+const {root}=require('../apps/api/ops/local-state.cjs').localState(),evidence=path.join(root,'evidence');
 const {chromium}=require(path.join(root,'tools/browser-tests/node_modules/playwright'));
 (async()=>{
- if(process.platform!=='win32'||process.argv[2]!=='--ack=LOCAL_STAFF_BROWSER_TEST')throw Error('LOCAL_BROWSER_ACK_REQUIRED');
+ if(process.argv[2]!=='--ack=LOCAL_STAFF_BROWSER_TEST')throw Error('LOCAL_BROWSER_ACK_REQUIRED');
  const fixture=JSON.parse(fs.readFileSync(path.join(root,'private/staff-browser-fixture.json'),'utf8'));
  if(!/^auth-proof-[a-f0-9]+@views\.invalid$/.test(fixture.email))throw Error('SYNTHETIC_STAFF_FIXTURE_REQUIRED');
- const browser=await chromium.launch({channel:'msedge',headless:true,chromiumSandbox:true});
+ const browser=await chromium.launch(process.platform==='win32'?{channel:'msedge',headless:true,chromiumSandbox:true}:{executablePath:process.env.VIEWS_BROWSER_EXECUTABLE||'/usr/bin/chromium',headless:true});
  const context=await browser.newContext({locale:'ru-RU',viewport:{width:1440,height:1050}}),page=await context.newPage();
  const pageErrors=[],sizes=[],paths=new Set();let leaked=false;
  page.on('pageerror',e=>pageErrors.push(e.message));page.on('request',r=>{const u=new URL(r.url());if(u.pathname.startsWith('/local-api/'))paths.add(u.pathname);
   const h=r.headers();if(h['x-views-service-token']||h['x-views-internal-key']||h['x-views-staff-session'])leaked=true;});
  const report={schemaVersion:1,stage:'7.25',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).stdout.trim(),
   trackedSourceDirty:spawnSync('git',['diff','--quiet','HEAD'],{windowsHide:true}).status!==0,pageErrors,sizes,
-  browser:'Microsoft Edge isolated profile',productionEnabled:false,realPayments:false,emailDeliveryUsed:false};
+  browser:process.platform==='win32'?'Microsoft Edge isolated profile':'Chromium Linux isolated profile',productionEnabled:false,realPayments:false,emailDeliveryUsed:false};
  try{
   await page.goto('http://127.0.0.1:4173/?api=local-core',{waitUntil:'networkidle'});
   await page.getByRole('heading',{name:'Вход в рабочую область',exact:true}).waitFor();
@@ -40,8 +40,9 @@ const {chromium}=require(path.join(root,'tools/browser-tests/node_modules/playwr
   }
   await row.getByRole('button',{name:'Снять резерв',exact:true}).click();await row.getByText('Отменён',{exact:true}).waitFor();
   // Restart only the owned local gateway. Authentication must persist in Core DB.
-  const node=path.join(root,'tools/node-v22.23.3-win-x64/node.exe'),launcher=path.resolve(__dirname,'../apps/api/ops/local-web-launch.cjs');
-  for(const mode of ['stop','start'])assert.equal(spawnSync(node,[launcher,mode],{encoding:'utf8',windowsHide:true}).status,0);
+  const node=process.platform==='win32'?path.join(root,'tools/node-v22.23.3-win-x64/node.exe'):process.execPath;
+  const launcher=path.resolve(__dirname,process.platform==='win32'?'../apps/api/ops/local-web-launch.cjs':'../apps/api/ops/cloud-local-rehearsal.cjs');
+  for(const mode of process.platform==='win32'?['stop','start']:['restart-web'])assert.equal(spawnSync(node,[launcher,mode],{encoding:'utf8',windowsHide:true}).status,0);
   await page.reload({waitUntil:'networkidle'});await page.getByLabel('Апартамент',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Выйти',exact:true}).click();await page.getByRole('heading',{name:'Вход в рабочую область',exact:true}).waitFor();
   await page.reload({waitUntil:'networkidle'});await page.getByRole('heading',{name:'Вход в рабочую область',exact:true}).waitFor();
