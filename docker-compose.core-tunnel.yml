@@ -80,8 +80,8 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=16m
       - /run:rw,noexec,nosuid,size=16m
-      - /var/log/squid:rw,nosuid,size=32m
-      - /var/spool/squid:rw,nosuid,size=64m
+      - /var/log/squid:rw,nosuid,size=32m,mode=1777
+      - /var/spool/squid:rw,nosuid,size=64m,mode=1777
     security_opt:
       - no-new-privileges:true
 
