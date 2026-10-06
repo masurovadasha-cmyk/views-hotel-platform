@@ -19,6 +19,6 @@ const node=path.join(root,'tools','node-v22.23.3-win-x64','node.exe'),entry=path
  const log=fs.openSync(path.join(root,'logs','review.log'),'a');
  const child=spawn(node,[entry],{cwd:path.resolve(__dirname,'../../..'),stdio:['ignore',log,log],detached:true,windowsHide:true});child.unref();fs.closeSync(log);
  fs.writeFileSync(record,JSON.stringify({pid:child.pid,entry,startedAt:new Date().toISOString()}));
- for(let i=0;i<20;i++){try{const r=await fetch('http://127.0.0.1:4173/?api=demo');if(r.ok){console.log('WEB_READY=http://127.0.0.1:4173/?api=demo');return;}}catch{}await new Promise(r=>setTimeout(r,200));}
+ for(let i=0;i<20;i++){try{const r=await fetch('http://127.0.0.1:4173/?api=local-core');if(r.ok){console.log('WEB_READY=http://127.0.0.1:4173/?api=local-core');return;}}catch{}await new Promise(r=>setTimeout(r,200));}
  throw Error('WEB_START_FAILED');
 })().catch(e=>{console.error(e.message);process.exitCode=1;});
