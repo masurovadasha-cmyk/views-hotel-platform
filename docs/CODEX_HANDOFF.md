@@ -168,3 +168,15 @@ Use current official provider documentation for external contracts. Do not treat
 chat summaries, simulated SMTP receipts or historical CI statuses as fresh proof.
 Any missing access/credential affects only that operation; continue useful code/
 test work without fabricating external execution or incurring new costs.
+
+## 8. Confirmed local reconciliation during the Codex handoff
+
+The connected PC was rechecked. PostgreSQL migration 0040 was queried through
+the restricted runtime role and its saved SHA-256 matched the local SQL bytes.
+It is already APPLIED: do not edit it in place. Original local work was preserved
+both in a named Git stash and a dated `VIEWS-Staging/handoff-backups` snapshot.
+The GitHub WIP and local additions were reconciled without reset/clean, forced
+push, database writes or restarting the running web/Core. The local additions
+include migration 0040 in Production Core CI and disabled mail env examples.
+Untracked lockfiles were deliberately left untouched. Current source != the
+already running Stage 7.25 build until a later deliberate build/restart.

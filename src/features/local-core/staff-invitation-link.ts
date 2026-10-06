@@ -13,6 +13,7 @@ export function readStaffInvitationLink(href:string):StaffInvitationLink|null{
 export function consumeStaffInvitationLink():StaffInvitationLink|null{
   if(typeof window==='undefined')return null;
   const result=readStaffInvitationLink(window.location.href);
+  // Remove the secret even when malformed, without changing origin/query.
   if(window.location.hash.includes('staff-action=')||window.location.hash.includes('token=')){
     window.history.replaceState(window.history.state,'',window.location.pathname+window.location.search);
   }
