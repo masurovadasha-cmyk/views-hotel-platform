@@ -6,9 +6,8 @@ os.chdir(ROOT)
 def run(*args):
     subprocess.run([str(arg) for arg in args],check=True)
 sdk=pathlib.Path(os.environ.get('ANDROID_HOME') or os.environ['ANDROID_SDK_ROOT'])
-builds=sorted((sdk/'build-tools').iterdir(),key=lambda p:tuple(int(n) if n.isdigit() else 0 for n in p.name.split('.')))
-tools=next((p for p in reversed(builds) if (p/'aapt2').exists() and (p/'d8').exists()),None)
-assert tools,'Android build-tools required'
+tools=sdk/'build-tools/35.0.0'
+assert (tools/'aapt2').exists() and (tools/'d8').exists(),'Android build-tools 35.0.0 required'
 android=sdk/'platforms/android-35/android.jar'
 assert android.exists(),'Android platform 35 required'
 assert (ROOT/'dist/index.html').exists(),'Build the web app first'
@@ -26,7 +25,8 @@ with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
     run(tools/'aapt2','compile','--dir',source/'res','-o',work/'resources.zip')
     run(tools/'aapt2','link','-o',work/'unsigned.apk','--manifest',work/'AndroidManifest.xml','-I',android,'-A',work/'assets','--min-sdk-version','26','--target-sdk-version','35',work/'resources.zip')
     javafiles=list((source/'src').rglob('*.java'))
-    run('javac','-encoding','UTF-8','-source','8','-target','8','-bootclasspath',android,'-d',work/'classes',*javafiles)
+    # JDK Java 8 symbols supply LambdaMetafactory; D8 desugars for Android.
+    run('javac','-encoding','UTF-8','--release','8','-classpath',android,'-d',work/'classes',*javafiles)
     run(tools/'d8','--lib',android,'--min-api','26','--output',work/'dex',*list((work/'classes').rglob('*.class')))
     with zipfile.ZipFile(work/'unsigned.apk','a',zipfile.ZIP_DEFLATED) as archive:
         archive.write(work/'dex/classes.dex','classes.dex')
