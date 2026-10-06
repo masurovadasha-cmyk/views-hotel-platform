@@ -5,9 +5,9 @@ module.exports=async function({check,seed,create,rpc,result,error,query,snapshot
   const assert=require('node:assert/strict');
   const {spawnSync}=require('node:child_process');
   const {Pool}=require('pg');
-  const {DatabaseService}=require('/app/dist/database/database.service');
-  const {PaymeMerchantApiService}=require('/app/dist/payments/payme-merchant-api.service');
-  const {PaymeExpiryWorkerService}=require('/app/dist/payments/payme-expiry-worker.service');
+  const {DatabaseService}=require(require('node:path').join(process.env.VIEWS_API_DIR||'/app','dist','database/database.service'));
+  const {PaymeMerchantApiService}=require(require('node:path').join(process.env.VIEWS_API_DIR||'/app','dist','payments/payme-merchant-api.service'));
+  const {PaymeExpiryWorkerService}=require(require('node:path').join(process.env.VIEWS_API_DIR||'/app','dist','payments/payme-expiry-worker.service'));
   const db=new DatabaseService();
   const neverSend={processVerifiedInTransaction(){throw Error('EXPIRY_MUST_NOT_CREATE_FINANCIAL_EVENT');}};
   const worker=new PaymeExpiryWorkerService(db,new PaymeMerchantApiService(db,neverSend));
@@ -91,12 +91,12 @@ module.exports=async function({check,seed,create,rpc,result,error,query,snapshot
       try{
         process.env.VIEWS_PAYME_SANDBOX_ENABLED='false';
         const report=await run();assert.equal(report.enabled,false);assert.equal(report.candidates,0);
-        const cli=spawnSync(process.execPath,['/app/dist/payments/run-payme-expiry.js','--ack=STAGING_EXPIRY_ONLY'],{encoding:'utf8',timeout:10000});
+        const cli=spawnSync(process.execPath,[require('node:path').join(process.env.VIEWS_API_DIR||'/app','dist','payments/run-payme-expiry.js'),'--ack=STAGING_EXPIRY_ONLY'],{encoding:'utf8',timeout:10000});
         assert.equal(cli.status,0);assert.equal(JSON.parse(cli.stdout).enabled,false);
       }finally{process.env.VIEWS_PAYME_SANDBOX_ENABLED=before;}
-      const bad=spawnSync(process.execPath,['/app/dist/payments/run-payme-expiry.js'],{encoding:'utf8',timeout:10000});
+      const bad=spawnSync(process.execPath,[require('node:path').join(process.env.VIEWS_API_DIR||'/app','dist','payments/run-payme-expiry.js')],{encoding:'utf8',timeout:10000});
       assert.equal(bad.status,2);assert.equal(JSON.parse(bad.stderr).error,'PAYME_EXPIRY_RUN_FAILED');
-      const valid=spawnSync(process.execPath,['/app/dist/payments/run-payme-expiry.js','--ack=STAGING_EXPIRY_ONLY','--limit=1'],{encoding:'utf8',timeout:15000});
+      const valid=spawnSync(process.execPath,[require('node:path').join(process.env.VIEWS_API_DIR||'/app','dist','payments/run-payme-expiry.js'),'--ack=STAGING_EXPIRY_ONLY','--limit=1'],{encoding:'utf8',timeout:15000});
       assert.equal(valid.status,0,valid.stderr);const report=JSON.parse(valid.stdout);
       assert.equal(report.enabled,true);assert.equal(report.expired,0);
     });
