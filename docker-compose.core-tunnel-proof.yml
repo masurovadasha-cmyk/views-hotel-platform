@@ -17,8 +17,8 @@ services:
       - |
         psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -f /proof/init/001_extensions.sql
         for file in /proof/migrations/*.sql; do
-          echo "Applying $file"
-          psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -f "$file"
+          echo "Applying $$file"
+          psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -f "$$file"
         done
 
         if ! psql -h postgres -U views -d views -Atc "SELECT 1 FROM pg_roles WHERE rolname='views_app'" | grep -qx 1; then
