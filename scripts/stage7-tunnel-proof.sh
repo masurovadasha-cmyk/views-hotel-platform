@@ -33,7 +33,7 @@ wait_tunnel_observer() {
   for attempt in $(seq 1 60); do
     if compose --profile ops run --rm tunnel-observer \
         node /ops/tunnel-replica-observer.mjs \
-        --min-connections="$min_connections" \
+        --mode=scrape \
         >"$output_file" 2>"$error_file"; then
       cat "$output_file"
       return 0

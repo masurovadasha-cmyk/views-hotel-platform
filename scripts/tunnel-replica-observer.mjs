@@ -1,4 +1,3 @@
-import {readFile} from "node:fs/promises";
 import {pathToFileURL} from "node:url";
 
 const DEFAULT_MIN_CONNECTIONS=4;
@@ -19,7 +18,9 @@ export function parsePrometheusMetrics(text){
     const trimmed=line.trim();
     if(!trimmed||trimmed.startsWith("#"))continue;
 
-    const match=trimmed.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)(?:\{[^}]*\})?\s+([^\s]+)(?:\s+\d+)?$/);
+    const match=trimmed.match(
+      /^([a-zA-Z_:][a-zA-Z0-9_:]*)(?:\{[^}]*\})?\s+([^\s]+)(?:\s+\d+)?$/
+    );
     if(!match)continue;
 
     const value=Number(match[2]);
@@ -100,9 +101,36 @@ export function evaluateReplicaMetrics(
   };
 }
 
+export function evaluateReplicaScrape(name,metrics){
+  const metricNames=Object.keys(metrics||{});
+  const buildInfo=Number(metrics?.build_info);
+  const findings=[];
+
+  if(!Number.isFinite(buildInfo)||buildInfo<1){
+    findings.push({
+      code:"CLOUDFLARED_BUILD_INFO_MISSING",
+      replica:name
+    });
+  }
+
+  return {
+    name,
+    state:findings.length===0?"reachable":"invalid",
+    metricCount:metricNames.length,
+    buildInfo:Number.isFinite(buildInfo)?buildInfo:0,
+    haConnections:numberMetric(
+      metrics,
+      "cloudflared_tunnel_ha_connections",
+      0
+    ),
+    findings
+  };
+}
+
 export function evaluateTunnelReplicaSet(
   replicas,
-  minConnections=DEFAULT_MIN_CONNECTIONS
+  minConnections=DEFAULT_MIN_CONNECTIONS,
+  mode="ha"
 ){
   if(!replicas||typeof replicas!=="object"||Array.isArray(replicas)){
     throw new TunnelReplicaObserverError("INVALID_REPLICA_SET");
@@ -112,21 +140,33 @@ export function evaluateTunnelReplicaSet(
   if(names.length<2||names.length>25){
     throw new TunnelReplicaObserverError("INVALID_REPLICA_COUNT");
   }
+  if(!["ha","scrape"].includes(mode)){
+    throw new TunnelReplicaObserverError("INVALID_OBSERVER_MODE");
+  }
 
   const results=names.map(name=>
-    evaluateReplicaMetrics(name,replicas[name],minConnections)
+    mode==="ha"
+      ?evaluateReplicaMetrics(name,replicas[name],minConnections)
+      :evaluateReplicaScrape(name,replicas[name])
   );
   const findings=results.flatMap(result=>result.findings);
-  const healthyCount=results.filter(result=>result.state==="healthy").length;
-  const downCount=results.filter(result=>result.state==="down").length;
+  const healthyCount=results.filter(result=>
+    mode==="ha"
+      ?result.state==="healthy"
+      :result.state==="reachable"
+  ).length;
+  const downCount=results.filter(result=>
+    mode==="ha"&&result.state==="down"
+  ).length;
 
   return {
     ok:findings.length===0,
-    schemaVersion:1,
+    schemaVersion:2,
+    mode,
     replicaCount:results.length,
     healthyCount,
     downCount,
-    minConnections,
+    minConnections:mode==="ha"?minConnections:null,
     replicas:results,
     findings
   };
@@ -152,16 +192,12 @@ export async function runTunnelReplicaObserver(
         signal:AbortSignal.timeout(options.timeoutMs)
       });
     }catch{
-      replicas[name]={
-        cloudflared_tunnel_ha_connections:0
-      };
+      replicas[name]={};
       continue;
     }
 
     if(!response?.ok){
-      replicas[name]={
-        cloudflared_tunnel_ha_connections:0
-      };
+      replicas[name]={};
       continue;
     }
 
@@ -170,7 +206,8 @@ export async function runTunnelReplicaObserver(
 
   const result=evaluateTunnelReplicaSet(
     replicas,
-    options.minConnections
+    options.minConnections,
+    options.mode
   );
   output.write(JSON.stringify(result)+"\n");
   return result.ok?0:1;
@@ -179,6 +216,7 @@ export async function runTunnelReplicaObserver(
 function parseArgs(argv,env){
   let minConnections=DEFAULT_MIN_CONNECTIONS;
   let timeoutMs=DEFAULT_TIMEOUT_MS;
+  let mode="ha";
   const cliEndpoints={};
 
   for(const arg of argv){
@@ -196,15 +234,16 @@ function parseArgs(argv,env){
       minConnections=Number(arg.slice("--min-connections=".length));
     }else if(arg.startsWith("--timeout-ms=")){
       timeoutMs=Number(arg.slice("--timeout-ms=".length));
-    }else if(arg.startsWith("--fixture=")){
-      throw new TunnelReplicaObserverError(
-        "FIXTURE_ARGUMENT_ONLY_SUPPORTED_BY_TEST_HELPER"
-      );
+    }else if(arg.startsWith("--mode=")){
+      mode=arg.slice("--mode=".length).trim();
     }else{
       throw new TunnelReplicaObserverError("INVALID_ARGUMENT");
     }
   }
 
+  if(!["ha","scrape"].includes(mode)){
+    throw new TunnelReplicaObserverError("INVALID_OBSERVER_MODE");
+  }
   if(
     !Number.isInteger(timeoutMs)||
     timeoutMs<250||
@@ -221,7 +260,7 @@ function parseArgs(argv,env){
     throw new TunnelReplicaObserverError("TUNNEL_METRICS_ENDPOINTS_REQUIRED");
   }
 
-  return {endpoints,minConnections,timeoutMs};
+  return {endpoints,minConnections,timeoutMs,mode};
 }
 
 function parseEndpointsEnv(raw){
@@ -260,7 +299,9 @@ function validateEndpoint(name,url){
     throw new TunnelReplicaObserverError("INVALID_METRICS_ENDPOINT");
   }
   if(parsed.username||parsed.password){
-    throw new TunnelReplicaObserverError("METRICS_ENDPOINT_CREDENTIALS_FORBIDDEN");
+    throw new TunnelReplicaObserverError(
+      "METRICS_ENDPOINT_CREDENTIALS_FORBIDDEN"
+    );
   }
   if(parsed.pathname!=="/metrics"){
     throw new TunnelReplicaObserverError("INVALID_METRICS_ENDPOINT");

@@ -2,32 +2,42 @@ import {describe,expect,it} from "vitest";
 import {
   TunnelReplicaObserverError,
   evaluateReplicaMetrics,
+  evaluateReplicaScrape,
   evaluateTunnelReplicaSet,
   parsePrometheusMetrics,
   runTunnelReplicaObserver
 } from "./tunnel-replica-observer.mjs";
 
 const healthyText=`
-# HELP cloudflared_tunnel_ha_connections Number of active HA connections
-# TYPE cloudflared_tunnel_ha_connections gauge
+# HELP build_info Build information
+# TYPE build_info gauge
+build_info{version="2026.10.0"} 1
 cloudflared_tunnel_ha_connections 4
 cloudflared_tunnel_active_streams 3
 cloudflared_tunnel_timer_retries 0
 cloudflared_tunnel_request_errors 2
 `;
 
+const quickText=`
+# HELP build_info Build information
+# TYPE build_info gauge
+build_info{version="2026.10.0"} 1
+cloudflared_tunnel_ha_connections 0
+cloudflared_tunnel_active_streams 0
+`;
+
 describe("tunnel replica observer",()=>{
   it("parses Prometheus metrics and sums labeled series",()=>{
     const metrics=parsePrometheusMetrics(`
-cloudflared_tunnel_ha_connections 4
+build_info{version="x"} 1
 quic_client_latest_rtt{conn_index="0"} 12
 quic_client_latest_rtt{conn_index="1"} 18
 `);
-    expect(metrics.cloudflared_tunnel_ha_connections).toBe(4);
+    expect(metrics.build_info).toBe(1);
     expect(metrics.quic_client_latest_rtt).toBe(30);
   });
 
-  it("classifies healthy, degraded and down replicas",()=>{
+  it("classifies healthy, degraded and down named-tunnel replicas",()=>{
     expect(evaluateReplicaMetrics("cloudflared-a",{
       cloudflared_tunnel_ha_connections:4
     }).state).toBe("healthy");
@@ -41,48 +51,48 @@ quic_client_latest_rtt{conn_index="1"} 18
     }).state).toBe("down");
   });
 
-  it("fails the set when any replica is degraded",()=>{
+  it("accepts a valid metrics scrape even when Quick Tunnel HA gauge is zero",()=>{
+    const result=evaluateReplicaScrape(
+      "cloudflared-a",
+      parsePrometheusMetrics(quickText)
+    );
+    expect(result.state).toBe("reachable");
+    expect(result.buildInfo).toBe(1);
+    expect(result.haConnections).toBe(0);
+  });
+
+  it("fails scrape mode when cloudflared build_info is missing",()=>{
+    const result=evaluateTunnelReplicaSet({
+      "cloudflared-a":{cloudflared_tunnel_ha_connections:0},
+      "cloudflared-b":{build_info:1}
+    },4,"scrape");
+    expect(result.ok).toBe(false);
+    expect(result.findings).toContainEqual({
+      code:"CLOUDFLARED_BUILD_INFO_MISSING",
+      replica:"cloudflared-a"
+    });
+  });
+
+  it("fails HA mode when any named-tunnel replica is degraded",()=>{
     const result=evaluateTunnelReplicaSet({
       "cloudflared-a":{cloudflared_tunnel_ha_connections:4},
       "cloudflared-b":{cloudflared_tunnel_ha_connections:3}
     });
     expect(result.ok).toBe(false);
     expect(result.healthyCount).toBe(1);
-    expect(result.findings).toContainEqual({
-      code:"TUNNEL_REPLICA_DEGRADED",
-      replica:"cloudflared-b",
-      haConnections:3,
-      required:4
-    });
   });
 
-  it("surfaces heartbeat retries without exposing raw endpoints",()=>{
+  it("supports scrape-only mode for ephemeral transport checks",()=>{
     const result=evaluateTunnelReplicaSet({
-      "cloudflared-a":{
-        cloudflared_tunnel_ha_connections:4,
-        cloudflared_tunnel_timer_retries:1
-      },
-      "cloudflared-b":{
-        cloudflared_tunnel_ha_connections:4
-      }
-    });
-    expect(result.ok).toBe(false);
-    expect(result.findings).toContainEqual({
-      code:"TUNNEL_HEARTBEAT_RETRIES_PRESENT",
-      replica:"cloudflared-a",
-      value:1
-    });
-  });
-
-  it("supports controlled lower thresholds for ephemeral proofs",()=>{
-    const result=evaluateTunnelReplicaSet({
-      "cloudflared-a":{cloudflared_tunnel_ha_connections:1},
-      "cloudflared-b":{cloudflared_tunnel_ha_connections:1}
-    },1);
+      "cloudflared-a":parsePrometheusMetrics(quickText),
+      "cloudflared-b":parsePrometheusMetrics(quickText)
+    },4,"scrape");
     expect(result.ok).toBe(true);
+    expect(result.mode).toBe("scrape");
+    expect(result.healthyCount).toBe(2);
   });
 
-  it("runs against two metrics endpoints without leaking endpoint URLs",async()=>{
+  it("runs HA mode against two metrics endpoints without leaking URLs",async()=>{
     let output="";
     const code=await runTunnelReplicaObserver(
       [],
@@ -101,17 +111,42 @@ quic_client_latest_rtt{conn_index="1"} 18
     expect(code).toBe(0);
     expect(JSON.parse(output)).toMatchObject({
       ok:true,
+      mode:"ha",
       replicaCount:2,
       healthyCount:2
     });
     expect(output).not.toContain("http://");
   });
 
-  it("treats an unreachable replica as down",async()=>{
+  it("runs scrape mode for Quick Tunnel endpoints with zero HA gauge",async()=>{
+    let output="";
+    const code=await runTunnelReplicaObserver(
+      ["--mode=scrape"],
+      {
+        VIEWS_TUNNEL_METRICS_ENDPOINTS_JSON:JSON.stringify({
+          "cloudflared-a":"http://cloudflared-a:2000/metrics",
+          "cloudflared-b":"http://cloudflared-b:2000/metrics"
+        })
+      },
+      {write:value=>{output+=String(value)}},
+      async()=>({
+        ok:true,
+        text:async()=>quickText
+      })
+    );
+    expect(code).toBe(0);
+    expect(JSON.parse(output)).toMatchObject({
+      ok:true,
+      mode:"scrape",
+      healthyCount:2
+    });
+  });
+
+  it("treats unreachable scrape endpoint as invalid",async()=>{
     let calls=0;
     let output="";
     const code=await runTunnelReplicaObserver(
-      ["--min-connections=1"],
+      ["--mode=scrape"],
       {
         VIEWS_TUNNEL_METRICS_ENDPOINTS_JSON:JSON.stringify({
           "cloudflared-a":"http://cloudflared-a:2000/metrics",
@@ -122,14 +157,17 @@ quic_client_latest_rtt{conn_index="1"} 18
       async()=>{
         calls+=1;
         if(calls===1)throw new Error("offline");
-        return {ok:true,text:async()=>healthyText};
+        return {ok:true,text:async()=>quickText};
       }
     );
     expect(code).toBe(1);
-    expect(JSON.parse(output).downCount).toBe(1);
+    expect(JSON.parse(output).findings).toContainEqual({
+      code:"CLOUDFLARED_BUILD_INFO_MISSING",
+      replica:"cloudflared-a"
+    });
   });
 
-  it("rejects malformed endpoint configuration",()=>{
+  it("rejects malformed replica sets",()=>{
     expect(()=>evaluateTunnelReplicaSet({
       "cloudflared-a":{cloudflared_tunnel_ha_connections:4}
     })).toThrow(TunnelReplicaObserverError);
