@@ -153,15 +153,21 @@ $;
 ROLLBACK;
 SQL
 
-FOREIGN="$(runtime_sql -At <<'SQL'
+runtime_sql <<'SQL'
 BEGIN;
 SELECT set_config('app.organization_id','72000000-0000-4000-8000-000000000001',true);
-SELECT count(*) FROM provider_egress_attempts;
-SELECT count(*) FROM provider_egress_reconciliation_queue;
+DO $
+BEGIN
+  IF (SELECT count(*) FROM provider_egress_attempts)<>0 THEN
+    RAISE EXCEPTION 'TENANT_ATTEMPT_ISOLATION_FAILED';
+  END IF;
+  IF (SELECT count(*) FROM provider_egress_reconciliation_queue)<>0 THEN
+    RAISE EXCEPTION 'TENANT_RECONCILIATION_ISOLATION_FAILED';
+  END IF;
+END
+$;
 ROLLBACK;
 SQL
-)"
-test "$(printf '%s\n' "$FOREIGN" | grep -c '^0$')" -ge 2
 
 echo "[5/7] Convert stale started audit into reconciliation work"
 runtime_sql <<'SQL'
