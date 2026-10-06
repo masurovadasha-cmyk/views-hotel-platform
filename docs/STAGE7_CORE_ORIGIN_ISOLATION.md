@@ -107,6 +107,16 @@ The Cloudflare public edge CIDR drift gate is applicable only to `TRUSTED_PROXY_
 
 In `cloudflare_tunnel` mode, the immediate peer is the pinned local connector, so the provider public-CIDR drift checker reports itself as not applicable. The Stage 7.15 isolation gate becomes the relevant network topology control.
 
+## Automated remote staging proof
+
+Before a persistent named tunnel is provisioned, the branch runs a real Cloudflare Quick Tunnel acceptance test in GitHub Actions.
+
+The proof uses docker-compose.core-tunnel-proof.yml and scripts/stage7-tunnel-proof.sh to exercise Cloudflare edge -> cloudflared -> private Core while proving the runner host has no direct listener on Core port 3001.
+
+It also injects an untrusted container into the private ingress network and confirms a forged CF-Connecting-IP is rejected with HTTP 403. The same intentionally invalid guest-auth token sent through the real Cloudflare tunnel must reach application auth logic and return HTTP 401 instead.
+
+Quick Tunnels are test-only. They do not replace the named staging/production tunnel.
+
 ## Activation proof required before production cutover
 
 1. Create a dedicated staging/production remotely managed tunnel.
