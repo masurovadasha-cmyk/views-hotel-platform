@@ -8,7 +8,8 @@ export interface EgressTransport {
 export type EgressAudit = Readonly<{
   schemaVersion: 1; event: "started" | "completed" | "failed";
   providerId: string; operationId: string; requestId: string;
-  attempt: 1; elapsedMs: number; delivery: Delivery; status?: number; code?: string;
+  attempt: 1; deadlineMs: number; elapsedMs: number;
+  delivery: Delivery; status?: number; code?: string;
 }>;
 export interface EgressAuditSink { write(event: EgressAudit): Promise<void>; }
 export type CredentialResolver = (ref: string) => string | undefined;
@@ -37,7 +38,8 @@ export class ProviderEgressClient {
     callerSignal?.addEventListener("abort", cancel, {once: true});
     const event = (kind: EgressAudit["event"], extra: Partial<EgressAudit> = {}): EgressAudit => Object.freeze({
       schemaVersion: 1, event: kind, providerId: plan.providerId, operationId: plan.operationId,
-      requestId: plan.requestId, attempt: 1, elapsedMs: Math.round(performance.now() - started), delivery, ...extra
+      requestId: plan.requestId, attempt: 1, deadlineMs: plan.timeoutMs,
+      elapsedMs: Math.round(performance.now() - started), delivery, ...extra
     });
     const abortError = () => new EgressError(deadline ? "EGRESS_DEADLINE" : "EGRESS_ABORTED", delivery);
     const record = async (value: EgressAudit) => {

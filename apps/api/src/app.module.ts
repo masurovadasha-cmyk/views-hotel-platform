@@ -18,11 +18,13 @@ import {InternalServiceAuditInterceptor} from "./security/internal-service-audit
 import {InternalServiceAuditService} from "./security/internal-service-audit.service";
 import {InternalServicePostureController} from "./security/internal-service-posture.controller";
 import {InternalServicePostureService} from "./security/internal-service-posture.service";
+import {ProviderEgressModule} from "./security/egress/provider-egress.module";
 
 @Module({
   imports:[
     DatabaseModule,InventoryModule,RatesModule,BookingModule,
-    PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule
+    PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule,
+    ProviderEgressModule
   ],
   controllers:[
     HealthController,
