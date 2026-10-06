@@ -20,6 +20,7 @@ jobs:
         run: |
           bash -n scripts/stage7-tunnel-proof.sh
           bash -n scripts/stage7-named-tunnel-failover-proof.sh
+          bash -n scripts/stage7-tunnel-health-watch.sh
           bash -n scripts/stage7-tunnel-slo-check.sh
           bash -n scripts/stage7-external-synthetic-check.sh
       - run: npm run build

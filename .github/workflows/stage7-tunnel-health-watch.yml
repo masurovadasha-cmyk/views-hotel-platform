@@ -1,0 +1,41 @@
+name: Stage 7.15 Tunnel Health Watch
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage7-15-tunnel-health-watch
+  cancel-in-progress: true
+
+jobs:
+  health:
+    if: ${{ vars.VIEWS_TUNNEL_HEALTH_WATCH_ENABLED == 'true' }}
+    runs-on: [self-hosted, views-staging-core]
+    environment: staging
+    timeout-minutes: 5
+    env:
+      VIEWS_STAGING_CORE_URL: ${{ vars.VIEWS_STAGING_CORE_URL }}
+      VIEWS_TUNNEL_METRICS_NETWORK: ${{ vars.VIEWS_TUNNEL_METRICS_NETWORK || 'views-core-tunnel_tunnel_metrics' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Observe tunnel replicas and public staging health
+        run: bash scripts/stage7-tunnel-health-watch.sh
+
+      - name: Publish health evidence
+        if: always()
+        shell: bash
+        run: |
+          echo "### Stage 7.15 tunnel health watch" >> "$GITHUB_STEP_SUMMARY"
+          if [ -s /tmp/stage7.15-tunnel-health-watch.json ]; then
+            echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/stage7.15-tunnel-health-watch.json >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Health watch failed before evidence was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
