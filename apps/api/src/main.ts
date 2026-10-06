@@ -4,11 +4,13 @@ import type {NestExpressApplication} from "@nestjs/platform-express";
 import {raw,type Request,type Response,type NextFunction} from "express";
 import {AppModule} from "./app.module";
 import {loadConfig} from "./config";
+import {resolveListenHost} from "./local-rehearsal-boundary";
 import {RedactingLogger} from "./security/redacting-logger";
 import {paymeError} from "./payments/payme-merchant-api.service";
 
 async function bootstrap(){
   const config=loadConfig();
+  const listenHost=resolveListenHost();
   const app=await NestFactory.create<NestExpressApplication>(AppModule,{
     cors:false,rawBody:true,logger:new RedactingLogger()
   });
@@ -24,6 +26,6 @@ async function bootstrap(){
     });
   });
   app.enableShutdownHooks();
-  await app.listen(config.port,"0.0.0.0");
+  await app.listen(config.port,listenHost);
 }
 void bootstrap();
