@@ -118,21 +118,40 @@ COMMIT;
 SQL
 
 echo "[4/7] Prove runtime cannot mutate audit tables directly and tenants are isolated"
-if runtime_sql <<'SQL'
+runtime_sql <<'SQL'
 BEGIN;
 SELECT set_config('app.organization_id','71000000-0000-4000-8000-000000000001',true);
-INSERT INTO provider_egress_attempts(
-  organization_id,provider_id,operation_id,request_id,deadline_ms
-) VALUES(
-  '71000000-0000-4000-8000-000000000001','fixture','forged',
-  '71111111-1111-4111-8111-222222222222',1000
-);
+DO $
+DECLARE
+  v_blocked boolean:=false;
+  v_owner name;
+  v_super boolean;
+BEGIN
+  BEGIN
+    INSERT INTO provider_egress_attempts(
+      organization_id,provider_id,operation_id,request_id,deadline_ms
+    ) VALUES(
+      '71000000-0000-4000-8000-000000000001','fixture','forged',
+      '71111111-1111-4111-8111-222222222222',1000
+    );
+  EXCEPTION WHEN others THEN
+    v_blocked:=true;
+  END;
+
+  IF v_blocked IS NOT TRUE THEN
+    SELECT pg_get_userbyid(c.relowner)
+      INTO v_owner
+      FROM pg_class c
+     WHERE c.oid='provider_egress_attempts'::regclass;
+    SELECT rolsuper INTO v_super FROM pg_roles WHERE rolname=current_user;
+    RAISE EXCEPTION
+      'DIRECT_WRITE_NOT_BLOCKED user=% owner=% super=%',
+      current_user,v_owner,v_super;
+  END IF;
+END
+$;
 ROLLBACK;
 SQL
-then
-  echo "runtime direct audit write unexpectedly succeeded" >&2
-  exit 1
-fi
 
 FOREIGN="$(runtime_sql -At <<'SQL'
 BEGIN;
