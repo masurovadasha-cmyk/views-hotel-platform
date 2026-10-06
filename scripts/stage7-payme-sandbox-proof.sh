@@ -141,7 +141,41 @@ INSERT INTO payment_intents(
 );
 SQL
 
-echo "[3/7] Start the sandbox-configured Core"
+echo "[3/8] Prove the restricted runtime can see only the seeded Payme tenant"
+docker exec -e PGPASSWORD=views_app_proof_2026 "$PG" \
+  psql -h 127.0.0.1 -U views_app -d views -v ON_ERROR_STOP=1 <<'SQL'
+BEGIN;
+SELECT set_config(
+  'app.organization_id',
+  '73000000-0000-4000-8000-000000000001',
+  true
+);
+DO $
+BEGIN
+  IF (
+    SELECT count(*)
+    FROM payment_intents
+    WHERE id='73333333-3333-4333-8333-333333333333'
+      AND organization_id='73000000-0000-4000-8000-000000000001'
+      AND provider='payme'
+  )<>1 THEN
+    RAISE EXCEPTION 'PAYME_RUNTIME_PAYMENT_INTENT_NOT_VISIBLE';
+  END IF;
+  IF (
+    SELECT count(*)
+    FROM reservations
+    WHERE id='73000000-0000-4000-8000-000000000007'
+      AND organization_id='73000000-0000-4000-8000-000000000001'
+      AND status='hold'
+  )<>1 THEN
+    RAISE EXCEPTION 'PAYME_RUNTIME_RESERVATION_NOT_VISIBLE';
+  END IF;
+END
+$;
+ROLLBACK;
+SQL
+
+echo "[4/8] Start the sandbox-configured Core"
 compose up -d --build core
 NETWORK="${PROJECT}_core_ingress"
 for attempt in $(seq 1 45); do
@@ -155,11 +189,11 @@ for attempt in $(seq 1 45); do
   sleep 2
 done
 
-echo "[4/7] Run official-style repeated Merchant API scenarios over HTTP"
+echo "[5/8] Run official-style repeated Merchant API scenarios over HTTP"
 docker run --rm --network "$NETWORK"   -e PAYME_PROOF_URL=http://core:3001/v1/payments/payme/merchant   -e PAYME_LOGIN=views-payme-test   -e PAYME_KEY=fixture-test-key-0123456789abcdef   -e PAYMENT_INTENT_ID=73333333-3333-4333-8333-333333333333   -v "$ROOT/scripts/payme-sandbox-protocol-proof.mjs:/proof.mjs:ro"   node:22-alpine node /proof.mjs > /tmp/payme-protocol.json
 cat /tmp/payme-protocol.json
 
-echo "[5/7] Verify financial and booking state after perform + cancel"
+echo "[6/8] Verify financial and booking state after perform + cancel"
 docker exec "$PG" psql -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
 DO $$
 DECLARE
@@ -224,7 +258,7 @@ END
 $$;
 SQL
 
-echo "[6/7] Verify repeated RPC calls did not duplicate durable rows"
+echo "[7/8] Verify repeated RPC calls did not duplicate durable rows"
 docker exec "$PG" psql -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
 DO $$
 BEGIN
@@ -244,7 +278,7 @@ END
 $$;
 SQL
 
-echo "[7/7] Write combined evidence"
+echo "[8/8] Write combined evidence"
 node --input-type=module - /tmp/payme-protocol.json "$OUTPUT" <<'NODE'
 import fs from "node:fs";
 const [protocolFile,out]=process.argv.slice(2);
