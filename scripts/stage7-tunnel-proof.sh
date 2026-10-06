@@ -57,9 +57,14 @@ for attempt in $(seq 1 45); do
 done
 
 echo "[4/7] Prove the host has no direct Core origin listener"
-if docker compose -f "$BASE_FILE" port core 3001 2>/tmp/views-core-port.err | grep -q .; then
-  echo "Core unexpectedly has a published host port" >&2
-  docker compose -f "$BASE_FILE" port core 3001 >&2 || true
+CORE_CONTAINER_ID="$(compose ps -q core)"
+if [ -z "$CORE_CONTAINER_ID" ]; then
+  echo "Core container id is unavailable" >&2
+  exit 1
+fi
+PORT_BINDINGS="$(docker inspect --format '{{json .HostConfig.PortBindings}}' "$CORE_CONTAINER_ID")"
+if [ "$PORT_BINDINGS" != "{}" ] && [ "$PORT_BINDINGS" != "null" ]; then
+  echo "Core unexpectedly has host port bindings: $PORT_BINDINGS" >&2
   exit 1
 fi
 if curl --silent --show-error --fail --max-time 2     http://127.0.0.1:3001/health >/tmp/direct-origin-body 2>/tmp/direct-origin-error; then
