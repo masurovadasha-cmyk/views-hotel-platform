@@ -7,16 +7,23 @@ import {PaymentRecoveryService} from "./payment-recovery.service";
 import {PaymentRefundWorkerService} from "./payment-refund-worker.service";
 import {PaymentWebhookController} from "./payment-webhook.controller";
 import {PaymentWebhookService} from "./payment-webhook.service";
+import {PaymeSandboxPaymentProvider} from "./payme-sandbox-payment-provider";
+import {PaymeMerchantApiController} from "./payme-merchant-api.controller";
+import {PaymeMerchantApiService} from "./payme-merchant-api.service";
 
 @Module({
-  controllers:[PaymentController,PaymentWebhookController],
+  controllers:[
+    PaymentController,PaymentWebhookController,PaymeMerchantApiController
+  ],
   providers:[
     PaymentProviderRegistry,LedgerService,PaymentRecoveryService,PaymentIntentService,
-    PaymentWebhookService,PaymentRefundWorkerService
+    PaymentWebhookService,PaymentRefundWorkerService,
+    PaymeSandboxPaymentProvider,PaymeMerchantApiService
   ],
   exports:[
     PaymentProviderRegistry,LedgerService,PaymentRecoveryService,PaymentIntentService,
-    PaymentWebhookService,PaymentRefundWorkerService
+    PaymentWebhookService,PaymentRefundWorkerService,
+    PaymeMerchantApiService
   ]
 })
 export class PaymentsModule{}
