@@ -218,7 +218,8 @@ cat >/tmp/stage7.15-named-tunnel-proof.json <<JSON
   "transport": "cloudflare_named_tunnel",
   "stableHostname": "$STAGING_URL",
   "connectorCount": 2,
-  "sameNamedTunnelFailoverProven": true,\n  "replicaMetricsSloProven": true,
+  "sameNamedTunnelFailoverProven": true,
+  "replicaMetricsSloProven": true,
   "directOriginReachable": false,
   "untrustedPeerSpoofStatus": $UNTRUSTED_STATUS,
   "baseline": {
@@ -243,4 +244,5 @@ cat >/tmp/stage7.15-named-tunnel-proof.json <<JSON
   }
 }
 JSON
+node -e 'JSON.parse(require("node:fs").readFileSync("/tmp/stage7.15-named-tunnel-proof.json","utf8"))'
 cat /tmp/stage7.15-named-tunnel-proof.json

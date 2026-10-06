@@ -223,7 +223,8 @@ cat >/tmp/stage7.15-tunnel-proof.json <<JSON
   "transport": "cloudflare_quick_tunnel_dual_connector",
   "connectorCount": 2,
   "directOriginReachable": false,
-  "untrustedPeerSpoofStatus": $UNTRUSTED_STATUS,\n  "metricsObserverPass": true,
+  "untrustedPeerSpoofStatus": $UNTRUSTED_STATUS,
+  "metricsObserverPass": true,
   "connectorA": {
     "healthStatus": $A_HEALTH,
     "readinessStatus": $A_READY,
@@ -238,4 +239,5 @@ cat >/tmp/stage7.15-tunnel-proof.json <<JSON
   "sameNamedTunnelFailoverProven": false
 }
 JSON
+node -e 'JSON.parse(require("node:fs").readFileSync("/tmp/stage7.15-tunnel-proof.json","utf8"))'
 cat /tmp/stage7.15-tunnel-proof.json
