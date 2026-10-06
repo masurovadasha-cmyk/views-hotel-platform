@@ -81,6 +81,7 @@ async function database(){
 function coreEnv(payme=false){
  return {...process.env,NODE_ENV:'test',PORT:'3001',VIEWS_ENV:'local-rehearsal',VIEWS_LOCAL_REHEARSAL:'true',TRUSTED_PROXY_MODE:'direct',DATABASE_URL:dbUrl(),
   GUEST_AUTH_RATE_LIMIT_SECRET:config.rateSecret,VIEWS_INTERNAL_API_KEY:config.internalSecret,
+  VIEWS_STAFF_AUTH_PILOT_ENABLED:'true',VIEWS_STAFF_AUTH_ORGANIZATION_ID:'74240000-0000-4000-8000-000000000001',
   VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:'{"local-workspace":"internal_key_only"}',
   VIEWS_INTERNAL_SERVICE_KEYS_JSON:JSON.stringify({'local-workspace':[config.internalSecret]}),
   VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON:'{"local-workspace":["127.0.0.1/32"]}',

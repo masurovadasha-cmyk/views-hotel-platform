@@ -1,4 +1,6 @@
 import {Module} from "@nestjs/common";
+import {StaffAuthModule} from "./staff-auth/staff-auth.module";
+import {StaffSessionGuard} from "./staff-auth/staff-session.guard";
 import {APP_GUARD,APP_INTERCEPTOR} from "@nestjs/core";
 import {MarketplaceModule} from "./marketplace/marketplace.module";
 import {AnalyticsModule} from "./analytics/analytics.module";
@@ -24,7 +26,7 @@ import {ProviderEgressModule} from "./security/egress/provider-egress.module";
   imports:[
     DatabaseModule,InventoryModule,RatesModule,BookingModule,
     PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule,
-    ProviderEgressModule
+    ProviderEgressModule,StaffAuthModule
   ],
   controllers:[
     HealthController,
@@ -38,6 +40,7 @@ import {ProviderEgressModule} from "./security/egress/provider-egress.module";
     InternalServicePostureService,
     {provide:APP_GUARD,useClass:InternalIngressGuard},
     {provide:APP_GUARD,useClass:InternalActorAuthGuard},
+    {provide:APP_GUARD,useClass:StaffSessionGuard},
     {provide:APP_INTERCEPTOR,useClass:InternalServiceAuditInterceptor}
   ]
 })
