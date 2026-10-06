@@ -31,13 +31,6 @@ services:
         psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO views_app"
         psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app"
 
-  core:
-    depends_on:
-      postgres:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-
   cloudflared:
     environment:
       TUNNEL_TOKEN: ""
