@@ -107,7 +107,7 @@ async function auditProof(){
   assert.deepEqual(counts,{attempts:2,reconciliation:2,required:2,resolved:1,unsafe:0});return counts;
 }
 (async()=>{
-  let report={schemaVersion:2,stage:'7.20',result:'fail',sourceCommit:process.env.VIEWS_PROOF_SOURCE_SHA||null,
+  let report={schemaVersion:2,stage:process.env.VIEWS_PAYME_EXPIRY_PROOF==='true'?'7.21':'7.20',result:'fail',sourceCommit:process.env.VIEWS_PROOF_SOURCE_SHA||null,
     checks,httpCalls:0,officialSandboxEndpointInvoked:false,officialSandboxCredentialsUsed:false,productionActivated:false};
   try{
     for(const org of [ORG,OTHER])await query(`INSERT INTO organizations(id,type,legal_name,display_name,country_code,default_currency,timezone)
@@ -213,10 +213,13 @@ async function auditProof(){
         GROUP BY j.id HAVING sum(CASE WHEN e.side='debit' THEN e.amount_minor ELSE -e.amount_minor END)<>0`,[ORG])).rows;
       assert.deepEqual(bad,[]);
     });
+    if(process.env.VIEWS_PAYME_EXPIRY_PROOF==='true'){
+      await require('./payme-expiry.integration.cjs')({check,seed,create,rpc,result,error,query,snapshot,failpoint,clearFailpoint,ORG,OTHER});
+    }
     let auditCounts;
     await check('durable_audit_SQL_really_executes_replay_RLS_stale_and_outbox_checks',async()=>{auditCounts=await auditProof();});
     report={...report,result:'pass',httpCalls,checkCount:checks.length,auditCounts,
-      mainPayment:await snapshot(f),parallelReplayVerified:true,atomicFailureRollbackVerified:true,
+      mainPayment:await snapshot(f),expiryWorkerVerified:process.env.VIEWS_PAYME_EXPIRY_PROOF==='true',parallelReplayVerified:true,atomicFailureRollbackVerified:true,
       timeoutVerified:true,tenantIsolationVerified:true,allPostedJournalsBalanced:true,
       limitations:['Real HTTP against local fixture Core, not external Payme sandbox certification','Two fixture tenant organizations only','No production credentials, charges or deployment']};
   }catch(e){report={...report,httpCalls,checkCount:checks.length,error:{code:e.code||'TEST_ASSERTION',message:String(e.message)}};process.exitCode=1;}

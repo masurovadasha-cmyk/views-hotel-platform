@@ -49,6 +49,41 @@ export class PaymeMerchantApiService{
     }catch(error){return error instanceof PaymeRpcFault?paymeError(id,error.code,error.data):paymeError(id,-32400);}
   }
 
+  /** Internal worker entry point. Caller owns the transaction and tenant context.
+   * Same lock order as RPC: advisory -> intent -> reservation. Never wait behind
+   * a live payment; a later maintenance cycle can pick up a busy row. */
+  async expirePendingTransaction(client:PoolClient,org:string,txid:string):Promise<"expired"|"unchanged"|"busy"|"conflict">{
+    const context=(await client.query<{organization_id:string|null}>(
+      "SELECT app.current_organization_id() AS organization_id"
+    )).rows[0];
+    if(context?.organization_id!==org)throw new Error("PAYME_EXPIRY_TENANT_MISMATCH");
+    const lock=(await client.query<{acquired:boolean}>(
+      "SELECT pg_try_advisory_xact_lock(hashtextextended($1,0)) AS acquired",["payme:"+org+":"+txid]
+    )).rows[0];
+    if(!lock?.acquired)return "busy";
+    const row=await this.find(client,org,txid);
+    if(!row||row.state!==1||Date.now()<Number(row.payme_time_ms)+PAYME_TIMEOUT_MS)return "unchanged";
+    const intent=(await client.query<{reservation_id:string}>(
+      "SELECT reservation_id FROM payment_intents WHERE organization_id=$1 AND id=$2 FOR UPDATE SKIP LOCKED",
+      [org,row.payment_intent_id]
+    )).rows[0];
+    if(!intent)return "busy";
+    const reservation=await client.query(
+      "SELECT id FROM reservations WHERE organization_id=$1 AND id=$2 FOR UPDATE SKIP LOCKED",
+      [org,intent.reservation_id]
+    );
+    if(!reservation.rowCount)return "busy";
+    const payment=await this.payment(client,org,row.payment_intent_id);
+    if(!this.canExpire(payment))return "conflict";
+    return await this.expire(client,org,row,payment)?"expired":"unchanged";
+  }
+
+  private canExpire(payment:Payment){
+    return BigInt(payment.captured_minor)===0n&&BigInt(payment.refunded_minor)===0n&&
+      ["requires_payment","pending_provider","cancelled","failed"].includes(payment.status)&&
+      ["hold","pending","cancelled"].includes(payment.reservation_status);
+  }
+
   private async check(client:PoolClient,org:string,params:JsonObject){
     const {paymentId,amount}=accountAmount(params);
     const payment=await this.payment(client,org,paymentId);
@@ -151,6 +186,7 @@ export class PaymeMerchantApiService{
   }
   private async expire(client:PoolClient,org:string,row:Transaction,payment:Payment){
     if(row.state!==1||Date.now()<Number(row.payme_time_ms)+PAYME_TIMEOUT_MS)return false;
+    if(!this.canExpire(payment))throw new PaymeRpcFault(-31008);
     const time=Date.now();
     await client.query("UPDATE payme_merchant_transactions SET state=-1,reason=4,cancel_time_ms=$3,updated_at=now() WHERE organization_id=$1 AND id=$2",[org,row.id,time]);
     await client.query("UPDATE payment_intents SET status='cancelled',updated_at=now(),version=version+1 WHERE id=$1 AND captured_minor=0",[payment.id]);

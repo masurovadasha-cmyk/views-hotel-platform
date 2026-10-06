@@ -1,3 +1,4 @@
+import {PaymeExpiryWorkerService} from "./payme-expiry-worker.service";
 import {Module} from "@nestjs/common";
 import {LedgerService} from "./ledger.service";
 import {PaymentController} from "./payment.controller";
@@ -18,12 +19,12 @@ import {PaymeMerchantApiService} from "./payme-merchant-api.service";
   providers:[
     PaymentProviderRegistry,LedgerService,PaymentRecoveryService,PaymentIntentService,
     PaymentWebhookService,PaymentRefundWorkerService,
-    PaymeSandboxPaymentProvider,PaymeMerchantApiService
+    PaymeSandboxPaymentProvider,PaymeMerchantApiService,PaymeExpiryWorkerService
   ],
   exports:[
     PaymentProviderRegistry,LedgerService,PaymentRecoveryService,PaymentIntentService,
     PaymentWebhookService,PaymentRefundWorkerService,
-    PaymeMerchantApiService
+    PaymeMerchantApiService,PaymeExpiryWorkerService
   ]
 })
 export class PaymentsModule{}

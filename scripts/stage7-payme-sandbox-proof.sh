@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 PROJECT="views-payme-proof-${GITHUB_RUN_ID:-$$}-${GITHUB_RUN_ATTEMPT:-1}"
-OUTPUT="/tmp/stage7.20-payme-sandbox-proof.json"
+OUTPUT="${VIEWS_PAYME_PROOF_OUTPUT:-/tmp/stage7.20-payme-sandbox-proof.json}"
 STARTED=false
 compose(){ docker compose -p "$PROJECT" -f docker-compose.core-tunnel.yml -f docker-compose.core-tunnel-proof.yml -f docker-compose.payme-sandbox-proof.yml "$@"; }
 cleanup(){
@@ -40,7 +40,11 @@ done
 echo '[3/4] Run actual HTTP, concurrency, fault injection, financial and audit assertions'
 # Forward source explicitly, then execute it in CommonJS module scope rather
 # than stdin/global scope. Only this subprocess receives the fixture owner URL.
+if [ "${VIEWS_PAYME_EXPIRY_PROOF:-false}" = true ]; then
+  docker cp scripts/payme-expiry.integration.cjs "$CORE:/tmp/payme-expiry.integration.cjs"
+fi
 docker exec -i \
+  -e "VIEWS_PAYME_EXPIRY_PROOF=${VIEWS_PAYME_EXPIRY_PROOF:-false}" \
   -e VIEWS_PAYME_PROOF_ACK=DISPOSABLE_DATABASE_ONLY \
   -e "PAYME_PROOF_ADMIN_DATABASE_URL=postgresql://views:${POSTGRES_PASSWORD}@postgres:5432/views" \
   -e "VIEWS_PROOF_SOURCE_SHA=$(git rev-parse HEAD)" \
