@@ -37,10 +37,12 @@ echo "[1/7] Render and validate the production isolation profile"
 docker compose -f "$BASE_FILE" config --format json >/tmp/views-core-tunnel-production.json
 node scripts/core-origin-isolation-gate.mjs   --file=/tmp/views-core-tunnel-production.json
 
-echo "[2/7] Start ephemeral Postgres, migrate, Core and Cloudflare Quick Tunnel"
-compose up -d --build postgres migrate core cloudflared
+echo "[2/7] Start ephemeral Postgres and apply migrations in foreground"
+compose up -d postgres
+compose run --rm migrate
 
-echo "[3/7] Verify private Core readiness from an ingress-network probe"
+echo "[3/7] Start Core and Cloudflare Quick Tunnel, then verify private readiness"
+compose up -d --build core cloudflared
 for attempt in $(seq 1 45); do
   if docker run --rm --network "$INGRESS_NETWORK" "$CURL_IMAGE"       --fail --silent --show-error       http://core:3001/readiness >/tmp/views-core-readiness.json 2>/dev/null; then
     cat /tmp/views-core-readiness.json
