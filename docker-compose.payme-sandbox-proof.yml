@@ -1,0 +1,12 @@
+services:
+  core:
+    environment:
+      NODE_ENV: test
+      TRUSTED_PROXY_MODE: direct
+      VIEWS_PAYME_SANDBOX_ENABLED: "true"
+      VIEWS_PAYME_MODE: sandbox
+      VIEWS_PAYME_ORGANIZATION_ID: "73000000-0000-4000-8000-000000000001"
+      VIEWS_PAYME_MERCHANT_ID: "0123456789abcdef01234567"
+      VIEWS_PAYME_MERCHANT_LOGIN: "views-payme-test"
+      VIEWS_PAYME_TEST_KEY: "fixture-test-key-0123456789abcdef"
+      VIEWS_PAYME_TEST_SOURCE_CIDRS_JSON: '["172.30.0.0/29"]'

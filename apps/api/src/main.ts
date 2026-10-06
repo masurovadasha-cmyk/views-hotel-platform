@@ -11,6 +11,10 @@ async function bootstrap(){
     rawBody:true,
     logger:new RedactingLogger()
   });
+  // Payme Merchant API officially sends Content-Type: text/json.
+  // Keep that route raw so JSON-RPC parse errors can still return HTTP 200
+  // with the protocol-specific -32700 response instead of an Express 400.
+  app.useBodyParser("raw",{type:"text/json",limit:"64kb"});
   app.enableShutdownHooks();
   await app.listen(config.port,"0.0.0.0");
 }
