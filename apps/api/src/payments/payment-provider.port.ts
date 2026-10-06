@@ -1,6 +1,7 @@
 export type SupportedPaymentProvider="payme"|"click"|"uzum"|"octo"|"multicard"|"stripe";
 
 export type HostedCheckoutRequest={
+  organizationId:string;
   paymentIntentId:string;
   amountMinor:bigint;
   currency:string;
@@ -42,6 +43,7 @@ export type RefundResult={
 
 export interface PaymentProviderPort{
   readonly provider:SupportedPaymentProvider;
+  assertOrganizationAllowed?(organizationId:string):void;
   createHostedCheckout(input:HostedCheckoutRequest):Promise<HostedCheckoutResult>;
   verifyAndParseWebhook(rawBody:string,headers:Record<string,string|undefined>):Promise<VerifiedWebhookEvent>;
   refund(input:RefundRequest):Promise<RefundResult>;
