@@ -243,31 +243,49 @@ COMMIT;
 SQL
 
 echo "[7/7] Verify safe outbox payload and write evidence"
-runtime_sql -At <<'SQL' > /tmp/stage7.19-counts.txt
+runtime_sql <<'SQL'
 BEGIN;
 SELECT set_config('app.organization_id','71000000-0000-4000-8000-000000000001',true);
-SELECT count(*) FROM provider_egress_attempts;
-SELECT count(*) FROM provider_egress_reconciliation_queue;
-SELECT count(*) FROM outbox_events WHERE event_type='provider.egress.reconciliation_required';
-SELECT count(*) FROM outbox_events WHERE event_type='provider.egress.reconciliation_resolved';
-SELECT count(*) FROM outbox_events
- WHERE event_type LIKE 'provider.egress.%'
-   AND (
-     payload ? 'body'
-     OR payload ? 'query'
-     OR payload ? 'authorization'
-     OR payload ? 'credential'
-     OR payload ? 'token'
-   );
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM provider_egress_attempts)<>2 THEN
+    RAISE EXCEPTION 'AUDIT_ATTEMPT_COUNT_INVALID';
+  END IF;
+  IF (SELECT count(*) FROM provider_egress_reconciliation_queue)<>2 THEN
+    RAISE EXCEPTION 'RECONCILIATION_QUEUE_COUNT_INVALID';
+  END IF;
+  IF (
+    SELECT count(*)
+    FROM outbox_events
+    WHERE event_type='provider.egress.reconciliation_required'
+  )<>2 THEN
+    RAISE EXCEPTION 'RECONCILIATION_REQUIRED_EVENT_COUNT_INVALID';
+  END IF;
+  IF (
+    SELECT count(*)
+    FROM outbox_events
+    WHERE event_type='provider.egress.reconciliation_resolved'
+  )<>1 THEN
+    RAISE EXCEPTION 'RECONCILIATION_RESOLVED_EVENT_COUNT_INVALID';
+  END IF;
+  IF (
+    SELECT count(*)
+    FROM outbox_events
+    WHERE event_type LIKE 'provider.egress.%'
+      AND (
+        payload ? 'body'
+        OR payload ? 'query'
+        OR payload ? 'authorization'
+        OR payload ? 'credential'
+        OR payload ? 'token'
+      )
+  )<>0 THEN
+    RAISE EXCEPTION 'UNSAFE_PROVIDER_EGRESS_OUTBOX_PAYLOAD';
+  END IF;
+END
+$$;
 ROLLBACK;
 SQL
-
-mapfile -t COUNTS < <(grep -E '^[0-9]+$' /tmp/stage7.19-counts.txt)
-test "${COUNTS[0]}" = "2"
-test "${COUNTS[1]}" = "2"
-test "${COUNTS[2]}" = "2"
-test "${COUNTS[3]}" = "1"
-test "${COUNTS[4]}" = "0"
 
 cat > "$OUTPUT" <<JSON
 {
@@ -283,6 +301,7 @@ cat > "$OUTPUT" <<JSON
   "directAuditMutationBlocked": true,
   "requestReplayBlocked": true,
   "staleStartedRecovered": true,
+  "leaseResolveRetryVerified": true,
   "productionProviderActivated": false
 }
 JSON
