@@ -520,7 +520,7 @@ CREATE OR REPLACE FUNCTION app.guard_provider_egress_audit_mutation()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = public, app
-AS $
+AS $guard$
 DECLARE
   v_owner name;
 BEGIN
@@ -535,7 +535,7 @@ BEGIN
 
   RETURN COALESCE(NEW,OLD);
 END
-$;
+$guard$;
 
 REVOKE ALL ON FUNCTION app.guard_provider_egress_audit_mutation()
 FROM PUBLIC;
