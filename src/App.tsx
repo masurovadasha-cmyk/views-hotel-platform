@@ -1,4 +1,4 @@
-import {StaffWorkspaceGate} from "./features/local-core/StaffWorkspaceGate";
+import {StaffMailEntry} from "./features/local-core/StaffMailEntry";
 import {useEffect,useState} from "react";
 import type {HospitalityRole} from "./domain/types";
 import {GuestApp} from "./features/guest/GuestApp";
@@ -33,7 +33,7 @@ export function App(){
 
   const live=runtime==="live-api";
   const content=()=>{
-    if(runtime==="local-core")return <StaffWorkspaceGate/>;
+    if(runtime==="local-core")return <StaffMailEntry/>;
     if(live&&loading)return <main className="authShell"><div className="notice">Checking secure session…</div></main>;
     if(live&&!session)return <main className="authShell"><AuthPanel onDone={refreshSession}/></main>;
     if(live&&session?.mode==="guest")return <GuestApp live/>;

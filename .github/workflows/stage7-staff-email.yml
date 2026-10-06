@@ -1,0 +1,70 @@
+name: Stage 7.26 Staff Email Delivery
+on:
+  push:
+    branches: ['stage7/staff-email-delivery-v1']
+  pull_request:
+    branches: ['stage7/staff-auth-pilot-v1']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stage726-mail-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  mail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: views_local
+          POSTGRES_USER: views_owner
+          POSTGRES_PASSWORD: fixture-owner
+        ports: ['55432:5432']
+        options: >-
+          --health-cmd 'pg_isready -U views_owner -d views_local'
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      PGPASSWORD: fixture-owner
+      VIEWS_MAIL_PROOF_ACK: DISPOSABLE_MAIL_ONLY
+      STAFF_MAIL_PROOF_OWNER_URL: postgresql://views_owner:fixture-owner@127.0.0.1:55432/views_local
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install existing Core plus pinned SMTP library
+        working-directory: apps/api
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Compile actual Core
+        working-directory: apps/api
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Apply every ordered migration to disposable database
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -f infra/postgres/init/001_extensions.sql
+          for file in apps/api/db/migrations/*.sql; do
+            psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -f "$file"
+          done
+      - name: Mail policy and token binding unit checks
+        run: |
+          mkdir -p mail-evidence
+          set -o pipefail
+          node --test scripts/staff-mail.acceptance.cjs | tee mail-evidence/unit.tap
+      - name: Real loopback SMTP, Core HTTP and restricted PostgreSQL proof
+        run: node scripts/staff-mail.integration.cjs
+      - name: Preserve exact source without secrets or captured email bodies
+        if: always()
+        run: git archive --format=zip HEAD -o /tmp/views-stage726-source.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: staff-email-delivery-evidence
+          path: |
+            mail-evidence/
+            /tmp/views-stage726-source.zip
+          if-no-files-found: error
