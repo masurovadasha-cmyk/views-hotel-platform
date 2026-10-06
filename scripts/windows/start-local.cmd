@@ -9,5 +9,5 @@ if errorlevel 1 (
 )
 "%NODE%" "%REPO%\apps\api\ops\local-web-launch.cjs" start
 if errorlevel 1 exit /b 1
-start "" "http://127.0.0.1:4173/?api=demo"
+start "" "http://127.0.0.1:4173/?api=local-core"
 echo VIEWS local review and Core are ready. Production payments are disabled.

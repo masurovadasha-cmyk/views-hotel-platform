@@ -1,3 +1,4 @@
+import {LocalCoreWorkspace} from "./features/local-core/LocalCoreWorkspace";
 import {useEffect,useState} from "react";
 import type {HospitalityRole} from "./domain/types";
 import {GuestApp} from "./features/guest/GuestApp";
@@ -32,6 +33,7 @@ export function App(){
 
   const live=runtime==="live-api";
   const content=()=>{
+    if(runtime==="local-core")return <LocalCoreWorkspace/>;
     if(live&&loading)return <main className="authShell"><div className="notice">Checking secure session…</div></main>;
     if(live&&!session)return <main className="authShell"><AuthPanel onDone={refreshSession}/></main>;
     if(live&&session?.mode==="guest")return <GuestApp live/>;
@@ -46,7 +48,7 @@ export function App(){
       <div className="topActions">
         <span className="runtimeBadge">{runtimeLabel(runtime)}</span>
         <button onClick={()=>setDark(v=>!v)}>{dark?"Light":"Dark"}</button>
-        {!live&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==="guest"?"Staff CRM":"Guest App"}</button>}
+        {!live&&runtime!=="local-core"&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==="guest"?"Staff CRM":"Guest App"}</button>}
         {live&&session&&<button onClick={async()=>{await api.logout();setSession(null)}}>Sign out</button>}
       </div>
     </header>

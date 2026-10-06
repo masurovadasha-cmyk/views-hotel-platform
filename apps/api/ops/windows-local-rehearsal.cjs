@@ -81,7 +81,10 @@ async function database(){
 function coreEnv(payme=false){
  return {...process.env,NODE_ENV:'test',PORT:'3001',VIEWS_ENV:'local-rehearsal',VIEWS_LOCAL_REHEARSAL:'true',TRUSTED_PROXY_MODE:'direct',DATABASE_URL:dbUrl(),
   GUEST_AUTH_RATE_LIMIT_SECRET:config.rateSecret,VIEWS_INTERNAL_API_KEY:config.internalSecret,
-  VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:'{}',VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:'{}',VIEWS_TRUSTED_PROXY_CIDRS_JSON:'',
+  VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:'{"local-workspace":"internal_key_only"}',
+  VIEWS_INTERNAL_SERVICE_KEYS_JSON:JSON.stringify({'local-workspace':[config.internalSecret]}),
+  VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON:'{"local-workspace":["127.0.0.1/32"]}',
+  VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:'{}',VIEWS_TRUSTED_PROXY_CIDRS_JSON:'',
   VIEWS_PAYME_SANDBOX_ENABLED:payme?'true':'false',VIEWS_PAYME_MODE:'sandbox',VIEWS_PAYME_ORGANIZATION_ID:ORG,
   VIEWS_PAYME_MERCHANT_ID:'0123456789abcdef01234567',VIEWS_PAYME_MERCHANT_LOGIN:'views-payme-test',VIEWS_PAYME_TEST_KEY:'fixture-test-key-0123456789abcdef',
   VIEWS_PAYME_TEST_SOURCE_CIDRS_JSON:'["127.0.0.1/32","::1/128"]',VIEWS_STAGING_MAINTENANCE_ENABLED:'false'};
@@ -91,7 +94,7 @@ async function core(payme=false){
  const out=fs.openSync(path.join(ROOT,'logs','core.log'),'a');const err=fs.openSync(path.join(ROOT,'logs','core-error.log'),'a');
  const child=spawn(NODE,[path.join(API,'dist','main.js')],{cwd:API,env:coreEnv(payme),windowsHide:true,detached:true,stdio:['ignore',out,err]});child.unref();fs.closeSync(out);fs.closeSync(err);
  write(path.join(ROOT,'core-process.json'),{pid:child.pid,executable:NODE,entry:path.join(API,'dist','main.js'),paymeFixtureEnabled:payme,startedAt:new Date().toISOString()});
- for(let i=0;i<40;i++){try{const r=await fetch('http://127.0.0.1:3001/readiness',{signal:AbortSignal.timeout(1000)});const j=await r.json();if(r.ok&&j.database==='ok'){console.log(JSON.stringify({coreReady:true,readiness:j,paymeFixtureEnabled:payme}));return;}}catch{}await new Promise(r=>setTimeout(r,500));}
+ for(let i=0;i<80;i++){try{const r=await fetch('http://127.0.0.1:3001/readiness',{signal:AbortSignal.timeout(1000)});const j=await r.json();if(r.ok&&j.database==='ok'){console.log(JSON.stringify({coreReady:true,readiness:j,paymeFixtureEnabled:payme}));return;}}catch{}await new Promise(r=>setTimeout(r,500));}
  throw Error('CORE_START_FAILED');
 }
 async function stopCore(){
