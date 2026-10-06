@@ -516,4 +516,36 @@ REVOKE ALL ON FUNCTION app.finish_provider_egress_reconciliation(
   uuid,uuid,boolean,text,integer
 ) FROM PUBLIC;
 
+CREATE OR REPLACE FUNCTION app.guard_provider_egress_audit_mutation()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public, app
+AS $
+DECLARE
+  v_owner name;
+BEGIN
+  SELECT pg_get_userbyid(c.relowner)
+    INTO v_owner
+    FROM pg_class c
+   WHERE c.oid=TG_RELID;
+
+  IF current_user<>v_owner THEN
+    RAISE EXCEPTION 'PROVIDER_EGRESS_DIRECT_WRITE_FORBIDDEN';
+  END IF;
+
+  RETURN COALESCE(NEW,OLD);
+END
+$;
+
+REVOKE ALL ON FUNCTION app.guard_provider_egress_audit_mutation()
+FROM PUBLIC;
+
+CREATE TRIGGER provider_egress_attempts_write_guard
+BEFORE INSERT OR UPDATE OR DELETE ON provider_egress_attempts
+FOR EACH ROW EXECUTE FUNCTION app.guard_provider_egress_audit_mutation();
+
+CREATE TRIGGER provider_egress_reconciliation_write_guard
+BEFORE INSERT OR UPDATE OR DELETE ON provider_egress_reconciliation_queue
+FOR EACH ROW EXECUTE FUNCTION app.guard_provider_egress_audit_mutation();
+
 COMMIT;
