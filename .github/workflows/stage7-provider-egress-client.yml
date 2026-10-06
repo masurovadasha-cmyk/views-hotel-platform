@@ -35,7 +35,11 @@ jobs:
         if: always()
         with:
           name: provider-egress-client-evidence
-          path: .egress-test-evidence/
+          # Only these generated reports; no environment files or fixture keys.
+          path: |
+            .egress-test-evidence/acceptance.tap
+            .egress-test-evidence/client-evidence.json
+          include-hidden-files: true
           if-no-files-found: error
   relay:
     needs: client
