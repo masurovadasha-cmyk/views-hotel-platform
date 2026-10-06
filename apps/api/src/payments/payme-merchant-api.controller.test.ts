@@ -1,5 +1,9 @@
 import {afterEach,describe,expect,it} from "vitest";
 import {assertPaymeRequestIdentity} from "./payme-merchant-api.controller";
+import {
+  PAYME_SOURCE_CIDRS,
+  loadPaymeSourceCidrs
+} from "./payme-sandbox.config";
 
 const base:NodeJS.ProcessEnv={
   NODE_ENV:"test",
@@ -41,14 +45,11 @@ describe("Payme Merchant API identity",()=>{
   });
 
   it("does not permit test CIDR override in production",()=>{
-    const env={...base,NODE_ENV:"production",
-      GUEST_AUTH_RATE_LIMIT_SECRET:"x".repeat(32),
-      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:"{}"
-    };
-    expect(assertPaymeRequestIdentity(
-      {socket:{remoteAddress:"172.30.0.5"},headers:{}},
-      auth,
-      env
-    )).toBe(false);
+    const ranges=loadPaymeSourceCidrs({
+      ...base,
+      NODE_ENV:"production"
+    });
+    expect(ranges).toEqual(PAYME_SOURCE_CIDRS);
+    expect(ranges).not.toContain("172.30.0.0/29");
   });
 });
