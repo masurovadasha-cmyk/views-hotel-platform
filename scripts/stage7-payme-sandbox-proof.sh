@@ -9,7 +9,7 @@ compose(){ docker compose -p "$PROJECT" -f docker-compose.core-tunnel.yml -f doc
 cleanup(){
   local code=$?
   if [ "$STARTED" = true ]; then
-    if [ "$code" -ne 0 ]; then compose logs --tail=35 core >&2 || true; fi
+    if [ "$code" -ne 0 ]; then cat "$OUTPUT" >&2 2>/dev/null || true; compose logs --tail=35 core >&2 || true; fi
     compose down -v --remove-orphans >/dev/null 2>&1 || true
   fi
   return "$code"
@@ -38,13 +38,13 @@ for attempt in $(seq 1 45); do
 done
 [ "$READY" = true ] || exit 1
 echo '[3/4] Run actual HTTP, concurrency, fault injection, financial and audit assertions'
-# -i is REQUIRED: without it node/psql can receive no program and exit 0.
-# The synthetic owner secret is given to this test subprocess, not the server.
+# Forward source explicitly, then execute it in CommonJS module scope rather
+# than stdin/global scope. Only this subprocess receives the fixture owner URL.
 docker exec -i \
   -e VIEWS_PAYME_PROOF_ACK=DISPOSABLE_DATABASE_ONLY \
   -e "PAYME_PROOF_ADMIN_DATABASE_URL=postgresql://views:${POSTGRES_PASSWORD}@postgres:5432/views" \
   -e "VIEWS_PROOF_SOURCE_SHA=$(git rev-parse HEAD)" \
-  "$CORE" node < scripts/payme-lifecycle.integration.cjs > "$OUTPUT"
+  "$CORE" sh -c 'cat > /tmp/views-payme-proof.cjs && NODE_PATH=/app/node_modules node /tmp/views-payme-proof.cjs' < scripts/payme-lifecycle.integration.cjs > "$OUTPUT"
 echo '[4/4] Validate measured evidence (empty output is failure)'
 node - "$OUTPUT" <<'NODE'
 const fs=require('node:fs');const report=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
