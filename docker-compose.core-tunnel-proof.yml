@@ -32,6 +32,7 @@ services:
         psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app"
 
   cloudflared:
+    pull_policy: missing
     environment:
       TUNNEL_TOKEN: ""
     command:
