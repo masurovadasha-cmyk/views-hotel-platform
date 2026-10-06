@@ -6,7 +6,7 @@ type Reservation={reservationId:string;confirmationCode:string;unitCode:string;s
 type Workspace={property:{id:string;name:Record<string,string>;timezone:string};units:Unit[];reservations:Reservation[];reservationsTruncated:boolean;databaseTime:string;syntheticData:true;realPayments:false};
 type Quote={quoteId:string;currency:string;nights:number;totalMinor:string;expiresAt:string;lines:Array<{code:string;label:Record<string,string>;amountMinor:string}>};
 type Hold={reservationId:string;confirmationCode:string;holdExpiresAt:string;status:string;idempotentReplay:boolean};
-let boot:Promise<{csrf:string}>|null=null;
+
 async function request<T>(route:string,csrf?:string,body?:unknown,key?:string):Promise<T>{
   const headers:Record<string,string>={"X-Views-Local-Workspace":"1"};
   if(csrf)headers["X-CSRF-Token"]=csrf;
@@ -14,9 +14,9 @@ async function request<T>(route:string,csrf?:string,body?:unknown,key?:string):P
   if(key)headers["Idempotency-Key"]=key;
   const response=await fetch("/local-api/"+route,{method:body===undefined?"GET":"POST",credentials:"same-origin",headers,
     body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
-  const value=await response.json();if(!response.ok)throw new Error(value.error||"CORE_UNAVAILABLE");return value as T;
+  const value=await response.json();if(!response.ok){if(response.status===401)window.dispatchEvent(new Event("views-staff-expired"));throw new Error(value.error||"CORE_UNAVAILABLE");}return value as T;
 }
-function session(){if(!boot)boot=request<{csrf:string}>("session").catch(e=>{boot=null;throw e;});return boot;}
+
 const name=(value:Record<string,string>)=>value.ru||value.en||Object.values(value)[0]||"—";
 export function uzs(minor:string){
   if(!/^\d+$/.test(minor))return "—";
@@ -34,19 +34,21 @@ const errors:Record<string,string>={
   BOOKING_PERIOD_CONFLICT:"На эти даты уже существует резерв. Обновите список.",
   QUOTE_EXPIRED:"Расчёт устарел. Рассчитайте стоимость заново.",INVALID_DATES:"Проверьте даты: от 1 до 30 ночей, не в прошлом.",
   WORKSPACE_BUSY:"Сервер занят. Повторите запрос с тем же ключом.",INVALID_GUEST_COUNT:"Количество гостей превышает вместимость.",
-  PROPERTY_FORBIDDEN:"У тестового сотрудника нет доступа к этому объекту.",
+  PROPERTY_FORBIDDEN:"У сотрудника нет доступа к этому объекту.",
+  STAFF_PERMISSION_DENIED:"У сотрудника нет права изменять бронирования.",STAFF_SESSION_REQUIRED:"Сессия отозвана или истекла. Войдите снова.",
   IDEMPOTENCY_RESULT_NOT_HOLD:"Этот резерв уже изменён. Обновите список, прежде чем повторять действие."
 };
 function message(error:unknown){const code=error instanceof Error?error.message:"UNKNOWN";return errors[code]||"Операция не подтверждена. Обновите список перед повтором. Код: "+(/^[A-Z0-9_]+$/.test(code)?code:"NETWORK_ERROR");}
-export function LocalCoreWorkspace(){
-  const [data,setData]=useState<Workspace|null>(null),[csrf,setCsrf]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
+export function LocalCoreWorkspace({staffCsrf}:{staffCsrf:string}){
+  const csrf=staffCsrf;
+  const [data,setData]=useState<Workspace|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false);
   const [error,setError]=useState(""),[notice,setNotice]=useState(""),[selection,setSelection]=useState("");
   const [checkIn,setCheckIn]=useState(day(1)),[checkOut,setCheckOut]=useState(day(3)),[guests,setGuests]=useState(1);
   const [quote,setQuote]=useState<Quote|null>(null),[hold,setHold]=useState<Hold|null>(null),[key,setKey]=useState("");
   const [now,setNow]=useState(Date.now()),releaseKeys=useRef(new Map<string,string>());
   const unit=data?.units.find(u=>u.unitId+":"+u.ratePlanId===selection);
   async function refresh(token=csrf){const next=await request<Workspace>("workspace",token);setData(next);setSelection(old=>old||(next.units[0]?next.units[0].unitId+":"+next.units[0].ratePlanId:""));}
-  useEffect(()=>{let alive=true;session().then(async s=>{if(!alive)return;setCsrf(s.csrf);await refresh(s.csrf);}).catch(e=>{if(alive)setError(message(e));}).finally(()=>{if(alive)setLoading(false);});return()=>{alive=false;};},[]);
+  useEffect(()=>{let alive=true;refresh(csrf).catch(e=>{if(alive)setError(message(e));}).finally(()=>{if(alive)setLoading(false);});return()=>{alive=false;};},[csrf]);
   useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(id);},[]);
   function invalidate(){setQuote(null);setHold(null);setKey("");setNotice("");setError("");}
   async function calculate(event:React.FormEvent){
