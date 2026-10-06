@@ -11,6 +11,20 @@ compose() {
   docker compose -f "$BASE_FILE" -f "$PROOF_FILE" "$@"
 }
 
+pull_with_retry() {
+  local image="$1"
+  for attempt in 1 2 3 4; do
+    if docker pull "$image"; then
+      return 0
+    fi
+    if [ "$attempt" -eq 4 ]; then
+      echo "Unable to pull $image after retries" >&2
+      return 1
+    fi
+    sleep $((attempt*2))
+  done
+}
+
 cleanup() {
   compose down -v --remove-orphans >/dev/null 2>&1 || true
 }
@@ -42,6 +56,8 @@ compose up -d postgres
 compose run --rm migrate
 
 echo "[3/7] Start Core and Cloudflare Quick Tunnel, then verify private readiness"
+pull_with_retry "cloudflare/cloudflared:latest"
+pull_with_retry "$CURL_IMAGE"
 compose up -d --build core cloudflared
 for attempt in $(seq 1 45); do
   if docker run --rm --network "$INGRESS_NETWORK" "$CURL_IMAGE"       --fail --silent --show-error       http://core:3001/readiness >/tmp/views-core-readiness.json 2>/dev/null; then
