@@ -16,4 +16,8 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run typecheck
       - run: npm test
+      - name: Validate Stage 7 shell proofs
+        run: |
+          bash -n scripts/stage7-tunnel-proof.sh
+          bash -n scripts/stage7-named-tunnel-failover-proof.sh
       - run: npm run build
