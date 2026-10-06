@@ -9,4 +9,5 @@ services:
       VIEWS_PAYME_MERCHANT_ID: "0123456789abcdef01234567"
       VIEWS_PAYME_MERCHANT_LOGIN: "views-payme-test"
       VIEWS_PAYME_TEST_KEY: "fixture-test-key-0123456789abcdef"
-      VIEWS_PAYME_TEST_SOURCE_CIDRS_JSON: '["172.30.0.0/29"]'
+      # Disposable loopback integration process only. Ignored in production.
+      VIEWS_PAYME_TEST_SOURCE_CIDRS_JSON: '["127.0.0.1/32","::1/128"]'

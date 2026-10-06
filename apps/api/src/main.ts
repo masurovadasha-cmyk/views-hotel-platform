@@ -1,21 +1,28 @@
 import "reflect-metadata";
 import {NestFactory} from "@nestjs/core";
 import type {NestExpressApplication} from "@nestjs/platform-express";
+import {raw,type Request,type Response,type NextFunction} from "express";
 import {AppModule} from "./app.module";
 import {loadConfig} from "./config";
 import {RedactingLogger} from "./security/redacting-logger";
+import {paymeError} from "./payments/payme-merchant-api.service";
 
 async function bootstrap(){
   const config=loadConfig();
   const app=await NestFactory.create<NestExpressApplication>(AppModule,{
-    cors:false,
-    rawBody:true,
-    logger:new RedactingLogger()
+    cors:false,rawBody:true,logger:new RedactingLogger()
   });
-  // Payme Merchant API officially sends Content-Type: text/json.
-  // Keep that route raw so JSON-RPC parse errors can still return HTTP 200
-  // with the protocol-specific -32700 response instead of an Express 400.
-  app.useBodyParser("raw",{type:"text/json",limit:"64kb"});
+  // Route-scoped raw parsing runs before Nest's default JSON parser. It keeps
+  // malformed JSON in either supported content type inside the JSON-RPC contract.
+  const parser=raw({type:["text/json","application/json"],limit:"64kb",inflate:false});
+  app.use("/v1/payments/payme/merchant",(req:Request,res:Response,next:NextFunction)=>{
+    if(req.method!=="POST")return next();
+    parser(req,res,error=>{
+      if(error){res.status(200).json(paymeError(null,-32600));return;}
+      if(Buffer.isBuffer(req.body))Object.assign(req,{rawBody:req.body});
+      next();
+    });
+  });
   app.enableShutdownHooks();
   await app.listen(config.port,"0.0.0.0");
 }
