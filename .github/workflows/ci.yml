@@ -16,10 +16,13 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run typecheck
       - run: npm test
+      - name: Enforce Core network primitive boundary
+        run: npm run security:core-network-primitives
       - name: Validate Stage 7 shell proofs
         run: |
           bash -n scripts/stage7-tunnel-proof.sh
           bash -n scripts/stage7-named-tunnel-failover-proof.sh
           bash -n scripts/stage7-tunnel-slo-check.sh
           bash -n scripts/stage7-external-synthetic-check.sh
+          bash -n scripts/stage7-core-egress-proof.sh
       - run: npm run build
