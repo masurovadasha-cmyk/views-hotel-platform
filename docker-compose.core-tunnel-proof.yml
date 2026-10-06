@@ -28,6 +28,7 @@ services:
         psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT CONNECT ON DATABASE views TO views_app"
         psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT USAGE ON SCHEMA public,app TO views_app"
         psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO views_app"
+        psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "REVOKE INSERT,UPDATE,DELETE ON provider_egress_attempts,provider_egress_reconciliation_queue FROM views_app"
         psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO views_app"
         psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app"
 
