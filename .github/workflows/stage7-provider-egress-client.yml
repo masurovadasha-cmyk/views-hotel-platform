@@ -1,0 +1,77 @@
+name: Stage 7.18 Provider Egress Client
+on:
+  push:
+    branches: ['stage7/provider-egress-client-v1']
+  pull_request:
+    branches: ['stage7/core-egress-relay-v1']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: provider-egress-client-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install existing API development dependencies
+        working-directory: apps/api
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Typecheck the complete Core with the new client
+        working-directory: apps/api
+        run: npm run typecheck
+      - name: Run compiled policy, audit and real CONNECT-TLS tests
+        run: node scripts/run-provider-egress-acceptance.mjs
+      - name: Check proof shell syntax and relay policy
+        run: |
+          bash -n scripts/stage7-egress-relay-proof.sh
+          node scripts/relay-destination-policy-gate.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: provider-egress-client-evidence
+          path: .egress-test-evidence/
+          if-no-files-found: error
+  relay:
+    needs: client
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      POSTGRES_PASSWORD: proof_owner_password_2026
+      DATABASE_URL: postgresql://views_app:views_app_proof_2026@postgres:5432/views
+      GUEST_AUTH_RATE_LIMIT_SECRET: stage7-18-fixture-rate-limit-secret-not-production
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON: '{"pages-bff":"signed_only"}'
+      CLOUDFLARE_TUNNEL_TOKEN: proof-unused
+      VIEWS_EGRESS_PROOF_ACK: DISPOSABLE_DATABASE_ONLY
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install existing source-policy parser
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Generate short-lived fixture verification keys
+        run: |
+          node <<'NODE'
+          const {generateKeyPairSync}=require('node:crypto');
+          const fs=require('node:fs');
+          const {publicKey}=generateKeyPairSync('ed25519');
+          const pem=publicKey.export({format:'pem',type:'spki'}).toString().trim();
+          const refs={'pages-bff':[{kid:'stage7-18-proof',ref:'VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY',
+            activatedAt:new Date(Date.now()-60000).toISOString(),rotateBy:new Date(Date.now()+86400000).toISOString()}]};
+          fs.appendFileSync(process.env.GITHUB_ENV,'VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY<<KEY\n'+pem+'\nKEY\n'+
+            'VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON='+JSON.stringify(refs)+'\n');
+          NODE
+      - name: Prove actual Squid denies approved DNS names resolving to private IPs
+        run: bash scripts/stage7-egress-relay-proof.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: relay-destination-proof
+          path: /tmp/stage7.17-egress-relay-proof.json
+          if-no-files-found: error
