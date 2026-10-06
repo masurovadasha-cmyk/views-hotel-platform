@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 PROJECT="views-payme-proof-${GITHUB_RUN_ID:-$$}-${GITHUB_RUN_ATTEMPT:-1}"
-OUTPUT="/tmp/stage7.20-payme-sandbox-proof.json"
+OUTPUT="${VIEWS_PAYME_PROOF_OUTPUT:-/tmp/stage7.20-payme-sandbox-proof.json}"
 STARTED=false
 compose(){ docker compose -p "$PROJECT" -f docker-compose.core-tunnel.yml -f docker-compose.core-tunnel-proof.yml -f docker-compose.payme-sandbox-proof.yml "$@"; }
 cleanup(){
@@ -22,7 +22,9 @@ done
 [ "$DATABASE_URL" = 'postgresql://views_app:views_app_proof_2026@postgres:5432/views' ] || { echo 'DISPOSABLE_DATABASE_REQUIRED' >&2; exit 2; }
 export CLOUDFLARE_TUNNEL_TOKEN="${CLOUDFLARE_TUNNEL_TOKEN:-proof-unused}"
 umask 077
-printf '{"stage":"7.20","result":"fail","error":"PROOF_INCOMPLETE"}\n' > "$OUTPUT"
+STAGE=7.20
+[ "${VIEWS_PAYME_EXPIRY_PROOF:-false}" != true ] || STAGE=7.21
+printf '{"stage":"%s","result":"fail","error":"PROOF_INCOMPLETE"}\n' "$STAGE" > "$OUTPUT"
 echo '[1/4] Create disposable PostgreSQL and apply all ordered migrations'
 STARTED=true
 compose up -d postgres
@@ -40,7 +42,11 @@ done
 echo '[3/4] Run actual HTTP, concurrency, fault injection, financial and audit assertions'
 # Forward source explicitly, then execute it in CommonJS module scope rather
 # than stdin/global scope. Only this subprocess receives the fixture owner URL.
+if [ "${VIEWS_PAYME_EXPIRY_PROOF:-false}" = true ]; then
+  docker exec -i "$CORE" sh -c 'cat > /tmp/payme-expiry.integration.cjs' < scripts/payme-expiry.integration.cjs
+fi
 docker exec -i \
+  -e "VIEWS_PAYME_EXPIRY_PROOF=${VIEWS_PAYME_EXPIRY_PROOF:-false}" \
   -e VIEWS_PAYME_PROOF_ACK=DISPOSABLE_DATABASE_ONLY \
   -e "PAYME_PROOF_ADMIN_DATABASE_URL=postgresql://views:${POSTGRES_PASSWORD}@postgres:5432/views" \
   -e "VIEWS_PROOF_SOURCE_SHA=$(git rev-parse HEAD)" \

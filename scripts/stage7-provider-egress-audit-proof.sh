@@ -33,7 +33,7 @@ PG="$(compose ps -q postgres)"
 [ -n "$PG" ] || { echo "postgres container missing" >&2; exit 1; }
 
 echo "[2/7] Seed two independent organizations"
-docker exec "$PG" psql -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+docker exec -i "$PG" psql -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
 INSERT INTO organizations(
   id,type,legal_name,display_name,country_code,default_currency,timezone
 ) VALUES
@@ -42,7 +42,7 @@ INSERT INTO organizations(
 SQL
 
 runtime_sql(){
-  docker exec -e PGPASSWORD=views_app_proof_2026 "$PG"     psql -h 127.0.0.1 -U views_app -d views -v ON_ERROR_STOP=1 "$@"
+  docker exec -i -e PGPASSWORD=views_app_proof_2026 "$PG"     psql -h 127.0.0.1 -U views_app -d views -v ON_ERROR_STOP=1 "$@"
 } 
 
 WHO="$(runtime_sql -Atc "SELECT current_user")"
@@ -66,14 +66,12 @@ BEGIN
     1000
   );
   IF v_id IS NULL THEN RAISE EXCEPTION 'AUDIT_BEGIN_FAILED'; END IF;
-
   v_completed:=app.complete_provider_egress_attempt(
     'fixture','create',
     '71111111-1111-4111-8111-111111111111'::uuid,
     'failed','unknown',NULL,'EGRESS_TRANSPORT_FAILED',37
   );
   IF v_completed IS NOT TRUE THEN RAISE EXCEPTION 'AUDIT_COMPLETE_FAILED'; END IF;
-
   BEGIN
     PERFORM app.begin_provider_egress_attempt(
       'fixture','create',
@@ -86,7 +84,6 @@ BEGIN
   IF v_replay_blocked IS NOT TRUE THEN
     RAISE EXCEPTION 'REQUEST_REPLAY_WAS_NOT_BLOCKED';
   END IF;
-
   IF (SELECT count(*) FROM provider_egress_attempts)<>1 THEN
     RAISE EXCEPTION 'UNEXPECTED_AUDIT_COUNT';
   END IF;
@@ -121,7 +118,7 @@ echo "[4/7] Prove runtime cannot mutate audit tables directly and tenants are is
 runtime_sql <<'SQL'
 BEGIN;
 SELECT set_config('app.organization_id','71000000-0000-4000-8000-000000000001',true);
-DO $
+DO $audit$
 DECLARE
   v_blocked boolean:=false;
   v_owner name;
@@ -137,7 +134,6 @@ BEGIN
   EXCEPTION WHEN others THEN
     v_blocked:=true;
   END;
-
   IF v_blocked IS NOT TRUE THEN
     SELECT pg_get_userbyid(c.relowner)
       INTO v_owner
@@ -149,14 +145,14 @@ BEGIN
       current_user,v_owner,v_super;
   END IF;
 END
-$;
+$audit$;
 ROLLBACK;
 SQL
 
 runtime_sql <<'SQL'
 BEGIN;
 SELECT set_config('app.organization_id','72000000-0000-4000-8000-000000000001',true);
-DO $
+DO $audit$
 BEGIN
   IF (SELECT count(*) FROM provider_egress_attempts)<>0 THEN
     RAISE EXCEPTION 'TENANT_ATTEMPT_ISOLATION_FAILED';
@@ -165,7 +161,7 @@ BEGIN
     RAISE EXCEPTION 'TENANT_RECONCILIATION_ISOLATION_FAILED';
   END IF;
 END
-$;
+$audit$;
 ROLLBACK;
 SQL
 
@@ -181,7 +177,7 @@ SELECT app.begin_provider_egress_attempt(
 COMMIT;
 SQL
 
-docker exec "$PG" psql -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+docker exec -i "$PG" psql -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
 UPDATE provider_egress_attempts
 SET started_at=now()-interval '2 minutes'
 WHERE request_id='71111111-1111-4111-8111-333333333333'::uuid;
@@ -217,20 +213,17 @@ BEGIN
     '71333333-3333-4333-8333-333333333333'::uuid,1
   );
   IF v_queue IS NULL THEN RAISE EXCEPTION 'RECONCILIATION_NOT_CLAIMED'; END IF;
-
   v_status:=app.finish_provider_egress_reconciliation(
     v_queue,
     '71333333-3333-4333-8333-333333333333'::uuid,
     true,'PROVIDER_CONFIRMED_NOT_APPLIED',60
   );
   IF v_status<>'resolved' THEN RAISE EXCEPTION 'RECONCILIATION_NOT_RESOLVED'; END IF;
-
   SELECT queue_id INTO v_queue
   FROM app.claim_provider_egress_reconciliation(
     '71444444-4444-4444-8444-444444444444'::uuid,1
   );
   IF v_queue IS NULL THEN RAISE EXCEPTION 'SECOND_RECONCILIATION_NOT_CLAIMED'; END IF;
-
   v_status:=app.finish_provider_egress_reconciliation(
     v_queue,
     '71444444-4444-4444-8444-444444444444'::uuid,
