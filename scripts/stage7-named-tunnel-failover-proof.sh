@@ -135,32 +135,36 @@ wait_container_running core
 wait_container_running cloudflared-a
 wait_container_running cloudflared-b
 
-echo "[3/9] Establish stable-hostname baseline with both replicas"
+echo "[3/10] Establish stable-hostname baseline with both replicas"
+compose --profile ops run --rm tunnel-observer \
+  >/tmp/stage7.15-named-tunnel-metrics-baseline.json
 IFS=',' read -r BASE_HEALTH BASE_READY BASE_GUEST   <<<"$(prove_public_stack baseline)"
-echo "PASS: stable staging hostname is healthy with both replicas"
+echo "PASS: stable staging hostname and replica metrics are healthy"
 
-echo "[4/9] Stop replica B and prove the same hostname through replica A"
+echo "[4/10] Stop replica B and prove the same hostname through replica A"
 compose stop cloudflared-b
 IFS=',' read -r A_HEALTH A_READY A_GUEST   <<<"$(prove_public_stack replica-a-only)"
 echo "PASS: stable hostname survived with replica A only"
 
-echo "[5/9] Restore replica B"
+echo "[5/10] Restore replica B"
 compose up -d cloudflared-b
 wait_container_running cloudflared-b
 wait_public_path "replica-b-restored" "/health" "200" >/dev/null
 
-echo "[6/9] Stop replica A and prove the same hostname through replica B"
+echo "[6/10] Stop replica A and prove the same hostname through replica B"
 compose stop cloudflared-a
 IFS=',' read -r B_HEALTH B_READY B_GUEST   <<<"$(prove_public_stack replica-b-only)"
 echo "PASS: stable hostname survived with replica B only"
 
-echo "[7/9] Restore replica A and prove both replicas healthy again"
+echo "[7/10] Restore replica A and prove both replicas healthy again"
 compose up -d cloudflared-a
 wait_container_running cloudflared-a
 IFS=',' read -r FINAL_HEALTH FINAL_READY FINAL_GUEST   <<<"$(prove_public_stack restored)"
-echo "PASS: both named-tunnel replicas restored"
+compose --profile ops run --rm tunnel-observer \
+  >/tmp/stage7.15-named-tunnel-metrics-restored.json
+echo "PASS: both named-tunnel replicas and metrics SLO restored"
 
-echo "[8/9] Re-prove no direct Core host listener and no proxy spoof bypass"
+echo "[8/10] Re-prove no direct Core host listener and no proxy spoof bypass"
 CORE_CONTAINER_ID="$(compose ps -q core)"
 [ -n "$CORE_CONTAINER_ID" ] || fail "Core container id is unavailable"
 PORT_BINDINGS="$(
@@ -182,7 +186,13 @@ UNTRUSTED_STATUS="$(
 [ "$UNTRUSTED_STATUS" = "403" ]   || fail "forged forwarded identity expected 403, got $UNTRUSTED_STATUS"
 echo "PASS: direct origin remains closed and untrusted proxy spoof remains denied"
 
-echo "[9/9] Write named-tunnel failover evidence"
+echo "[9/10] Verify metrics evidence exists"
+[ -s /tmp/stage7.15-named-tunnel-metrics-baseline.json ] \
+  || fail "baseline metrics evidence missing"
+[ -s /tmp/stage7.15-named-tunnel-metrics-restored.json ] \
+  || fail "restored metrics evidence missing"
+
+echo "[10/10] Write named-tunnel failover evidence"
 cat >/tmp/stage7.15-named-tunnel-proof.json <<JSON
 {
   "schemaVersion": 1,
@@ -191,7 +201,7 @@ cat >/tmp/stage7.15-named-tunnel-proof.json <<JSON
   "transport": "cloudflare_named_tunnel",
   "stableHostname": "$STAGING_URL",
   "connectorCount": 2,
-  "sameNamedTunnelFailoverProven": true,
+  "sameNamedTunnelFailoverProven": true,\n  "replicaMetricsSloProven": true,
   "directOriginReachable": false,
   "untrustedPeerSpoofStatus": $UNTRUSTED_STATUS,
   "baseline": {

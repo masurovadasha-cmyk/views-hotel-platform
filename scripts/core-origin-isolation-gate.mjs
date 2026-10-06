@@ -3,6 +3,7 @@ import {readFile} from "node:fs/promises";
 import {pathToFileURL} from "node:url";
 
 const CONNECTOR_NAME=/^cloudflared(?:-[a-z0-9][a-z0-9-]*)?$/;
+const METRICS_PORT="0.0.0.0:2000";
 
 export class CoreOriginIsolationGateError extends Error{
   constructor(code){
@@ -19,6 +20,7 @@ export function evaluateCoreOriginIsolation(model){
 
   const services=model.services;
   const core=requiredService(services,"core");
+  const observer=requiredService(services,"tunnel-observer");
   const connectors=Object.entries(services)
     .filter(([name])=>CONNECTOR_NAME.test(name))
     .sort(([a],[b])=>a.localeCompare(b));
@@ -34,6 +36,7 @@ export function evaluateCoreOriginIsolation(model){
   const protectedNames=[
     "core",
     "postgres",
+    "tunnel-observer",
     ...connectors.map(([name])=>name)
   ];
   for(const name of protectedNames){
@@ -45,6 +48,7 @@ export function evaluateCoreOriginIsolation(model){
 
   for(const [name,service] of [
     ["core",core],
+    ["tunnel-observer",observer],
     ...connectors
   ]){
     if(service.network_mode==="host"){
@@ -69,21 +73,43 @@ export function evaluateCoreOriginIsolation(model){
     add(blockers,{code:"PRIVATE_INGRESS_NETWORK_REQUIRED",service:null});
   }
 
+  const metricsNetwork=model.networks.tunnel_metrics;
+  if(!metricsNetwork||metricsNetwork.internal!==true){
+    add(blockers,{code:"PRIVATE_METRICS_NETWORK_REQUIRED",service:null});
+  }
+
   const coreNetworks=networkEntries(core.networks);
   if(!coreNetworks.has("core_ingress")){
     add(blockers,{code:"CORE_CONNECTOR_SHARED_INGRESS_REQUIRED",service:null});
   }
+  if(coreNetworks.has("tunnel_metrics")){
+    add(blockers,{code:"CORE_METRICS_NETWORK_FORBIDDEN",service:"core"});
+  }
 
-  const expectedMembers=[
+  const expectedIngressMembers=[
     "core",
     ...connectors.map(([name])=>name)
   ].sort();
-  const ingressMembers=Object.entries(services)
-    .filter(([,service])=>networkEntries(service.networks).has("core_ingress"))
-    .map(([name])=>name)
-    .sort();
-  if(JSON.stringify(ingressMembers)!==JSON.stringify(expectedMembers)){
+  const ingressMembers=membersOfNetwork(services,"core_ingress");
+  if(JSON.stringify(ingressMembers)!==JSON.stringify(expectedIngressMembers)){
     add(blockers,{code:"INGRESS_NETWORK_MEMBERSHIP_INVALID",service:null});
+  }
+
+  const expectedMetricsMembers=[
+    "tunnel-observer",
+    ...connectors.map(([name])=>name)
+  ].sort();
+  const metricsMembers=membersOfNetwork(services,"tunnel_metrics");
+  if(JSON.stringify(metricsMembers)!==JSON.stringify(expectedMetricsMembers)){
+    add(blockers,{code:"METRICS_NETWORK_MEMBERSHIP_INVALID",service:null});
+  }
+
+  const observerNetworks=networkEntries(observer.networks);
+  if(
+    observerNetworks.size!==1||
+    !observerNetworks.has("tunnel_metrics")
+  ){
+    add(blockers,{code:"OBSERVER_NETWORK_SCOPE_INVALID",service:"tunnel-observer"});
   }
 
   const coreIp=networkIpv4(core.networks,"core_ingress");
@@ -97,6 +123,9 @@ export function evaluateCoreOriginIsolation(model){
     const networks=networkEntries(connector.networks);
     if(!networks.has("core_ingress")){
       add(blockers,{code:"CORE_CONNECTOR_SHARED_INGRESS_REQUIRED",service:name});
+    }
+    if(!networks.has("tunnel_metrics")){
+      add(blockers,{code:"TUNNEL_METRICS_NETWORK_REQUIRED",service:name});
     }
 
     const ip=networkIpv4(connector.networks,"core_ingress");
@@ -122,6 +151,9 @@ export function evaluateCoreOriginIsolation(model){
         code:"TUNNEL_TOKEN_MUST_NOT_BE_IN_PROCESS_ARGS",
         service:name
       });
+    }
+    if(!command.includes("--metrics "+METRICS_PORT)){
+      add(blockers,{code:"TUNNEL_METRICS_ENDPOINT_REQUIRED",service:name});
     }
 
     const env=environmentMap(connector.environment);
@@ -153,6 +185,8 @@ export function evaluateCoreOriginIsolation(model){
     add(blockers,{code:"TUNNEL_EGRESS_MUST_ALLOW_OUTBOUND",service:null});
   }
 
+  validateObserverConfig(observer,connectors,blockers);
+
   const coreEnv=environmentMap(core.environment);
   if(coreEnv.TRUSTED_PROXY_MODE!=="cloudflare_tunnel"){
     add(blockers,{code:"TUNNEL_PROXY_MODE_REQUIRED",service:"core"});
@@ -171,12 +205,18 @@ export function evaluateCoreOriginIsolation(model){
 
   return {
     ok:blockers.length===0,
-    schemaVersion:2,
+    schemaVersion:3,
     mode:"cloudflare_tunnel",
     connectorCount:connectors.length,
     connectorIps:connectorIps.sort(),
     coreIp:coreIp||null,
     ingressMembers,
+    metricsMembers,
+    observability:{
+      network:"tunnel_metrics",
+      metricsPort:2000,
+      observer:"tunnel-observer"
+    },
     blockers
   };
 }
@@ -201,6 +241,41 @@ export async function runCoreOriginIsolationGate(
   const result=evaluateCoreOriginIsolation(model);
   output.write(JSON.stringify(result)+"\n");
   return result.ok?0:1;
+}
+
+function validateObserverConfig(observer,connectors,blockers){
+  const env=environmentMap(observer.environment);
+  let endpoints;
+  try{
+    endpoints=JSON.parse(
+      String(env.VIEWS_TUNNEL_METRICS_ENDPOINTS_JSON||"")
+    );
+  }catch{
+    add(blockers,{code:"OBSERVER_ENDPOINTS_INVALID",service:"tunnel-observer"});
+    return;
+  }
+
+  if(!endpoints||typeof endpoints!=="object"||Array.isArray(endpoints)){
+    add(blockers,{code:"OBSERVER_ENDPOINTS_INVALID",service:"tunnel-observer"});
+    return;
+  }
+
+  const expected=Object.fromEntries(
+    connectors.map(([name])=>[
+      name,
+      "http://"+name+":2000/metrics"
+    ])
+  );
+
+  if(JSON.stringify(sortObject(endpoints))!==JSON.stringify(sortObject(expected))){
+    add(blockers,{code:"OBSERVER_ENDPOINTS_MISMATCH",service:"tunnel-observer"});
+  }
+}
+
+function sortObject(value){
+  return Object.fromEntries(
+    Object.entries(value).sort(([a],[b])=>a.localeCompare(b))
+  );
 }
 
 function parseArgs(argv){
@@ -240,6 +315,13 @@ function networkEntries(value){
   if(Array.isArray(value))return new Map(value.map(name=>[String(name),{}]));
   if(value&&typeof value==="object")return new Map(Object.entries(value));
   return new Map();
+}
+
+function membersOfNetwork(services,name){
+  return Object.entries(services)
+    .filter(([,service])=>networkEntries(service.networks).has(name))
+    .map(([serviceName])=>serviceName)
+    .sort();
 }
 
 function networkIpv4(value,name){

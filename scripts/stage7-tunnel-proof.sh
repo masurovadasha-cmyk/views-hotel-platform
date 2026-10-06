@@ -133,7 +133,13 @@ for attempt in $(seq 1 45); do
   sleep 2
 done
 
-echo "[4/8] Prove the host has no direct Core origin listener"
+echo "[4/9] Prove both replica metrics endpoints are reachable"
+compose --profile ops run --rm tunnel-observer \
+  node /ops/tunnel-replica-observer.mjs --min-connections=1 \
+  >/tmp/stage7.15-tunnel-metrics-proof.json
+cat /tmp/stage7.15-tunnel-metrics-proof.json
+
+echo "[5/9] Prove the host has no direct Core origin listener"
 CORE_CONTAINER_ID="$(compose ps -q core)"
 if [ -z "$CORE_CONTAINER_ID" ]; then
   echo "Core container id is unavailable" >&2
@@ -153,7 +159,7 @@ if curl --silent --show-error --fail --max-time 2     http://127.0.0.1:3001/heal
 fi
 echo "PASS: 127.0.0.1:3001 is not reachable from the host"
 
-echo "[5/8] Prove an untrusted private peer cannot forge CF client identity"
+echo "[6/9] Prove an untrusted private peer cannot forge CF client identity"
 UNTRUSTED_STATUS="$(
   docker run --rm --network "$INGRESS_NETWORK" "$CURL_IMAGE"     --silent --output /dev/null --write-out '%{http_code}'     --request POST     --header 'content-type: application/json'     --header 'cf-connecting-ip: 203.0.113.55'     --data '{"token":"fixture"}'     http://core:3001/v1/guest-auth/exchange
 )"
@@ -163,7 +169,7 @@ if [ "$UNTRUSTED_STATUS" != "403" ]; then
 fi
 echo "PASS: spoofed forwarded identity from non-connector peer is denied"
 
-echo "[6/8] Resolve independent Quick Tunnel URLs for both pinned connectors"
+echo "[7/9] Resolve independent Quick Tunnel URLs for both pinned connectors"
 TUNNEL_A="$(resolve_tunnel_url cloudflared-a)"
 TUNNEL_B="$(resolve_tunnel_url cloudflared-b)"
 if [ "$TUNNEL_A" = "$TUNNEL_B" ]; then
@@ -173,12 +179,12 @@ fi
 echo "Connector A tunnel: $TUNNEL_A"
 echo "Connector B tunnel: $TUNNEL_B"
 
-echo "[7/8] Prove both pinned connector paths reach Core"
+echo "[8/9] Prove both pinned connector paths reach Core"
 IFS=',' read -r A_HEALTH A_READY A_GUEST   <<<"$(prove_tunnel_path connector-a "$TUNNEL_A")"
 IFS=',' read -r B_HEALTH B_READY B_GUEST   <<<"$(prove_tunnel_path connector-b "$TUNNEL_B")"
 echo "PASS: connector A and B both reached Core through Cloudflare"
 
-echo "[8/8] Stop connector A and prove connector B remains healthy"
+echo "[9/9] Stop connector A and prove connector B remains healthy"
 compose stop cloudflared-a
 SURVIVOR_STATUS="$(
   curl --silent --output /tmp/survivor-health.json     --write-out '%{http_code}'     --max-time 10     "$TUNNEL_B/health" || true
@@ -198,7 +204,7 @@ cat >/tmp/stage7.15-tunnel-proof.json <<JSON
   "transport": "cloudflare_quick_tunnel_dual_connector",
   "connectorCount": 2,
   "directOriginReachable": false,
-  "untrustedPeerSpoofStatus": $UNTRUSTED_STATUS,
+  "untrustedPeerSpoofStatus": $UNTRUSTED_STATUS,\n  "metricsObserverPass": true,
   "connectorA": {
     "healthStatus": $A_HEALTH,
     "readinessStatus": $A_READY,

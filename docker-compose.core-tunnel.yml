@@ -86,6 +86,7 @@ services:
       core_ingress:
         ipv4_address: 172.30.0.2
       tunnel_egress: {}
+      tunnel_metrics: {}
     read_only: true
     cap_drop:
       - ALL
@@ -113,7 +114,28 @@ services:
       core_ingress:
         ipv4_address: 172.30.0.4
       tunnel_egress: {}
+      tunnel_metrics: {}
     read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  tunnel-observer:
+    image: node:22-alpine
+    profiles: ["ops"]
+    command:
+      - node
+      - /ops/tunnel-replica-observer.mjs
+    environment:
+      VIEWS_TUNNEL_METRICS_ENDPOINTS_JSON: '{"cloudflared-a":"http://cloudflared-a:2000/metrics","cloudflared-b":"http://cloudflared-b:2000/metrics"}'
+    volumes:
+      - ./scripts/tunnel-replica-observer.mjs:/ops/tunnel-replica-observer.mjs:ro
+    networks:
+      tunnel_metrics: {}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
     cap_drop:
       - ALL
     security_opt:
@@ -131,6 +153,8 @@ networks:
     driver: bridge
   tunnel_egress:
     driver: bridge
+  tunnel_metrics:
+    internal: true
 
 volumes:
   views_core_pg:

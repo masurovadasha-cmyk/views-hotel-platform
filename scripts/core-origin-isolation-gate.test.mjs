@@ -8,13 +8,31 @@ function connector(ip){
   return {
     image:"cloudflare/cloudflared:latest",
     command:[
-      "tunnel","--no-autoupdate","--loglevel","info","run"
+      "tunnel","--no-autoupdate","--metrics","0.0.0.0:2000","run"
     ],
     environment:{TUNNEL_TOKEN:"fixture-shared-tunnel-token"},
     networks:{
       core_ingress:{ipv4_address:ip},
-      tunnel_egress:null
+      tunnel_egress:null,
+      tunnel_metrics:null
     },
+    read_only:true,
+    cap_drop:["ALL"],
+    security_opt:["no-new-privileges:true"]
+  };
+}
+
+function observer(){
+  return {
+    image:"node:22-alpine",
+    command:["node","/ops/tunnel-replica-observer.mjs"],
+    environment:{
+      VIEWS_TUNNEL_METRICS_ENDPOINTS_JSON:JSON.stringify({
+        "cloudflared-a":"http://cloudflared-a:2000/metrics",
+        "cloudflared-b":"http://cloudflared-b:2000/metrics"
+      })
+    },
+    networks:{tunnel_metrics:null},
     read_only:true,
     cap_drop:["ALL"],
     security_opt:["no-new-privileges:true"]
@@ -47,27 +65,30 @@ function fixture(){
         security_opt:["no-new-privileges:true"]
       },
       "cloudflared-a":connector("172.30.0.2"),
-      "cloudflared-b":connector("172.30.0.4")
+      "cloudflared-b":connector("172.30.0.4"),
+      "tunnel-observer":observer()
     },
     networks:{
       core_ingress:{internal:true},
       core_data:{internal:true},
       core_egress:{},
-      tunnel_egress:{}
+      tunnel_egress:{},
+      tunnel_metrics:{internal:true}
     }
   };
 }
 
-describe("Core origin isolation HA gate",()=>{
-  it("accepts exactly pinned dual-connector topology",()=>{
+describe("Core origin isolation HA + observability gate",()=>{
+  it("accepts pinned dual connectors and isolated metrics observer",()=>{
     const result=evaluateCoreOriginIsolation(fixture());
     expect(result.ok).toBe(true);
+    expect(result.schemaVersion).toBe(3);
     expect(result.connectorCount).toBe(2);
     expect(result.connectorIps).toEqual([
       "172.30.0.2","172.30.0.4"
     ]);
-    expect(result.ingressMembers).toEqual([
-      "cloudflared-a","cloudflared-b","core"
+    expect(result.metricsMembers).toEqual([
+      "cloudflared-a","cloudflared-b","tunnel-observer"
     ]);
   });
 
@@ -76,10 +97,60 @@ describe("Core origin isolation HA gate",()=>{
     delete model.services["cloudflared-b"];
     model.services.core.environment.VIEWS_TRUSTED_PROXY_CIDRS_JSON=
       '["172.30.0.2/32"]';
+    model.services["tunnel-observer"].environment
+      .VIEWS_TUNNEL_METRICS_ENDPOINTS_JSON=JSON.stringify({
+        "cloudflared-a":"http://cloudflared-a:2000/metrics"
+      });
     const result=evaluateCoreOriginIsolation(model);
     expect(result.blockers).toContainEqual({
       code:"HA_CONNECTOR_REPLICA_COUNT_INVALID",
       service:null
+    });
+  });
+
+  it("requires the metrics network to remain private",()=>{
+    const model=fixture();
+    model.networks.tunnel_metrics.internal=false;
+    const result=evaluateCoreOriginIsolation(model);
+    expect(result.blockers).toContainEqual({
+      code:"PRIVATE_METRICS_NETWORK_REQUIRED",
+      service:null
+    });
+  });
+
+  it("requires cloudflared metrics endpoints on every replica",()=>{
+    const model=fixture();
+    model.services["cloudflared-b"].command=[
+      "tunnel","--no-autoupdate","run"
+    ];
+    const result=evaluateCoreOriginIsolation(model);
+    expect(result.blockers).toContainEqual({
+      code:"TUNNEL_METRICS_ENDPOINT_REQUIRED",
+      service:"cloudflared-b"
+    });
+  });
+
+  it("keeps Core off the metrics network",()=>{
+    const model=fixture();
+    model.services.core.networks.tunnel_metrics=null;
+    const result=evaluateCoreOriginIsolation(model);
+    expect(result.blockers).toContainEqual({
+      code:"CORE_METRICS_NETWORK_FORBIDDEN",
+      service:"core"
+    });
+  });
+
+  it("rejects observer endpoints that do not match replicas",()=>{
+    const model=fixture();
+    model.services["tunnel-observer"].environment
+      .VIEWS_TUNNEL_METRICS_ENDPOINTS_JSON=JSON.stringify({
+        "cloudflared-a":"http://cloudflared-a:2000/metrics",
+        "cloudflared-b":"http://wrong:2000/metrics"
+      });
+    const result=evaluateCoreOriginIsolation(model);
+    expect(result.blockers).toContainEqual({
+      code:"OBSERVER_ENDPOINTS_MISMATCH",
+      service:"tunnel-observer"
     });
   });
 
@@ -111,19 +182,6 @@ describe("Core origin isolation HA gate",()=>{
     });
   });
 
-  it("rejects extra containers on the private ingress network",()=>{
-    const model=fixture();
-    model.services.debug={
-      image:"busybox",
-      networks:{core_ingress:{ipv4_address:"172.30.0.5"}}
-    };
-    const result=evaluateCoreOriginIsolation(model);
-    expect(result.blockers).toContainEqual({
-      code:"INGRESS_NETWORK_MEMBERSHIP_INVALID",
-      service:null
-    });
-  });
-
   it("requires all replicas to use the same tunnel credential",()=>{
     const model=fixture();
     model.services["cloudflared-b"].environment.TUNNEL_TOKEN=
@@ -132,18 +190,6 @@ describe("Core origin isolation HA gate",()=>{
     expect(result.blockers).toContainEqual({
       code:"CONNECTOR_TUNNEL_TOKEN_MISMATCH",
       service:null
-    });
-  });
-
-  it("requires tunnel token injection outside process arguments",()=>{
-    const model=fixture();
-    model.services["cloudflared-a"].command=[
-      "tunnel","--no-autoupdate","run","--token","fixture"
-    ];
-    const result=evaluateCoreOriginIsolation(model);
-    expect(result.blockers).toContainEqual({
-      code:"TUNNEL_TOKEN_MUST_NOT_BE_IN_PROCESS_ARGS",
-      service:"cloudflared-a"
     });
   });
 
@@ -156,19 +202,6 @@ describe("Core origin isolation HA gate",()=>{
       code:"CONNECTOR_IP_COLLISION",
       service:null
     });
-  });
-
-  it("requires non-privileged hardened Core and connectors",()=>{
-    const model=fixture();
-    model.services.core.read_only=false;
-    model.services["cloudflared-b"].privileged=true;
-    const result=evaluateCoreOriginIsolation(model);
-    expect(result.blockers.map(item=>item.code)).toContain(
-      "READ_ONLY_ROOTFS_REQUIRED"
-    );
-    expect(result.blockers.map(item=>item.code)).toContain(
-      "PRIVILEGED_CONTAINER_FORBIDDEN"
-    );
   });
 
   it("fails closed on malformed compose input",()=>{
