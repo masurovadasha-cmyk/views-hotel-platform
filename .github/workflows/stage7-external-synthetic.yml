@@ -1,0 +1,42 @@
+name: Stage 7.15 External Core Synthetic
+
+on:
+  schedule:
+    - cron: "13,28,43,58 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage7-15-external-core-synthetic
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    if: ${{ vars.VIEWS_EXTERNAL_SYNTHETIC_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      VIEWS_STAGING_CORE_URL: ${{ vars.VIEWS_STAGING_CORE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Probe stable staging hostname from outside the origin host
+        run: bash scripts/stage7-external-synthetic-check.sh
+
+      - name: Publish external synthetic evidence
+        if: always()
+        shell: bash
+        run: |
+          echo "### Stage 7.15 external Core synthetic" >> "$GITHUB_STEP_SUMMARY"
+          if [ -s /tmp/stage7.15-external-synthetic.json ]; then
+            echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/stage7.15-external-synthetic.json >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "External synthetic evidence was not produced. Inspect job logs." >> "$GITHUB_STEP_SUMMARY"
+          fi
