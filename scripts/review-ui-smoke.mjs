@@ -1,0 +1,35 @@
+import {chromium} from '@playwright/test';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+const origin='https://appassets.androidplatform.net';
+const prefix='/views-hotel-platform/';
+const browser=await chromium.launch({headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:1000}});
+const errors=[];const apiRequests=[];
+page.on('pageerror',e=>errors.push(e.message));
+await page.route(origin+'/**',async route=>{
+  const url=new URL(route.request().url());
+  if(url.pathname.includes('/api/'))apiRequests.push(url.pathname);
+  const relative=url.pathname.startsWith(prefix)?url.pathname.slice(prefix.length):null;
+  if(relative===null||relative.split('/').includes('..'))return route.fulfill({status:404,body:''});
+  const filename=path.resolve('dist',relative||'index.html');
+  try{await route.fulfill({path:filename});}catch{await route.fulfill({status:404,body:''});}
+});
+await page.goto(origin+prefix,{waitUntil:'networkidle'});
+await page.getByText('VIEWS',{exact:true}).first().waitFor();
+await page.getByText('Static staging demo',{exact:true}).waitFor();
+await fs.mkdir('review-output',{recursive:true});
+await page.screenshot({path:'review-output/guest-desktop.png',fullPage:true});
+await page.getByRole('button',{name:'Staff CRM',exact:true}).click();
+await page.getByRole('button',{name:'Guest App',exact:true}).waitFor();
+await page.screenshot({path:'review-output/staff-desktop.png',fullPage:true});
+await page.getByRole('button',{name:'Guest App',exact:true}).click();
+await page.setViewportSize({width:390,height:844});
+await page.screenshot({path:'review-output/guest-mobile.png',fullPage:true});
+await page.getByRole('button',{name:'Dark',exact:true}).click();
+await page.getByRole('button',{name:'Light',exact:true}).waitFor();
+const report={mode:'static-demo',guestRendered:true,staffToggleWorks:true,mobileViewport:{width:390,height:844},darkToggleWorks:true,pageErrors:errors,apiRequests,sourceCommit:process.env.GITHUB_SHA};
+await fs.writeFile('review-output/ui-smoke.json',JSON.stringify(report,null,2));
+await browser.close();
+if(errors.length||apiRequests.length)throw new Error(JSON.stringify(report));
+console.log(JSON.stringify(report));

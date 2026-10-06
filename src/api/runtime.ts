@@ -2,6 +2,8 @@ export type RuntimeMode="static-demo"|"live-api";
 
 export function detectRuntimeMode(locationHref=globalThis.location?.href||""){
   const url=new URL(locationHref||"https://example.invalid/");
+  // The Android review package serves immutable bundled assets, never live APIs.
+  if(url.hostname==="appassets.androidplatform.net")return "static-demo" as const;
   if(url.searchParams.get("api")==="live")return "live-api" as const;
   if(url.hostname.endsWith("github.io"))return "static-demo" as const;
   return "live-api" as const;
