@@ -42,8 +42,13 @@ INSERT INTO organizations(
 SQL
 
 runtime_sql(){
-  docker exec -e PGPASSWORD=views_app_proof_2026 "$PG"     psql -U views_app -d views -v ON_ERROR_STOP=1 "$@"
-}
+  docker exec -e PGPASSWORD=views_app_proof_2026 "$PG"     psql -h 127.0.0.1 -U views_app -d views -v ON_ERROR_STOP=1 "$@"
+} 
+
+WHO="$(runtime_sql -Atc "SELECT current_user")"
+test "$WHO" = "views_app"
+CAN_INSERT="$(runtime_sql -Atc "SELECT has_table_privilege(current_user,'provider_egress_attempts','INSERT')")"
+test "$CAN_INSERT" = "f"
 
 echo "[3/7] Persist unknown delivery and reject request replay"
 runtime_sql <<'SQL'
