@@ -1,4 +1,4 @@
-import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
+import {createCipheriv,createDecipheriv,createHash,createHmac,timingSafeEqual,randomBytes} from 'node:crypto';
 export const SYNTHETIC_VAULT='views-synthetic-document-v1';
 export type DocumentBinding={organizationId:string;reservationId:string;guestId:string;documentId:string};
 function aad(b:DocumentBinding){
@@ -22,4 +22,22 @@ export function openSyntheticDocument(b:DocumentBinding,hex:string,encrypted:Buf
   if(text!==content(b)||createHash('sha256').update(text).digest('hex')!==checksum)throw Error();
   return text;
  }catch{throw Error('SYNTHETIC_DOCUMENT_UNAVAILABLE');}
+}
+
+// A short-lived receipt proves which synthetic bytes this live session fetched.
+// It does not prove that a person read or understood them.
+export type ReviewReceipt={organizationId:string;reservationId:string;documentId:string;membershipId:string;sessionHash:string;checksum:string;stamp:string;expiresAt:number};
+export function issueReviewReceipt(value:ReviewReceipt,hex:string){
+ const payload=Buffer.from(JSON.stringify(value)).toString('base64url');
+ return payload+'.'+createHmac('sha256',key(hex)).update('synthetic-review-v1:'+payload).digest('hex');
+}
+export function readReviewReceipt(token:string,hex:string):ReviewReceipt{
+ try{
+  if(typeof token!=='string'||token.length>2048)throw Error();
+  const [payload,signature,...rest]=token.split('.');
+  if(rest.length||! /^[a-f0-9]{64}$/.test(signature||''))throw Error();
+  const expected=createHmac('sha256',key(hex)).update('synthetic-review-v1:'+payload).digest();
+  if(!timingSafeEqual(expected,Buffer.from(signature,'hex')))throw Error();
+  return JSON.parse(Buffer.from(payload,'base64url').toString('utf8')) as ReviewReceipt;
+ }catch{throw Error('DOCUMENT_REVIEW_RECEIPT_INVALID');}
 }

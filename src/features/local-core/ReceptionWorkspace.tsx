@@ -1,17 +1,17 @@
 import {SyntheticDocumentPreview} from './SyntheticDocumentPreview';
 import {useEffect,useRef,useState} from 'react';
 import {request} from './LocalCoreWorkspace';
-type Readiness={primaryGuest:string|null;unitActive:boolean;inventoryValid:boolean;paymentFree:boolean;timeAllowed:boolean;unitVacant:boolean};
+type Readiness={primaryGuest:string|null;unitActive:boolean;inventoryValid:boolean;paymentFree:boolean;timeAllowed:boolean;unitVacant:boolean;cleaningReady:boolean};
 function blockers(r:Readiness|null|undefined){
  if(!r)return ['Проверки готовности не получены. Обновите сводку.'];
- return [!r.primaryGuest&&'Не указан основной гость.',!r.unitActive&&'Номер не назначен или недоступен.',!r.inventoryValid&&'Не подтверждён резерв номера на весь срок.',!r.paymentFree&&'Есть финансовая операция — требуется отдельная проверка.',!r.timeAllowed&&'Операция недоступна в текущий момент по датам брони.',!r.unitVacant&&'В номере ещё проживает другой гость.'].filter(Boolean) as string[];
+ return [r.cleaningReady===false&&'Не подтверждена уборка после предыдущего выезда.',!r.primaryGuest&&'Не указан основной гость.',!r.unitActive&&'Номер не назначен или недоступен.',!r.inventoryValid&&'Не подтверждён резерв номера на весь срок.',!r.paymentFree&&'Есть финансовая операция — требуется отдельная проверка.',!r.timeAllowed&&'Операция недоступна в текущий момент по датам брони.',!r.unitVacant&&'В номере ещё проживает другой гость.'].filter(Boolean) as string[];
 }
 type DocumentSummary={total:number;items:{previewId?:string|null;type:string;status:string;expired:boolean;uploadFinalized:boolean}[]};
 function DocumentStatus({documents,onView}:{documents?:DocumentSummary|null;onView:(id:string)=>void}){
  const names:Record<string,string>={passport:'Паспорт',id_card:'ID-карта',birth_certificate:'Свидетельство о рождении',residence_permit:'Вид на жительство',travel_document:'Проездной документ',other:'Другой документ'};
  return <div aria-label="Документы основного гостя"><strong>Документы основного гостя</strong>
   {!documents?<p>Статусы документов не получены. Обновите сводку.</p>:documents.total===0?<p>Документы не добавлены.</p>:<>
-   <ul>{documents.items.map((d,i)=><li key={i}>{names[d.type]||'Документ'}: {d.expired||d.status==='expired'?'Срок действия истёк':d.status==='rejected'?'Отклонён':!d.uploadFinalized?'Загрузка не завершена':d.status==='verified'?'Проверен в Core':d.status==='pending'?'Ожидает проверки':'Неизвестный статус'}{d.previewId&&<button type="button" onClick={()=>onView(d.previewId!)}>Открыть тестовый файл</button>}</li>)}</ul>
+   <ul>{documents.items.map((d,i)=><li key={i}><span>{names[d.type]||'Документ'}: {d.expired||d.status==='expired'?'Срок действия истёк':d.status==='rejected'?'Отклонён':!d.uploadFinalized?'Загрузка не завершена':d.status==='verified'?'Проверен в Core':d.status==='pending'?'Ожидает проверки':'Неизвестный статус'}</span>{d.previewId&&<button type="button" onClick={()=>onView(d.previewId!)}>Открыть тестовый файл</button>}</li>)}</ul>
    {documents.total>documents.items.length&&<p>Показаны {documents.items.length} из {documents.total} документов.</p>}
   </>}
   <p className="localHint">Показаны статусы записей тестовой среды. Просмотр файлов и проверка реальных документов не подключены. Это не подтверждение государственной регистрации.</p>
@@ -40,18 +40,18 @@ function GuestForm({row,csrf,done}:{row:Row;csrf:string;done:()=>Promise<void>})
  </form>;
 }
 type Group={total:number;truncated:boolean;items:Row[]};
-type Board={property:{name:Record<string,string>;timezone:string};day:string;databaseTime:string;arrivals:Group;departures:Group;staying:Group};
+type Board={property:{name:Record<string,string>;timezone:string};day:string;databaseTime:string;arrivals:Group;departures:Group;staying:Group;cleaning:Group};
 export function ReceptionWorkspace({staffCsrf}:{staffCsrf:string}){
  const [data,setData]=useState<Board|null>(null),[day,setDay]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [preview,setPreview]=useState<{reservationId:string;documentId:string}|null>(null);
  const [editing,setEditing]=useState<Row|null>(null);
  const sequence=useRef(0),keys=useRef(new Map<string,string>());
- const [pending,setPending]=useState<{row:Row;action:'check-in'|'check-out'}|null>(null),[notice,setNotice]=useState('');
+ const [pending,setPending]=useState<{row:Row;action:'check-in'|'check-out'|'cleaning-complete'}|null>(null),[notice,setNotice]=useState('');
  async function apply(){
   if(!pending)return;const {row,action}=pending;const binding=row.reservationId+action;
   let key=keys.current.get(binding);if(!key){key=crypto.randomUUID();keys.current.set(binding,key);}
   setBusy(true);setNotice('');setError('');
-  try{await request(action,staffCsrf,{reservationId:row.reservationId},key);setNotice(action==='check-in'?'Тестовое заселение оформлено.':'Тестовый выезд оформлен. Оставшийся интервал брони освобождён; готовность номера после уборки проверяется отдельно.');setPending(null);await load(day);}
+  try{await request(action,staffCsrf,{reservationId:row.reservationId},key);setNotice(action==='cleaning-complete'?'Готовность тестового номера после уборки подтверждена.':action==='check-in'?'Тестовое заселение оформлено.':'Тестовый выезд оформлен. Оставшийся интервал брони освобождён; готовность номера после уборки проверяется отдельно.');setPending(null);await load(day);}
   catch{setPending(null);await load(day);setError('Операция не подтверждена. Проверьте обновлённый статус перед повтором. Заселение доступно только в срок брони, с тестовым гостем и без оплаты.');}
   finally{setBusy(false);}
  }
@@ -71,21 +71,22 @@ export function ReceptionWorkspace({staffCsrf}:{staffCsrf:string}){
    <label>Дата ресепшена<input aria-label="Дата ресепшена" type="date" required value={day} disabled={busy||!!editing} onChange={e=>setDay(e.target.value)}/></label>
    <button disabled={busy||!!editing}>Показать сводку</button>
   </form>
-  {preview&&<SyntheticDocumentPreview key={preview.documentId} {...preview} csrf={staffCsrf} onClose={()=>setPreview(null)}/>}
+  {preview&&<SyntheticDocumentPreview key={preview.documentId} {...preview} csrf={staffCsrf} onClose={()=>{setPreview(null);void load(day);}}/>}
   {editing&&<GuestForm row={editing} csrf={staffCsrf} done={async()=>{setEditing(null);await load(day);}}/>}
   {notice&&<p role="status" className="localSuccess">{notice}</p>}
-  {pending&&<div className="localWarning"><p>{pending.action==='check-in'?'Оформить тестовое заселение':'Оформить тестовый выезд'}: {pending.row.confirmationCode}? Реальная оплата и регистрация гостя в государственных системах не выполняются.</p>
+  {pending&&<div className="localWarning"><p>{pending.action==='cleaning-complete'?'Подтвердить готовность тестового номера после уборки':pending.action==='check-in'?'Оформить тестовое заселение':'Оформить тестовый выезд'}: {pending.row.confirmationCode}? Реальная оплата и регистрация гостя в государственных системах не выполняются.</p>
    <button disabled={busy} onClick={()=>void apply()}>Подтвердить действие</button> <button disabled={busy} onClick={()=>setPending(null)}>Отмена</button></div>}
   {busy&&<p role="status">Загрузка сводки…</p>}{error&&<p role="alert" className="localError">{error}</p>}
   {data&&<>
    <p>Дата сводки: {data.day} · {data.property.timezone}. Обновлено: {format(data.databaseTime)}.</p>
-   <div className="receptionGroups">{([['arrivals','Ожидаемые заезды'],['departures','Выезды по плану'],['staying','Сейчас проживают']] as const).map(([key,label])=>{
+   <div className="receptionGroups">{([['arrivals','Ожидаемые заезды'],['departures','Выезды по плану'],['staying','Сейчас проживают'],['cleaning','Ожидают уборки (тест)']] as const).map(([key,label])=>{
     const group=data[key];return <section className="localPanel" aria-label={label} key={key}>
      <h3>{label}: {group.total}</h3>
      {group.total===0?<p>Нет записей.</p>:<ul>{group.items.map(r=><li key={r.reservationId} data-stay-id={r.reservationId}>
-      <strong>{r.confirmationCode}</strong><div>{r.unitCode||'Номер не назначен'} · {r.status==='confirmed'?'Подтверждена':'Заселён'}</div>
+      <strong>{r.confirmationCode}</strong><div>{r.unitCode||'Номер не назначен'} · {r.status==='checked_out'?'Выезд оформлен':r.status==='confirmed'?'Подтверждена':'Заселён'}</div>
       <small>{format(r.checkInAt)} — {format(r.checkOutAt)}</small>
-      {r.stayPilot&&<div className="stayReadiness"><p>Основной гость: {r.readiness?.primaryGuest||'не указан'}</p><p className="localHint">Тестовая карточка. Проверка документов и государственная регистрация не выполнялись.</p>
+      {r.stayPilot&&r.status==='checked_out'&&<button disabled={busy||!!editing} onClick={()=>setPending({row:r,action:'cleaning-complete'})}>Подтвердить уборку (тест)</button>}
+      {r.stayPilot&&r.status!=='checked_out'&&<div className="stayReadiness"><p>Основной гость: {r.readiness?.primaryGuest||'не указан'}</p><p className="localHint">Тестовая карточка. Проверка документов и государственная регистрация не выполнялись.</p>
        {blockers(r.readiness).length?<ul aria-label="Причины блокировки">{blockers(r.readiness).map(reason=><li key={reason}>{reason}</li>)}</ul>:<p>Проверки тестовой брони пройдены. При подтверждении сервер проверит её снова.</p>}
        <DocumentStatus documents={r.documents} onView={documentId=>setPreview({reservationId:r.reservationId,documentId})}/>
        {!!r.documents?.total&&<p>Изменение данных гостя заблокировано: есть связанные документы.</p>}

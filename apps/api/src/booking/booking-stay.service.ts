@@ -1,4 +1,4 @@
-import {openSyntheticDocument,SYNTHETIC_VAULT} from '../compliance/synthetic-document-vault';
+import {openSyntheticDocument,SYNTHETIC_VAULT,issueReviewReceipt,readReviewReceipt} from '../compliance/synthetic-document-vault';
 import {createHash} from 'node:crypto';
 import {BadRequestException,ConflictException,ForbiddenException,Injectable,NotFoundException,UnauthorizedException} from '@nestjs/common';
 import {DatabaseService} from '../database/database.service';
@@ -15,9 +15,12 @@ export function validateGuest(value:unknown):GuestInput{
 @Injectable()
 export class BookingStayService{
  constructor(private readonly db:DatabaseService){}
- async transition(actor:RequestActorContext,token:string,id:string,key:string,action:'check-in'|'check-out'|'guest'|'document-view',input?:unknown){
-  const documentId=action==='document-view'?(input as {documentId?:unknown})?.documentId:undefined;
-  if(action==='document-view'&&(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).join(',')!=='documentId'||typeof documentId!=='string'||! /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(documentId)))throw new BadRequestException('INVALID_DOCUMENT_REQUEST');
+ async transition(actor:RequestActorContext,token:string,id:string,key:string,action:'check-in'|'check-out'|'guest'|'document-view'|'document-review'|'cleaning-complete',input?:unknown){
+  const documentAction=action==='document-view'||action==='document-review';
+  const documentId=documentAction?(input as {documentId?:unknown})?.documentId:undefined;
+  const decision=(input as {decision?:unknown})?.decision,reviewToken=(input as {reviewToken?:unknown})?.reviewToken;
+  if(documentAction&&(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).sort().join(',')!==(action==='document-view'?'documentId':'decision,documentId,reviewToken')||typeof documentId!=='string'||! /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(documentId)))throw new BadRequestException('INVALID_DOCUMENT_REQUEST');
+  if(action==='document-review'&&(typeof decision!=='string'||!['verified','rejected'].includes(decision)||typeof reviewToken!=='string'||reviewToken.length>2048))throw new BadRequestException('INVALID_DOCUMENT_REQUEST');
   const guest=action==='guest'?validateGuest(input):undefined;
   const requestHash=guest?createHash('sha256').update(JSON.stringify({id,...guest})).digest('hex'):id;
   if(!stayPilotEnabled(actor.organizationId))throw new NotFoundException('STAY_PILOT_DISABLED');
@@ -37,24 +40,54 @@ export class BookingStayService{
    if(r.quote_snapshot?.localStayPilot!==true||r.total_minor!=='0'||!r.unit_id)throw new ConflictException('STAY_FIXTURE_REQUIRED');
    const unit=(await c.query('SELECT status FROM units WHERE id=$1 AND property_id=$2 FOR UPDATE',[r.unit_id,r.property_id])).rows[0];
    await authorize(); // wall-clock expiry after reservation/unit lock waits
-   if(action==='document-view'){
+   if(documentAction){
     if(process.env.VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED!=='true')throw new NotFoundException('DOCUMENT_PREVIEW_DISABLED');
     if(!['confirmed','checked_in'].includes(r.status))throw new ConflictException('STAY_STATE_CHANGED');
-    const doc=(await c.query(`SELECT d.id,d.reservation_guest_id,d.encrypted_fields,d.object_checksum_sha256
+    const doc=(await c.query(`SELECT d.id,d.reservation_guest_id,d.encrypted_fields,d.object_checksum_sha256,d.verification_status,d.updated_at::text stamp
       FROM guest_document_records d JOIN reservation_guests g ON g.id=d.reservation_guest_id AND g.organization_id=d.organization_id
       WHERE d.id=$1 AND g.reservation_id=$2 AND g.organization_id=$3 AND g.is_primary AND d.vault_id=$4
-      FOR SHARE OF d`,[documentId,id,actor.organizationId,SYNTHETIC_VAULT])).rows[0];
+      FOR UPDATE OF d`,[documentId,id,actor.organizationId,SYNTHETIC_VAULT])).rows[0];
     await authorize();
     if(!doc)throw new NotFoundException('SYNTHETIC_DOCUMENT_UNAVAILABLE');
     let text:string;
     try{text=openSyntheticDocument({organizationId:actor.organizationId,reservationId:id,guestId:doc.reservation_guest_id,documentId:doc.id},process.env.VIEWS_LOCAL_DOCUMENT_KEY||'',doc.encrypted_fields,doc.object_checksum_sha256);}
     catch{throw new ConflictException('SYNTHETIC_DOCUMENT_UNAVAILABLE');}
+    const secret=process.env.VIEWS_LOCAL_DOCUMENT_KEY||'',sessionHash=createHash('sha256').update(token).digest('hex');
+    if(action==='document-review'){
+     const type='local_document-review',hash=createHash('sha256').update(JSON.stringify({id,documentId,decision,reviewToken})).digest('hex');
+     let receipt;
+     try{receipt=readReviewReceipt(reviewToken as string,secret);}catch{throw new ConflictException('DOCUMENT_REVIEW_RECEIPT_INVALID');}
+     if(receipt.organizationId!==actor.organizationId||receipt.reservationId!==id||receipt.documentId!==doc.id||receipt.membershipId!==actor.membershipId||receipt.sessionHash!==sessionHash)throw new ConflictException('DOCUMENT_REVIEW_RECEIPT_INVALID');
+     const prior=(await c.query('SELECT request_hash,result_snapshot FROM booking_commands WHERE organization_id=$1 AND command_type=$2 AND idempotency_key=$3',[actor.organizationId,type,key])).rows[0];
+     if(prior){if(prior.request_hash!==hash)throw new ConflictException('IDEMPOTENCY_CONFLICT');return {...prior.result_snapshot,idempotentReplay:true};}
+     if(decision==='verified'&&(await c.query("SELECT d.expires_on<(clock_timestamp() AT TIME ZONE p.timezone)::date expired FROM guest_document_records d JOIN properties p ON p.id=$2 WHERE d.id=$1",[doc.id,r.property_id])).rows[0]?.expired)throw new ConflictException('DOCUMENT_EXPIRED');
+     if(!Number.isSafeInteger(receipt.expiresAt)||receipt.expiresAt<=Date.now()||receipt.checksum!==doc.object_checksum_sha256||receipt.stamp!==doc.stamp||doc.verification_status!=='pending')throw new ConflictException('DOCUMENT_REVIEW_STALE');
+     await c.query("UPDATE guest_document_records SET verification_status=$2::document_verification_status,verified_at=CASE WHEN $2='verified' THEN clock_timestamp() ELSE NULL END,verified_by=CASE WHEN $2='verified' THEN $3::uuid ELSE NULL END,updated_at=clock_timestamp() WHERE id=$1",[doc.id,decision,actor.userId]);
+     await c.query('UPDATE reservations SET version=version+1,updated_at=clock_timestamp() WHERE id=$1',[id]);
+     const result={reservationId:id,documentId:doc.id,status:decision,syntheticData:true,idempotentReplay:false};
+     await c.query('INSERT INTO booking_commands(organization_id,idempotency_key,command_type,reservation_id,request_hash,result_snapshot,completed_at) VALUES($1,$2,$3,$4,$5,$6,clock_timestamp())',[actor.organizationId,key,type,id,hash,result]);
+     await c.query("INSERT INTO outbox_events(organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload) VALUES($1,'guest_document',$2,'staff.synthetic_document_reviewed',$3,$4)",[actor.organizationId,doc.id,'synthetic-review:'+actor.organizationId+':'+key,result]);
+     await c.query("INSERT INTO audit_log(organization_id,actor_user_id,actor_membership_id,action,entity_type,entity_id,after_state) VALUES($1,$2,$3,'staff.synthetic_document_reviewed','guest_document',$4,$5)",[actor.organizationId,actor.userId,actor.membershipId,doc.id,result]);
+     return result;
+    }
     await c.query("INSERT INTO audit_log(organization_id,actor_user_id,actor_membership_id,action,entity_type,entity_id,after_state) VALUES($1,$2,$3,'staff.synthetic_document_viewed','guest_document',$4,$5)",[actor.organizationId,actor.userId,actor.membershipId,doc.id,{reservationId:id,syntheticData:true}]);
-    return {documentId:doc.id,text,syntheticData:true};
+    return {documentId:doc.id,text,status:doc.verification_status,syntheticData:true,reviewToken:doc.verification_status==='pending'?issueReviewReceipt({organizationId:actor.organizationId,reservationId:id,documentId:doc.id,membershipId:actor.membershipId,sessionHash,checksum:doc.object_checksum_sha256,stamp:doc.stamp,expiresAt:Date.now()+60000},secret):null};
    }
    const type='local_'+action;
    const prior=(await c.query('SELECT request_hash,result_snapshot FROM booking_commands WHERE organization_id=$1 AND command_type=$2 AND idempotency_key=$3',[actor.organizationId,type,key])).rows[0];
    if(prior){if(prior.request_hash!==requestHash)throw new ConflictException('IDEMPOTENCY_CONFLICT');return {...prior.result_snapshot,idempotentReplay:true};}
+   if(action==='cleaning-complete'){
+    if(r.status!=='checked_out')throw new ConflictException('STAY_STATE_CHANGED');
+    if((await c.query("SELECT 1 FROM reservations WHERE unit_id=$1 AND status='checked_in'",[r.unit_id])).rowCount)throw new ConflictException('STAY_UNIT_OCCUPIED');
+    const task=(await c.query("UPDATE local_stay_turnovers SET status='completed',completed_at=clock_timestamp(),completed_by=$2 WHERE reservation_id=$1 AND status='pending' RETURNING reservation_id",[id,actor.userId])).rows[0];
+    await authorize();
+    if(!task)throw new ConflictException('TURNOVER_STATE_CHANGED');
+    const result={reservationId:id,status:'completed',syntheticData:true,idempotentReplay:false};
+    await c.query('INSERT INTO booking_commands(organization_id,idempotency_key,command_type,reservation_id,request_hash,result_snapshot,completed_at) VALUES($1,$2,$3,$4,$5,$6,clock_timestamp())',[actor.organizationId,key,type,id,requestHash,result]);
+    await c.query("INSERT INTO outbox_events(organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload) VALUES($1,'reservation',$2,'staff.synthetic_turnover_completed',$3,$4)",[actor.organizationId,id,'turnover:'+actor.organizationId+':'+key,result]);
+    await c.query("INSERT INTO audit_log(organization_id,actor_user_id,actor_membership_id,action,entity_type,entity_id,after_state) VALUES($1,$2,$3,'staff.synthetic_turnover_completed','reservation',$4,$5)",[actor.organizationId,actor.userId,actor.membershipId,id,result]);
+    return result;
+   }
    if(guest){
     if(r.status!=='confirmed')throw new ConflictException('STAY_STATE_CHANGED');
     if(r.version!==guest.expectedVersion)throw new ConflictException('GUEST_VERSION_CHANGED');
@@ -76,10 +109,12 @@ export class BookingStayService{
    if(!(await c.query('SELECT 1 FROM reservation_guests WHERE reservation_id=$1 AND organization_id=$2 AND is_primary FOR SHARE',[id,actor.organizationId])).rowCount)throw new ConflictException('STAY_GUEST_REQUIRED');
    const period=(await c.query(`SELECT p.id FROM inventory_periods p JOIN reservations r ON r.id=p.reservation_id WHERE p.reservation_id=$1 AND p.unit_id=$2 AND p.property_id=r.property_id AND p.organization_id=r.organization_id AND p.kind='reservation'
     AND p.stay_period=tstzrange(r.check_in_at,r.check_out_at,'[)') FOR UPDATE OF p`,[id,r.unit_id])).rows;
+   await authorize();
    if(period.length!==1)throw new ConflictException('STAY_INVENTORY_INVALID');
    const clock=(await c.query('SELECT clock_timestamp()::text AS time,clock_timestamp()>=check_in_at AND clock_timestamp()<check_out_at AS arrival,clock_timestamp()>check_in_at AS departure FROM reservations WHERE id=$1',[id])).rows[0];
    const now=clock.time as string;
    if(action==='check-in'){
+    if((await c.query("SELECT 1 FROM local_stay_turnovers WHERE unit_id=$1 AND status='pending'",[r.unit_id])).rowCount)throw new ConflictException('STAY_CLEANING_REQUIRED');
     if(!clock.arrival)throw new ConflictException('STAY_OUTSIDE_ARRIVAL_WINDOW');
     if((await c.query("SELECT 1 FROM reservations WHERE unit_id=$1 AND status='checked_in' AND id<>$2",[r.unit_id,id])).rowCount)throw new ConflictException('STAY_UNIT_OCCUPIED');
    }else{
@@ -88,6 +123,7 @@ export class BookingStayService{
    }
    const result={reservationId:id,status:to,occurredAt:new Date(now).toISOString(),syntheticData:true,idempotentReplay:false};
    await c.query('UPDATE reservations SET status=$2::reservation_status,version=version+1,updated_at=$3 WHERE id=$1',[id,to,now]);
+   if(action==='check-out')await c.query('INSERT INTO local_stay_turnovers(reservation_id,organization_id,property_id,unit_id) VALUES($1,$2,$3,$4)',[id,actor.organizationId,r.property_id,r.unit_id]);
    await c.query(`INSERT INTO booking_commands(organization_id,idempotency_key,command_type,reservation_id,request_hash,result_snapshot,completed_at)
     VALUES($1,$2,$3,$4::uuid,$4::uuid::text,$5,clock_timestamp())`,[actor.organizationId,key,type,id,result]);
    await c.query(`INSERT INTO booking_state_events(organization_id,reservation_id,event_type,from_status,to_status,actor_user_id,idempotency_key,payload)

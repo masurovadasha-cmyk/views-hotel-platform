@@ -114,7 +114,7 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     const day=u.searchParams.get('day')||'today';if(day!=='today'&&!/^\d{4}-\d{2}-\d{2}$/.test(day))fail(400,'INVALID_RECEPTION_DAY');
     const value=await core('/v1/booking-workspace?propertyId='+config.fixture.propertyId+'&day='+encodeURIComponent(day),'GET',undefined,undefined,token,identity);
     if(value.property?.id!==config.fixture.propertyId||!value.arrivals||!value.departures||!value.staying)fail(502,'CORE_RESPONSE_INVALID');
-    s.reservations=new Set([...s.reservations,...['arrivals','departures','staying'].flatMap(k=>value[k].items.map(r=>r.reservationId))]);
+    s.reservations=new Set([...s.reservations,...['arrivals','departures','staying','cleaning'].flatMap(k=>value[k].items.map(r=>r.reservationId))]);
     json(res,200,value);return true;
    }
    if(req.method==='GET'&&route==='/local-api/workspace'){
@@ -123,7 +123,7 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     s.reservations=new Set([...s.reservations,...value.reservations.map(r=>r.reservationId)]);json(res,200,{...value,mode:'local-core',syntheticData:true,realPayments:false});return true;
    }
    if(req.method!=='POST')fail(405,'METHOD_DENIED');
-   if(!['/local-api/quotes','/local-api/holds','/local-api/release','/local-api/check-in','/local-api/check-out','/local-api/guest','/local-api/document-view'].includes(route))fail(404,'ROUTE_NOT_ALLOWED');
+   if(!['/local-api/quotes','/local-api/holds','/local-api/release','/local-api/check-in','/local-api/check-out','/local-api/guest','/local-api/document-view','/local-api/document-review','/local-api/cleaning-complete'].includes(route))fail(404,'ROUTE_NOT_ALLOWED');
    if(!identity.permissions.includes('reservation.manage'))fail(403,'STAFF_PERMISSION_DENIED');
    const body=await readJson(req);
    if(route==='/local-api/quotes'){
@@ -138,8 +138,8 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     const value=await core('/v1/bookings/holds','POST',{quoteId:body.quoteId,ttlSeconds:900},key,token,identity);
     if(!UUID.test(value.reservationId||''))fail(502,'CORE_RESPONSE_INVALID');s.reservations.add(value.reservationId);json(res,200,value);return true;
    }
-   exactKeys(body,route==='/local-api/guest'?['reservationId','guest']:route==='/local-api/document-view'?['reservationId','documentId']:['reservationId']);if(!UUID.test(body.reservationId||'')||!s.reservations.has(body.reservationId))fail(403,'RESERVATION_OUTSIDE_WORKSPACE');
-   json(res,200,await core('/v1/bookings/'+body.reservationId+(route==='/local-api/release'?'/release':'/stay/'+route.split('/').pop()),'POST',route==='/local-api/guest'?body.guest:route==='/local-api/document-view'?{documentId:body.documentId}:{},key,token,identity));return true;
+   exactKeys(body,route==='/local-api/guest'?['reservationId','guest']:route==='/local-api/document-view'?['reservationId','documentId']:route==='/local-api/document-review'?['reservationId','documentId','decision','reviewToken']:['reservationId']);if(!UUID.test(body.reservationId||'')||!s.reservations.has(body.reservationId))fail(403,'RESERVATION_OUTSIDE_WORKSPACE');
+   json(res,200,await core('/v1/bookings/'+body.reservationId+(route==='/local-api/release'?'/release':'/stay/'+route.split('/').pop()),'POST',route==='/local-api/guest'?body.guest:route==='/local-api/document-view'?{documentId:body.documentId}:route==='/local-api/document-review'?{documentId:body.documentId,decision:body.decision,reviewToken:body.reviewToken}:{},key,token,identity));return true;
   }catch(e){if(e.status===401&&e.message!=='STAFF_LOGIN_FAILED')cookie(res,null);if(!res.headersSent)json(res,e instanceof GatewayError?e.status:500,{error:e instanceof GatewayError?e.message:'LOCAL_GATEWAY_ERROR'});else res.end();return true;}
  };
 }

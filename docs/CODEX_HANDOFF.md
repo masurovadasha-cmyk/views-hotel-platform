@@ -302,3 +302,27 @@ owned Core/gateway restart, manual/timed close, cache headers, CSRF/scope and
 post-logout refusal. Booking regression also passed on four widths. No migrations;
 46 retained. Final clean-source HTTP/browser reports remain private with SHA and
 dirty flag. Actual document uploads/review/registration and production remain OFF.
+
+## 20. Complete local review → stay → turnover chain
+
+Stage 7.37 adds short-lived session-bound review receipts and atomic accept/reject
+for the already-viewed synthetic file, plus migration 0047 for pending turnover
+after checkout and explicit front-desk confirmation. Pending turnover blocks the
+next synthetic check-in. Synthetic stays/documents cannot enter real registration
+preparation/submission. No existing role grants were expanded.
+
+See STAGE7_REVIEW_AND_TURNOVER.md and CURRENT_DELIVERY_STATUS.md. The latter lists
+all project gates honestly, including unfinished localization/onboarding/real
+housekeeping software as well as external provider/hosting/Android requirements.
+
+Dirty continuation of 9e5c7c2: root 220, Core 283/56 files, network 119 files, mail
+policy 15, CI evidence acceptance 85, combined mail/passkey 47 groups passed.
+Staff HTTP 13 groups/32 calls; complete stay browser 13 groups; booking regression
+four widths with restart/logout. Full consistent local restore matched 71 tables
+(7 private), 6 encrypted documents and 1 turnover; separate disposable auth restore
+matched 70 tables/7 private and 8 recovery rows. Local has one extra migration
+ledger table. No production/physical-device/hosted-CI success is claimed.
+
+`npm run cloud:verify` is the complete local verification command; private reports
+record exact SHA/dirty status. `cloud:test:restore` keeps the source read-only and
+uses a new disposable container. The live rehearsal retains 47 immutable migrations.

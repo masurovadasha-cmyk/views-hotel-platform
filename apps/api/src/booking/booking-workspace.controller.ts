@@ -42,6 +42,7 @@ export class BookingWorkspaceController{
               'inventoryValid',(SELECT count(*)=1 FROM inventory_periods ip WHERE ip.reservation_id=r.id AND ip.organization_id=r.organization_id AND ip.property_id=r.property_id AND ip.unit_id=r.unit_id AND ip.kind='reservation' AND ip.stay_period=tstzrange(r.check_in_at,r.check_out_at,'[)')),
               'paymentFree',NOT EXISTS(SELECT 1 FROM payment_intents pi WHERE pi.reservation_id=r.id),
               'timeAllowed',CASE WHEN r.status='confirmed' THEN clock_timestamp()>=r.check_in_at AND clock_timestamp()<r.check_out_at ELSE clock_timestamp()>r.check_in_at END,
+              'cleaningReady',NOT EXISTS(SELECT 1 FROM local_stay_turnovers t WHERE t.unit_id=r.unit_id AND t.status='pending'),
               'unitVacant',r.status='checked_in' OR NOT EXISTS(SELECT 1 FROM reservations other WHERE other.unit_id=r.unit_id AND other.status='checked_in' AND other.id<>r.id)
             ) ELSE NULL END AS readiness,
             CASE WHEN $5::boolean AND r.quote_snapshot->'localStayPilot'='true'::jsonb AND r.total_minor=0 THEN (
@@ -59,7 +60,8 @@ export class BookingWorkspaceController{
           CROSS JOIN LATERAL unnest(ARRAY[
             CASE WHEN r.status='confirmed' AND (r.check_in_at AT TIME ZONE $4)::date=selected.day THEN 'arrivals' END,
             CASE WHEN r.status='checked_in' AND (r.check_out_at AT TIME ZONE $4)::date=selected.day THEN 'departures' END,
-            CASE WHEN r.status='checked_in' THEN 'staying' END
+            CASE WHEN r.status='checked_in' THEN 'staying' END,
+            CASE WHEN r.status='checked_out' AND EXISTS(SELECT 1 FROM local_stay_turnovers t WHERE t.reservation_id=r.id AND t.status='pending') THEN 'cleaning' END
           ]) bucket
           WHERE r.organization_id=$1 AND r.property_id=$2 AND bucket IS NOT NULL
         ), ranked AS (
@@ -72,7 +74,7 @@ export class BookingWorkspaceController{
           ) summaries`,[actor.organizationId,propertyId,day,property.timezone,stayPilotEnabled(actor.organizationId)])).rows[0];
         const empty={total:0,truncated:false,items:[]};
         return {property,day:result.day,databaseTime:result.databaseTime,
-          arrivals:result.groups.arrivals||empty,departures:result.groups.departures||empty,staying:result.groups.staying||empty};
+          arrivals:result.groups.arrivals||empty,departures:result.groups.departures||empty,staying:result.groups.staying||empty,cleaning:result.groups.cleaning||empty};
       }
       const units=(await client.query(`SELECT u.id AS "unitId",u.code,ut.name AS "unitTypeName",ut.max_guests AS "maxGuests",
         rp.id AS "ratePlanId",rp.name AS "rateName",rp.currency,rp.base_nightly_minor::text AS "baseNightlyMinor"

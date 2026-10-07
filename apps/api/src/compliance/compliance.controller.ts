@@ -184,7 +184,7 @@ function mapComplianceError(error:unknown){
   )return error;
 
   const message=error instanceof Error?error.message:"COMPLIANCE_ERROR";
-  if(message==="PROPERTY_FORBIDDEN"||message==="COMPLIANCE_ROLE_FORBIDDEN"){
+  if(message==="SYNTHETIC_REGISTRATION_FORBIDDEN"||message==="PROPERTY_FORBIDDEN"||message==="COMPLIANCE_ROLE_FORBIDDEN"){
     return new ForbiddenException(message);
   }
   if([
