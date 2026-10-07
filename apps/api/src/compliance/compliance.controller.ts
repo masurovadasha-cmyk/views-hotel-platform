@@ -200,7 +200,7 @@ function mapComplianceError(error:unknown){
   ].includes(message))return new ServiceUnavailableException(message);
 
   if([
-    "DOCUMENT_ALREADY_VERIFIED","REGISTRATION_CASE_BUSY","FISCALIZATION_REQUEST_BUSY"
+    "DOCUMENT_ALREADY_VERIFIED","DOCUMENT_NOT_PENDING","DOCUMENT_FINALIZE_CONFLICT","DOCUMENT_EXPIRED","DOCUMENT_REVIEW_NOT_AVAILABLE","REGISTRATION_CASE_BUSY","FISCALIZATION_REQUEST_BUSY"
   ].includes(message))return new ConflictException(message);
 
   return new BadRequestException(message);

@@ -43,7 +43,17 @@ export class BookingWorkspaceController{
               'paymentFree',NOT EXISTS(SELECT 1 FROM payment_intents pi WHERE pi.reservation_id=r.id),
               'timeAllowed',CASE WHEN r.status='confirmed' THEN clock_timestamp()>=r.check_in_at AND clock_timestamp()<r.check_out_at ELSE clock_timestamp()>r.check_in_at END,
               'unitVacant',r.status='checked_in' OR NOT EXISTS(SELECT 1 FROM reservations other WHERE other.unit_id=r.unit_id AND other.status='checked_in' AND other.id<>r.id)
-            ) ELSE NULL END AS readiness
+            ) ELSE NULL END AS readiness,
+            CASE WHEN $5::boolean AND r.quote_snapshot->'localStayPilot'='true'::jsonb AND r.total_minor=0 THEN (
+              SELECT jsonb_build_object('total',count(*),'items',COALESCE(jsonb_agg(jsonb_build_object(
+                'type',docs.document_type,'status',docs.verification_status,
+                'expired',docs.expires_on IS NOT NULL AND docs.expires_on<(clock_timestamp() AT TIME ZONE $4)::date,
+                'uploadFinalized',COALESCE(docs.object_checksum_sha256 ~ '^[a-fA-F0-9]{64}$',false)
+              ) ORDER BY docs.created_at,docs.id) FILTER(WHERE docs.n<=10),'[]'::jsonb))
+              FROM (SELECT d.*,row_number() OVER(ORDER BY d.created_at,d.id) n FROM guest_document_records d
+                JOIN reservation_guests g ON g.id=d.reservation_guest_id AND g.organization_id=d.organization_id
+                WHERE g.reservation_id=r.id AND g.organization_id=r.organization_id AND g.is_primary) docs
+            ) ELSE NULL END AS documents
           FROM reservations r LEFT JOIN units u ON u.id=r.unit_id CROSS JOIN selected
           CROSS JOIN LATERAL unnest(ARRAY[
             CASE WHEN r.status='confirmed' AND (r.check_in_at AT TIME ZONE $4)::date=selected.day THEN 'arrivals' END,

@@ -269,3 +269,20 @@ auth fixture timed out before reaching the stay card; running the documented
 The compliance fixture's order-dependent residency-policy FK was corrected;
 the full disposable Core suite then passed twice. Remaining work includes the
 separate document review workflow and real operational integration gates.
+
+## 18. Document status and verification integrity
+
+Stage 7.35 projects bounded, non-file document statuses into the local reception
+card, including expiry overriding historical verification and a guest-edit lock.
+The existing compliance service rejects incomplete/rejected/expired documents
+and disconnected vaults; verification/audit/outbox are atomic and a delayed
+finalization cannot overwrite verified content. See `STAGE7_DOCUMENT_STATUS.md`.
+Real file upload/viewing/manual review is still blocked by the absent vault
+adapter and is not exposed by the local staff gateway.
+
+Dirty continuation of 3c7f3ab: web/Core builds and typechecks passed, root 220,
+Core 278 / 55 files, mail policy 15, network gate 118 files. Staff HTTP proof:
+13 groups/32 calls; stay browser: eight groups including document status and
+expiry; booking/reception regression passed on four widths with restart/logout.
+No new migration; 46 retained. Final clean-commit HTTP/browser reports are kept
+outside Git and include source SHA and dirty flag.

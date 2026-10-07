@@ -69,6 +69,17 @@ describe.sequential('local synthetic stay transitions',()=>{
   expect(next.arrivals.items.find((r:{reservationId:string})=>r.reservationId===ready).readiness.inventoryValid).toBe(false);
   await expect(act(ready,'check-in')).rejects.toThrow('STAY_INVENTORY_INVALID');
  });
+ it('projects bounded document statuses without file identifiers or personal data',async()=>{
+  const id=await fixture(),normal=await fixture({marker:false});
+  await query("INSERT INTO guest_document_records(organization_id,reservation_guest_id,document_type,object_key,storage_region,vault_id,expires_on,verification_status,object_checksum_sha256) SELECT g.organization_id,g.id,'passport','private-hidden-path','UZ','synthetic','2000-01-01','verified',repeat('a',64) FROM reservation_guests g CROSS JOIN generate_series(1,12) WHERE g.reservation_id=$1",[id]);
+  const board=await new BookingWorkspaceController(db).read({'x-organization-id':org,'x-user-id':actor.userId,'x-membership-id':actor.membershipId},property,'today');
+  if(!('arrivals' in board))throw Error('MISSING_BOARD');
+  const row=board.arrivals.items.find((r:{reservationId:string})=>r.reservationId===id);
+  expect(row.documents.total).toBe(12);expect(row.documents.items).toHaveLength(10);
+  expect(row.documents.items[0]).toEqual({type:'passport',status:'verified',expired:true,uploadFinalized:true});
+  expect(JSON.stringify(row.documents)).not.toContain('private-hidden-path');
+  expect(board.arrivals.items.find((r:{reservationId:string})=>r.reservationId===normal).documents).toBeNull();
+ });
  it('saves primary guest atomically, replays once and rejects stale or changed requests',async()=>{
   const id=await fixture({guest:false}),key=randomUUID();
   const guest={firstName:'Test',lastName:'Guest',dateOfBirth:'2000-02-29',nationality:'UZ',expectedVersion:1};

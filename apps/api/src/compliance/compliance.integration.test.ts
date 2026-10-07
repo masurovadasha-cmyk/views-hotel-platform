@@ -299,6 +299,55 @@ describe.sequential("Uzbekistan compliance integration",()=>{
     expect(stored.data_residency_policy_id).toBe(RESIDENCY_POLICY);
   });
 
+  it("rejects incomplete, rejected, expired and disconnected documents",async()=>{
+    const upload=await documents.beginUpload(actor,RES_GUEST,{documentType:'passport',contentType:'image/jpeg',expiresOn:'2031-01-01'});
+    const id=upload.documentRecordId;
+    await expect(documents.verify(actor,id)).rejects.toThrow('DOCUMENT_UPLOAD_NOT_FINALIZED');
+    await documents.finalizeUpload(actor,id);
+    const change=(sql:string,args:unknown[]=[])=>db.withActor(actor,c=>c.query(sql,[id,...args]));
+    await change("UPDATE guest_document_records SET verification_status='rejected' WHERE id=$1");
+    await expect(documents.verify(actor,id)).rejects.toThrow('DOCUMENT_NOT_PENDING');
+    await expect(documents.finalizeUpload(actor,id)).rejects.toThrow('DOCUMENT_NOT_PENDING');
+    await change("UPDATE guest_document_records SET verification_status='pending',expires_on='2000-01-01' WHERE id=$1");
+    await expect(documents.verify(actor,id)).rejects.toThrow('DOCUMENT_EXPIRED');
+    await change("UPDATE guest_document_records SET expires_on='2031-01-01',vault_id='not-connected' WHERE id=$1");
+    await expect(documents.verify(actor,id)).rejects.toThrow('DOCUMENT_VAULT_NOT_CONNECTED');
+    await change("UPDATE guest_document_records SET vault_id='vault-test',object_checksum_sha256='invalid' WHERE id=$1");
+    await expect(documents.verify(actor,id)).rejects.toThrow('DOCUMENT_UPLOAD_NOT_FINALIZED');
+    const row=(await change('SELECT verification_status,verified_at FROM guest_document_records WHERE id=$1')).rows[0];
+    expect(row).toEqual({verification_status:'pending',verified_at:null});
+  });
+
+  it("verifies concurrently once and rolls back on outbox collision",async()=>{
+    const upload=await documents.beginUpload(actor,RES_GUEST,{documentType:'passport',contentType:'image/jpeg'});
+    const id=upload.documentRecordId;await documents.finalizeUpload(actor,id);
+    const results=await Promise.all([documents.verify(actor,id),documents.verify(actor,id)]);
+    expect(results.filter(r=>r.idempotentReplay)).toHaveLength(1);
+    const audit=await db.withActor(actor,c=>c.query("SELECT after_state FROM audit_log WHERE entity_id=$1 AND action='compliance.document_verified'",[id]));
+    expect(audit.rows).toEqual([{after_state:{status:'verified'}}]);
+    const other=await documents.beginUpload(actor,RES_GUEST,{documentType:'passport',contentType:'image/jpeg'});
+    await documents.finalizeUpload(actor,other.documentRecordId);
+    await db.withActor(actor,c=>c.query("INSERT INTO outbox_events(organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload) VALUES($1,'guest_document',$2,'fixture.collision',$3,'{}')",[ORG,other.documentRecordId,'compliance:document-verified:'+other.documentRecordId]));
+    await expect(documents.verify(actor,other.documentRecordId)).rejects.toThrow();
+    const row=await db.withActor(actor,c=>c.query('SELECT verification_status,verified_at FROM guest_document_records WHERE id=$1',[other.documentRecordId]));
+    expect(row.rows[0]).toEqual({verification_status:'pending',verified_at:null});
+  });
+
+  it("does not finalize over a document verified while the vault was responding",async()=>{
+    const upload=await documents.beginUpload(actor,RES_GUEST,{documentType:'passport',contentType:'image/jpeg'});
+    const id=upload.documentRecordId;await documents.finalizeUpload(actor,id);
+    const racingRegistry=new ComplianceProviderRegistry();
+    const vault=new TestVault();vault.finalizeUpload=async input=>{
+      await documents.verify(actor,id);
+      return {objectKey:input.objectKey,checksumSha256:'b'.repeat(64),encryptionKeyRef:'changed',documentNumberHash:'changed'};
+    };
+    racingRegistry.registerVault(vault);
+    const racing=new GuestDocumentService(db,racingRegistry);
+    await expect(racing.finalizeUpload(actor,id)).rejects.toThrow('DOCUMENT_FINALIZE_CONFLICT');
+    const stored=await db.withActor(actor,c=>c.query('SELECT verification_status,object_checksum_sha256 FROM guest_document_records WHERE id=$1',[id]));
+    expect(stored.rows[0]).toEqual({verification_status:'verified',object_checksum_sha256:'a'.repeat(64)});
+  });
+
   it("creates fiscalization once per provider transaction and confirms the receipt",async()=>{
     const first=await fiscalization.prepareFromProviderTransaction(actor,PROVIDER_TX);
     const second=await fiscalization.prepareFromProviderTransaction(actor,PROVIDER_TX);

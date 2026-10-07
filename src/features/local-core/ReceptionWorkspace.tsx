@@ -5,7 +5,18 @@ function blockers(r:Readiness|null|undefined){
  if(!r)return ['Проверки готовности не получены. Обновите сводку.'];
  return [!r.primaryGuest&&'Не указан основной гость.',!r.unitActive&&'Номер не назначен или недоступен.',!r.inventoryValid&&'Не подтверждён резерв номера на весь срок.',!r.paymentFree&&'Есть финансовая операция — требуется отдельная проверка.',!r.timeAllowed&&'Операция недоступна в текущий момент по датам брони.',!r.unitVacant&&'В номере ещё проживает другой гость.'].filter(Boolean) as string[];
 }
-type Row={reservationId:string;confirmationCode:string;unitCode:string|null;status:string;version:number;stayPilot?:boolean;readiness?:Readiness|null;checkInAt:string;checkOutAt:string};
+type DocumentSummary={total:number;items:{type:string;status:string;expired:boolean;uploadFinalized:boolean}[]};
+function DocumentStatus({documents}:{documents?:DocumentSummary|null}){
+ const names:Record<string,string>={passport:'Паспорт',id_card:'ID-карта',birth_certificate:'Свидетельство о рождении',residence_permit:'Вид на жительство',travel_document:'Проездной документ',other:'Другой документ'};
+ return <div aria-label="Документы основного гостя"><strong>Документы основного гостя</strong>
+  {!documents?<p>Статусы документов не получены. Обновите сводку.</p>:documents.total===0?<p>Документы не добавлены.</p>:<>
+   <ul>{documents.items.map((d,i)=><li key={i}>{names[d.type]||'Документ'}: {d.expired||d.status==='expired'?'Срок действия истёк':d.status==='rejected'?'Отклонён':!d.uploadFinalized?'Загрузка не завершена':d.status==='verified'?'Проверен в Core':d.status==='pending'?'Ожидает проверки':'Неизвестный статус'}</li>)}</ul>
+   {documents.total>documents.items.length&&<p>Показаны {documents.items.length} из {documents.total} документов.</p>}
+  </>}
+  <p className="localHint">Показаны статусы записей тестовой среды. Просмотр файлов и проверка реальных документов не подключены. Это не подтверждение государственной регистрации.</p>
+ </div>;
+}
+type Row={reservationId:string;confirmationCode:string;unitCode:string|null;status:string;version:number;stayPilot?:boolean;readiness?:Readiness|null;documents?:DocumentSummary|null;checkInAt:string;checkOutAt:string};
 function GuestForm({row,csrf,done}:{row:Row;csrf:string;done:()=>Promise<void>}){
  const [firstName,setFirst]=useState(''),[lastName,setLast]=useState(''),[dateOfBirth,setBirth]=useState(''),[nationality,setCountry]=useState('UZ'),[saving,setSaving]=useState(false),[error,setError]=useState('');
  const key=useRef({body:'',key:''});
@@ -73,7 +84,9 @@ export function ReceptionWorkspace({staffCsrf}:{staffCsrf:string}){
       <small>{format(r.checkInAt)} — {format(r.checkOutAt)}</small>
       {r.stayPilot&&<div className="stayReadiness"><p>Основной гость: {r.readiness?.primaryGuest||'не указан'}</p><p className="localHint">Тестовая карточка. Проверка документов и государственная регистрация не выполнялись.</p>
        {blockers(r.readiness).length?<ul aria-label="Причины блокировки">{blockers(r.readiness).map(reason=><li key={reason}>{reason}</li>)}</ul>:<p>Проверки тестовой брони пройдены. При подтверждении сервер проверит её снова.</p>}
-       {r.status==='confirmed'&&<button disabled={busy||!!editing||!!pending} onClick={()=>setEditing(r)}>Заполнить данные гостя (тест)</button>}
+       <DocumentStatus documents={r.documents}/>
+       {!!r.documents?.total&&<p>Изменение данных гостя заблокировано: есть связанные документы.</p>}
+       {r.status==='confirmed'&&<button disabled={busy||!!editing||!!pending||!!r.documents?.total} onClick={()=>setEditing(r)}>Заполнить данные гостя (тест)</button>}
        <button disabled={busy||!!editing||blockers(r.readiness).length>0} onClick={()=>{setNotice('');setPending({row:r,action:r.status==='confirmed'?'check-in':'check-out'});}}>{r.status==='confirmed'?'Заселить (тест)':'Оформить выезд (тест)'}</button></div>}
      </li>)}</ul>}
      {group.truncated&&<p>Показаны первые 100 из {group.total} записей.</p>}
