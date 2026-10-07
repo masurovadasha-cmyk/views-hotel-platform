@@ -69,7 +69,7 @@ export function StaffWorkspaceGate(){
  if(loading)return <main className="localWorkspace"><p role="status">Проверка сессии сотрудника…</p></main>;
  if(session.authenticated&&session.identity&&session.csrf)return <>
   <nav className="localWorkspace localNavigation" aria-label="Разделы рабочей области">
-   <a href="#staff-reception">Ресепшен и уборка</a><a href="#staff-booking">Бронирование</a><a href="#staff-security">Ключи доступа</a><a href="#staff-account">Учётная запись</a>
+   <a href="#staff-reception">Ресепшен и уборка</a><a href="#staff-cleaning">Очередь уборки</a><a href="#staff-booking">Бронирование</a><a href="#staff-security">Ключи доступа</a><a href="#staff-account">Учётная запись</a>
   </nav>
   <section id="staff-account" tabIndex={-1} className="localWorkspace staffAccount" aria-label="Учётная запись сотрудника">
    <div><strong>{session.identity.displayName||session.identity.email}</strong><small>{session.identity.email} · {session.identity.role==='front_desk'?'Ресепшен':session.identity.role}</small>

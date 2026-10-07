@@ -51,7 +51,7 @@ const {chromium}=require('playwright');
   }
   await row.getByRole('button',{name:'Снять резерв',exact:true}).click();await row.getByText('Отменён',{exact:true}).waitFor();
   const navigation=page.getByRole('navigation',{name:'Разделы рабочей области',exact:true});
-  for(const [label,target] of [['Ресепшен и уборка','staff-reception'],['Бронирование','staff-booking'],['Ключи доступа','staff-security'],['Учётная запись','staff-account']]){
+  for(const [label,target] of [['Ресепшен и уборка','staff-reception'],['Очередь уборки','staff-cleaning'],['Бронирование','staff-booking'],['Ключи доступа','staff-security'],['Учётная запись','staff-account']]){
    await navigation.getByRole('link',{name:label,exact:true}).click();assert.equal(new URL(page.url()).hash,'#'+target);assert.equal(await page.locator('#'+target).count(),1);
   }
   assert.equal(new URL(page.url()).search,'');report.defaultLocalEntry=true;report.workspaceNavigation=true;

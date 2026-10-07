@@ -435,3 +435,20 @@ Builds failure; external Cloudflare diagnostic logs are still unavailable.
 Remaining localization and owner/housekeeper software are explicitly OPEN, not
 credential blockers. No whole-product, production or physical-device completion
 is claimed. Final private reports identify the exact final SHA/dirty state.
+
+## 27. Dedicated front-desk turnover queue
+
+Stage 7.44 adds a responsive searchable/sortable pending-turnover panel, partial
+projection warning and separate navigation. Check-in/out/readiness confirmations
+use a focus-managed keyboard modal. Core permissions, commands and migrations
+remain unchanged. This does not enable a cleaner role or staff assignment.
+
+Dirty continuation of b5d0402afd68c07e88a7618a3206774f674e7bda passed web/Core
+builds, root 222/36, staff-auth 20/3, network gate 119 files, mail policy 15,
+HTTP 13 groups/32 calls, stay browser 16 groups, booking/restart/navigation and
+four widths. Stay proof separately labels its UI-only truncated projection;
+real local writes/reloads still exercise Core. Initial accessible-name and
+focus-restoration failures were fixed before passing. Final clean-source private
+reports retain exact SHA/dirty fields. See STAGE7_TURNOVER_WORKSPACE.md.
+Owner/cleaner workflows and complete localization remain unfinished software;
+hosting, permanent Android signing and real provider activation remain gated.

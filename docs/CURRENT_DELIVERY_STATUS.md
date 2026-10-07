@@ -11,7 +11,7 @@ acceptance. Source repository and branch remain unchanged; main is not merged.
 | Booking | PostgreSQL quote/hold/release; synthetic confirmed stay transitions with inventory, audit/outbox and retries | Real inventory/tariff onboarding and paid-stay operational integration |
 | Guests | Versioned synthetic primary guest entry/replacement; related-document edits blocked | Real PII onboarding, policy-approved data collection and retention |
 | Documents | Encrypted fixed synthetic text, scoped noncached preview, expiring session-bound review receipt, accept/reject, audit and replay checks | Selected regional vault adapter, arbitrary real uploads, content inspection, KMS/rotation, approved human review rules |
-| Stay and turnover | Synthetic check-in/out; checkout creates pending turnover; next check-in blocked until explicit readiness confirmation | Actual housekeeper workspace and staff assignment; no new housekeeper privileges granted |
+| Stay and turnover | Synthetic check-in/out; checkout creates pending turnover; dedicated front-desk queue with search/sort/partial-result warning and keyboard confirmation; next check-in blocked until explicit readiness confirmation | Actual housekeeper workspace and staff assignment; no new housekeeper privileges granted |
 | Payments/fiscalization | Provider-bound transport/audit and Payme sandbox/Core tests from preceding stages | Provider credentials/certification, real transactions and fiscal operator integration |
 | Government registration | Existing contracts/policy/test provider | Approved real registration adapter/account and current operational/legal rules |
 | Recovery | Disposable mail/auth restore; full local snapshot restored and table digests matched, encrypted files decrypted with separate key | Production recovery, KMS recovery and restored deployment credentials/runbook exercise |
@@ -51,5 +51,6 @@ where applicable and request only missing provider-specific requirements after
 checking them. Available Git transport authentication is already sufficient for
 this branch; no replacement GitHub token is requested.
 
-See STAGE7_ANDROID_SIGNING_AND_DELIVERY.md for the final local verification
-checkpoint, signing configuration and native emulator failure boundaries.
+See STAGE7_TURNOVER_WORKSPACE.md for the latest front-desk increment and checks.
+STAGE7_ANDROID_SIGNING_AND_DELIVERY.md records signing configuration and native
+emulator failure boundaries.

@@ -9,7 +9,7 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
  const previewSeed=spawnSync(process.execPath,['apps/api/ops/prepare-local-stay.cjs','--ack=LOCAL_SYNTHETIC_STAY','--document-preview'],{encoding:'utf8'});assert.equal(previewSeed.status,0);const previewFixture=JSON.parse(previewSeed.stdout);
  const login=JSON.parse(fs.readFileSync(path.join(root,'private/staff-browser-fixture.json'),'utf8'));assert.match(login.email,/^auth-proof-[a-f0-9]+@views\.invalid$/);
  const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium'}),context=await browser.newContext(),page=await context.newPage();
- const report={stage:'7.37',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),checks:[],productionEnabled:false,realPayments:false};
+ const report={stage:'7.44',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),checks:[],productionEnabled:false,realPayments:false};
  const errors=[];page.on('pageerror',e=>errors.push(e.name));
  try{
   await page.goto('http://localhost:4173/?api=local-core');await page.getByLabel('Email сотрудника',{exact:true}).fill(login.email);await page.getByLabel('Пароль',{exact:true}).fill(login.password);const loginResponsePromise=page.waitForResponse(r=>r.url().endsWith('/local-api/login'));await page.getByRole('button',{name:'Войти',exact:true}).click();const loginResponse=await loginResponsePromise;if(loginResponse.status()!==200){const failure=await loginResponse.json();throw Error('LOGIN_HTTP_'+loginResponse.status()+'_'+(failure.error||'UNKNOWN'));}
@@ -82,10 +82,47 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
   await staying.getByRole('button',{name:'Оформить выезд (тест)',exact:true}).click();await reception.getByRole('button',{name:'Подтвердить действие',exact:true}).click();await reception.getByText('Тестовый выезд оформлен.',{exact:false}).waitFor();
   await page.reload();await page.getByRole('region',{name:'Сейчас проживают',exact:true}).waitFor();assert.equal(await staying.count(),0);report.checks.push('check_out_survives_reload');assert.deepEqual(errors,[]);
   const cleaning=page.getByRole('region',{name:'Ожидают уборки (тест)',exact:true}).locator('[data-stay-id="'+fixture.reservationId+'"]');await cleaning.waitFor();
-  await cleaning.getByRole('button',{name:'Подтвердить уборку (тест)',exact:true}).click();await reception.getByRole('button',{name:'Отмена',exact:true}).click();await cleaning.waitFor();
+  const cleaningBoard=page.getByRole('region',{name:'Ожидают уборки (тест)',exact:true});
+  const code=await cleaning.locator('strong').innerText();
+  await cleaningBoard.getByLabel('Поиск уборки по номеру или брони',{exact:true}).fill('no-match-'+randomUUID());
+  await cleaningBoard.getByText('Совпадений в загруженной очереди нет. Измените или сбросьте поиск.',{exact:true}).waitFor();
+  assert.equal(await cleaningBoard.locator('[data-stay-id]').count(),0);
+  await cleaningBoard.getByRole('button',{name:'Сбросить поиск уборки',exact:true}).click();await cleaning.waitFor();
+  await cleaningBoard.getByLabel('Поиск уборки по номеру или брони',{exact:true}).fill('  '+code.toLowerCase()+'  ');
+  assert.equal(await cleaningBoard.locator('[data-stay-id]').count(),1);
+  await cleaningBoard.getByLabel('Порядок очереди уборки',{exact:true}).selectOption('unit');await cleaning.waitFor();
+  for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+  report.checks.push('turnover_search_clear_sort_and_four_widths');
+  await cleaning.getByRole('button',{name:'Подтвердить уборку (тест)',exact:true}).click();
+  const confirmation=page.getByRole('alertdialog',{name:'Подтвердить готовность номера',exact:true});await confirmation.waitFor();
+  assert.equal(await confirmation.getByRole('button',{name:'Подтвердить действие',exact:true}).evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('Shift+Tab');assert.equal(await confirmation.getByRole('button',{name:'Отмена',exact:true}).evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('Tab');assert.equal(await confirmation.getByRole('button',{name:'Подтвердить действие',exact:true}).evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('Escape');await cleaning.waitFor();assert.equal(await confirmation.count(),0);
+  assert.equal(await cleaning.getByRole('button',{name:'Подтвердить уборку (тест)',exact:true}).evaluate(el=>el===document.activeElement),true);
+  report.checks.push('turnover_confirmation_keyboard_cancel_restores_focus');
   await cleaning.getByRole('button',{name:'Подтвердить уборку (тест)',exact:true}).click();await reception.getByRole('button',{name:'Подтвердить действие',exact:true}).click();
   await reception.getByText('Готовность тестового номера после уборки подтверждена.',{exact:true}).waitFor();
   await page.reload();await page.getByRole('region',{name:'Ожидают уборки (тест)',exact:true}).waitFor();assert.equal(await cleaning.count(),0);report.checks.push('checkout_creates_cleaning_and_confirmation_survives_reload');
+  // UI-only projection fixture: no synthetic row below is written to Core.
+  const projectionRoute='**/local-api/reception?*';
+  await page.route(projectionRoute,async route=>{
+   const response=await route.fetch();assert.equal(response.status(),200);const board=await response.json();
+   board.cleaning={total:103,truncated:true,items:[
+    {reservationId:'ui-a',confirmationCode:'UI-A',unitCode:'10',checkOutAt:'2026-10-07T11:00:00+05:00'},
+    {reservationId:'ui-b',confirmationCode:'UI-B',unitCode:'2',checkOutAt:'2026-10-07T07:00:00Z'},
+    {reservationId:'ui-c',confirmationCode:'UI-C',unitCode:'1',checkOutAt:'2026-10-07T08:00:00Z'}
+   ].map(row=>({...row,checkInAt:'2026-10-06T00:00:00Z',status:'checked_out',version:1,stayPilot:false}))};
+   await route.fulfill({response,json:board});
+  });
+  await page.reload();await cleaningBoard.getByText('Загружены первые 3 из 103 записей. Поиск и сортировка действуют только на загруженную часть очереди.',{exact:true}).waitFor();
+  assert.deepEqual(await cleaningBoard.locator('[data-stay-id]').evaluateAll(rows=>rows.map(row=>row.dataset.stayId)),['ui-a','ui-b','ui-c']);
+  await cleaningBoard.getByLabel('Порядок очереди уборки',{exact:true}).selectOption('unit');
+  assert.deepEqual(await cleaningBoard.locator('[data-stay-id]').evaluateAll(rows=>rows.map(row=>row.dataset.stayId)),['ui-c','ui-b','ui-a']);
+  assert.equal(await cleaningBoard.getByRole('button',{name:'Подтвердить уборку (тест)',exact:true}).evaluateAll(buttons=>buttons.every(button=>button.disabled)),true);
+  await page.unroute(projectionRoute);await page.reload();await cleaningBoard.waitFor();
+  assert.equal(await cleaningBoard.locator('[data-stay-id^="ui-"]').count(),0);assert.deepEqual(errors,[]);
+  report.checks.push('ui_only_truncated_projection_numeric_and_timezone_sort_nonpilot_disabled');
   assert.equal((await api('logout',{all:false},randomUUID())).status,200);
   assert.equal((await api('document-view',{reservationId:previewFixture.reservationId,documentId:previewData.documentId},randomUUID())).status,401);report.checks.push('document_preview_denied_after_logout');
   Object.assign(report,{result:'pass',pageErrors:errors,checkedAt:new Date().toISOString()});
