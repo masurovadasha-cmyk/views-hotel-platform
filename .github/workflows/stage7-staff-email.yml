@@ -1,4 +1,4 @@
-name: Stage 7.26–7.29 Staff Email and Passkey Pilot
+name: Stage 7.26–7.30 Staff Email and Passkey Pilot
 on:
   push:
     branches: ['stage7/staff-email-delivery-v1']

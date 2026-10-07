@@ -10,8 +10,9 @@ export function StaffPasskeyPanel({csrf}:{csrf:string}){
   return response.json();
  }
  useEffect(()=>{let live=true;
-  if(location.hostname==='localhost')void call<Status>('state',{}).then(s=>{if(live)setStatus(s);}).catch(()=>{});
-  return()=>{live=false;};
+  const refresh=()=>{if(location.hostname==='localhost')void call<Status>('state',{}).then(s=>{if(live)setStatus(s);}).catch(()=>{});};
+  refresh();window.addEventListener('views-staff-assurance-updated',refresh);
+  return()=>{live=false;window.removeEventListener('views-staff-assurance-updated',refresh);};
  },[csrf]);
  useEffect(()=>{if(!status?.verifiedUntil)return;
   const timer=setTimeout(()=>setStatus(s=>s?{...s,verifiedUntil:null}:s),Math.max(0,Date.parse(status.verifiedUntil)-Date.now()));

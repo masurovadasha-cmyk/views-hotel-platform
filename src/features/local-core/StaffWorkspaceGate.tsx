@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react';
+import {startAuthentication,type PublicKeyCredentialRequestOptionsJSON} from '@simplewebauthn/browser';
 import {StaffPasskeyPanel} from './StaffPasskeyPanel';
 import {LocalCoreWorkspace} from './LocalCoreWorkspace';
 import './local-core.css';
@@ -9,21 +10,23 @@ const messages:Record<string,string>={STAFF_LOGIN_FAILED:'Неверные да�
  STAFF_ACTIVATION_INVALID:'Код недействителен, уже использован или истёк. Нужен новый код от администратора.',
  STAFF_AUTH_RATE_LIMIT:'Слишком много попыток. Подождите пять минут.',STAFF_AUTH_BUSY:'Сервис входа занят. Повторите позже.',
  CORE_UNAVAILABLE:'Core недоступен. Проверьте локальный сервер.',STAFF_AUTH_NOT_ACTIVATED:'Сервис входа ещё не активирован на этом стенде.'};
+class StaffRequestError extends Error{constructor(readonly code:string,message:string,readonly status:number){super(message);}}
 async function authCall<T>(route:string,body?:unknown,csrf?:string):Promise<T>{
  const headers:Record<string,string>={'X-Views-Local-Workspace':'1'};
  if(body!==undefined)headers['Content-Type']='application/json';if(csrf)headers['X-CSRF-Token']=csrf;
  const response=await fetch('/local-api/'+route,{method:body===undefined?'GET':'POST',headers,credentials:'same-origin',
  body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
- const value=await response.json();if(!response.ok)throw Error(messages[value.error]||'Запрос не выполнен. Проверьте сервер и повторите вход.');return value;
+ const value=await response.json();if(!response.ok)throw new StaffRequestError(value.error,messages[value.error]||'Запрос не выполнен. Проверьте сервер и повторите вход.',response.status);return value;
 }
 export function StaffWorkspaceGate(){
  const [session,setSession]=useState<Session>({authenticated:false}),[loading,setLoading]=useState(true),[mode,setMode]=useState<'login'|'activate'|'reset'>('login');
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[repeat,setRepeat]=useState(''),[token,setToken]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const [assurance,setAssurance]=useState(false),[changeNotice,setChangeNotice]=useState('');
  const [change,setChange]=useState(false),[current,setCurrent]=useState(''),[next,setNext]=useState('');
  useEffect(()=>{let alive=true;
   authCall<Session>('session').then(s=>{if(alive)setSession(s);}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive)setLoading(false);});
-  const expired=()=>{setSession({authenticated:false});setChange(false);setCurrent('');setNext('');setError('Сессия завершена или доступ отозван. Войдите снова.');};
+  const expired=()=>{setSession({authenticated:false});setChange(false);setAssurance(false);setChangeNotice('');setCurrent('');setNext('');setError('Сессия завершена или доступ отозван. Войдите снова.');};
   const replaced=()=>{expired();setError('');setNotice('Ключ заменён. Все сессии завершены. Войдите заново.');};
   window.addEventListener('views-staff-key-replaced',replaced);
   window.addEventListener('views-staff-expired',expired);return()=>{alive=false;window.removeEventListener('views-staff-expired',expired);window.removeEventListener('views-staff-key-replaced',replaced);};
@@ -39,26 +42,44 @@ export function StaffWorkspaceGate(){
   finally{setPassword('');setRepeat('');setBusy(false);}
  }
  async function logout(all:boolean){
-  setBusy(true);setError('');try{await authCall('logout',{all},session.csrf);setSession({authenticated:false});setChange(false);setNotice(all?'Все ваши сессии завершены.':'Вы вышли из системы.');}
+  setBusy(true);setError('');try{await authCall('logout',{all},session.csrf);setSession({authenticated:false});setChange(false);setAssurance(false);setCurrent('');setNext('');setChangeNotice('');setNotice(all?'Все ваши сессии завершены.':'Вы вышли из системы.');}
   catch(e){setError(e instanceof Error?e.message:'Не удалось завершить сессию.');}finally{setBusy(false);}
  }
  async function changePassword(e:React.FormEvent){
-  e.preventDefault();setBusy(true);setError('');
+  e.preventDefault();setBusy(true);setError('');setChangeNotice('');setAssurance(false);
   try{await authCall('password',{currentPassword:current,password:next},session.csrf);setSession({authenticated:false});setChange(false);setNotice('Пароль изменён. Все сессии отозваны. Войдите заново.');}
-  catch(e){setError(e instanceof Error?e.message:'Пароль не изменён.');}finally{setBusy(false);setCurrent('');setNext('');}
+  catch(e){
+   if(e instanceof StaffRequestError&&e.code==='STAFF_ASSURANCE_REQUIRED'){
+    window.dispatchEvent(new Event('views-staff-assurance-updated'));setAssurance(true);setError('Для смены пароля подтвердите личность ключом в этой сессии.');
+   }else if(e instanceof StaffRequestError&&e.status<500){setError(e.message);}
+   else{setSession({authenticated:false});setChange(false);setNotice('Не удалось получить подтверждение смены пароля. Он мог измениться. Попробуйте войти с новым паролем; если он не подходит — с прежним.');}
+  }finally{setBusy(false);setCurrent('');setNext('');}
+ }
+ async function confirmPasswordKey(){
+  setBusy(true);setError('');setChangeNotice('');setCurrent('');setNext('');
+  try{
+   const c=await authCall<{challengeId:string;options:PublicKeyCredentialRequestOptionsJSON}>('passkey/options',{purpose:'authenticate',password:null},session.csrf);
+   const response=await startAuthentication({optionsJSON:c.options});
+   await authCall('passkey/verify',{purpose:'authenticate',challengeId:c.challengeId,response},session.csrf);
+   window.dispatchEvent(new Event('views-staff-assurance-updated'));setAssurance(false);setChangeNotice('Ключ подтверждён. Введите текущий и новый пароли ещё раз и сохраните изменение.');
+  }catch{setError('Подтверждение ключом не завершено. Пароль этой попыткой не менялся. Повторите подтверждение или отмените смену пароля.');}
+  finally{setBusy(false);}
  }
  if(loading)return <main className="localWorkspace"><p role="status">Проверка сессии сотрудника…</p></main>;
  if(session.authenticated&&session.identity&&session.csrf)return <>
   <section className="localWorkspace staffAccount" aria-label="Учётная запись сотрудника">
    <div><strong>{session.identity.displayName||session.identity.email}</strong><small>{session.identity.email} · {session.identity.role==='front_desk'?'Ресепшен':session.identity.role}</small>
    <small>Сессия PostgreSQL · {session.identity.emailVerified?'Email подтверждён':'Локальная проверка приглашения, не подтверждение email'}</small></div>
-   <div className="staffAccountActions"><button disabled={busy} onClick={()=>setChange(v=>!v)}>Изменить пароль</button>
+   <div className="staffAccountActions"><button disabled={busy} onClick={()=>{setChange(v=>!v);setCurrent('');setNext('');setAssurance(false);setChangeNotice('');setError('');}}>Изменить пароль</button>
     <button disabled={busy} onClick={()=>void logout(true)}>Завершить все сессии</button><button disabled={busy} onClick={()=>void logout(false)}>Выйти</button></div>
    {error&&<p className="localError" role="alert">{error}</p>}
-   {change&&<form onSubmit={changePassword} className="staffPasswordForm">
+   {change&&<div className="staffPasswordChange">
+    {changeNotice&&<p role="status">{changeNotice}</p>}
+    {assurance&&<button disabled={busy} onClick={()=>void confirmPasswordKey()}>Подтвердить ключом для смены пароля</button>}
+    <form onSubmit={changePassword} className="staffPasswordForm"><fieldset disabled={busy||assurance}>
     <label>Текущий пароль<input aria-label="Текущий пароль" type="password" required autoComplete="current-password" value={current} onChange={e=>setCurrent(e.target.value)}/></label>
     <label>Новый пароль<input aria-label="Новый пароль" type="password" required minLength={15} maxLength={128} autoComplete="new-password" value={next} onChange={e=>setNext(e.target.value)}/></label>
-    <button className="primary" disabled={busy}>Сохранить новый пароль</button></form>}
+    <button className="primary" disabled={busy||assurance}>Сохранить новый пароль</button></fieldset></form></div>}
   </section>
   <StaffPasskeyPanel csrf={session.csrf}/>
   <LocalCoreWorkspace staffCsrf={session.csrf}/>

@@ -217,3 +217,11 @@ Migration 0044 enforces session-bound fresh UV proof inside the password mutatio
 including expiry after lock waits. The API maps denial to HTTP 403. Existing
 password-only staff without a key retain their flow; privileged routes remain
 closed. See `STAGE7_PASSWORD_ASSURANCE.md` for the boundary and proof commands.
+
+## 13. Password assurance user flow
+
+Stage 7.30 connects the password form to the existing passkey confirmation flow.
+After a server assurance refusal it clears password fields, offers explicit key
+confirmation and requires a new explicit password submission. Lost responses are
+reported as unknown outcomes, without automatic retry. See
+`STAGE7_PASSWORD_ASSURANCE_UX.md`; no new migration or privilege activation.

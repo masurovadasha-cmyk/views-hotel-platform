@@ -130,4 +130,6 @@ module.exports=async function recoveryProof({page,context,cdp,initialAuthenticat
   assert.equal((await rpc('passkey/state',{},logged.body.token)).body.verifiedUntil,null);
  });
 
+ await require('./staff-password-assurance.browser.cjs')({page,context,owner,rpc,fixture:async()=>{await newDevice();return fixture();},password,check});
+
 };

@@ -84,7 +84,7 @@ async function setup(){
  assert.equal(ready,true,'CORE_NOT_READY');await smtpFixture();
 }
 (async()=>{
- const report={schemaVersion:1,stage:process.env.VIEWS_PASSKEY_PROOF==='true'?'7.29':'7.26',passkeyVirtualAuthenticator:process.env.VIEWS_PASSKEY_PROOF==='true',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim().length>0,checks,externalEmailsSent:0,
+ const report={schemaVersion:1,stage:process.env.VIEWS_PASSKEY_PROOF==='true'?'7.30':'7.26',passkeyVirtualAuthenticator:process.env.VIEWS_PASSKEY_PROOF==='true',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim().length>0,checks,externalEmailsSent:0,
  externalMailboxOwnershipProven:false,productionEnabled:false,privilegedMfaEnabled:false,hostDeploymentConfirmed:false};
  try{
   await setup();
@@ -205,7 +205,7 @@ async function setup(){
    actualSMTPTransportExercised:true,SMTPReceiptPositiveBranchSimulated:true,queueReplaysPrevented:true,
    mailerRuntimeSeparated:true,uncertainDeliveryNotRetried:true,checkedAt:new Date().toISOString(),
    limitations:['SMTP messages received only by disposable loopback test server','Positive external-verification branch uses a simulated mailer receipt','No user workstation deployment or external sender configuration confirmed']});
- }catch(e){report.failure={check:current,code:e.code||'ASSERTION_FAILED'};process.exitCode=1;}
+ }catch(e){report.failure={check:current,code:e.code||'ASSERTION_FAILED',frames:String(e.stack||'').split('\n').filter(line=>/^\s+at /.test(line)).slice(0,5)};process.exitCode=1;}
  finally{
   transport?.close();for(const socket of sockets)socket.destroy();if(server)await new Promise(r=>server.close(r));
   if(child&&!child.exitCode){child.kill('SIGTERM');await Promise.race([new Promise(r=>child.once('exit',r)),new Promise(r=>setTimeout(()=>{child.kill('SIGKILL');r();},3000))]);}
