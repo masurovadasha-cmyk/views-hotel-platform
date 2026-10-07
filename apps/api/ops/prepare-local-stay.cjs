@@ -3,6 +3,7 @@
 const fs=require('node:fs'),path=require('node:path'),{randomUUID}=require('node:crypto');
 const {Client}=require('pg'),{localState}=require('./local-state.cjs');
 (async()=>{
+ if(process.argv.length>4||(process.argv[3]&&process.argv[3]!=='--without-guest'))throw Error('INVALID_STAY_FIXTURE_OPTION');
  if(process.argv[2]!=='--ack=LOCAL_SYNTHETIC_STAY')throw Error('LOCAL_STAY_ACK_REQUIRED');
  const {privateDir,scope}=localState(),secret=JSON.parse(fs.readFileSync(path.join(privateDir,'runtime.json'),'utf8'));
  if(secret.scope!==scope)throw Error('LOCAL_SCOPE_REQUIRED');
@@ -16,7 +17,7 @@ const {Client}=require('pg'),{localState}=require('./local-state.cjs');
   await db.query(`INSERT INTO reservations(id,organization_id,property_id,unit_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot,quote_snapshot,confirmed_at)
    VALUES($1,$2,$3,$4,$5,'confirmed',clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 day','UZS',0,'{}','{"localStayPilot":true}',clock_timestamp())`,[id,org,prop,unit,code]);
   await db.query("INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,reservation_id,stay_period) SELECT organization_id,property_id,unit_id,'reservation',id,tstzrange(check_in_at,check_out_at,'[)') FROM reservations WHERE id=$1",[id]);
-  await db.query("INSERT INTO reservation_guests(organization_id,reservation_id,is_primary,first_name,last_name,date_of_birth,nationality_country_code) VALUES($1,$2,true,'Synthetic','Local Stay','2000-01-01','UZ')",[org,id]);
+  if(process.argv[3]!=='--without-guest')await db.query("INSERT INTO reservation_guests(organization_id,reservation_id,is_primary,first_name,last_name,date_of_birth,nationality_country_code) VALUES($1,$2,true,'Synthetic','Local Stay','2000-01-01','UZ')",[org,id]);
   await db.query('COMMIT');console.log(JSON.stringify({reservationId:id,confirmationCode:code,syntheticData:true,paymentsCreated:0}));
  }catch(e){await db.query('ROLLBACK');throw e;}finally{await db.end();}
 })().catch(e=>{console.error(JSON.stringify({result:'fail',code:e.code||'LOCAL_STAY_FIXTURE_FAILED'}));process.exitCode=1;});

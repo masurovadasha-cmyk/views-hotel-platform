@@ -1,6 +1,11 @@
 import {useEffect,useRef,useState} from 'react';
 import {request} from './LocalCoreWorkspace';
-type Row={reservationId:string;confirmationCode:string;unitCode:string|null;status:string;stayPilot?:boolean;checkInAt:string;checkOutAt:string};
+type Readiness={primaryGuest:string|null;unitActive:boolean;inventoryValid:boolean;paymentFree:boolean;timeAllowed:boolean;unitVacant:boolean};
+function blockers(r:Readiness|null|undefined){
+ if(!r)return ['Проверки готовности не получены. Обновите сводку.'];
+ return [!r.primaryGuest&&'Не указан основной гость.',!r.unitActive&&'Номер не назначен или недоступен.',!r.inventoryValid&&'Не подтверждён резерв номера на весь срок.',!r.paymentFree&&'Есть финансовая операция — требуется отдельная проверка.',!r.timeAllowed&&'Операция недоступна в текущий момент по датам брони.',!r.unitVacant&&'В номере ещё проживает другой гость.'].filter(Boolean) as string[];
+}
+type Row={reservationId:string;confirmationCode:string;unitCode:string|null;status:string;stayPilot?:boolean;readiness?:Readiness|null;checkInAt:string;checkOutAt:string};
 type Group={total:number;truncated:boolean;items:Row[]};
 type Board={property:{name:Record<string,string>;timezone:string};day:string;databaseTime:string;arrivals:Group;departures:Group;staying:Group};
 export function ReceptionWorkspace({staffCsrf}:{staffCsrf:string}){
@@ -43,7 +48,9 @@ export function ReceptionWorkspace({staffCsrf}:{staffCsrf:string}){
      {group.total===0?<p>Нет записей.</p>:<ul>{group.items.map(r=><li key={r.reservationId} data-stay-id={r.reservationId}>
       <strong>{r.confirmationCode}</strong><div>{r.unitCode||'Номер не назначен'} · {r.status==='confirmed'?'Подтверждена':'Заселён'}</div>
       <small>{format(r.checkInAt)} — {format(r.checkOutAt)}</small>
-      {r.stayPilot&&<button disabled={busy} onClick={()=>{setNotice('');setPending({row:r,action:r.status==='confirmed'?'check-in':'check-out'});}}>{r.status==='confirmed'?'Заселить (тест)':'Оформить выезд (тест)'}</button>}
+      {r.stayPilot&&<div className="stayReadiness"><p>Основной гость: {r.readiness?.primaryGuest||'не указан'}</p><p className="localHint">Тестовая карточка. Проверка документов и государственная регистрация не выполнялись.</p>
+       {blockers(r.readiness).length?<ul aria-label="Причины блокировки">{blockers(r.readiness).map(reason=><li key={reason}>{reason}</li>)}</ul>:<p>Проверки тестовой брони пройдены. При подтверждении сервер проверит её снова.</p>}
+       <button disabled={busy||blockers(r.readiness).length>0} onClick={()=>{setNotice('');setPending({row:r,action:r.status==='confirmed'?'check-in':'check-out'});}}>{r.status==='confirmed'?'Заселить (тест)':'Оформить выезд (тест)'}</button></div>}
      </li>)}</ul>}
      {group.truncated&&<p>Показаны первые 100 из {group.total} записей.</p>}
     </section>;

@@ -242,3 +242,11 @@ the atomic state/inventory/audit/outbox mutation. The cloud-local launcher opts
 into this bounded pilot; normal priced bookings and real guest/compliance/payment
 processing remain excluded. See `STAGE7_LOCAL_STAY_PILOT.md` and the preparation/
 browser proof commands. Applied earlier migrations remain immutable.
+
+## 16. Synthetic guest readiness
+
+Stage 7.33 adds a primary-guest card and server-projected readiness reasons to
+the local stay pilot. Missing guest, invalid inventory, inactive unit, payment
+intent, timing or occupancy blocks the UI action; the transactional write still
+rechecks every prerequisite. No guest editing or document verification is
+implied. See `STAGE7_STAY_READINESS.md` for verification and remaining scope.

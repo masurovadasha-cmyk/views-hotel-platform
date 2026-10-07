@@ -4,19 +4,25 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
 (async()=>{
  if(process.argv[2]!=='--ack=LOCAL_SYNTHETIC_STAY_PROOF')throw Error('STAY_PROOF_ACK_REQUIRED');
  const seed=spawnSync(process.execPath,['apps/api/ops/prepare-local-stay.cjs','--ack=LOCAL_SYNTHETIC_STAY'],{encoding:'utf8'});assert.equal(seed.status,0);const fixture=JSON.parse(seed.stdout);
+ const blockedSeed=spawnSync(process.execPath,['apps/api/ops/prepare-local-stay.cjs','--ack=LOCAL_SYNTHETIC_STAY','--without-guest'],{encoding:'utf8'});assert.equal(blockedSeed.status,0);const blocked=JSON.parse(blockedSeed.stdout);
  const login=JSON.parse(fs.readFileSync(path.join(root,'private/staff-browser-fixture.json'),'utf8'));assert.match(login.email,/^auth-proof-[a-f0-9]+@views\.invalid$/);
  const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium'}),context=await browser.newContext(),page=await context.newPage();
- const report={stage:'7.32',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),checks:[],productionEnabled:false,realPayments:false};
+ const report={stage:'7.33',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),checks:[],productionEnabled:false,realPayments:false};
  const errors=[];page.on('pageerror',e=>errors.push(e.name));
  try{
   await page.goto('http://localhost:4173/?api=local-core');await page.getByLabel('Email сотрудника',{exact:true}).fill(login.email);await page.getByLabel('Пароль',{exact:true}).fill(login.password);await page.getByRole('button',{name:'Войти',exact:true}).click();
   const reception=page.getByRole('region',{name:'Ресепшен',exact:true});
   const arriving=reception.getByRole('region',{name:'Ожидаемые заезды',exact:true}).locator('[data-stay-id="'+fixture.reservationId+'"]');await arriving.waitFor();
+  await arriving.getByText('Основной гость: Synthetic Local Stay',{exact:true}).waitFor();
+  const blockedRow=reception.getByRole('region',{name:'Ожидаемые заезды',exact:true}).locator('[data-stay-id="'+blocked.reservationId+'"]');
+  await blockedRow.getByText('Не указан основной гость.',{exact:true}).waitFor();assert.equal(await blockedRow.getByRole('button',{name:'Заселить (тест)',exact:true}).isDisabled(),true);
+  report.checks.push('server_guest_card_and_missing_guest_blocks_ui');
   async function api(route,body,key,csrf=true){return page.evaluate(async({route,body,key,csrf})=>{
    const session=await(await fetch('/local-api/session',{headers:{'X-Views-Local-Workspace':'1'}})).json();
    const r=await fetch('/local-api/'+route,{method:'POST',headers:{'X-Views-Local-Workspace':'1','Content-Type':'application/json','Idempotency-Key':key,...(csrf?{'X-CSRF-Token':session.csrf}:{})},body:JSON.stringify(body)});
    return {status:r.status,body:await r.json()};
   },{route,body,key,csrf});}
+  const denied=await api('check-in',{reservationId:blocked.reservationId},randomUUID());assert.equal(denied.status,409);assert.equal(denied.body.error,'STAY_GUEST_REQUIRED');
   assert.equal((await api('check-in',{reservationId:fixture.reservationId},randomUUID(),false)).status,403);
   assert.equal((await api('check-in',{reservationId:randomUUID()},randomUUID())).status,403);assert.equal((await api('check-in',{reservationId:fixture.reservationId,localStayPilot:true},randomUUID())).status,400);report.checks.push('csrf_workspace_scope_and_body_allowlist');
   await arriving.getByRole('button',{name:'Заселить (тест)',exact:true}).click();await reception.getByRole('button',{name:'Отмена',exact:true}).click();await arriving.waitFor();report.checks.push('cancel_keeps_confirmed');

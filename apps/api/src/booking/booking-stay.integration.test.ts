@@ -1,6 +1,7 @@
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {randomUUID,randomBytes,createHash} from 'node:crypto';
 import {DatabaseService} from '../database/database.service';
+import {BookingWorkspaceController} from './booking-workspace.controller';
 import {BookingStayService} from './booking-stay.service';
 const org='10000000-0000-4000-8000-000000000001',property='10000000-0000-4000-8000-000000000002';
 const actor={organizationId:org,userId:'20000000-0000-4000-8000-000000000001',membershipId:'73100000-0000-4000-8000-000000000001',requestId:'stay-proof'};
@@ -54,6 +55,19 @@ describe.sequential('local synthetic stay transitions',()=>{
   expect((await query('SELECT status,version FROM reservations WHERE id=$1',[id])).rows[0]).toEqual({status:'checked_in',version:2});
   expect((await query('SELECT upper(stay_period)>clock_timestamp() retained FROM inventory_periods WHERE reservation_id=$1',[id])).rows[0].retained).toBe(true);
   expect((await query("SELECT count(*)::int n FROM booking_commands WHERE reservation_id=$1 AND command_type='local_check-out'",[id])).rows[0].n).toBe(0);
+ });
+ it('projects guest and blockers only for eligible synthetic stays',async()=>{
+  const controller=new BookingWorkspaceController(db);
+  const headers={'x-organization-id':org,'x-user-id':actor.userId,'x-membership-id':actor.membershipId};
+  const ready=await fixture(),missing=await fixture({guest:false}),normal=await fixture({marker:false});
+  const board=await controller.read(headers,property,'today');if(!('arrivals' in board))throw Error('MISSING_BOARD');
+  const get=(id:string)=>board.arrivals.items.find((r:{reservationId:string})=>r.reservationId===id);
+  expect(get(ready).readiness).toEqual({primaryGuest:'Synthetic Stay',unitActive:true,inventoryValid:true,paymentFree:true,timeAllowed:true,unitVacant:true});
+  expect(get(missing).readiness.primaryGuest).toBeNull();expect(get(normal).readiness).toBeNull();
+  await query('DELETE FROM inventory_periods WHERE reservation_id=$1',[ready]);
+  const next=await controller.read(headers,property,'today');if(!('arrivals' in next))throw Error('MISSING_BOARD');
+  expect(next.arrivals.items.find((r:{reservationId:string})=>r.reservationId===ready).readiness.inventoryValid).toBe(false);
+  await expect(act(ready,'check-in')).rejects.toThrow('STAY_INVENTORY_INVALID');
  });
  it('revocation blocks later transitions even with a previously valid session',async()=>{
   const old=await session(),id=await fixture();await db.query('SELECT app.staff_auth_logout($1,false)',[createHash('sha256').update(old).digest('hex')]);

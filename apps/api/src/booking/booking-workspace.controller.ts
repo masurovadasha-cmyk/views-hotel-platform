@@ -35,7 +35,15 @@ export class BookingWorkspaceController{
         ), grouped AS (
           SELECT bucket,r.id AS "reservationId",r.confirmation_code AS "confirmationCode",u.code AS "unitCode",r.status,
             r.check_in_at AS "checkInAt",r.check_out_at AS "checkOutAt",
-            ($5::boolean AND r.quote_snapshot->>'localStayPilot'='true' AND r.total_minor=0) AS "stayPilot"
+            ($5::boolean AND r.quote_snapshot->'localStayPilot'='true'::jsonb AND r.total_minor=0) AS "stayPilot",
+            CASE WHEN $5::boolean AND r.quote_snapshot->'localStayPilot'='true'::jsonb AND r.total_minor=0 THEN jsonb_build_object(
+              'primaryGuest', (SELECT concat_ws(' ',g.first_name,g.last_name) FROM reservation_guests g WHERE g.reservation_id=r.id AND g.organization_id=r.organization_id AND g.is_primary),
+              'unitActive',COALESCE(u.status='active' AND u.property_id=r.property_id,false),
+              'inventoryValid',(SELECT count(*)=1 FROM inventory_periods ip WHERE ip.reservation_id=r.id AND ip.organization_id=r.organization_id AND ip.property_id=r.property_id AND ip.unit_id=r.unit_id AND ip.kind='reservation' AND ip.stay_period=tstzrange(r.check_in_at,r.check_out_at,'[)')),
+              'paymentFree',NOT EXISTS(SELECT 1 FROM payment_intents pi WHERE pi.reservation_id=r.id),
+              'timeAllowed',CASE WHEN r.status='confirmed' THEN clock_timestamp()>=r.check_in_at AND clock_timestamp()<r.check_out_at ELSE clock_timestamp()>r.check_in_at END,
+              'unitVacant',r.status='checked_in' OR NOT EXISTS(SELECT 1 FROM reservations other WHERE other.unit_id=r.unit_id AND other.status='checked_in' AND other.id<>r.id)
+            ) ELSE NULL END AS readiness
           FROM reservations r LEFT JOIN units u ON u.id=r.unit_id CROSS JOIN selected
           CROSS JOIN LATERAL unnest(ARRAY[
             CASE WHEN r.status='confirmed' AND (r.check_in_at AT TIME ZONE $4)::date=selected.day THEN 'arrivals' END,
