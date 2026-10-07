@@ -6,10 +6,10 @@ export function parseGuestLocale(value:unknown):Locale{return value==='ru'||valu
 export const translateGuest=(locale:Locale,source:string,values?:MessageValues)=>translate(catalog,locale,source,values);
 type Context={locale:Locale;setLocale:(locale:Locale)=>void;t:(source:string,values?:MessageValues)=>string};
 const GuestLocaleContext=createContext<Context>({locale:'en',setLocale:()=>{},t:(source,values)=>translateGuest('en',source,values)});
-export function GuestLocaleProvider({children}:{children:ReactNode}){
+export function GuestLocaleProvider({children,manageDocument=true,persist=true}:{children:ReactNode;manageDocument?:boolean;persist?:boolean}){
  const [locale,setLocale]=useState<Locale>(()=>{try{return parseGuestLocale(localStorage.getItem(guestLocaleStorageKey));}catch{return 'en';}});
- useEffect(()=>{const previous=document.documentElement.getAttribute('lang');return()=>{if(previous===null)document.documentElement.removeAttribute('lang');else document.documentElement.lang=previous;};},[]);
- useEffect(()=>{try{localStorage.setItem(guestLocaleStorageKey,locale);}catch{/* The in-memory language selection remains usable. */}document.documentElement.lang=locale;},[locale]);
+ useEffect(()=>{if(!manageDocument)return;const previous=document.documentElement.getAttribute('lang');return()=>{if(previous===null)document.documentElement.removeAttribute('lang');else document.documentElement.lang=previous;};},[manageDocument]);
+ useEffect(()=>{try{if(persist)localStorage.setItem(guestLocaleStorageKey,locale);}catch{/* The in-memory language selection remains usable. */}if(manageDocument)document.documentElement.lang=locale;},[locale,manageDocument,persist]);
  const t=useCallback((source:string,values?:MessageValues)=>translateGuest(locale,source,values),[locale]);
  return <GuestLocaleContext.Provider value={{locale,setLocale,t}}>{children}</GuestLocaleContext.Provider>;
 }

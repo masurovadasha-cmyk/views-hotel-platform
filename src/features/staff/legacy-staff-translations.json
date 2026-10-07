@@ -1,0 +1,2190 @@
+{
+  "Address": {
+    "ru": "Адрес",
+    "uz": "Manzil"
+  },
+  "Apartment": {
+    "ru": "Апартамент",
+    "uz": "Apartament"
+  },
+  "Booking": {
+    "ru": "Бронирование",
+    "uz": "Bronlash"
+  },
+  "Booking confirmed": {
+    "ru": "Бронь подтверждена",
+    "uz": "Bron tasdiqlangan"
+  },
+  "Bookings": {
+    "ru": "Брони",
+    "uz": "Bronlar"
+  },
+  "Check-in": {
+    "ru": "Заезд",
+    "uz": "Kelish"
+  },
+  "Check-out": {
+    "ru": "Выезд",
+    "uz": "Ketish"
+  },
+  "Cleaning": {
+    "ru": "Уборка",
+    "uz": "Tozalash"
+  },
+  "Close": {
+    "ru": "Закрыть",
+    "uz": "Yopish"
+  },
+  "Documents": {
+    "ru": "Документы",
+    "uz": "Hujjatlar"
+  },
+  "Nationality": {
+    "ru": "Гражданство",
+    "uz": "Fuqarolik"
+  },
+  "Notifications": {
+    "ru": "Уведомления",
+    "uz": "Bildirishnomalar"
+  },
+  "Payment": {
+    "ru": "Оплата",
+    "uz": "Toʻlov"
+  },
+  "Pending": {
+    "ru": "Ожидается",
+    "uz": "Kutilmoqda"
+  },
+  "Property": {
+    "ru": "Объект",
+    "uz": "Obyekt"
+  },
+  "Service": {
+    "ru": "Услуга",
+    "uz": "Xizmat"
+  },
+  "Status": {
+    "ru": "Статус",
+    "uz": "Holat"
+  },
+  "Processing…": {
+    "ru": "Выполняется…",
+    "uz": "Bajarilmoqda…"
+  },
+  "Passport": {
+    "ru": "Паспорт",
+    "uz": "Pasport"
+  },
+  "Property name": {
+    "ru": "Название объекта",
+    "uz": "Obyekt nomi"
+  },
+  "Accept": {
+    "ru": "Принять",
+    "uz": "Qabul qilish"
+  },
+  "Acknowledge": {
+    "ru": "Подтвердить получение",
+    "uz": "Qabul qilinganini tasdiqlash"
+  },
+  "Active": {
+    "ru": "Активно",
+    "uz": "Faol"
+  },
+  "Active tasks": {
+    "ru": "Активные задачи",
+    "uz": "Faol vazifalar"
+  },
+  "Active workload": {
+    "ru": "Текущая нагрузка",
+    "uz": "Joriy ish hajmi"
+  },
+  "After": {
+    "ru": "После",
+    "uz": "Keyin"
+  },
+  "After photo": {
+    "ru": "Фото после",
+    "uz": "Keyingi surat"
+  },
+  "All service orders": {
+    "ru": "Все сервисные заявки",
+    "uz": "Barcha xizmat buyurtmalari"
+  },
+  "All tracked inventory is at or above par.": {
+    "ru": "Все запасы на необходимом уровне.",
+    "uz": "Barcha zaxiralar kerakli darajada."
+  },
+  "Amount": {
+    "ru": "Сумма",
+    "uz": "Summa"
+  },
+  "Analytics · canonical Core read model": {
+    "ru": "Аналитика · данные Core",
+    "uz": "Tahlil · Core maʼlumotlari"
+  },
+  "Apartment Timeline": {
+    "ru": "История апартамента",
+    "uz": "Apartament tarixi"
+  },
+  "Apt": {
+    "ru": "Апартамент",
+    "uz": "Apartament"
+  },
+  "Arrivals": {
+    "ru": "Заезды",
+    "uz": "Kelishlar"
+  },
+  "Arrivals & active stays": {
+    "ru": "Заезды и текущие проживания",
+    "uz": "Kelishlar va joriy yashashlar"
+  },
+  "Assign": {
+    "ru": "Назначить",
+    "uz": "Tayinlash"
+  },
+  "Assignee": {
+    "ru": "Исполнитель",
+    "uz": "Ijrochi"
+  },
+  "Available": {
+    "ru": "Доступно",
+    "uz": "Mavjud"
+  },
+  "Awaiting evidence": {
+    "ru": "Ожидаются подтверждающие материалы",
+    "uz": "Tasdiqlovchi materiallar kutilmoqda"
+  },
+  "Awaiting manager verification": {
+    "ru": "Ожидается проверка управляющего",
+    "uz": "Boshqaruvchi tekshiruvi kutilmoqda"
+  },
+  "Awaiting supervisor verification": {
+    "ru": "Ожидается проверка старшего сотрудника",
+    "uz": "Masʼul xodim tekshiruvi kutilmoqda"
+  },
+  "Balance": {
+    "ru": "Баланс",
+    "uz": "Balans"
+  },
+  "Bed linen": {
+    "ru": "Постельное бельё",
+    "uz": "Choyshablar"
+  },
+  "Before": {
+    "ru": "До",
+    "uz": "Oldin"
+  },
+  "Before / after proof": {
+    "ru": "Подтверждение до и после",
+    "uz": "Oldingi va keyingi tasdiq"
+  },
+  "Before photo": {
+    "ru": "Фото до",
+    "uz": "Oldingi surat"
+  },
+  "Below par level": {
+    "ru": "Ниже необходимого уровня",
+    "uz": "Kerakli darajadan past"
+  },
+  "Black scarf": {
+    "ru": "Чёрный шарф",
+    "uz": "Qora sharf"
+  },
+  "Block": {
+    "ru": "Заблокировать",
+    "uz": "Bloklash"
+  },
+  "Blocked": {
+    "ru": "Заблокировано",
+    "uz": "Bloklangan"
+  },
+  "Booked": {
+    "ru": "Забронировано",
+    "uz": "Band qilingan"
+  },
+  "Booking adjustment": {
+    "ru": "Корректировка брони",
+    "uz": "Bandlovni tuzatish"
+  },
+  "Booking invoice": {
+    "ru": "Счёт по бронированию",
+    "uz": "Bandlov hisobi"
+  },
+  "Calendar & pricing": {
+    "ru": "Календарь и цены",
+    "uz": "Taqvim va narxlar"
+  },
+  "Calendar sync": {
+    "ru": "Синхронизация календаря",
+    "uz": "Taqvimni sinxronlash"
+  },
+  "Cancellation dispute": {
+    "ru": "Спор об отмене",
+    "uz": "Bekor qilish boʻyicha nizo"
+  },
+  "Cancellation refund": {
+    "ru": "Возврат при отмене",
+    "uz": "Bekor qilinganda qaytarish"
+  },
+  "Capture photo": {
+    "ru": "Сделать фото",
+    "uz": "Suratga olish"
+  },
+  "Captured": {
+    "ru": "Снято",
+    "uz": "Surat olindi"
+  },
+  "Case": {
+    "ru": "Обращение",
+    "uz": "Murojaat"
+  },
+  "Category": {
+    "ru": "Категория",
+    "uz": "Toifa"
+  },
+  "Check in": {
+    "ru": "Заселить",
+    "uz": "Joylashtirish"
+  },
+  "Check out": {
+    "ru": "Оформить выезд",
+    "uz": "Chiqishni rasmiylashtirish"
+  },
+  "Check-in date": {
+    "ru": "Дата заезда",
+    "uz": "Kelish sanasi"
+  },
+  "Check-ins": {
+    "ru": "Заезды",
+    "uz": "Kelishlar"
+  },
+  "Check-out date": {
+    "ru": "Дата выезда",
+    "uz": "Ketish sanasi"
+  },
+  "Checked in at": {
+    "ru": "Время заселения",
+    "uz": "Joylashtirish vaqti"
+  },
+  "Checked out at": {
+    "ru": "Время выезда",
+    "uz": "Chiqish vaqti"
+  },
+  "Claim": {
+    "ru": "Принять обращение",
+    "uz": "Murojaatni olish"
+  },
+  "Claimed": {
+    "ru": "Заявлено владельцем",
+    "uz": "Egasi talab qildi"
+  },
+  "Cleaned 13:42": {
+    "ru": "Убрано в 13:42",
+    "uz": "13:42 da tozalangan"
+  },
+  "Commission": {
+    "ru": "Комиссия",
+    "uz": "Komissiya"
+  },
+  "Complete": {
+    "ru": "Завершить",
+    "uz": "Yakunlash"
+  },
+  "Completed": {
+    "ru": "Завершено",
+    "uz": "Yakunlangan"
+  },
+  "Completed · housekeeping queued": {
+    "ru": "Завершено · уборка в очереди",
+    "uz": "Yakunlangan · tozalash navbatda"
+  },
+  "Concierge request waiting": {
+    "ru": "Ожидается обработка запроса консьержу",
+    "uz": "Konsyerj soʻrovi kutilmoqda"
+  },
+  "Concierge taxi booking": {
+    "ru": "Заказ такси через консьержа",
+    "uz": "Konsyerj orqali taksi buyurtmasi"
+  },
+  "Confirmation": {
+    "ru": "Подтверждение",
+    "uz": "Tasdiq"
+  },
+  "Core projection · pending events": {
+    "ru": "Данные Core · события в очереди",
+    "uz": "Core maʼlumotlari · navbatdagi hodisalar"
+  },
+  "Create": {
+    "ru": "Создать",
+    "uz": "Yaratish"
+  },
+  "Create handover": {
+    "ru": "Создать передачу смены",
+    "uz": "Smena topshiruvini yaratish"
+  },
+  "Create shift handover": {
+    "ru": "Создать передачу смены",
+    "uz": "Smena topshiruvini yaratish"
+  },
+  "Create task": {
+    "ru": "Создать задачу",
+    "uz": "Vazifa yaratish"
+  },
+  "Creating…": {
+    "ru": "Создание…",
+    "uz": "Yaratilmoqda…"
+  },
+  "Current": {
+    "ru": "Текущее",
+    "uz": "Joriy"
+  },
+  "Current work": {
+    "ru": "Текущая работа",
+    "uz": "Joriy ishlar"
+  },
+  "DND": {
+    "ru": "Не беспокоить",
+    "uz": "Bezovta qilmaslik"
+  },
+  "DND active": {
+    "ru": "Режим «Не беспокоить»",
+    "uz": "«Bezovta qilmaslik» rejimi"
+  },
+  "Damage Reports": {
+    "ru": "Сообщения о повреждениях",
+    "uz": "Shikastlanish xabarlari"
+  },
+  "Dead-letter": {
+    "ru": "Необработанные ошибки",
+    "uz": "Qayta ishlanmagan xatolar"
+  },
+  "Decline": {
+    "ru": "Отклонить",
+    "uz": "Rad etish"
+  },
+  "Description": {
+    "ru": "Описание",
+    "uz": "Tavsif"
+  },
+  "Dirty": {
+    "ru": "Требуется уборка",
+    "uz": "Tozalash kerak"
+  },
+  "Disputes & refunds": {
+    "ru": "Споры и возвраты",
+    "uz": "Nizolar va qaytarishlar"
+  },
+  "Done": {
+    "ru": "Готово",
+    "uz": "Bajarildi"
+  },
+  "Done today": {
+    "ru": "Выполнено сегодня",
+    "uz": "Bugun bajarilgan"
+  },
+  "Door lock damage": {
+    "ru": "Повреждение дверного замка",
+    "uz": "Eshik qulfi shikastlangan"
+  },
+  "Early arrival": {
+    "ru": "Ранний заезд",
+    "uz": "Erta kelish"
+  },
+  "Error:": {
+    "ru": "Ошибка:",
+    "uz": "Xato:"
+  },
+  "Exact policy calculation required": {
+    "ru": "Нужен расчёт по условиям отмены",
+    "uz": "Bekor qilish shartlari boʻyicha hisoblash kerak"
+  },
+  "Finance & invoices": {
+    "ru": "Финансы и счета",
+    "uz": "Moliya va hisoblar"
+  },
+  "Financial controls": {
+    "ru": "Финансовый контроль",
+    "uz": "Moliyaviy nazorat"
+  },
+  "Follow-up": {
+    "ru": "Дальнейшие действия",
+    "uz": "Keyingi harakatlar"
+  },
+  "From shift": {
+    "ru": "Сдающая смена",
+    "uz": "Topshiruvchi smena"
+  },
+  "Front Desk 09:15": {
+    "ru": "Ресепшен 09:15",
+    "uz": "Qabulxona 09:15"
+  },
+  "GOLDEN FLOW": {
+    "ru": "ОСНОВНОЙ ПРОЦЕСС",
+    "uz": "ASOSIY JARAYON"
+  },
+  "Gross": {
+    "ru": "Валовая сумма",
+    "uz": "Yalpi summa"
+  },
+  "Gross revenue": {
+    "ru": "Валовая выручка",
+    "uz": "Yalpi tushum"
+  },
+  "Guest": {
+    "ru": "Гость",
+    "uz": "Mehmon"
+  },
+  "Guest & Booking": {
+    "ru": "Гость и бронирование",
+    "uz": "Mehmon va bandlov"
+  },
+  "Guest & stay operations": {
+    "ru": "Гость и обслуживание проживания",
+    "uz": "Mehmon va yashash xizmatlari"
+  },
+  "Guest 360": {
+    "ru": "Карточка гостя",
+    "uz": "Mehmon kartasi"
+  },
+  "Guest arrival updated": {
+    "ru": "Данные о заезде гостя обновлены",
+    "uz": "Mehmonning kelish maʼlumotlari yangilandi"
+  },
+  "Guest record created": {
+    "ru": "Карточка гостя создана",
+    "uz": "Mehmon kartasi yaratildi"
+  },
+  "Guest stay": {
+    "ru": "Проживание гостя",
+    "uz": "Mehmonning yashashi"
+  },
+  "High": {
+    "ru": "Высокий",
+    "uz": "Yuqori"
+  },
+  "Host finance": {
+    "ru": "Финансы владельца",
+    "uz": "Mulkdor moliyasi"
+  },
+  "Housekeeping": {
+    "ru": "Уборка",
+    "uz": "Tozalash"
+  },
+  "Housekeeping control": {
+    "ru": "Контроль уборки",
+    "uz": "Tozalash nazorati"
+  },
+  "Housekeeping inspection": {
+    "ru": "Проверка уборки",
+    "uz": "Tozalashni tekshirish"
+  },
+  "Housekeeping queue": {
+    "ru": "Очередь уборки",
+    "uz": "Tozalash navbati"
+  },
+  "Housekeeping workflow": {
+    "ru": "Процесс уборки",
+    "uz": "Tozalash jarayoni"
+  },
+  "Immigration registration queue": {
+    "ru": "Очередь регистрации гостей",
+    "uz": "Mehmonlarni roʻyxatga olish navbati"
+  },
+  "In Progress": {
+    "ru": "В работе",
+    "uz": "Bajarilmoqda"
+  },
+  "In house": {
+    "ru": "Проживают",
+    "uz": "Yashamoqda"
+  },
+  "Inspection": {
+    "ru": "Проверка",
+    "uz": "Tekshiruv"
+  },
+  "Integration Hub": {
+    "ru": "Подключения",
+    "uz": "Ulanishlar"
+  },
+  "Inventory below par": {
+    "ru": "Недостаточные запасы",
+    "uz": "Yetarli boʻlmagan zaxiralar"
+  },
+  "LIVE GUEST CRM": {
+    "ru": "КАРТОЧКА ГОСТЯ",
+    "uz": "MEHMON KARTASI"
+  },
+  "LIVE STAY CARD": {
+    "ru": "КАРТОЧКА ПРОЖИВАНИЯ",
+    "uz": "YASHASH KARTASI"
+  },
+  "Last interaction": {
+    "ru": "Последнее обращение",
+    "uz": "Oxirgi murojaat"
+  },
+  "Last sync:": {
+    "ru": "Последняя синхронизация:",
+    "uz": "Oxirgi sinxronlash:"
+  },
+  "Late check-out approval": {
+    "ru": "Согласование позднего выезда",
+    "uz": "Kech chiqishni kelishish"
+  },
+  "Late checkout authorization": {
+    "ru": "Разрешение позднего выезда",
+    "uz": "Kech chiqishga ruxsat"
+  },
+  "Latest handover detail": {
+    "ru": "Последняя передача смены",
+    "uz": "Oxirgi smena topshiruvi"
+  },
+  "Laundry pickup overdue": {
+    "ru": "Получение белья просрочено",
+    "uz": "Kirlarni olish muddati oʻtgan"
+  },
+  "Ledger account projection": {
+    "ru": "Остатки по счетам",
+    "uz": "Hisob qoldiqlari"
+  },
+  "Listing quality / content check": {
+    "ru": "Проверка качества и описания объекта",
+    "uz": "Obyekt sifati va tavsifini tekshirish"
+  },
+  "Listing wizard": {
+    "ru": "Мастер добавления объекта",
+    "uz": "Obyekt qoʻshish yordamchisi"
+  },
+  "Live amount comes from booking source": {
+    "ru": "Сумма поступает из данных бронирования",
+    "uz": "Summa bandlov maʼlumotlaridan olinadi"
+  },
+  "Live booking data": {
+    "ru": "Данные бронирования",
+    "uz": "Bandlov maʼlumotlari"
+  },
+  "Live data required": {
+    "ru": "Нужны реальные данные",
+    "uz": "Haqiqiy maʼlumotlar kerak"
+  },
+  "Live money": {
+    "ru": "Реальные платежи",
+    "uz": "Haqiqiy toʻlovlar"
+  },
+  "Loading canonical analytics…": {
+    "ru": "Загрузка аналитики Core…",
+    "uz": "Core tahlili yuklanmoqda…"
+  },
+  "Lobby": {
+    "ru": "Лобби",
+    "uz": "Lobbi"
+  },
+  "Lost & Found": {
+    "ru": "Бюро находок",
+    "uz": "Topilmalar byurosi"
+  },
+  "Lost phone charger": {
+    "ru": "Забытое зарядное устройство",
+    "uz": "Unutilgan quvvatlagich"
+  },
+  "Low": {
+    "ru": "Низкий",
+    "uz": "Past"
+  },
+  "Low stock": {
+    "ru": "Мало запасов",
+    "uz": "Zaxira kam"
+  },
+  "Low-stock SKUs": {
+    "ru": "Позиции с низким запасом",
+    "uz": "Zaxirasi kam mahsulotlar"
+  },
+  "Maintenance": {
+    "ru": "Техническое обслуживание",
+    "uz": "Texnik xizmat"
+  },
+  "Maintenance control": {
+    "ru": "Контроль технических работ",
+    "uz": "Texnik ishlar nazorati"
+  },
+  "Maintenance queue": {
+    "ru": "Очередь технических работ",
+    "uz": "Texnik ishlar navbati"
+  },
+  "Maintenance unacknowledged": {
+    "ru": "Техническая заявка не принята",
+    "uz": "Texnik buyurtma qabul qilinmagan"
+  },
+  "Message": {
+    "ru": "Сообщение",
+    "uz": "Xabar"
+  },
+  "Minibar restock": {
+    "ru": "Пополнение мини-бара",
+    "uz": "Minibarni toʻldirish"
+  },
+  "Minimum Inventory Alerts": {
+    "ru": "Контроль минимальных запасов",
+    "uz": "Minimal zaxiralar nazorati"
+  },
+  "Module foundation ready for the next backend slice.": {
+    "ru": "Раздел ещё не подключён к рабочему сервису.",
+    "uz": "Boʻlim hali ishchi xizmatga ulanmagan."
+  },
+  "My Tasks": {
+    "ru": "Мои задачи",
+    "uz": "Vazifalarim"
+  },
+  "New": {
+    "ru": "Новое",
+    "uz": "Yangi"
+  },
+  "New task assigned": {
+    "ru": "Назначена новая задача",
+    "uz": "Yangi vazifa tayinlandi"
+  },
+  "Next": {
+    "ru": "Далее",
+    "uz": "Keyingi"
+  },
+  "No": {
+    "ru": "Нет",
+    "uz": "Yoʻq"
+  },
+  "No active staff records in this property scope.": {
+    "ru": "Нет активных сотрудников с доступом к объекту.",
+    "uz": "Obyektga kirishi mumkin boʻlgan faol xodimlar yoʻq."
+  },
+  "No assignable open service orders in this role scope.": {
+    "ru": "Нет доступных для назначения заявок.",
+    "uz": "Tayinlash mumkin boʻlgan ochiq buyurtmalar yoʻq."
+  },
+  "No domain events recorded yet.": {
+    "ru": "События ещё не записаны.",
+    "uz": "Hodisalar hali qayd etilmagan."
+  },
+  "No email": {
+    "ru": "Email не указан",
+    "uz": "Email koʻrsatilmagan"
+  },
+  "No front-desk reservations in this property queue.": {
+    "ru": "В очереди ресепшена нет бронирований.",
+    "uz": "Qabulxona navbatida bandlovlar yoʻq."
+  },
+  "No guest": {
+    "ru": "Гость не указан",
+    "uz": "Mehmon koʻrsatilmagan"
+  },
+  "No housekeeping jobs assigned to this queue.": {
+    "ru": "В очереди нет задач уборки.",
+    "uz": "Navbatda tozalash vazifalari yoʻq."
+  },
+  "No integration records are configured for this organization.": {
+    "ru": "Для организации ещё нет настроенных подключений.",
+    "uz": "Tashkilot uchun ulanishlar hali sozlanmagan."
+  },
+  "No job": {
+    "ru": "Задачи нет",
+    "uz": "Vazifa yoʻq"
+  },
+  "No maintenance tickets assigned to this queue.": {
+    "ru": "В очереди нет технических заявок.",
+    "uz": "Navbatda texnik buyurtmalar yoʻq."
+  },
+  "No materialized KPI rows yet": {
+    "ru": "Показатели ещё не рассчитаны",
+    "uz": "Koʻrsatkichlar hali hisoblanmagan"
+  },
+  "No open damage reports.": {
+    "ru": "Нет открытых сообщений о повреждениях.",
+    "uz": "Ochiq shikastlanish xabarlari yoʻq."
+  },
+  "No open lost-and-found records.": {
+    "ru": "Нет открытых обращений о находках.",
+    "uz": "Topilmalar haqida ochiq murojaatlar yoʻq."
+  },
+  "No open service orders visible to this role.": {
+    "ru": "Для этой роли нет открытых заявок.",
+    "uz": "Bu rol uchun ochiq buyurtmalar yoʻq."
+  },
+  "No payment projection has been synchronized to staging yet.": {
+    "ru": "Платёжные данные ещё не синхронизированы со стендом.",
+    "uz": "Toʻlov maʼlumotlari test muhitiga hali sinxronlanmagan."
+  },
+  "No persisted operational events for this apartment yet.": {
+    "ru": "Для апартамента ещё нет сохранённых событий.",
+    "uz": "Apartament uchun saqlangan hodisalar hali yoʻq."
+  },
+  "No phone": {
+    "ru": "Телефон не указан",
+    "uz": "Telefon koʻrsatilmagan"
+  },
+  "No posted ledger account balances are projected to staging yet.": {
+    "ru": "Остатки проведённых операций ещё не поступили на стенд.",
+    "uz": "Oʻtkazilgan operatsiyalar qoldiqlari hali test muhitiga kelmagan."
+  },
+  "No requests in this queue.": {
+    "ru": "В очереди нет заявок.",
+    "uz": "Navbatda buyurtmalar yoʻq."
+  },
+  "No reservations in this property.": {
+    "ru": "У объекта нет бронирований.",
+    "uz": "Obyektda bandlovlar yoʻq."
+  },
+  "No scopes recorded": {
+    "ru": "Области доступа не указаны",
+    "uz": "Ruxsat doiralari koʻrsatilmagan"
+  },
+  "No shift handovers yet.": {
+    "ru": "Передач смены пока нет.",
+    "uz": "Smena topshiruvlari hali yoʻq."
+  },
+  "Normal": {
+    "ru": "Обычный",
+    "uz": "Oddiy"
+  },
+  "Now": {
+    "ru": "Сейчас",
+    "uz": "Hozir"
+  },
+  "OFF": {
+    "ru": "ВЫКЛ",
+    "uz": "OʻCHIQ"
+  },
+  "OK": {
+    "ru": "В норме",
+    "uz": "Meʼyorda"
+  },
+  "ON": {
+    "ru": "ВКЛ",
+    "uz": "YOQIQ"
+  },
+  "OPERATIONS": {
+    "ru": "ОПЕРАЦИИ",
+    "uz": "AMALIYOTLAR"
+  },
+  "OPERATIONS QUEUE": {
+    "ru": "ОЧЕРЕДЬ ЗАДАЧ",
+    "uz": "VAZIFALAR NAVBATI"
+  },
+  "Object moderation": {
+    "ru": "Проверка объектов",
+    "uz": "Obyektlarni tekshirish"
+  },
+  "Occupancy": {
+    "ru": "Загрузка",
+    "uz": "Bandlik"
+  },
+  "Occupied": {
+    "ru": "Занято",
+    "uz": "Band"
+  },
+  "Occupied units": {
+    "ru": "Занятые номера",
+    "uz": "Band xonalar"
+  },
+  "On shift": {
+    "ru": "На смене",
+    "uz": "Smenada"
+  },
+  "One item per line": {
+    "ru": "Один пункт на строку",
+    "uz": "Har qatorda bitta band"
+  },
+  "Open Requests": {
+    "ru": "Открытые заявки",
+    "uz": "Ochiq buyurtmalar"
+  },
+  "Open SLA": {
+    "ru": "Активные сроки выполнения",
+    "uz": "Faol bajarish muddatlari"
+  },
+  "Open maintenance": {
+    "ru": "Открытые технические заявки",
+    "uz": "Ochiq texnik buyurtmalar"
+  },
+  "Open service orders": {
+    "ru": "Открытые сервисные заявки",
+    "uz": "Ochiq xizmat buyurtmalari"
+  },
+  "Operational profile": {
+    "ru": "Рабочий профиль",
+    "uz": "Ish profili"
+  },
+  "Operational task": {
+    "ru": "Рабочая задача",
+    "uz": "Ish vazifasi"
+  },
+  "Operations": {
+    "ru": "Операции",
+    "uz": "Amaliyotlar"
+  },
+  "Operations control": {
+    "ru": "Контроль операций",
+    "uz": "Amaliyotlar nazorati"
+  },
+  "Outbox leased": {
+    "ru": "События в обработке",
+    "uz": "Qayta ishlanayotgan hodisalar"
+  },
+  "Outbox pending": {
+    "ru": "События в очереди",
+    "uz": "Navbatdagi hodisalar"
+  },
+  "Outbox retrying": {
+    "ru": "Повторная обработка",
+    "uz": "Qayta ishlash takrori"
+  },
+  "Overdue SLA": {
+    "ru": "Просроченные задачи",
+    "uz": "Muddati oʻtgan vazifalar"
+  },
+  "Paid out": {
+    "ru": "Выплачено",
+    "uz": "Toʻlangan"
+  },
+  "Passport data + stay details": {
+    "ru": "Данные паспорта и проживания",
+    "uz": "Pasport va yashash maʼlumotlari"
+  },
+  "Payment currencies": {
+    "ru": "Валюты платежей",
+    "uz": "Toʻlov valyutalari"
+  },
+  "Payment projection": {
+    "ru": "Платёжные данные",
+    "uz": "Toʻlov maʼlumotlari"
+  },
+  "Phone charger": {
+    "ru": "Зарядное устройство",
+    "uz": "Quvvatlagich"
+  },
+  "Posted journals": {
+    "ru": "Проведённые журналы операций",
+    "uz": "Oʻtkazilgan operatsiyalar jurnallari"
+  },
+  "PostgreSQL payments ledger": {
+    "ru": "Платёжный реестр PostgreSQL",
+    "uz": "PostgreSQL toʻlov reyestri"
+  },
+  "Previous": {
+    "ru": "Предыдущее",
+    "uz": "Oldingi"
+  },
+  "Priority": {
+    "ru": "Приоритет",
+    "uz": "Ustuvorlik"
+  },
+  "Process now": {
+    "ru": "Обработать сейчас",
+    "uz": "Hozir qayta ishlash"
+  },
+  "Processor": {
+    "ru": "Обработчик",
+    "uz": "Qayta ishlovchi"
+  },
+  "Projection status:": {
+    "ru": "Состояние данных:",
+    "uz": "Maʼlumotlar holati:"
+  },
+  "Proof placeholder": {
+    "ru": "Пример подтверждения",
+    "uz": "Tasdiq namunasi"
+  },
+  "Property readiness": {
+    "ru": "Готовность объекта",
+    "uz": "Obyektning tayyorligi"
+  },
+  "Property task": {
+    "ru": "Задача по объекту",
+    "uz": "Obyekt vazifasi"
+  },
+  "Provider-backed": {
+    "ru": "По данным провайдера",
+    "uz": "Provayder maʼlumotlari asosida"
+  },
+  "Provider-backed calculation required": {
+    "ru": "Нужен расчёт провайдера",
+    "uz": "Provayder hisobi kerak"
+  },
+  "Published": {
+    "ru": "Опубликовано",
+    "uz": "Eʼlon qilingan"
+  },
+  "Queue health": {
+    "ru": "Состояние очереди",
+    "uz": "Navbat holati"
+  },
+  "Rate": {
+    "ru": "Тариф",
+    "uz": "Tarif"
+  },
+  "Ready": {
+    "ru": "Готово",
+    "uz": "Tayyor"
+  },
+  "Ready for submission": {
+    "ru": "Готово к отправке",
+    "uz": "Yuborishga tayyor"
+  },
+  "Ready units": {
+    "ru": "Готовые номера",
+    "uz": "Tayyor xonalar"
+  },
+  "Reassign": {
+    "ru": "Переназначить",
+    "uz": "Qayta tayinlash"
+  },
+  "Recent handovers": {
+    "ru": "Последние передачи смены",
+    "uz": "Oxirgi smena topshiruvlari"
+  },
+  "Recent operational events": {
+    "ru": "Последние рабочие события",
+    "uz": "Oxirgi ish hodisalari"
+  },
+  "Refund": {
+    "ru": "Возврат",
+    "uz": "Qaytarish"
+  },
+  "Registration": {
+    "ru": "Регистрация",
+    "uz": "Roʻyxatga olish"
+  },
+  "Required Follow-Up": {
+    "ru": "Необходимые действия",
+    "uz": "Zarur harakatlar"
+  },
+  "Reservation → stay → turnover": {
+    "ru": "Бронь → проживание → подготовка номера",
+    "uz": "Bandlov → yashash → xonani tayyorlash"
+  },
+  "Reservations": {
+    "ru": "Бронирования",
+    "uz": "Bandlovlar"
+  },
+  "Reservations in property": {
+    "ru": "Бронирования объекта",
+    "uz": "Obyekt bandlovlari"
+  },
+  "Resolve": {
+    "ru": "Решить",
+    "uz": "Hal qilish"
+  },
+  "Resolved Today": {
+    "ru": "Решено сегодня",
+    "uz": "Bugun hal qilingan"
+  },
+  "Restock to par": {
+    "ru": "Пополнить до нормы",
+    "uz": "Meʼyorgacha toʻldirish"
+  },
+  "Return": {
+    "ru": "Вернуть",
+    "uz": "Qaytarish"
+  },
+  "Review": {
+    "ru": "Проверить",
+    "uz": "Tekshirish"
+  },
+  "Risk": {
+    "ru": "Риск",
+    "uz": "Xavf"
+  },
+  "Risks": {
+    "ru": "Риски",
+    "uz": "Xavflar"
+  },
+  "Risky Operational Items": {
+    "ru": "Проблемные задачи",
+    "uz": "Muammoli vazifalar"
+  },
+  "Role": {
+    "ru": "Роль",
+    "uz": "Rol"
+  },
+  "Role scope": {
+    "ru": "Доступ по роли",
+    "uz": "Rol boʻyicha ruxsat"
+  },
+  "SLA breaches": {
+    "ru": "Нарушения сроков",
+    "uz": "Muddat buzilishlari"
+  },
+  "STAY CARD": {
+    "ru": "КАРТОЧКА ПРОЖИВАНИЯ",
+    "uz": "YASHASH KARTASI"
+  },
+  "Schedule / Calendar": {
+    "ru": "Расписание и календарь",
+    "uz": "Jadval va taqvim"
+  },
+  "Select a guest from the property reservation queue.": {
+    "ru": "Выберите гостя из бронирований объекта.",
+    "uz": "Obyekt bandlovlaridan mehmonni tanlang."
+  },
+  "Select a reservation.": {
+    "ru": "Выберите бронирование.",
+    "uz": "Bandlovni tanlang."
+  },
+  "Select a task.": {
+    "ru": "Выберите задачу.",
+    "uz": "Vazifani tanlang."
+  },
+  "Select apartment": {
+    "ru": "Выберите апартамент",
+    "uz": "Apartamentni tanlang"
+  },
+  "Select staff": {
+    "ru": "Выберите сотрудника",
+    "uz": "Xodimni tanlang"
+  },
+  "Service Orders": {
+    "ru": "Сервисные заявки",
+    "uz": "Xizmat buyurtmalari"
+  },
+  "Service-order assignment": {
+    "ru": "Назначение сервисных заявок",
+    "uz": "Xizmat buyurtmalarini tayinlash"
+  },
+  "Services & Operations": {
+    "ru": "Услуги и операции",
+    "uz": "Xizmatlar va amaliyotlar"
+  },
+  "Sort: Priority · Due Time": {
+    "ru": "Сортировка: приоритет · срок",
+    "uz": "Saralash: ustuvorlik · muddat"
+  },
+  "Source of truth:": {
+    "ru": "Источник данных:",
+    "uz": "Maʼlumotlar manbasi:"
+  },
+  "Staff Workload": {
+    "ru": "Нагрузка сотрудников",
+    "uz": "Xodimlarning ish hajmi"
+  },
+  "Staff records": {
+    "ru": "Сотрудники",
+    "uz": "Xodimlar"
+  },
+  "Stale housekeeping": {
+    "ru": "Уборки без обновлений",
+    "uz": "Yangilanmagan tozalashlar"
+  },
+  "Stale maintenance": {
+    "ru": "Технические заявки без обновлений",
+    "uz": "Yangilanmagan texnik buyurtmalar"
+  },
+  "Stale service work": {
+    "ru": "Сервисные заявки без обновлений",
+    "uz": "Yangilanmagan xizmat buyurtmalari"
+  },
+  "Start": {
+    "ru": "Начать",
+    "uz": "Boshlash"
+  },
+  "Stay history": {
+    "ru": "История проживаний",
+    "uz": "Yashash tarixi"
+  },
+  "Stay status": {
+    "ru": "Статус проживания",
+    "uz": "Yashash holati"
+  },
+  "Supervisor verification": {
+    "ru": "Проверка старшего сотрудника",
+    "uz": "Masʼul xodim tekshiruvi"
+  },
+  "Task detail": {
+    "ru": "Подробности задачи",
+    "uz": "Vazifa tafsilotlari"
+  },
+  "Tasks today": {
+    "ru": "Задачи на сегодня",
+    "uz": "Bugungi vazifalar"
+  },
+  "This role cannot create operational tasks.": {
+    "ru": "Эта роль не может создавать рабочие задачи.",
+    "uz": "Bu rol ish vazifalarini yarata olmaydi."
+  },
+  "To shift": {
+    "ru": "Принимающая смена",
+    "uz": "Qabul qiluvchi smena"
+  },
+  "Today's tasks": {
+    "ru": "Задачи на сегодня",
+    "uz": "Bugungi vazifalar"
+  },
+  "Toiletries": {
+    "ru": "Гигиенические принадлежности",
+    "uz": "Gigiyena vositalari"
+  },
+  "Total units": {
+    "ru": "Всего номеров",
+    "uz": "Jami xonalar"
+  },
+  "Type": {
+    "ru": "Тип",
+    "uz": "Tur"
+  },
+  "UNIFIED EVENT STREAM": {
+    "ru": "ЕДИНАЯ ЛЕНТА СОБЫТИЙ",
+    "uz": "YAGONA HODISALAR LENTASI"
+  },
+  "Unassigned": {
+    "ru": "Не назначено",
+    "uz": "Tayinlanmagan"
+  },
+  "Unassigned service orders": {
+    "ru": "Заявки без исполнителя",
+    "uz": "Ijrochisiz buyurtmalar"
+  },
+  "Unbalanced journals": {
+    "ru": "Несбалансированные журналы",
+    "uz": "Balanslanmagan jurnallar"
+  },
+  "Unit status": {
+    "ru": "Статус номера",
+    "uz": "Xona holati"
+  },
+  "Unresolved": {
+    "ru": "Не решено",
+    "uz": "Hal qilinmagan"
+  },
+  "Unresolved Requests": {
+    "ru": "Нерешённые заявки",
+    "uz": "Hal qilinmagan buyurtmalar"
+  },
+  "Upcoming": {
+    "ru": "Предстоящие",
+    "uz": "Kutilayotgan"
+  },
+  "Urgent": {
+    "ru": "Срочный",
+    "uz": "Shoshilinch"
+  },
+  "VIEWS CRM": {
+    "ru": "VIEWS · CRM",
+    "uz": "VIEWS · CRM"
+  },
+  "VIEWS FINANCE READ MODEL": {
+    "ru": "VIEWS · ФИНАНСОВЫЕ ДАННЫЕ",
+    "uz": "VIEWS · MOLIYAVIY MAʼLUMOTLAR"
+  },
+  "VIEWS LIVE CONTROL": {
+    "ru": "VIEWS · ОПЕРАТИВНЫЙ КОНТРОЛЬ",
+    "uz": "VIEWS · TEZKOR NAZORAT"
+  },
+  "VIEWS LIVE CRM": {
+    "ru": "VIEWS · CRM",
+    "uz": "VIEWS · CRM"
+  },
+  "VIEWS LIVE FRONT DESK": {
+    "ru": "VIEWS · РЕСЕПШЕН",
+    "uz": "VIEWS · QABULXONA"
+  },
+  "VIEWS LIVE OPERATIONS": {
+    "ru": "VIEWS · ОПЕРАЦИИ",
+    "uz": "VIEWS · AMALIYOTLAR"
+  },
+  "VIEWS LIVE OVERVIEW": {
+    "ru": "VIEWS · ОБЗОР",
+    "uz": "VIEWS · UMUMIY KOʻRINISH"
+  },
+  "VIEWS OPERATIONS": {
+    "ru": "VIEWS · ОПЕРАЦИИ",
+    "uz": "VIEWS · AMALIYOTLAR"
+  },
+  "VIEWS apartment": {
+    "ru": "Апартамент VIEWS",
+    "uz": "VIEWS apartamenti"
+  },
+  "VIP flag": {
+    "ru": "Отметка VIP",
+    "uz": "VIP belgisi"
+  },
+  "VIP noise complaint": {
+    "ru": "Жалоба VIP-гостя на шум",
+    "uz": "VIP mehmonning shovqin haqidagi shikoyati"
+  },
+  "Verified": {
+    "ru": "Проверено",
+    "uz": "Tekshirilgan"
+  },
+  "Verify & close": {
+    "ru": "Проверить и закрыть",
+    "uz": "Tekshirish va yopish"
+  },
+  "Verify ready": {
+    "ru": "Подтвердить готовность",
+    "uz": "Tayyorlikni tasdiqlash"
+  },
+  "Wait": {
+    "ru": "Ожидание",
+    "uz": "Kutish"
+  },
+  "What needs to be done?": {
+    "ru": "Что нужно сделать?",
+    "uz": "Nima qilish kerak?"
+  },
+  "Yes": {
+    "ru": "Да",
+    "uz": "Ha"
+  },
+  "acknowledged": {
+    "ru": "получение подтверждено",
+    "uz": "qabul qilingan"
+  },
+  "assigned": {
+    "ru": "назначено",
+    "uz": "tayinlangan"
+  },
+  "awaiting acknowledgement": {
+    "ru": "ожидает подтверждения получения",
+    "uz": "qabul tasdigʻi kutilmoqda"
+  },
+  "busy": {
+    "ru": "занят",
+    "uz": "band"
+  },
+  "cache": {
+    "ru": "кеш",
+    "uz": "kesh"
+  },
+  "cancelled": {
+    "ru": "отменено",
+    "uz": "bekor qilingan"
+  },
+  "checked_in": {
+    "ru": "Заселён",
+    "uz": "Joylashtirilgan"
+  },
+  "checkout_due": {
+    "ru": "Ожидается выезд",
+    "uz": "Chiqish kutilmoqda"
+  },
+  "cleaning": {
+    "ru": "уборка",
+    "uz": "tozalash"
+  },
+  "cleared": {
+    "ru": "проверено",
+    "uz": "tekshirilgan"
+  },
+  "closed": {
+    "ru": "закрыто",
+    "uz": "yopilgan"
+  },
+  "confirmed": {
+    "ru": "подтверждено",
+    "uz": "tasdiqlangan"
+  },
+  "guests ·": {
+    "ru": "гостей ·",
+    "uz": "mehmon ·"
+  },
+  "hit": {
+    "ru": "найдено",
+    "uz": "topildi"
+  },
+  "in_progress": {
+    "ru": "В работе",
+    "uz": "Bajarilmoqda"
+  },
+  "min": {
+    "ru": "мин",
+    "uz": "daq"
+  },
+  "minor": {
+    "ru": "мин. денежных единиц",
+    "uz": "kichik pul birliklari"
+  },
+  "minor units": {
+    "ru": "мин. денежных единиц",
+    "uz": "kichik pul birliklari"
+  },
+  "minor ·": {
+    "ru": "мин. денежных единиц ·",
+    "uz": "kichik pul birliklari ·"
+  },
+  "minor · Net": {
+    "ru": "мин. денежных единиц · чистая сумма",
+    "uz": "kichik pul birliklari · sof summa"
+  },
+  "minor · RevPAR": {
+    "ru": "мин. денежных единиц · RevPAR",
+    "uz": "kichik pul birliklari · RevPAR"
+  },
+  "miss": {
+    "ru": "нет",
+    "uz": "yoʻq"
+  },
+  "never": {
+    "ru": "никогда",
+    "uz": "hech qachon"
+  },
+  "not checked": {
+    "ru": "не проверено",
+    "uz": "tekshirilmagan"
+  },
+  "not connected": {
+    "ru": "не подключено",
+    "uz": "ulanmagan"
+  },
+  "open": {
+    "ru": "открыто",
+    "uz": "ochiq"
+  },
+  "payment intents": {
+    "ru": "платёжных намерений",
+    "uz": "toʻlov niyatlari"
+  },
+  "projection timestamp unavailable": {
+    "ru": "время обновления данных неизвестно",
+    "uz": "maʼlumotlar yangilanish vaqti nomaʼlum"
+  },
+  "reorder": {
+    "ru": "пополнить",
+    "uz": "toʻldirish"
+  },
+  "request": {
+    "ru": "заявка",
+    "uz": "buyurtma"
+  },
+  "scope properties": {
+    "ru": "объектов в области доступа",
+    "uz": "ruxsat doirasidagi obyektlar"
+  },
+  "sent": {
+    "ru": "отправлено",
+    "uz": "yuborilgan"
+  },
+  "severity": {
+    "ru": "серьёзность",
+    "uz": "jiddiylik"
+  },
+  "system": {
+    "ru": "система",
+    "uz": "tizim"
+  },
+  "waiting": {
+    "ru": "ожидание",
+    "uz": "kutish"
+  },
+  "waiting / blocked": {
+    "ru": "ожидание / заблокировано",
+    "uz": "kutish / bloklangan"
+  },
+  "· ADR": {
+    "ru": "· ADR",
+    "uz": "· ADR"
+  },
+  "· Apt": {
+    "ru": "· Апартамент",
+    "uz": "· Apartament"
+  },
+  "· Captured": {
+    "ru": "· Списано",
+    "uz": "· Yechilgan"
+  },
+  "· Health:": {
+    "ru": "· Состояние:",
+    "uz": "· Holati:"
+  },
+  "· Net captured": {
+    "ru": "· Чистое списание",
+    "uz": "· Sof yechilgan summa"
+  },
+  "· Properties": {
+    "ru": "· Объекты",
+    "uz": "· Obyektlar"
+  },
+  "· Refunded": {
+    "ru": "· Возвращено",
+    "uz": "· Qaytarilgan"
+  },
+  "· credit": {
+    "ru": "· кредит",
+    "uz": "· kredit"
+  },
+  "· debit": {
+    "ru": "· дебет",
+    "uz": "· debet"
+  },
+  "· net debit": {
+    "ru": "· чистый дебет",
+    "uz": "· sof debet"
+  },
+  "· v": {
+    "ru": "· версия",
+    "uz": "· versiya"
+  },
+  "Damage reports": {
+    "ru": "Сообщения о повреждениях",
+    "uz": "Shikastlanish xabarlari"
+  },
+  "Guest & booking": {
+    "ru": "Гость и бронирование",
+    "uz": "Mehmon va bandlov"
+  },
+  "Required follow-up": {
+    "ru": "Необходимые действия",
+    "uz": "Zarur harakatlar"
+  },
+  "Services & operations": {
+    "ru": "Услуги и операции",
+    "uz": "Xizmatlar va amaliyotlar"
+  },
+  "Staff workload": {
+    "ru": "Нагрузка сотрудников",
+    "uz": "Xodimlarning ish hajmi"
+  },
+  "Unresolved requests": {
+    "ru": "Нерешённые заявки",
+    "uz": "Hal qilinmagan buyurtmalar"
+  },
+  "active": {
+    "ru": "Активно",
+    "uz": "Faol"
+  },
+  "available": {
+    "ru": "Доступно",
+    "uz": "Mavjud"
+  },
+  "claimed": {
+    "ru": "Заявлено владельцем",
+    "uz": "Egasi talab qildi"
+  },
+  "completed": {
+    "ru": "Завершено",
+    "uz": "Yakunlangan"
+  },
+  "dirty": {
+    "ru": "Требуется уборка",
+    "uz": "Tozalash kerak"
+  },
+  "housekeeping": {
+    "ru": "Уборка",
+    "uz": "Tozalash"
+  },
+  "inspection": {
+    "ru": "Проверка",
+    "uz": "Tekshiruv"
+  },
+  "occupied": {
+    "ru": "Занято",
+    "uz": "Band"
+  },
+  "pending": {
+    "ru": "Ожидает",
+    "uz": "Kutilmoqda"
+  },
+  "priority": {
+    "ru": "Приоритет",
+    "uz": "Ustuvorlik"
+  },
+  "ready": {
+    "ru": "Готово",
+    "uz": "Tayyor"
+  },
+  "review": {
+    "ru": "Проверить",
+    "uz": "Tekshirish"
+  },
+  "unassigned": {
+    "ru": "Не назначено",
+    "uz": "Tayinlanmagan"
+  },
+  " · VIP": {
+    "ru": " · VIP",
+    "uz": " · VIP"
+  },
+  ". This D1 surface is read-only. It never collects PAN/CVV and cannot initiate, capture or refund money.": {
+    "ru": ". Экран доступен только для чтения: он не запрашивает реквизиты карты и не проводит платежи или возвраты.",
+    "uz": ". Ekran faqat oʻqish uchun: karta maʼlumotlarini soʻramaydi va toʻlov yoki qaytarishni amalga oshirmaydi."
+  },
+  "1 Basics": {
+    "ru": "1 Основное",
+    "uz": "1 Asosiy maʼlumotlar"
+  },
+  "1 open ticket": {
+    "ru": "1 открытая заявка",
+    "uz": "1 ta ochiq buyurtma"
+  },
+  "10 min": {
+    "ru": "10 мин",
+    "uz": "10 daq"
+  },
+  "12 Oct": {
+    "ru": "12 окт",
+    "uz": "12 okt"
+  },
+  "12–15 Oct": {
+    "ru": "12–15 окт",
+    "uz": "12–15 okt"
+  },
+  "13 Oct": {
+    "ru": "13 окт",
+    "uz": "13 okt"
+  },
+  "14 Jan": {
+    "ru": "14 янв",
+    "uz": "14 yan"
+  },
+  "14 Oct": {
+    "ru": "14 окт",
+    "uz": "14 okt"
+  },
+  "15 Oct": {
+    "ru": "15 окт",
+    "uz": "15 okt"
+  },
+  "2 Photos": {
+    "ru": "2 Фотографии",
+    "uz": "2 Suratlar"
+  },
+  "2 active": {
+    "ru": "2 активные",
+    "uz": "2 ta faol"
+  },
+  "21 Jan": {
+    "ru": "21 янв",
+    "uz": "21 yan"
+  },
+  "3 Amenities": {
+    "ru": "3 Удобства",
+    "uz": "3 Qulayliklar"
+  },
+  "4 Prices": {
+    "ru": "4 Цены",
+    "uz": "4 Narxlar"
+  },
+  "5 Rules": {
+    "ru": "5 Правила",
+    "uz": "5 Qoidalar"
+  },
+  "5 min": {
+    "ru": "5 мин",
+    "uz": "5 daq"
+  },
+  "ATTENTION": {
+    "ru": "ВНИМАНИЕ",
+    "uz": "DIQQAT"
+  },
+  "Airbnb / Booking.com connectors appear here after partner authorization. No sync state is fabricated.": {
+    "ru": "Подключения Airbnb и Booking.com появятся после авторизации у партнёров. Синхронизация пока не подтверждена.",
+    "uz": "Airbnb va Booking.com ulanishlari hamkorlar ruxsatidan keyin paydo boʻladi. Sinxronlash hali tasdiqlanmagan."
+  },
+  "All observability data is organization/property scoped. Raw event payloads are intentionally not exposed in this UI.": {
+    "ru": "Показаны только данные доступных организации и объекта. Содержимое технических событий скрыто.",
+    "uz": "Faqat ruxsat berilgan tashkilot va obyekt maʼlumotlari koʻrsatiladi. Texnik hodisalar mazmuni yashirilgan."
+  },
+  "Apartment #235": {
+    "ru": "Апартамент №235",
+    "uz": "235-apartament"
+  },
+  "Apt 202": {
+    "ru": "Апартамент 202",
+    "uz": "202-apartament"
+  },
+  "Apt 207 · estimate pending": {
+    "ru": "Апартамент 207 · ожидается оценка",
+    "uz": "207-apartament · baholash kutilmoqda"
+  },
+  "Apt 304 · Studio Deluxe · active stay": {
+    "ru": "Апартамент 304 · студия делюкс · текущее проживание",
+    "uz": "304-apartament · lyuks studiya · joriy yashash"
+  },
+  "Apt 318": {
+    "ru": "Апартамент 318",
+    "uz": "318-apartament"
+  },
+  "Apt 318 · found after checkout": {
+    "ru": "Апартамент 318 · найдено после выезда",
+    "uz": "318-apartament · chiqishdan keyin topilgan"
+  },
+  "Apt 501 · unresolved": {
+    "ru": "Апартамент 501 · не решено",
+    "uz": "501-apartament · hal qilinmagan"
+  },
+  "Booking #8821 · room not ready": {
+    "ru": "Бронь №8821 · номер не готов",
+    "uz": "8821-bandlov · xona tayyor emas"
+  },
+  "Check-out atomically completes the reservation, closes the stay, marks the apartment dirty and creates the turnover housekeeping job.": {
+    "ru": "При выезде одновременно завершаются бронирование и проживание, а номер направляется на уборку.",
+    "uz": "Chiqishda bandlov va yashash bir vaqtda yakunlanadi, xona esa tozalashga yuboriladi."
+  },
+  "Cleaner actions and supervisor verification are enforced again on the server; UI buttons are not the authorization boundary.": {
+    "ru": "Действия горничной и подтверждение старшего сотрудника проверяются сервером.",
+    "uz": "Tozalovchi amallari va masʼul xodim tasdigʻi serverda tekshiriladi."
+  },
+  "Credentials are never stored in this UI, browser storage or GitHub. Live secrets are added only to the deployment secret store.": {
+    "ru": "Ключи доступа не хранятся в интерфейсе или браузере. Их настраивают через защищённое хранилище сервера.",
+    "uz": "Kirish kalitlari interfeys yoki brauzerda saqlanmaydi. Ular serverning himoyalangan omborida sozlanadi."
+  },
+  "FINANCE_INTEGRITY_ALERT: one or more posted ledger journals are not balanced. Do not treat this projection as release-ready.": {
+    "ru": "FINANCE_INTEGRITY_ALERT: обнаружены несбалансированные проводки. До проверки данные нельзя использовать для расчётов.",
+    "uz": "FINANCE_INTEGRITY_ALERT: balanslanmagan oʻtkazmalar aniqlandi. Tekshiruvgacha bu maʼlumotlardan hisob-kitob uchun foydalanmang."
+  },
+  "Financial values remain unavailable until backed by live captured transactions.": {
+    "ru": "Финансовые показатели появятся после подтверждённых реальных платежей.",
+    "uz": "Moliyaviy koʻrsatkichlar tasdiqlangan haqiqiy toʻlovlardan keyin paydo boʻladi."
+  },
+  "Housekeeping ·": {
+    "ru": "Уборка ·",
+    "uz": "Tozalash ·"
+  },
+  "Live operations data is available in the authenticated staging runtime.": {
+    "ru": "Рабочие данные доступны после входа на подключённом тестовом стенде.",
+    "uz": "Ish maʼlumotlari ulangan test muhitiga kirgandan keyin mavjud boʻladi."
+  },
+  "No financial KPIs are invented. Revenue, ADR, RevPAR and balances are rendered only from persisted transactions.": {
+    "ru": "Выручка, ADR, RevPAR и остатки рассчитываются только по сохранённым операциям.",
+    "uz": "Tushum, ADR, RevPAR va qoldiqlar faqat saqlangan operatsiyalardan hisoblanadi."
+  },
+  "Operational panels use persisted Pages/D1 data. Occupancy, ADR, RevPAR and revenue above come only from the canonical PostgreSQL analytics projection through the server-side BFF.": {
+    "ru": "Рабочие панели показывают сохранённые данные. Загрузка, ADR, RevPAR и выручка поступают из аналитики PostgreSQL Core.",
+    "uz": "Ish panellari saqlangan maʼlumotlarni koʻrsatadi. Bandlik, ADR, RevPAR va tushum PostgreSQL Core tahlilidan olinadi."
+  },
+  "Overdue SLAs": {
+    "ru": "Просроченные задачи",
+    "uz": "Muddati oʻtgan vazifalar"
+  },
+  "Room 412 · pending assignment": {
+    "ru": "Номер 412 · ожидает исполнителя",
+    "uz": "412-xona · ijrochi kutilmoqda"
+  },
+  "SLA 30 min · elapsed 52 min": {
+    "ru": "Срок 30 мин · прошло 52 мин",
+    "uz": "Muddat 30 daq · 52 daq oʻtdi"
+  },
+  "Suite 305 · since 14:30": {
+    "ru": "Люкс 305 · с 14:30",
+    "uz": "305-lyuks · 14:30 dan beri"
+  },
+  "Technician sees only assigned maintenance work; managers see the full queue and exceptions.": {
+    "ru": "Техник видит назначенные ему работы, управляющий — всю очередь и проблемные задачи.",
+    "uz": "Texnik oʻziga tayinlangan ishlarni, boshqaruvchi esa barcha navbat va muammoli vazifalarni koʻradi."
+  },
+  "Technicians receive only their assigned tickets. Verification remains manager-only on the API.": {
+    "ru": "Технику доступны только его заявки. Подтвердить проверку может управляющий.",
+    "uz": "Texnik faqat oʻz buyurtmalarini koʻradi. Tekshiruvni boshqaruvchi tasdiqlaydi."
+  },
+  "This screen reports persisted connector state only. Credentials and OAuth secrets are never returned to the browser.": {
+    "ru": "Показано сохранённое состояние подключений. Секретные ключи не передаются в браузер.",
+    "uz": "Ulanishlarning saqlangan holati koʻrsatiladi. Maxfiy kalitlar brauzerga yuborilmaydi."
+  },
+  "This stream is built only from persisted reservation, service-order, housekeeping and maintenance events.": {
+    "ru": "Лента содержит только сохранённые события бронирований, заявок, уборки и технических работ.",
+    "uz": "Lentada faqat saqlangan bandlov, buyurtma, tozalash va texnik ish hodisalari bor."
+  },
+  "Timeline unifies bookings, check-in/out, housekeeping, maintenance and service orders for one apartment.": {
+    "ru": "История объединяет бронирования, заезды, выезды, уборку, технические работы и заявки по апартаменту.",
+    "uz": "Tarix apartament bandlovlari, kelish, ketish, tozalash, texnik ishlar va buyurtmalarni birlashtiradi."
+  },
+  "Unit 110 · SLA breached": {
+    "ru": "Номер 110 · срок нарушен",
+    "uz": "110-xona · muddat buzilgan"
+  },
+  "Unit 208 · 45 min overdue": {
+    "ru": "Номер 208 · просрочено на 45 мин",
+    "uz": "208-xona · 45 daq kechikkan"
+  },
+  "Unit 307 · cleaning not completed": {
+    "ru": "Номер 307 · уборка не завершена",
+    "uz": "307-xona · tozalash tugamagan"
+  },
+  "Unit 415": {
+    "ru": "Номер 415",
+    "uz": "415-xona"
+  },
+  "iCal / OTA synchronization": {
+    "ru": "Синхронизация iCal / OTA",
+    "uz": "iCal / OTA sinxronlash"
+  },
+  "Overview": {
+    "ru": "Обзор",
+    "uz": "Umumiy koʻrinish"
+  },
+  "Inbox": {
+    "ru": "Входящие",
+    "uz": "Kiruvchi"
+  },
+  "Front Desk": {
+    "ru": "Ресепшен",
+    "uz": "Qabulxona"
+  },
+  "Guests CRM": {
+    "ru": "Гости",
+    "uz": "Mehmonlar"
+  },
+  "Host Desk": {
+    "ru": "Кабинет владельца",
+    "uz": "Mulkdor kabineti"
+  },
+  "Finance": {
+    "ru": "Финансы",
+    "uz": "Moliya"
+  },
+  "Admin": {
+    "ru": "Администрирование",
+    "uz": "Boshqaruv"
+  },
+  "Integrations": {
+    "ru": "Подключения",
+    "uz": "Ulanishlar"
+  },
+  "Team": {
+    "ru": "Команда",
+    "uz": "Jamoa"
+  },
+  "Messages": {
+    "ru": "Сообщения",
+    "uz": "Xabarlar"
+  },
+  "Shift Handover": {
+    "ru": "Передача смены",
+    "uz": "Smena topshiruvi"
+  },
+  "Exceptions": {
+    "ru": "Проблемные задачи",
+    "uz": "Muammoli vazifalar"
+  },
+  "Stay Card": {
+    "ru": "Карточка проживания",
+    "uz": "Yashash kartasi"
+  },
+  "cleaner": {
+    "ru": "Горничная",
+    "uz": "Tozalovchi"
+  },
+  "concierge": {
+    "ru": "Консьерж",
+    "uz": "Konsyerj"
+  },
+  "technician": {
+    "ru": "Техник",
+    "uz": "Texnik"
+  },
+  "front desk": {
+    "ru": "Ресепшен",
+    "uz": "Qabulxona"
+  },
+  "general manager": {
+    "ru": "Управляющий",
+    "uz": "Boshqaruvchi"
+  },
+  "super admin": {
+    "ru": "Администратор платформы",
+    "uz": "Platforma administratori"
+  },
+  "housekeeping supervisor": {
+    "ru": "Старший по уборке",
+    "uz": "Tozalash rahbari"
+  },
+  "maintenance manager": {
+    "ru": "Руководитель технических работ",
+    "uz": "Texnik ishlar rahbari"
+  },
+  "reservation manager": {
+    "ru": "Руководитель бронирования",
+    "uz": "Bandlov rahbari"
+  },
+  "reservation front desk": {
+    "ru": "Бронирование и ресепшен",
+    "uz": "Bandlov va qabulxona"
+  },
+  "laundry": {
+    "ru": "Прачечная",
+    "uz": "Kirxona"
+  },
+  "minimart": {
+    "ru": "Мини-маркет",
+    "uz": "Minimarket"
+  },
+  "restaurant": {
+    "ru": "Ресторан",
+    "uz": "Restoran"
+  },
+  "bar": {
+    "ru": "Бар",
+    "uz": "Bar"
+  },
+  "rent car": {
+    "ru": "Аренда автомобиля",
+    "uz": "Avtomobil ijarasi"
+  },
+  "spa": {
+    "ru": "СПА",
+    "uz": "SPA"
+  },
+  "accepted": {
+    "ru": "Принято",
+    "uz": "Qabul qilingan"
+  },
+  "waiting parts": {
+    "ru": "Ожидаются запчасти",
+    "uz": "Ehtiyot qismlar kutilmoqda"
+  },
+  "resolved": {
+    "ru": "Решено",
+    "uz": "Hal qilingan"
+  },
+  "declined": {
+    "ru": "Отклонено",
+    "uz": "Rad etilgan"
+  },
+  "dnd": {
+    "ru": "Не беспокоить",
+    "uz": "Bezovta qilmaslik"
+  },
+  "Guest interaction": {
+    "ru": "Обращение гостя",
+    "uz": "Mehmon murojaati"
+  },
+  "Cleaning started": {
+    "ru": "Уборка начата",
+    "uz": "Tozalash boshlandi"
+  },
+  "AC ticket opened": {
+    "ru": "Создана заявка по кондиционеру",
+    "uz": "Konditsioner buyurtmasi ochildi"
+  },
+  "Cleaning completed": {
+    "ru": "Уборка завершена",
+    "uz": "Tozalash tugadi"
+  },
+  "Room ready": {
+    "ru": "Номер готов",
+    "uz": "Xona tayyor"
+  },
+  "tasks": {
+    "ru": "Задачи",
+    "uz": "Vazifalar"
+  },
+  "detail": {
+    "ru": "Подробности",
+    "uz": "Tafsilotlar"
+  },
+  "proof": {
+    "ru": "Подтверждение",
+    "uz": "Tasdiq"
+  },
+  "create": {
+    "ru": "Создать",
+    "uz": "Yaratish"
+  },
+  "notifications": {
+    "ru": "Уведомления",
+    "uz": "Bildirishnomalar"
+  },
+  "Task creation is available in live staging runtime.": {
+    "ru": "Создание задач доступно на подключённом тестовом стенде.",
+    "uz": "Vazifalarni ulangan test muhitida yaratish mumkin."
+  },
+  "Choose a task type and enter a description.": {
+    "ru": "Выберите тип задачи и введите описание.",
+    "uz": "Vazifa turini tanlang va tavsif kiriting."
+  },
+  "Request failed": {
+    "ru": "Не удалось выполнить запрос.",
+    "uz": "Soʻrov bajarilmadi."
+  },
+  "Failed to load live tasks": {
+    "ru": "Не удалось загрузить задачи.",
+    "uz": "Vazifalarni yuklab boʻlmadi."
+  },
+  "Action failed": {
+    "ru": "Не удалось выполнить действие.",
+    "uz": "Amalni bajarib boʻlmadi."
+  },
+  "Create failed": {
+    "ru": "Не удалось создать запись.",
+    "uz": "Yozuvni yaratib boʻlmadi."
+  },
+  "Core analytics identity is not linked for this staff account.": {
+    "ru": "Учётная запись не подключена к аналитике Core.",
+    "uz": "Hisob Core tahliliga ulanmagan."
+  },
+  "Core analytics connection is not configured.": {
+    "ru": "Подключение к аналитике Core не настроено.",
+    "uz": "Core tahliliga ulanish sozlanmagan."
+  },
+  "Core analytics is temporarily unavailable.": {
+    "ru": "Аналитика Core временно недоступна.",
+    "uz": "Core tahlili vaqtincha mavjud emas."
+  },
+  "Created: {id}": {
+    "ru": "Создано: {id}",
+    "uz": "Yaratildi: {id}"
+  },
+  "Apartment {unit}": {
+    "ru": "Апартамент {unit}",
+    "uz": "{unit}-apartament"
+  },
+  "Unit: {unit} · Stay: {stay}": {
+    "ru": "Номер: {unit} · Проживание: {stay}",
+    "uz": "Xona: {unit} · Yashash: {stay}"
+  },
+  "Assigned: {id}": {
+    "ru": "Назначено: {id}",
+    "uz": "Tayinlangan: {id}"
+  },
+  "Unresolved {count} · Risks {risks} · Follow-up {followup}": {
+    "ru": "Не решено: {count} · Риски: {risks} · Дальнейшие действия: {followup}",
+    "uz": "Hal qilinmagan: {count} · Xavflar: {risks} · Keyingi harakatlar: {followup}"
+  },
+  "Open tasks": {
+    "ru": "Открытые задачи",
+    "uz": "Ochiq vazifalar"
+  },
+  "Claimed {claimed} · processed {processed} · skipped {skipped} · retried {retried} · failed {failed} · remaining {remaining}": {
+    "ru": "Получено: {claimed} · обработано: {processed} · пропущено: {skipped} · повторов: {retried} · ошибок: {failed} · осталось: {remaining}",
+    "uz": "Olingan: {claimed} · bajarilgan: {processed} · oʻtkazib yuborilgan: {skipped} · takror: {retried} · xato: {failed} · qolgan: {remaining}"
+  },
+  "finance manager": {
+    "ru": "Финансовый руководитель",
+    "uz": "Moliya rahbari"
+  },
+  "accountant": {
+    "ru": "Бухгалтер",
+    "uz": "Buxgalter"
+  },
+  "revenue manager": {
+    "ru": "Управляющий доходами",
+    "uz": "Daromad boshqaruvchisi"
+  },
+  "owner readonly": {
+    "ru": "Владелец · просмотр",
+    "uz": "Mulkdor · koʻrish"
+  },
+  "service declined": {
+    "ru": "Услуга отклонена",
+    "uz": "Xizmat rad etilgan"
+  },
+  "checked in": {
+    "ru": "Заселён",
+    "uz": "Joylashtirilgan"
+  },
+  "checked out": {
+    "ru": "Выехал",
+    "uz": "Chiqib ketgan"
+  },
+  "checkout due": {
+    "ru": "Ожидается выезд",
+    "uz": "Chiqish kutilmoqda"
+  },
+  "in progress": {
+    "ru": "В работе",
+    "uz": "Bajarilmoqda"
+  },
+  "not configured": {
+    "ru": "Не настроено",
+    "uz": "Sozlanmagan"
+  },
+  "credentials required": {
+    "ru": "Нужны ключи доступа",
+    "uz": "Kirish kalitlari kerak"
+  },
+  "partner access required": {
+    "ru": "Нужен доступ партнёра",
+    "uz": "Hamkor ruxsati kerak"
+  },
+  "configured": {
+    "ru": "Настроено",
+    "uz": "Sozlangan"
+  },
+  "healthy": {
+    "ru": "Работает",
+    "uz": "Ishlamoqda"
+  },
+  "degraded": {
+    "ru": "Работает с ограничениями",
+    "uz": "Cheklovlar bilan ishlamoqda"
+  },
+  "error": {
+    "ru": "Ошибка",
+    "uz": "Xato"
+  },
+  "fresh": {
+    "ru": "Актуально",
+    "uz": "Dolzarb"
+  },
+  "stale": {
+    "ru": "Требует обновления",
+    "uz": "Yangilash kerak"
+  },
+  "unavailable": {
+    "ru": "Недоступно",
+    "uz": "Mavjud emas"
+  },
+  "Booking.com Connectivity": {
+    "ru": "Подключение Booking.com",
+    "uz": "Booking.com ulanishi"
+  },
+  "Airbnb Software Connection": {
+    "ru": "Подключение Airbnb",
+    "uz": "Airbnb ulanishi"
+  },
+  "AI Concierge": {
+    "ru": "ИИ-консьерж",
+    "uz": "AI konsyerj"
+  },
+  "reservations": {
+    "ru": "Бронирования",
+    "uz": "Bandlovlar"
+  },
+  "rates availability": {
+    "ru": "Тарифы и доступность",
+    "uz": "Tariflar va mavjudlik"
+  },
+  "messaging": {
+    "ru": "Обмен сообщениями",
+    "uz": "Xabar almashish"
+  },
+  "reviews": {
+    "ru": "Отзывы",
+    "uz": "Sharhlar"
+  },
+  "content": {
+    "ru": "Описание объекта",
+    "uz": "Obyekt tavsifi"
+  },
+  "listing sync": {
+    "ru": "Синхронизация объекта",
+    "uz": "Obyektni sinxronlash"
+  },
+  "guest chat": {
+    "ru": "Чат с гостями",
+    "uz": "Mehmonlar bilan chat"
+  },
+  "service triage": {
+    "ru": "Распределение заявок",
+    "uz": "Buyurtmalarni taqsimlash"
+  },
+  "translation": {
+    "ru": "Перевод",
+    "uz": "Tarjima"
+  },
+  "knowledge assistance": {
+    "ru": "Справочная помощь",
+    "uz": "Maʼlumot yordami"
+  },
+  "Demo staff role": {
+    "ru": "Роль сотрудника в демо",
+    "uz": "Namoyishdagi xodim roli"
+  },
+  "Staff sections": {
+    "ru": "Разделы сотрудников",
+    "uz": "Xodimlar boʻlimlari"
+  },
+  "Mobile staff sections": {
+    "ru": "Мобильные разделы сотрудников",
+    "uz": "Xodimlarning mobil boʻlimlari"
+  },
+  "Photo uploads are not connected in this preview.": {
+    "ru": "В этом просмотре загрузка фотографий не подключена.",
+    "uz": "Bu namoyishda surat yuklash ulanmagan."
+  },
+  "Listing creation uses the owner workspace connected to Core.": {
+    "ru": "Создание объекта доступно в кабинете владельца, подключённом к Core.",
+    "uz": "Obyekt yaratish Core tizimiga ulangan mulkdor kabinetida mavjud."
+  },
+  "Assignment requires a connected staff account.": {
+    "ru": "Назначение исполнителя требует подключённой учётной записи сотрудника.",
+    "uz": "Ijrochi tayinlash uchun ulangan xodim hisobi kerak."
+  },
+  "Advanced filters are unavailable in this preview.": {
+    "ru": "Расширенные фильтры в этом просмотре недоступны.",
+    "uz": "Bu namoyishda kengaytirilgan filtrlar mavjud emas."
+  },
+  "Sort: Priority": {
+    "ru": "Сортировка: приоритет",
+    "uz": "Saralash: ustuvorlik"
+  },
+  "done": {
+    "ru": "Готово",
+    "uz": "Bajarildi"
+  },
+  "high": {
+    "ru": "Высокий",
+    "uz": "Yuqori"
+  },
+  "low": {
+    "ru": "Низкий",
+    "uz": "Past"
+  },
+  "new": {
+    "ru": "Новое",
+    "uz": "Yangi"
+  },
+  "normal": {
+    "ru": "Обычный",
+    "uz": "Oddiy"
+  },
+  "urgent": {
+    "ru": "Срочный",
+    "uz": "Shoshilinch"
+  },
+  "checked_out": {
+    "ru": "Выехал",
+    "uz": "Chiqib ketgan"
+  },
+  "service_declined": {
+    "ru": "Услуга отклонена",
+    "uz": "Xizmat rad etilgan"
+  },
+  "Resolved": {
+    "ru": "Решённые",
+    "uz": "Hal qilingan"
+  },
+  "asset": {
+    "ru": "Активы",
+    "uz": "Aktivlar"
+  },
+  "liability": {
+    "ru": "Обязательства",
+    "uz": "Majburiyatlar"
+  },
+  "equity": {
+    "ru": "Капитал",
+    "uz": "Kapital"
+  },
+  "revenue": {
+    "ru": "Доходы",
+    "uz": "Daromadlar"
+  },
+  "expense": {
+    "ru": "Расходы",
+    "uz": "Xarajatlar"
+  },
+  "provider clearing": {
+    "ru": "Расчёты с провайдером",
+    "uz": "Provayder bilan hisob-kitoblar"
+  },
+  "guest deposits": {
+    "ru": "Депозиты гостей",
+    "uz": "Mehmon depozitlari"
+  },
+  "refunds payable": {
+    "ru": "Возвраты к выплате",
+    "uz": "Qaytarilishi kerak boʻlgan summalar"
+  },
+  "platform commission revenue": {
+    "ru": "Комиссионный доход платформы",
+    "uz": "Platforma komissiya daromadi"
+  },
+  "owner payable": {
+    "ru": "Выплаты владельцу",
+    "uz": "Mulkdorga toʻlovlar"
+  },
+  "taxes payable": {
+    "ru": "Налоги к уплате",
+    "uz": "Toʻlanadigan soliqlar"
+  },
+  "other deductions payable": {
+    "ru": "Прочие удержания к перечислению",
+    "uz": "Oʻtkaziladigan boshqa ushlanmalar"
+  }
+}

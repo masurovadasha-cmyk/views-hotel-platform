@@ -1262,5 +1262,17 @@
   "После подтверждения номер можно использовать для следующего тестового заселения.": {
     "en": "After confirmation, the room can be used for the next test check-in.",
     "uz": "Tasdiqlangandan keyin xonadan keyingi test joylashtirish uchun foydalanish mumkin."
+  },
+  "Гостевое приложение": {
+    "en": "Guest App",
+    "uz": "Mehmon ilovasi"
+  },
+  "Live API": {
+    "en": "Live API",
+    "uz": "Ulangan API"
+  },
+  "Static staging demo": {
+    "en": "Static staging demo",
+    "uz": "Statik test namoyishi"
   }
 }

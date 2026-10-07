@@ -136,3 +136,24 @@ Stage 7.32 enables the zero-charge synthetic stay pilot in the cloud-local launc
 Use `npm run cloud:prepare:stay` to add one separate synthetic stay (no existing
 reservation changes). `npm run cloud:test:stay` follows cloud:test:auth and tests
 the explicit check-in/checkout UI; see STAGE7_LOCAL_STAY_PILOT.md.
+
+
+## Bounded housekeeper browser proof
+
+Stage 7.50 adds `npm run cloud:test:housekeeping`. It runs the disposable Core
+suite plus actual password → gateway → Core → PostgreSQL → browser task actions.
+It does not activate a cleaner in the persistent rehearsal. Build Core and web,
+then free only the owned web/Core listeners and restore them even if proof fails:
+
+```sh
+npm --prefix apps/api run build
+npm run build
+npm run cloud:stop
+(trap 'npm run cloud:start' EXIT; npm run cloud:test:housekeeping)
+```
+
+The owned disposable database uses a random loopback port, marker and generated
+credentials. The HTTP harness refuses occupied 3001/4173, binds loopback itself
+and never changes the production bootstrap. Owner inventory and housekeeping
+flags remain off in ordinary startup. See
+`STAGE7_LEGACY_CRM_AND_CONNECTED_HOUSEKEEPING.md` for tested scope.

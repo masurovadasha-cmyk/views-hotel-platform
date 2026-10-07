@@ -3,18 +3,19 @@ import {parseStaffLocale, staffLocaleStorageKey, translateStaff, type MessageVal
 
 type LocaleContext = {locale: StaffLocale; setLocale: (locale: StaffLocale) => void; t: (source: string, values?: MessageValues) => string};
 const StaffLocaleContext = createContext<LocaleContext>({locale: 'ru', setLocale: () => {}, t: (source, values) => translateStaff('ru', source, values)});
-export function StaffLocaleProvider({children}: {children: ReactNode}) {
+export function StaffLocaleProvider({children,manageDocument=true,persist=true}: {children: ReactNode;manageDocument?:boolean;persist?:boolean}) {
   const [locale, setLocale] = useState<StaffLocale>(() => {
     try { return parseStaffLocale(localStorage.getItem(staffLocaleStorageKey)); } catch { return 'ru'; }
   });
   useEffect(() => {
+    if(!manageDocument)return;
     const previous = document.documentElement.getAttribute('lang');
     return () => { if (previous === null) document.documentElement.removeAttribute('lang'); else document.documentElement.lang = previous; };
-  }, []);
+  }, [manageDocument]);
   useEffect(() => {
-    try { localStorage.setItem(staffLocaleStorageKey, locale); } catch { /* In-memory choice still works. */ }
-    document.documentElement.lang = locale;
-  }, [locale]);
+    try { if(persist)localStorage.setItem(staffLocaleStorageKey, locale); } catch { /* In-memory choice still works. */ }
+    if(manageDocument)document.documentElement.lang = locale;
+  }, [locale,manageDocument,persist]);
   const t = useCallback((source: string, values?: MessageValues) => translateStaff(locale, source, values), [locale]);
   return <StaffLocaleContext.Provider value={{locale, setLocale, t}}>{children}</StaffLocaleContext.Provider>;
 }

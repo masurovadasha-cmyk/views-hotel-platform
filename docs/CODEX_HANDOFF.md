@@ -519,3 +519,32 @@ synthetic HTTP responses: do not call them connected role onboarding.
 See STAGE7_OWNER_AND_HOUSEKEEPING.md and CURRENT_DELIVERY_STATUS.md. Continue
 legacy staff localization and real inventory/role/provider integration only
 within their stated scope. No main merge, public deployment or new APK release.
+
+
+## 31. Stage 7.49–7.50 — legacy CRM languages and connected cleaner proof
+
+Legacy CRM's eight components now use 547 RU/UZ/EN catalog entries, preserving
+API enums, user data, canonical BigInt analytics and separate guest/staff
+preferences. Mobile role navigation/sheet close and inbox filters work. Fake
+photo capture and inert demo listing/assignment/filter controls are disabled.
+
+Dirty base eb812dc: root 241/40; disposable Core 298/59 and 5 actual-password
+housekeeper HTTP/browser groups passed. The new bounded
+`npm run cloud:test:housekeeping` requires ports 3001/4173 free, starts the actual
+AppModule/gateway against its own marked disposable DB and restarts the owned
+persistent environment via the documented trap. Never run fixture setup on the
+persistent database. Normal launcher role flags remain off; owner login is still
+gated. After proof the persistent launcher reported 49 migrations, none new.
+
+Web/Android builds, legacy browser 7 groups on each target, guest 7 groups on each,
+offline role proofs, front-desk auth 13/32 HTTP, locale 8 and booking browser
+passed. Network gate 126 files and mail policy 15 passed. Fresh unsigned native
+package compiled with 9 matching assets; no permanent signing, publication or
+physical-device proof. See STAGE7_LEGACY_CRM_AND_CONNECTED_HOUSEKEEPING.md for
+exact dirty artifact hash and limits. `cloud:verify` now includes the offline
+legacy proof, but not the fixed-port connected housekeeper runner.
+
+First real property's details were requested asynchronously. Do not invent
+business data or claim access to the user's other chat. Real guest/vault/payment/
+registration, privileged role rollout, multi-category inventory editing and
+sales/hosting/signing acceptance remain open in CURRENT_DELIVERY_STATUS.md.

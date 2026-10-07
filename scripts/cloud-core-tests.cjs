@@ -37,6 +37,7 @@ const run = args => {
       catch { await candidate.end().catch(() => {}); await new Promise(r => setTimeout(r, 500)); }
     }
     if (!admin) throw Error('CI_POSTGRES_NOT_READY');
+    await admin.query("COMMENT ON DATABASE views IS 'VIEWS_DISPOSABLE_CORE_TEST'");
     await admin.query(fs.readFileSync(path.join(REPO, 'infra/postgres/init/001_extensions.sql'), 'utf8'));
     const migrations = path.join(REPO, 'apps/api/db/migrations');
     for (const file of fs.readdirSync(migrations).filter(f => /^\d{4}_.*\.sql$/.test(f)).sort()) {
@@ -67,6 +68,7 @@ const run = args => {
       child.once('error', reject); child.once('exit', code => resolve(code ?? 1));
     });
     process.exitCode = exitCode;
+    if(exitCode===0&&process.env.VIEWS_HOUSEKEEPING_HTTP_PROOF==='true')await require('./housekeeping-connected-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
   } finally {
     if (runtime) await runtime.end();
     if (admin) await admin.end();
