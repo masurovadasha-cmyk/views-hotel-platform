@@ -11,6 +11,9 @@ describe("runtime mode",()=>{
     expect(detectRuntimeMode('http://localhost:4173/?api=live')).toBe('live-api');
     expect(detectRuntimeMode('http://localhost:4173/?api=demo')).toBe('static-demo');
   });
+  it("opens bundled Android review assets without enabling live or local APIs",()=>{
+    expect(detectRuntimeMode("https://appassets.androidplatform.net/views-hotel-platform/?api=demo")).toBe("static-demo");
+  });
   it("labels demo truthfully",()=>expect(runtimeLabel("static-demo")).toBe("Static staging demo"));
   it("opens local Core only on the dedicated loopback HTTP origin",()=>{
     for(const host of ["127.0.0.1","localhost"])expect(detectRuntimeMode("http://"+host+":4173/?api=local-core")).toBe("local-core");

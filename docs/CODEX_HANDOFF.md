@@ -345,3 +345,16 @@ cloud:test:auth before browser proofs to prepare a new synthetic identity; do no
 relax rate limits. No existing accounts changed. Clean-source reports remain in
 the private evidence directory with exact SHA and dirty status. Remaining delivery
 gates are listed in CURRENT_DELIVERY_STATUS.md; production is not enabled.
+
+## 22. Android source recovery (native build incomplete)
+
+Recovered historical native review shell and packaging helper from 02a6322 into
+the active branch. Explicit Android demo query fixes current frontend routing.
+Packaging now emits unsigned output only, never a new ephemeral signing identity.
+See STAGE7_ANDROID_SOURCE_RECOVERY.md for dependencies and exact limitations.
+Dirty continuation of 367377ce19fcabd50bc0f1b4796e30ba904b5b7d: frontend
+typecheck/build:pages, root 222 tests/36 files and browser proof at the Android
+asset origin passed. External photo attempts are blocked (4), not successful
+network requests. Python packaging syntax passed; actual native packaging exits
+1 because SDK configuration is absent, and javac is also missing. No APK built,
+no native/device/signing/update proof claimed. Root-mounted web build restored.
