@@ -44,7 +44,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p mail-evidence
-          node --test scripts/staff-ci-evidence.test.cjs | tee mail-evidence/gate.tap
+          node --test scripts/staff-ci-evidence.acceptance.cjs | tee mail-evidence/gate.tap
       - name: Install existing Core plus pinned SMTP library
         working-directory: apps/api
         run: npm ci --ignore-scripts --no-audit --no-fund
