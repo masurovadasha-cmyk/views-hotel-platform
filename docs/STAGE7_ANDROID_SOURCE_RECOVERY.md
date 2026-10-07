@@ -63,6 +63,12 @@ asset count, artifact size and SHA-256. This is unsigned review mode, without
 public backend, signature, emulator, installation or upgrade proof. Existing
 review APK/signing keys and public deployment are not changed.
 
-The four demo listing photos still reference an external CDN. The offline shell
-blocks them; listing text and controls render, but those photos are unavailable.
-Bundling licensed photo assets remains a mobile-readiness task.
+Stage 7.41 bundles the four existing demo listing photos with the shared frontend.
+Original source URLs, byte counts and SHA-256 values are recorded in
+src/assets/demo/sources.json. No new photo content or real inventory is introduced.
+Vite generates base-aware asset paths for both root web and Android/Pages builds.
+The browser proof now requires all four listing images and the detail image to
+decode, including after reload, and rejects every external request (zero allowed).
+It exercises widths 360/390/768/1440. Native packaging verifies all eight embedded
+web files, including the four photos. This remains a demo and does not establish
+native-device execution or real inventory onboarding.

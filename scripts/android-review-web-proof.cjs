@@ -16,7 +16,7 @@ const assert=require('node:assert/strict');
    const relative=decodeURIComponent(u.pathname.slice(prefix.length))||'index.html';
    const file=path.resolve('dist',relative);
    if(!file.startsWith(path.resolve('dist')+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
-   const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml'}[path.extname(file)];
+   const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.jpg':'image/jpeg'}[path.extname(file)];
    await route.fulfill({path:file,contentType:mime});
   });
   await page.goto(origin+prefix+'?api=demo',{waitUntil:'networkidle'});
@@ -24,7 +24,21 @@ const assert=require('node:assert/strict');
   assert.ok((await page.locator('#root').innerText()).length>100);
   assert.ok(await page.locator('button:visible').count()>0);
   assert.equal(await page.getByRole('heading',{name:'Вход в рабочую область',exact:true}).count(),0);
-  assert.deepEqual(errors,[]);assert.ok(external.every(r=>r.type==='image'&&r.origin==='https://a0.muscache.com'));
-  console.log(JSON.stringify({result:'pass',bundledAndroidOrigin:true,explicitDemo:true,blockedImageRequests:external.length,externalRequestsSent:0,pageErrors:0,androidDeviceTested:false}));
+  const photos=page.locator('.photoButton img');
+  assert.equal(await photos.count(),4);
+  async function verifyPhotos(){
+   assert.ok(await photos.evaluateAll(images=>images.every(img=>img.complete&&img.naturalWidth>0)));
+  }
+  await verifyPhotos();
+  for(const width of [360,390,768,1440]){
+   await page.setViewportSize({width,height:900});
+   await verifyPhotos();
+  }
+  await page.locator('.photoButton').first().click();
+  const detail=page.locator('.modalPhoto');await detail.waitFor();
+  assert.ok(await detail.evaluate(img=>img.complete&&img.naturalWidth>0));
+  await page.reload({waitUntil:'networkidle'});await verifyPhotos();
+  assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
+  console.log(JSON.stringify({result:'pass',bundledAndroidOrigin:true,explicitDemo:true,loadedListingPhotos:4,detailPhotoLoaded:true,reloadPhotosLoaded:true,viewports:[360,390,768,1440],blockedImageRequests:external.length,externalRequestsSent:0,pageErrors:0,androidDeviceTested:false}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

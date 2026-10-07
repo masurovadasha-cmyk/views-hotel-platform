@@ -374,3 +374,17 @@ rerun passed. Android 26 minimum / 35 target, version 738001, unsigned artifact
 Final exact source/artifact checksums are in ignored review-output/build-evidence.json.
 No emulator/device execution, stable signature, in-place upgrade or connected
 mobile backend proof. Root-mounted local web build restored after packaging.
+
+## 24. Offline Android review photographs
+
+Stage 7.41 embeds the four existing demo CDN images in the shared Vite build;
+provenance and SHA-256 are recorded alongside assets. No live inventory is added.
+The browser proof now rejects every external request and checks loaded listing
+and detail photos, reload and four widths. Booking detail image has alt text.
+
+Dirty continuation of ee2cf373b488be8a6f90e7381317604e2ee7b546: build:pages,
+222 root tests / 36 files, expanded asset-origin browser proof and native unsigned
+packaging passed. All eight web assets matched their APK copies. Final clean SHA
+and artifact checksum are recorded in ignored review-output/build-evidence.json.
+No signing, emulator, physical-device or connected mobile claim. Restore the
+ordinary root web build after Android packaging; no public release is performed.
