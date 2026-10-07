@@ -474,3 +474,26 @@ before locale proof. Browser login errors report HTTP status without credentials
 Final clean-source locale/booking reports record their own SHA/dirty state.
 See STAGE7_STAFF_LOCALIZATION.md for evidence and limits. Guest/demo localization,
 owner/cleaner software, native-speaker review and external release gates remain.
+
+## 29. Guest localization and preview navigation
+
+Stage 7.46 adds a separate RU/UZ/EN guest preference and 223 catalog messages,
+including public email entry, static apartment data, preview steps and accessibility
+labels. Shared safe interpolation retains existing staff behavior. Desktop guest
+navigation, favorites and help search now work. Modal keyboard/focus handling is
+implemented; SMS focus no longer restarts with each parent callback identity.
+
+The legacy connected booking Details action now displays the selected server
+record instead of apartments[0]. Failure/retry and two distinct bookings are
+covered by intercepted synthetic responses; this is not PostgreSQL guest Core
+integration. Demo service/chat controls and booking/confirmation previews explicitly
+state their limits. No new permission/provider/production activation occurred.
+
+Dirty continuation of 75612486975c3d92866a55bacceae6daae864d04 passed web build,
+root 233/38, Core build/typecheck, staff-auth 20/3, mail policy 15, network gate 119,
+staff HTTP 13 groups/32 calls, staff locale eight groups and booking browser. Guest
+browser passed seven groups on web and Android-target assets across three languages
+and four widths; original Android offline-photo/navigation/SMS proof also passed.
+Final clean-source artifact reports record SHA/dirty status. See
+STAGE7_GUEST_LOCALIZATION.md. Native device, permanent signing/publication, real
+guest/provider integration, owner/cleaner and legacy staff localization remain open.

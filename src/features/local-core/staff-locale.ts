@@ -1,3 +1,4 @@
+import {translate} from '../../i18n/messages';
 import catalog from './staff-translations.json';
 
 export type StaffLocale = 'ru' | 'uz' | 'en';
@@ -11,10 +12,7 @@ const messages: Record<string, {en: string; uz: string}> = catalog;
 
 /** Russian source messages are catalog keys; runtime/user data is never scanned. */
 export function translateStaff(locale: StaffLocale, source: string, values: MessageValues = {}): string {
-  const translated = locale === 'ru' || !Object.prototype.hasOwnProperty.call(messages, source)
-    ? source : messages[source][locale];
-  return translated.replace(/\{([a-zA-Z]+)\}/g, (placeholder, key: string) =>
-    Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : placeholder);
+  return translate(messages,locale,source,values);
 }
 
 /** Preserve bigint minor units; do not round money through Number. */

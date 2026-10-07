@@ -1,7 +1,9 @@
+import {useGuestLocale} from '../guest/GuestLocale';
 import {FormEvent,useState} from "react";
-import {api,ApiError} from "../../api/client";
+import {api} from "../../api/client";
 
 export function AuthPanel({onDone}:{onDone:()=>void}){
+  const {t}=useGuestLocale();
   const [email,setEmail]=useState("");
   const [token,setToken]=useState("");
   const [stage,setStage]=useState<"email"|"token">("email");
@@ -20,20 +22,20 @@ export function AuthPanel({onDone}:{onDone:()=>void}){
         setMessage("Login link requested. Use the secure link/token delivered by the configured email provider.");
       }
     }
-    catch(error){setMessage(error instanceof ApiError?error.message:"Login request failed")}
+    catch(error){setMessage("Login request failed. Check your connection and try again.")}
     finally{setBusy(false)}
   }
   async function verify(e:FormEvent){
     e.preventDefault();setBusy(true);setMessage("");
     try{await api.verifyLogin(token);onDone()}
-    catch(error){setMessage(error instanceof ApiError?error.message:"Verification failed")}
+    catch(error){setMessage("Verification failed. Request a new link if the token has expired.")}
     finally{setBusy(false)}
   }
 
   return <section className="authPanel">
-    <div><small>SECURE ACCESS</small><h2>Sign in to VIEWS</h2><p>Passwordless email access. Staff permissions are resolved server-side after authentication.</p></div>
-    {stage==="email"?<form onSubmit={requestLink}><label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label><button className="primary" disabled={busy}>{busy?"Sending…":"Continue with email"}</button></form>
-    :<form onSubmit={verify}><label>Verification token<input required value={token} onChange={e=>setToken(e.target.value)} placeholder="Paste secure token"/></label><button className="primary" disabled={busy}>{busy?"Verifying…":"Verify & continue"}</button><button type="button" onClick={()=>setStage("email")}>Use another email</button></form>}
-    {message&&<div className="notice">{message}</div>}
+    <div><small>{t("SECURE ACCESS")}</small><h2>{t("Sign in to VIEWS")}</h2><p>{t("Passwordless email access. Staff permissions are resolved server-side after authentication.")}</p></div>
+    {stage==="email"?<form onSubmit={requestLink}><label>{t("Email")}<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label><button className="primary" disabled={busy}>{busy?t("Sending…"):t("Continue with email")}</button></form>
+    :<form onSubmit={verify}><label>{t("Verification token")}<input required value={token} onChange={e=>setToken(e.target.value)} placeholder={t("Paste secure token")}/></label><button className="primary" disabled={busy}>{busy?t("Verifying…"):t("Verify & continue")}</button><button type="button" onClick={()=>setStage("email")}>{t("Use another email")}</button></form>}
+    {message&&<div className="notice">{t(message)}</div>}
   </section>
 }
