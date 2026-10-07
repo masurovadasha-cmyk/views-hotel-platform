@@ -32,9 +32,36 @@ It is not a native WebView, emulator, installation or physical-device test.
 After packaging, restore `npm run build` for the existing root-mounted local
 server. Generated review-output is ignored by Git.
 
-In this cloud session the native build stops with an explicit prerequisite error:
-Android SDK is absent and javac is unavailable. No new APK, signature verification,
-Android runtime acceptance or connected mobile release is claimed.
+The initial SDK/javac blocker was resolved in Stage 7.40. Toolchain installation
+and native packaging now pass in this cloud session. No signed APK, Android
+runtime acceptance or connected mobile release is claimed.
+
+## Verified Linux x64 setup (Stage 7.40)
+
+Python 3.12+ runs `python3 scripts/setup-android-review.py`. This installs only in
+`/workspace/android-tools` (override with VIEWS_ANDROID_TOOLS). Pinned downloads
+and SHA-256 values are recorded in toolchain-linux-x64.json; original archives
+were checked against Google repository metadata and Adoptium package checksums.
+Checksum mismatches stop installation. Existing archives are checked on every run.
+The helper was rerun successfully using the cached, verified downloads.
+
+```
+export JAVA_HOME=/workspace/android-tools/java/jdk-21.0.12.1+1
+export ANDROID_HOME=/workspace/android-tools/sdk
+export PATH="$JAVA_HOME/bin:$PATH"
+npm run build:pages
+node scripts/android-review-web-proof.cjs
+python3 scripts/build-android-review.py
+npm run build
+```
+
+Native Java compilation, DEX conversion, resource packaging, zip alignment and
+compiled manifest inspection passed. Every embedded dist file is compared byte
+for byte. Packaging refuses an ordinary root-mounted web build, since it would
+break the Android asset prefix. Build evidence records source SHA/dirty flag,
+asset count, artifact size and SHA-256. This is unsigned review mode, without
+public backend, signature, emulator, installation or upgrade proof. Existing
+review APK/signing keys and public deployment are not changed.
 
 The four demo listing photos still reference an external CDN. The offline shell
 blocks them; listing text and controls render, but those photos are unavailable.

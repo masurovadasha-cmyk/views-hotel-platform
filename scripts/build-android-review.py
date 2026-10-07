@@ -15,6 +15,7 @@ assert (tools/'aapt2').exists() and (tools/'d8').exists(),'Android build-tools 3
 android=sdk/'platforms/android-35/android.jar'
 assert android.exists(),'Android platform 35 required'
 assert (ROOT/'dist/index.html').exists(),'Build the web app first'
+assert '/views-hotel-platform/assets/' in (ROOT/'dist/index.html').read_text(), 'Run npm run build:pages before Android packaging'
 source=ROOT/'apps/android-review'
 output=ROOT/'review-output'
 output.mkdir(exist_ok=True)
@@ -39,6 +40,7 @@ with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
     # Signing is a separate owner-approved release step; never rotate identity here.
     apk=output/'VIEWS-Review-unsigned.apk'
     shutil.copyfile(work/'aligned.apk',apk)
+    run(tools/'zipalign','-c','4',apk)
     badging=subprocess.check_output([str(tools/'aapt2'),'dump','badging',str(apk)],text=True)
     (output/'apk-manifest.txt').write_text(badging)
     print(badging)
@@ -55,10 +57,13 @@ with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
     assert root.find('application/activity').get(A+'name') in ['.MainActivity','uz.views.review.MainActivity']
     assert [p.get(A+'name') for p in root.findall('uses-permission')]==['android.permission.INTERNET']
     with zipfile.ZipFile(apk) as archive:
-        assert archive.read('assets/www/index.html')==(ROOT/'dist/index.html').read_bytes()
+        assets=[p for p in (ROOT/'dist').rglob('*') if p.is_file()]
+        for asset in assets:
+            assert archive.read('assets/www/'+asset.relative_to(ROOT/'dist').as_posix())==asset.read_bytes(), str(asset)
+        assert not any(name.startswith('META-INF/') and name.endswith(('.RSA','.DSA','.EC')) for name in archive.namelist())
         assert 'classes.dex' in archive.namelist()
     sha=hashlib.sha256(apk.read_bytes()).hexdigest()
     (output/'SHA256SUMS.txt').write_text(f'{sha}  VIEWS-Review-unsigned.apk\n')
-    evidence={'applicationId':'uz.views.review','versionName':'0.7.38-review','versionCode':version,'minAndroid':'8.0','minSdk':26,'targetSdk':35,'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sourceDirty':bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),'apkSha256':sha,'apkSizeBytes':apk.stat().st_size,'signatureVerified':False,'compiledManifestVerified':True,'assetsMatchWebBuild':True,'physicalDeviceTested':False,'mode':'static-demo','productionBackendConnected':False,'productionPaymentsConnected':False,'signature':'unsigned; not installable until approved signing'}
+    evidence={'applicationId':'uz.views.review','versionName':'0.7.38-review','versionCode':version,'minAndroid':'8.0','minSdk':26,'targetSdk':35,'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sourceDirty':bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),'apkSha256':sha,'apkSizeBytes':apk.stat().st_size,'signatureVerified':False,'compiledManifestVerified':True,'assetsMatchWebBuild':True,'verifiedAssetCount':len(assets),'physicalDeviceTested':False,'mode':'static-demo','productionBackendConnected':False,'productionPaymentsConnected':False,'signature':'unsigned; not installable until approved signing'}
     (output/'build-evidence.json').write_text(json.dumps(evidence,indent=2)+'\n')
     print(json.dumps(evidence))

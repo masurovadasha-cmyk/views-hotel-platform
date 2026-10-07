@@ -358,3 +358,19 @@ asset origin passed. External photo attempts are blocked (4), not successful
 network requests. Python packaging syntax passed; actual native packaging exits
 1 because SDK configuration is absent, and javac is also missing. No APK built,
 no native/device/signing/update proof claimed. Root-mounted web build restored.
+
+## 23. Native unsigned Android packaging verified
+
+Stage 7.40 resolves SDK/JDK prerequisites under /workspace/android-tools, with
+pinned upstream downloads, SHA-256 checking and a repeatable user-space installer.
+No signing identity is created. See STAGE7_ANDROID_SOURCE_RECOVERY.md.
+
+Clean ce81ad0c1d653e44d16fca23d5b1b3421c9521fb: build:pages, browser asset-origin
+proof and native unsigned packaging passed. Dirty continuation adds all-four-file
+asset comparison, zipalign verification and rejection of a root-mounted web build;
+positive native build and negative wrong-base check both passed. Installer cached
+rerun passed. Android 26 minimum / 35 target, version 738001, unsigned artifact
+290711 bytes. Java emits deprecation/source-8 warnings, no compilation failures.
+Final exact source/artifact checksums are in ignored review-output/build-evidence.json.
+No emulator/device execution, stable signature, in-place upgrade or connected
+mobile backend proof. Root-mounted local web build restored after packaging.
