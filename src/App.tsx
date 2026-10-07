@@ -1,3 +1,4 @@
+import {StaffLocaleProvider,StaffLanguageSelector,useStaffLocale} from './features/local-core/StaffLocale';
 import {StaffMailEntry} from "./features/local-core/StaffMailEntry";
 import {useEffect,useState} from "react";
 import type {HospitalityRole} from "./domain/types";
@@ -12,6 +13,10 @@ type Session =
  | {mode:"staff";userId:string;role:HospitalityRole;organizationId:string;propertyIds:string[]};
 
 export function App(){
+  return detectRuntimeMode()==='local-core'?<StaffLocaleProvider><Application/></StaffLocaleProvider>:<Application/>;
+}
+function Application(){
+  const {t}=useStaffLocale();
   const runtime=detectRuntimeMode();
   const [demoMode,setDemoMode]=useState<"guest"|"staff">("guest");
   const [demoRole,setDemoRole]=useState<HospitalityRole>("general_manager");
@@ -43,11 +48,12 @@ export function App(){
 
   return <div className={dark?"app dark":"app"}>
     <header className="brandbar">
-      <div className="brand"><span className="vmark">V</span><div><strong>VIEWS</strong><small>HOTEL & APARTMENTS</small></div><i/><p>One Ecosystem<br/>A Better Experience</p></div>
-      <div className="cities">TASHKENT · SAMARKAND · BUKHARA · KHIVA · AND BEYOND</div>
+      <div className="brand" lang="en"><span className="vmark">V</span><div><strong>VIEWS</strong><small>HOTEL & APARTMENTS</small></div><i/><p>One Ecosystem<br/>A Better Experience</p></div>
+      <div className="cities" lang="en">TASHKENT · SAMARKAND · BUKHARA · KHIVA · AND BEYOND</div>
       <div className="topActions">
-        <span className="runtimeBadge">{runtimeLabel(runtime)}</span>
-        <button onClick={()=>setDark(v=>!v)}>{dark?"Light":"Dark"}</button>
+        <span className="runtimeBadge">{t(runtimeLabel(runtime))}</span>
+        {runtime==="local-core"&&<StaffLanguageSelector/>}
+        <button onClick={()=>setDark(v=>!v)}>{runtime==='local-core'?t(dark?'Светлая тема':'Тёмная тема'):dark?'Light':'Dark'}</button>
         {!live&&runtime!=="local-core"&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==="guest"?"Staff CRM":"Guest App"}</button>}
         {live&&session&&<button onClick={async()=>{await api.logout();setSession(null)}}>Sign out</button>}
       </div>

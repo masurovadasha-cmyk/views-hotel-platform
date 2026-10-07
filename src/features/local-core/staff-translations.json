@@ -1,0 +1,1058 @@
+{
+  "Core недоступен. Данные не заменены демо-значениями. Проверьте сервер и обновите список.": {
+    "en": "Core is unavailable. Demo data has not replaced server data. Check the server and refresh the list.",
+    "uz": "Core mavjud emas. Server maʼlumotlari demo maʼlumotlar bilan almashtirilmadi. Serverni tekshiring va roʻyxatni yangilang."
+  },
+  "Локальная рабочая область ещё не подготовлена.": {
+    "en": "The local workspace has not been prepared yet.",
+    "uz": "Mahalliy ish maydoni hali tayyorlanmagan."
+  },
+  "Тестовая сессия истекла. Перезагрузите страницу.": {
+    "en": "The test session has expired. Reload the page.",
+    "uz": "Sinov seansining muddati tugadi. Sahifani qayta yuklang."
+  },
+  "Сессия изменилась. Перезагрузите страницу.": {
+    "en": "The session has changed. Reload the page.",
+    "uz": "Seans oʻzgardi. Sahifani qayta yuklang."
+  },
+  "Апартамент уже занят на эти даты. Выберите другие даты или снимите тестовый резерв.": {
+    "en": "The apartment is occupied on these dates. Choose other dates or release the test hold.",
+    "uz": "Bu sanalarda apartament band. Boshqa sanalarni tanlang yoki sinov bandlovini bekor qiling."
+  },
+  "На эти даты уже существует резерв. Обновите список.": {
+    "en": "A hold already exists for these dates. Refresh the list.",
+    "uz": "Bu sanalar uchun bandlov mavjud. Roʻyxatni yangilang."
+  },
+  "Расчёт устарел. Рассчитайте стоимость заново.": {
+    "en": "The quote has expired. Calculate the price again.",
+    "uz": "Hisob-kitob muddati tugadi. Narxni qayta hisoblang."
+  },
+  "Проверьте даты: от 1 до 30 ночей, не в прошлом.": {
+    "en": "Check the dates: 1 to 30 nights, with no past dates.",
+    "uz": "Sanalarni tekshiring: 1 dan 30 kechagacha, oʻtgan sana boʻlmasligi kerak."
+  },
+  "Сервер занят. Повторите запрос с тем же ключом.": {
+    "en": "The server is busy. Retry with the same key.",
+    "uz": "Server band. Xuddi shu kalit bilan qayta urinib koʻring."
+  },
+  "Количество гостей превышает вместимость.": {
+    "en": "The guest count exceeds capacity.",
+    "uz": "Mehmonlar soni sigʻimdan oshib ketgan."
+  },
+  "У сотрудника нет доступа к этому объекту.": {
+    "en": "This staff member cannot access this property.",
+    "uz": "Xodim bu obyektga kira olmaydi."
+  },
+  "У сотрудника нет права изменять бронирования.": {
+    "en": "This staff member cannot change bookings.",
+    "uz": "Xodimda bronlarni oʻzgartirish huquqi yoʻq."
+  },
+  "Сессия отозвана или истекла. Войдите снова.": {
+    "en": "The session was revoked or expired. Sign in again.",
+    "uz": "Seans bekor qilingan yoki muddati tugagan. Qayta kiring."
+  },
+  "Этот резерв уже изменён. Обновите список, прежде чем повторять действие.": {
+    "en": "This hold has already changed. Refresh the list before trying again.",
+    "uz": "Bu bandlov allaqachon oʻzgargan. Qayta urinishdan oldin roʻyxatni yangilang."
+  },
+  "Операция не подтверждена. Обновите список перед повтором.": {
+    "en": "The operation is unconfirmed. Refresh the list before trying again.",
+    "uz": "Amal tasdiqlanmadi. Qayta urinishdan oldin roʻyxatni yangilang."
+  },
+  "Резерв сохранён в PostgreSQL.": {
+    "en": "The hold was saved in PostgreSQL.",
+    "uz": "Bandlov PostgreSQL bazasida saqlandi."
+  },
+  "Резерв снят. Апартамент снова доступен на эти даты.": {
+    "en": "The hold was released. The apartment is available again for these dates.",
+    "uz": "Bandlov bekor qilindi. Apartament bu sanalarda yana boʻsh."
+  },
+  "VIEWS · ЛОКАЛЬНЫЙ CORE": {
+    "en": "VIEWS · LOCAL CORE",
+    "uz": "VIEWS · MAHALLIY CORE"
+  },
+  "Рабочая область бронирования": {
+    "en": "Booking workspace",
+    "uz": "Bronlash ish maydoni"
+  },
+  "Интерфейс → Core → PostgreSQL. Расчёт, резерв и снятие резерва выполняются сервером.": {
+    "en": "Interface → Core → PostgreSQL. Quotes, holds and releases are processed by the server.",
+    "uz": "Interfeys → Core → PostgreSQL. Hisoblash, bandlash va bandlovni bekor qilish serverda bajariladi."
+  },
+  "Открыть демо-интерфейс": {
+    "en": "Open demo interface",
+    "uz": "Demo interfeysni ochish"
+  },
+  "Только тестовые данные.": {
+    "en": "Test data only.",
+    "uz": "Faqat sinov maʼlumotlari."
+  },
+  "Это локальная сессия сотрудника, а не вход в production. Реальные апартаменты, гости, налоги и платежи не подключены.": {
+    "en": "This is a local staff session, not production access. Real apartments, guests, taxes and payments are not connected.",
+    "uz": "Bu xodimning mahalliy seansi, amaldagi tizimga kirish emas. Haqiqiy apartamentlar, mehmonlar, soliqlar va toʻlovlar ulanmagan."
+  },
+  "Подключение к локальному Core…": {
+    "en": "Connecting to local Core…",
+    "uz": "Mahalliy Core tizimiga ulanmoqda…"
+  },
+  "Нет связи с Core": {
+    "en": "No connection to Core",
+    "uz": "Core bilan aloqa yoʻq"
+  },
+  "Данные БД: ": {
+    "en": "Database data: ",
+    "uz": "Baza maʼlumotlari: "
+  },
+  "Серверные данные не получены": {
+    "en": "Server data was not received",
+    "uz": "Server maʼlumotlari olinmadi"
+  },
+  "Обновить из БД": {
+    "en": "Refresh from database",
+    "uz": "Bazadan yangilash"
+  },
+  "1. Рассчитать стоимость": {
+    "en": "1. Calculate price",
+    "uz": "1. Narxni hisoblash"
+  },
+  "Апартамент": {
+    "en": "Apartment",
+    "uz": "Apartament"
+  },
+  "Заезд": {
+    "en": "Check-in",
+    "uz": "Kelish"
+  },
+  "Выезд": {
+    "en": "Check-out",
+    "uz": "Ketish"
+  },
+  "Взрослые гости": {
+    "en": "Adult guests",
+    "uz": "Voyaga yetgan mehmonlar"
+  },
+  "Заезд в 14:00, выезд в 12:00 по Ташкенту.": {
+    "en": "Check-in at 14:00, check-out at 12:00, Tashkent time.",
+    "uz": "Toshkent vaqti bilan kelish 14:00 da, ketish 12:00 da."
+  },
+  "Тестовая базовая цена: {price} за ночь.": {
+    "en": "Test base price: {price} per night.",
+    "uz": "Sinov asosiy narxi: bir kechaga {price}."
+  },
+  "Сумма ниже рассчитывается Core, не браузером.": {
+    "en": "The amount below is calculated by Core, not the browser.",
+    "uz": "Quyidagi summani brauzer emas, Core hisoblaydi."
+  },
+  "Выполняется…": {
+    "en": "Processing…",
+    "uz": "Bajarilmoqda…"
+  },
+  "Рассчитать через Core": {
+    "en": "Calculate via Core",
+    "uz": "Core orqali hisoblash"
+  },
+  "2. Создать резерв": {
+    "en": "2. Create a hold",
+    "uz": "2. Vaqtincha bandlash"
+  },
+  "Выберите апартамент и даты. Здесь появится реальный расчёт из локальной базы.": {
+    "en": "Choose an apartment and dates. A quote from the local database will appear here.",
+    "uz": "Apartament va sanalarni tanlang. Mahalliy bazadan hisob-kitob shu yerda koʻrinadi."
+  },
+  "Ночей:": {
+    "en": "Nights:",
+    "uz": "Kechalar soni:"
+  },
+  "Расчёт действителен до {time}. Резерв — на 15 минут. Оплата не выполняется.": {
+    "en": "Quote valid until {time}. The hold lasts 15 minutes. No payment is made.",
+    "uz": "Hisob-kitob {time} gacha amal qiladi. Bandlov muddati — 15 daqiqa. Toʻlov amalga oshirilmaydi."
+  },
+  "Резерв создан": {
+    "en": "Hold created",
+    "uz": "Bandlov yaratildi"
+  },
+  "Создать тестовый резерв": {
+    "en": "Create test hold",
+    "uz": "Sinov bandlovini yaratish"
+  },
+  "Расчёт истёк. Рассчитайте стоимость заново.": {
+    "en": "The quote has expired. Calculate the price again.",
+    "uz": "Hisob-kitob muddati tugadi. Narxni qayta hisoblang."
+  },
+  "Сохранён до {time}": {
+    "en": "Held until {time}",
+    "uz": "{time} gacha band qilingan"
+  },
+  "Данные сохраняются после перезагрузки страницы.": {
+    "en": "Data persists after reloading the page.",
+    "uz": "Sahifa qayta yuklanganda maʼlumotlar saqlanadi."
+  },
+  "3. Резервы в PostgreSQL": {
+    "en": "3. Holds in PostgreSQL",
+    "uz": "3. PostgreSQL bazasidagi bandlovlar"
+  },
+  "Последние 50 записей тестового объекта. Снятие резерва освобождает апартамент; финансовая операция не создаётся.": {
+    "en": "The latest 50 records for the test property. Releasing a hold frees the apartment; no financial transaction is created.",
+    "uz": "Sinov obyektining oxirgi 50 ta yozuvi. Bandlovni bekor qilish apartamentni boʻshatadi; moliyaviy operatsiya yaratilmaydi."
+  },
+  "Записей пока нет.": {
+    "en": "No records yet.",
+    "uz": "Hozircha yozuvlar yoʻq."
+  },
+  "Временный резерв": {
+    "en": "Temporary hold",
+    "uz": "Vaqtinchalik bandlov"
+  },
+  "Срок резерва истёк": {
+    "en": "Hold expired",
+    "uz": "Bandlov muddati tugagan"
+  },
+  "Отменён": {
+    "en": "Cancelled",
+    "uz": "Bekor qilingan"
+  },
+  "Снять резерв": {
+    "en": "Release hold",
+    "uz": "Bandlovni bekor qilish"
+  },
+  "Показаны последние 50 записей, не весь архив.": {
+    "en": "Showing the latest 50 records, not the entire archive.",
+    "uz": "Butun arxiv emas, oxirgi 50 ta yozuv koʻrsatilgan."
+  },
+  "Проверки готовности не получены. Обновите сводку.": {
+    "en": "Readiness checks were not received. Refresh the summary.",
+    "uz": "Tayyorlik tekshiruvlari olinmadi. Maʼlumotlarni yangilang."
+  },
+  "Не подтверждена уборка после предыдущего выезда.": {
+    "en": "Cleaning after the previous check-out is not confirmed.",
+    "uz": "Oldingi mehmon ketganidan keyingi tozalash tasdiqlanmagan."
+  },
+  "Не указан основной гость.": {
+    "en": "The primary guest is not specified.",
+    "uz": "Asosiy mehmon koʻrsatilmagan."
+  },
+  "Номер не назначен или недоступен.": {
+    "en": "The room is unassigned or unavailable.",
+    "uz": "Xona biriktirilmagan yoki mavjud emas."
+  },
+  "Не подтверждён резерв номера на весь срок.": {
+    "en": "Room inventory is not confirmed for the full stay.",
+    "uz": "Xona butun yashash muddati uchun band qilingani tasdiqlanmagan."
+  },
+  "Есть финансовая операция — требуется отдельная проверка.": {
+    "en": "A financial transaction exists; separate review is required.",
+    "uz": "Moliyaviy operatsiya mavjud — alohida tekshiruv talab qilinadi."
+  },
+  "Операция недоступна в текущий момент по датам брони.": {
+    "en": "The booking dates do not allow this operation now.",
+    "uz": "Bron sanalariga koʻra bu amalni hozir bajarib boʻlmaydi."
+  },
+  "В номере ещё проживает другой гость.": {
+    "en": "Another guest is still staying in the room.",
+    "uz": "Xonada boshqa mehmon hali yashamoqda."
+  },
+  "Паспорт": {
+    "en": "Passport",
+    "uz": "Pasport"
+  },
+  "ID-карта": {
+    "en": "ID card",
+    "uz": "ID-karta"
+  },
+  "Свидетельство о рождении": {
+    "en": "Birth certificate",
+    "uz": "Tugʻilganlik guvohnomasi"
+  },
+  "Вид на жительство": {
+    "en": "Residence permit",
+    "uz": "Yashash guvohnomasi"
+  },
+  "Проездной документ": {
+    "en": "Travel document",
+    "uz": "Safar hujjati"
+  },
+  "Другой документ": {
+    "en": "Other document",
+    "uz": "Boshqa hujjat"
+  },
+  "Документы основного гостя": {
+    "en": "Primary guest documents",
+    "uz": "Asosiy mehmon hujjatlari"
+  },
+  "Статусы документов не получены. Обновите сводку.": {
+    "en": "Document statuses were not received. Refresh the summary.",
+    "uz": "Hujjat holatlari olinmadi. Maʼlumotlarni yangilang."
+  },
+  "Документы не добавлены.": {
+    "en": "No documents added.",
+    "uz": "Hujjatlar qoʻshilmagan."
+  },
+  "Документ": {
+    "en": "Document",
+    "uz": "Hujjat"
+  },
+  "Срок действия истёк": {
+    "en": "Expired",
+    "uz": "Muddati tugagan"
+  },
+  "Отклонён": {
+    "en": "Rejected",
+    "uz": "Rad etilgan"
+  },
+  "Загрузка не завершена": {
+    "en": "Upload incomplete",
+    "uz": "Yuklash tugallanmagan"
+  },
+  "Проверен в Core": {
+    "en": "Reviewed in Core",
+    "uz": "Core tizimida tekshirilgan"
+  },
+  "Ожидает проверки": {
+    "en": "Awaiting review",
+    "uz": "Tekshiruv kutilmoqda"
+  },
+  "Неизвестный статус": {
+    "en": "Unknown status",
+    "uz": "Nomaʼlum holat"
+  },
+  "Открыть тестовый файл": {
+    "en": "Open test file",
+    "uz": "Sinov faylini ochish"
+  },
+  "Показаны {shown} из {total} документов.": {
+    "en": "Showing {shown} of {total} documents.",
+    "uz": "{total} ta hujjatdan {shown} tasi koʻrsatilgan."
+  },
+  "Показаны статусы записей тестовой среды. Просмотр файлов и проверка реальных документов не подключены. Это не подтверждение государственной регистрации.": {
+    "en": "These are test-environment record statuses. Viewing and reviewing real documents are not connected. This does not confirm government registration.",
+    "uz": "Bu sinov muhitidagi yozuv holatlari. Haqiqiy hujjatlarni koʻrish va tekshirish ulanmagan. Bu davlat roʻyxatidan oʻtganlikni tasdiqlamaydi."
+  },
+  "Сохранение не подтверждено. Можно повторить те же данные или закрыть форму и обновить сводку. При изменении брони другим сотрудником откройте форму заново.": {
+    "en": "Saving is unconfirmed. Retry the same data or close the form and refresh the summary. If another staff member changed the booking, reopen the form.",
+    "uz": "Saqlash tasdiqlanmadi. Xuddi shu maʼlumotlar bilan takrorlang yoki shaklni yopib, maʼlumotlarni yangilang. Boshqa xodim bronni oʻzgartirgan boʻlsa, shaklni qayta oching."
+  },
+  "Данные тестового гостя": {
+    "en": "Test guest details",
+    "uz": "Sinov mehmoni maʼlumotlari"
+  },
+  "Введите новые данные основного гостя для {code}. Используйте только вымышленные данные. Документы этим действием не проверяются.": {
+    "en": "Enter new primary guest details for {code}. Use fictional data only. This action does not review documents.",
+    "uz": "{code} uchun asosiy mehmonning yangi maʼlumotlarini kiriting. Faqat toʻqima maʼlumotlardan foydalaning. Bu amal hujjatlarni tekshirmaydi."
+  },
+  "Имя гостя": {
+    "en": "Guest first name",
+    "uz": "Mehmonning ismi"
+  },
+  "Фамилия гостя": {
+    "en": "Guest last name",
+    "uz": "Mehmonning familiyasi"
+  },
+  "Дата рождения": {
+    "en": "Date of birth",
+    "uz": "Tugʻilgan sana"
+  },
+  "Код страны гражданства": {
+    "en": "Citizenship country code",
+    "uz": "Fuqarolik mamlakati kodi"
+  },
+  "Сохранить тестового гостя": {
+    "en": "Save test guest",
+    "uz": "Sinov mehmonini saqlash"
+  },
+  "Закрыть форму": {
+    "en": "Close form",
+    "uz": "Shaklni yopish"
+  },
+  "Готовность тестового номера после уборки подтверждена.": {
+    "en": "Test room readiness after cleaning is confirmed.",
+    "uz": "Sinov xonasining tozalashdan keyingi tayyorligi tasdiqlandi."
+  },
+  "Тестовое заселение оформлено.": {
+    "en": "Test check-in recorded.",
+    "uz": "Sinov joylashtirishi rasmiylashtirildi."
+  },
+  "Тестовый выезд оформлен. Оставшийся интервал брони освобождён; готовность номера после уборки проверяется отдельно.": {
+    "en": "Test check-out recorded. The remaining booking interval was released; room readiness after cleaning is checked separately.",
+    "uz": "Sinov chiqishi rasmiylashtirildi. Bronning qolgan muddati boʻshatildi; xonaning tozalashdan keyingi tayyorligi alohida tekshiriladi."
+  },
+  "Операция не подтверждена. Проверьте обновлённый статус перед повтором. Заселение доступно только в срок брони, с тестовым гостем и без оплаты.": {
+    "en": "The operation is unconfirmed. Check the refreshed status before retrying. Check-in is available only within the booking dates, with a test guest and no payment.",
+    "uz": "Amal tasdiqlanmadi. Takrorlashdan oldin yangilangan holatni tekshiring. Joylashtirish faqat bron muddati ichida, sinov mehmoni bilan va toʻlovsiz mumkin."
+  },
+  "Не удалось загрузить сводку ресепшена. Проверьте дату и соединение, затем повторите запрос.": {
+    "en": "Could not load the reception summary. Check the date and connection, then retry.",
+    "uz": "Qabulxona maʼlumotlarini yuklab boʻlmadi. Sana va ulanishni tekshirib, qayta urinib koʻring."
+  },
+  "Ресепшен": {
+    "en": "Reception",
+    "uz": "Qabulxona"
+  },
+  "Ресепшен: заезды и выезды": {
+    "en": "Reception: arrivals and departures",
+    "uz": "Qabulxona: kelish va ketish"
+  },
+  "Ожидаемые заезды и выезды по плану на выбранную дату. Проживающие — по текущему статусу брони, а не исторический отчёт. Временные резервы и отмены сюда не входят.": {
+    "en": "Planned arrivals and departures for the selected date. Current guests reflect booking status, not a historical report. Temporary holds and cancellations are excluded.",
+    "uz": "Tanlangan sanadagi rejalashtirilgan kelish va ketishlar. Yashayotgan mehmonlar tarixiy hisobot emas, bronning joriy holati boʻyicha koʻrsatiladi. Vaqtinchalik va bekor qilingan bandlovlar kiritilmagan."
+  },
+  "Дата ресепшена": {
+    "en": "Reception date",
+    "uz": "Qabulxona sanasi"
+  },
+  "Показать сводку": {
+    "en": "Show summary",
+    "uz": "Maʼlumotlarni koʻrsatish"
+  },
+  "Загрузка сводки…": {
+    "en": "Loading summary…",
+    "uz": "Maʼlumotlar yuklanmoqda…"
+  },
+  "Дата сводки: {day} · {zone}. Обновлено: {time}.": {
+    "en": "Summary date: {day} · {zone}. Updated: {time}.",
+    "uz": "Maʼlumotlar sanasi: {day} · {zone}. Yangilangan: {time}."
+  },
+  "Ожидаемые заезды": {
+    "en": "Expected arrivals",
+    "uz": "Kutilayotgan kelishlar"
+  },
+  "Выезды по плану": {
+    "en": "Planned departures",
+    "uz": "Rejalashtirilgan ketishlar"
+  },
+  "Сейчас проживают": {
+    "en": "Currently staying",
+    "uz": "Hozir yashayotganlar"
+  },
+  "Нет записей.": {
+    "en": "No records.",
+    "uz": "Yozuvlar yoʻq."
+  },
+  "Номер не назначен": {
+    "en": "Room unassigned",
+    "uz": "Xona biriktirilmagan"
+  },
+  "Выезд оформлен": {
+    "en": "Checked out",
+    "uz": "Ketishi rasmiylashtirilgan"
+  },
+  "Подтверждена": {
+    "en": "Confirmed",
+    "uz": "Tasdiqlangan"
+  },
+  "Заселён": {
+    "en": "Checked in",
+    "uz": "Joylashtirilgan"
+  },
+  "Основной гость:": {
+    "en": "Primary guest:",
+    "uz": "Asosiy mehmon:"
+  },
+  "не указан": {
+    "en": "not specified",
+    "uz": "koʻrsatilmagan"
+  },
+  "Тестовая карточка. Проверка документов и государственная регистрация не выполнялись.": {
+    "en": "Test record. Document review and government registration have not been performed.",
+    "uz": "Sinov yozuvi. Hujjatlar tekshirilmagan va davlat roʻyxatidan oʻtkazilmagan."
+  },
+  "Причины блокировки": {
+    "en": "Blocking reasons",
+    "uz": "Bloklash sabablari"
+  },
+  "Проверки тестовой брони пройдены. При подтверждении сервер проверит её снова.": {
+    "en": "Test booking checks passed. The server will check again when you confirm.",
+    "uz": "Sinov broni tekshiruvlardan oʻtdi. Tasdiqlashda server yana tekshiradi."
+  },
+  "Изменение данных гостя заблокировано: есть связанные документы.": {
+    "en": "Guest details cannot be changed: linked documents exist.",
+    "uz": "Mehmon maʼlumotlarini oʻzgartirib boʻlmaydi: bogʻlangan hujjatlar mavjud."
+  },
+  "Заполнить данные гостя (тест)": {
+    "en": "Enter guest details (test)",
+    "uz": "Mehmon maʼlumotlarini kiritish (sinov)"
+  },
+  "Заселить (тест)": {
+    "en": "Check in (test)",
+    "uz": "Joylashtirish (sinov)"
+  },
+  "Оформить выезд (тест)": {
+    "en": "Check out (test)",
+    "uz": "Chiqishni rasmiylashtirish (sinov)"
+  },
+  "Показаны первые 100 из {total} записей.": {
+    "en": "Showing the first 100 of {total} records.",
+    "uz": "{total} ta yozuvdan dastlabki 100 tasi koʻrsatilgan."
+  },
+  "Заселение и выезд доступны только для специально подготовленных бесплатных тестовых броней. Реальные гости, документы и расчёты не подключены.": {
+    "en": "Check-in and check-out are available only for specially prepared free test bookings. Real guests, documents and settlements are not connected.",
+    "uz": "Joylashtirish va chiqish faqat maxsus tayyorlangan bepul sinov bronlari uchun mavjud. Haqiqiy mehmonlar, hujjatlar va hisob-kitoblar ulanmagan."
+  },
+  "Код принят. Пароль установлен. Теперь войдите в рабочую область.": {
+    "en": "Code accepted. Password set. You can now sign in to the workspace.",
+    "uz": "Kod qabul qilindi. Parol oʻrnatildi. Endi ish maydoniga kiring."
+  },
+  "Пароли не совпадают.": {
+    "en": "Passwords do not match.",
+    "uz": "Parollar mos emas."
+  },
+  "Пароль должен содержать 15–128 символов.": {
+    "en": "The password must contain 15–128 characters.",
+    "uz": "Parol 15–128 ta belgidan iborat boʻlishi kerak."
+  },
+  "Ссылка истекла, уже использована или письмо ещё не принято. Запросите новое приглашение у администратора.": {
+    "en": "The link has expired, was already used or the email has not yet been accepted. Ask the administrator for a new invitation.",
+    "uz": "Havola eskirgan, ishlatilgan yoki xat hali qabul qilinmagan. Administratordan yangi taklif soʻrang."
+  },
+  "Сервер не подтвердил операцию. Повторите позже.": {
+    "en": "The server did not confirm the operation. Try again later.",
+    "uz": "Server amalni tasdiqlamadi. Keyinroq qayta urinib koʻring."
+  },
+  "Не удалось подтвердить код.": {
+    "en": "Could not confirm the code.",
+    "uz": "Kodni tasdiqlab boʻlmadi."
+  },
+  "VIEWS · ПРИГЛАШЕНИЕ ИЗ ПИСЬМА": {
+    "en": "VIEWS · EMAIL INVITATION",
+    "uz": "VIEWS · EMAIL ORQALI TAKLIF"
+  },
+  "Принять приглашение": {
+    "en": "Accept invitation",
+    "uz": "Taklifni qabul qilish"
+  },
+  "Восстановить доступ": {
+    "en": "Recover access",
+    "uz": "Kirishni tiklash"
+  },
+  "Локальный проверочный стенд.": {
+    "en": "Local test environment.",
+    "uz": "Mahalliy sinov muhiti."
+  },
+  "Тестовое письмо не подтверждает владение настоящим email. Реальные письма и платежи отключены.": {
+    "en": "A test email does not verify ownership of a real email address. Real emails and payments are disabled.",
+    "uz": "Sinov xati haqiqiy email manzili egasini tasdiqlamaydi. Haqiqiy xatlar va toʻlovlar oʻchirilgan."
+  },
+  "Одноразовый код получен из ссылки и удалён из адресной строки. Само открытие страницы не активирует учётную запись.": {
+    "en": "The one-time code was read from the link and removed from the address bar. Opening this page alone does not activate the account.",
+    "uz": "Bir martalik kod havoladan olindi va manzil satridan olib tashlandi. Sahifani ochishning oʻzi hisobni faollashtirmaydi."
+  },
+  "Новый пароль": {
+    "en": "New password",
+    "uz": "Yangi parol"
+  },
+  "Повторите пароль": {
+    "en": "Repeat password",
+    "uz": "Parolni takrorlang"
+  },
+  "Подтверждение…": {
+    "en": "Confirming…",
+    "uz": "Tasdiqlanmoqda…"
+  },
+  "Установить пароль и подтвердить код": {
+    "en": "Set password and confirm code",
+    "uz": "Parolni oʻrnatish va kodni tasdiqlash"
+  },
+  "Вернуться ко входу": {
+    "en": "Back to sign-in",
+    "uz": "Kirishga qaytish"
+  },
+  "Не удалось подтвердить ключ. Повторите попытку; для нового ключа проверьте текущий пароль.": {
+    "en": "Could not confirm the passkey. Retry; for a new passkey, check your current password.",
+    "uz": "Kirish kalitini tasdiqlab boʻlmadi. Qayta urining; yangi kalit uchun joriy parolni tekshiring."
+  },
+  "Подтвердите действующим ключом и проверьте пароль. Если ответ потерян, запросите новый набор: предыдущие коды могли быть отменены.": {
+    "en": "Confirm with your current passkey and check the password. If the response was lost, request a new set: the previous codes may have been revoked.",
+    "uz": "Amaldagi kirish kaliti bilan tasdiqlang va parolni tekshiring. Javob yoʻqolgan boʻlsa, yangi toʻplam soʻrang: oldingi kodlar bekor qilingan boʻlishi mumkin."
+  },
+  "Не удалось подтвердить замену. Войдите заново и проверьте ключ; использованный резервный код повторно не подходит.": {
+    "en": "Could not confirm replacement. Sign in again and check the passkey; a used recovery code cannot be reused.",
+    "uz": "Almashtirishni tasdiqlab boʻlmadi. Qayta kiring va kalitni tekshiring; ishlatilgan zaxira kodini qayta qoʻllab boʻlmaydi."
+  },
+  "Подтверждение отменено. Можно повторить попытку.": {
+    "en": "Confirmation cancelled. You can try again.",
+    "uz": "Tasdiqlash bekor qilindi. Qayta urinishingiz mumkin."
+  },
+  "Ключ не подтверждён. Проверьте пароль, доступность ключа и повторите попытку.": {
+    "en": "Passkey not confirmed. Check your password and passkey availability, then retry.",
+    "uz": "Kirish kaliti tasdiqlanmadi. Parol va kalit mavjudligini tekshirib, qayta urining."
+  },
+  "Ключ доступа": {
+    "en": "Passkey",
+    "uz": "Kirish kaliti"
+  },
+  "Проверочный режим. Ключ подтверждает вашу личность в текущей сессии и не меняет права доступа.": {
+    "en": "Test mode. The passkey verifies your identity in this session and does not change access permissions.",
+    "uz": "Sinov rejimi. Kirish kaliti shu seansda shaxsingizni tasdiqlaydi va kirish huquqlarini oʻzgartirmaydi."
+  },
+  "Личность подтверждена на 5 минут.": {
+    "en": "Identity verified for 5 minutes.",
+    "uz": "Shaxs 5 daqiqaga tasdiqlandi."
+  },
+  "Ключ зарегистрирован. Подтвердите личность для текущей сессии.": {
+    "en": "Passkey registered. Verify your identity for this session.",
+    "uz": "Kirish kaliti roʻyxatga olindi. Shu seans uchun shaxsingizni tasdiqlang."
+  },
+  "Зарегистрируйте ключ с PIN-кодом или биометрией устройства.": {
+    "en": "Register a passkey using your device PIN or biometrics.",
+    "uz": "Qurilma PIN-kodi yoki biometrik maʼlumotlari yordamida kirish kalitini roʻyxatdan oʻtkazing."
+  },
+  "Текущий пароль для ключа": {
+    "en": "Current password for passkey",
+    "uz": "Kirish kaliti uchun joriy parol"
+  },
+  "Подтвердить ключом": {
+    "en": "Verify with passkey",
+    "uz": "Kirish kaliti bilan tasdiqlash"
+  },
+  "Зарегистрировать ключ": {
+    "en": "Register passkey",
+    "uz": "Kirish kalitini roʻyxatdan oʻtkazish"
+  },
+  "Резервные коды": {
+    "en": "Recovery codes",
+    "uz": "Zaxira kodlari"
+  },
+  "Доступно кодов: {count}. Новый набор отменяет предыдущий. Для выдачи сначала подтвердите личность действующим ключом.": {
+    "en": "Codes available: {count}. A new set revokes the previous one. Verify with your current passkey first.",
+    "uz": "Mavjud kodlar: {count}. Yangi toʻplam oldingisini bekor qiladi. Avval amaldagi kirish kaliti bilan shaxsingizni tasdiqlang."
+  },
+  "После регистрации ключа смена пароля требует свежего подтверждения ключом в этой сессии.": {
+    "en": "After registering a passkey, changing your password requires recent passkey verification in this session.",
+    "uz": "Kirish kaliti roʻyxatga olingach, parolni oʻzgartirish uchun shu seansda kalit bilan qayta tasdiqlash kerak."
+  },
+  "Пароль для резервных кодов": {
+    "en": "Password for recovery codes",
+    "uz": "Zaxira kodlari uchun parol"
+  },
+  "Выдать новые резервные коды": {
+    "en": "Issue new recovery codes",
+    "uz": "Yangi zaxira kodlarini olish"
+  },
+  "Новые резервные коды": {
+    "en": "New recovery codes",
+    "uz": "Yangi zaxira kodlari"
+  },
+  "Сохраните коды в безопасном месте. Каждый подходит один раз. После закрытия или перезагрузки их нельзя посмотреть снова; срок действия — 180 дней.": {
+    "en": "Store the codes safely. Each works once. After closing or reloading, they cannot be viewed again; they expire after 180 days.",
+    "uz": "Kodlarni xavfsiz joyda saqlang. Har biri bir marta ishlaydi. Yopish yoki qayta yuklashdan keyin ularni qayta koʻrib boʻlmaydi; amal qilish muddati — 180 kun."
+  },
+  "Я сохранил коды — скрыть": {
+    "en": "I saved the codes — hide",
+    "uz": "Kodlarni saqladim — yashirish"
+  },
+  "Замена или восстановление ключа": {
+    "en": "Replace or recover passkey",
+    "uz": "Kirish kalitini almashtirish yoki tiklash"
+  },
+  "Подтвердите действующим ключом или введите резервный код. После регистрации нового ключа старый ключ и все коды будут отменены, все сессии завершатся. Отмена регистрации сохраняет старый ключ, но уже принятый код остаётся использованным.": {
+    "en": "Verify with your current passkey or enter a recovery code. Registering a new passkey revokes the old passkey and all codes, and ends all sessions. Cancelling registration preserves the old passkey, but an accepted code remains used.",
+    "uz": "Amaldagi kalit bilan tasdiqlang yoki zaxira kodini kiriting. Yangi kalit roʻyxatga olingach, eski kalit va barcha kodlar bekor qilinadi, barcha seanslar tugaydi. Roʻyxatdan oʻtkazish bekor qilinsa, eski kalit saqlanadi, lekin qabul qilingan kod ishlatilgan hisoblanadi."
+  },
+  "Пароль для замены ключа": {
+    "en": "Password for passkey replacement",
+    "uz": "Kalitni almashtirish uchun parol"
+  },
+  "Резервный код, если ключ недоступен": {
+    "en": "Recovery code if passkey is unavailable",
+    "uz": "Kalit mavjud boʻlmasa, zaxira kodi"
+  },
+  "Резервный код": {
+    "en": "Recovery code",
+    "uz": "Zaxira kodi"
+  },
+  "Заменить ключ и завершить все сессии": {
+    "en": "Replace passkey and end all sessions",
+    "uz": "Kalitni almashtirish va barcha seanslarni tugatish"
+  },
+  "Если нет ни ключа, ни кода, восстановление пока недоступно. Вход по паролю сам по себе не заменяет ключ.": {
+    "en": "Without a passkey or recovery code, recovery is not yet available. Password sign-in alone does not replace the passkey.",
+    "uz": "Kalit ham, zaxira kodi ham boʻlmasa, tiklash hozircha mavjud emas. Faqat parol bilan kirish kalitni almashtirmaydi."
+  },
+  "Неверные данные входа или доступ сотрудника отключён.": {
+    "en": "Invalid sign-in details or staff access is disabled.",
+    "uz": "Kirish maʼlumotlari notoʻgʻri yoki xodimning kirishi oʻchirilgan."
+  },
+  "Сессия завершена. Войдите снова.": {
+    "en": "Session ended. Sign in again.",
+    "uz": "Seans tugadi. Qayta kiring."
+  },
+  "Пароль: от 15 до 128 символов. Используйте уникальную длинную фразу.": {
+    "en": "Password: 15 to 128 characters. Use a unique long phrase.",
+    "uz": "Parol: 15 dan 128 ta belgigacha. Noyob uzun iboradan foydalaning."
+  },
+  "Код недействителен, уже использован или истёк. Нужен новый код от администратора.": {
+    "en": "The code is invalid, used or expired. Ask the administrator for a new code.",
+    "uz": "Kod notoʻgʻri, ishlatilgan yoki muddati tugagan. Administratordan yangi kod soʻrang."
+  },
+  "Слишком много попыток. Подождите пять минут.": {
+    "en": "Too many attempts. Wait five minutes.",
+    "uz": "Urinishlar juda koʻp. Besh daqiqa kuting."
+  },
+  "Сервис входа занят. Повторите позже.": {
+    "en": "The sign-in service is busy. Try again later.",
+    "uz": "Kirish xizmati band. Keyinroq qayta urinib koʻring."
+  },
+  "Core недоступен. Проверьте локальный сервер.": {
+    "en": "Core is unavailable. Check the local server.",
+    "uz": "Core mavjud emas. Mahalliy serverni tekshiring."
+  },
+  "Сервис входа ещё не активирован на этом стенде.": {
+    "en": "Sign-in has not been activated in this environment yet.",
+    "uz": "Bu muhitda kirish xizmati hali faollashtirilmagan."
+  },
+  "Запрос не выполнен. Проверьте сервер и повторите вход.": {
+    "en": "The request failed. Check the server and sign in again.",
+    "uz": "Soʻrov bajarilmadi. Serverni tekshiring va qayta kiring."
+  },
+  "Сессия завершена или доступ отозван. Войдите снова.": {
+    "en": "Session ended or access revoked. Sign in again.",
+    "uz": "Seans tugadi yoki kirish bekor qilindi. Qayta kiring."
+  },
+  "Ключ заменён. Все сессии завершены. Войдите заново.": {
+    "en": "Passkey replaced. All sessions ended. Sign in again.",
+    "uz": "Kirish kaliti almashtirildi. Barcha seanslar tugadi. Qayta kiring."
+  },
+  "Пароль установлен. Войдите с адресом из приглашения.": {
+    "en": "Password set. Sign in with the email from your invitation.",
+    "uz": "Parol oʻrnatildi. Taklifdagi email manzili bilan kiring."
+  },
+  "Ошибка входа.": {
+    "en": "Sign-in error.",
+    "uz": "Kirish xatosi."
+  },
+  "Все ваши сессии завершены.": {
+    "en": "All your sessions have ended.",
+    "uz": "Barcha seanslaringiz tugatildi."
+  },
+  "Вы вышли из системы.": {
+    "en": "You have signed out.",
+    "uz": "Siz tizimdan chiqdingiz."
+  },
+  "Не удалось завершить сессию.": {
+    "en": "Could not end the session.",
+    "uz": "Seansni tugatib boʻlmadi."
+  },
+  "Пароль изменён. Все сессии отозваны. Войдите заново.": {
+    "en": "Password changed. All sessions revoked. Sign in again.",
+    "uz": "Parol oʻzgartirildi. Barcha seanslar bekor qilindi. Qayta kiring."
+  },
+  "Для смены пароля подтвердите личность ключом в этой сессии.": {
+    "en": "To change your password, verify with a passkey in this session.",
+    "uz": "Parolni oʻzgartirish uchun shu seansda kirish kaliti bilan tasdiqlang."
+  },
+  "Не удалось получить подтверждение смены пароля. Он мог измениться. Попробуйте войти с новым паролем; если он не подходит — с прежним.": {
+    "en": "Password change confirmation was not received. It may have changed. Try the new password; if it fails, try the previous one.",
+    "uz": "Parol oʻzgarishi tasdigʻi olinmadi. Parol oʻzgargan boʻlishi mumkin. Yangi parol bilan kiring; mos kelmasa, oldingisini sinab koʻring."
+  },
+  "Ключ подтверждён. Введите текущий и новый пароли ещё раз и сохраните изменение.": {
+    "en": "Passkey verified. Enter your current and new passwords again and save the change.",
+    "uz": "Kirish kaliti tasdiqlandi. Joriy va yangi parollarni qayta kiriting va oʻzgarishni saqlang."
+  },
+  "Подтверждение ключом не завершено. Пароль этой попыткой не менялся. Повторите подтверждение или отмените смену пароля.": {
+    "en": "Passkey verification did not complete. This attempt did not change your password. Retry verification or cancel the password change.",
+    "uz": "Kalit bilan tasdiqlash tugallanmadi. Bu urinish parolni oʻzgartirmadi. Tasdiqlashni takrorlang yoki parolni oʻzgartirishni bekor qiling."
+  },
+  "Проверка сессии сотрудника…": {
+    "en": "Checking staff session…",
+    "uz": "Xodim seansi tekshirilmoqda…"
+  },
+  "Разделы рабочей области": {
+    "en": "Workspace sections",
+    "uz": "Ish maydoni boʻlimlari"
+  },
+  "Ресепшен и уборка": {
+    "en": "Reception and cleaning",
+    "uz": "Qabulxona va tozalash"
+  },
+  "Очередь уборки": {
+    "en": "Cleaning queue",
+    "uz": "Tozalash navbati"
+  },
+  "Бронирование": {
+    "en": "Booking",
+    "uz": "Bronlash"
+  },
+  "Ключи доступа": {
+    "en": "Passkeys",
+    "uz": "Kirish kalitlari"
+  },
+  "Учётная запись": {
+    "en": "Account",
+    "uz": "Hisob"
+  },
+  "Учётная запись сотрудника": {
+    "en": "Staff account",
+    "uz": "Xodim hisobi"
+  },
+  "Сессия PostgreSQL ·": {
+    "en": "PostgreSQL session ·",
+    "uz": "PostgreSQL seansi ·"
+  },
+  "Email подтверждён": {
+    "en": "Email verified",
+    "uz": "Email tasdiqlangan"
+  },
+  "Локальная проверка приглашения, не подтверждение email": {
+    "en": "Local invitation check, not email verification",
+    "uz": "Mahalliy taklif tekshiruvi, email tasdigʻi emas"
+  },
+  "Изменить пароль": {
+    "en": "Change password",
+    "uz": "Parolni oʻzgartirish"
+  },
+  "Завершить все сессии": {
+    "en": "End all sessions",
+    "uz": "Barcha seanslarni tugatish"
+  },
+  "Выйти": {
+    "en": "Sign out",
+    "uz": "Chiqish"
+  },
+  "Подтвердить ключом для смены пароля": {
+    "en": "Verify with passkey to change password",
+    "uz": "Parolni oʻzgartirish uchun kalit bilan tasdiqlash"
+  },
+  "Текущий пароль": {
+    "en": "Current password",
+    "uz": "Joriy parol"
+  },
+  "Сохранить новый пароль": {
+    "en": "Save new password",
+    "uz": "Yangi parolni saqlash"
+  },
+  "VIEWS · ВХОД СОТРУДНИКА": {
+    "en": "VIEWS · STAFF SIGN-IN",
+    "uz": "VIEWS · XODIMLAR UCHUN KIRISH"
+  },
+  "Вход в рабочую область": {
+    "en": "Sign in to workspace",
+    "uz": "Ish maydoniga kirish"
+  },
+  "Активировать приглашение": {
+    "en": "Activate invitation",
+    "uz": "Taklifni faollashtirish"
+  },
+  "Локальный стенд с тестовым фондом.": {
+    "en": "Local environment with test inventory.",
+    "uz": "Sinov xonalari mavjud mahalliy muhit."
+  },
+  "Автоматического входа больше нет. Учётная запись, пароль, сессия и права проверяются Core. Реальные платежи отключены.": {
+    "en": "There is no automatic sign-in. Core checks the account, password, session and permissions. Real payments are disabled.",
+    "uz": "Avtomatik kirish yoʻq. Hisob, parol, seans va huquqlarni Core tekshiradi. Haqiqiy toʻlovlar oʻchirilgan."
+  },
+  "Доступ только по приглашению. Самостоятельная регистрация и выбор роли запрещены.": {
+    "en": "Invitation-only access. Self-registration and role selection are not allowed.",
+    "uz": "Faqat taklif orqali kirish mumkin. Mustaqil roʻyxatdan oʻtish va rol tanlashga ruxsat yoʻq."
+  },
+  "Введите одноразовый код, выданный администратором. На этом стенде приглашения выдаются локально — письма не отправляются.": {
+    "en": "Enter the one-time code issued by the administrator. Invitations in this environment are issued locally; no emails are sent.",
+    "uz": "Administrator bergan bir martalik kodni kiriting. Bu muhitda takliflar mahalliy beriladi — xatlar yuborilmaydi."
+  },
+  "Email сотрудника": {
+    "en": "Staff email",
+    "uz": "Xodim emaili"
+  },
+  "Код приглашения или восстановления": {
+    "en": "Invitation or recovery code",
+    "uz": "Taklif yoki tiklash kodi"
+  },
+  "Пароль": {
+    "en": "Password",
+    "uz": "Parol"
+  },
+  "Проверка…": {
+    "en": "Checking…",
+    "uz": "Tekshirilmoqda…"
+  },
+  "Войти": {
+    "en": "Sign in",
+    "uz": "Kirish"
+  },
+  "Активировать доступ": {
+    "en": "Activate access",
+    "uz": "Kirishni faollashtirish"
+  },
+  "Установить новый пароль": {
+    "en": "Set new password",
+    "uz": "Yangi parol oʻrnatish"
+  },
+  "У меня есть приглашение": {
+    "en": "I have an invitation",
+    "uz": "Menda taklif bor"
+  },
+  "Есть код восстановления": {
+    "en": "I have a recovery code",
+    "uz": "Menda tiklash kodi bor"
+  },
+  "Приложение не сохраняет пароль в браузерное хранилище; в БД хранится только защищённый хеш. Вход руководителя и администратора с расширенными правами пока закрыт до подключения MFA и подтверждения email.": {
+    "en": "The app does not store passwords in browser storage; only a protected hash is stored in the database. Privileged manager and administrator sign-in remains closed until MFA and email verification are connected.",
+    "uz": "Ilova parolni brauzer xotirasida saqlamaydi; bazada faqat himoyalangan xesh saqlanadi. Kengaytirilgan huquqli rahbar va administrator kirishi MFA va email tasdigʻi ulanmaguncha yopiq."
+  },
+  "Открыть отдельный демо-интерфейс": {
+    "en": "Open separate demo interface",
+    "uz": "Alohida demo interfeysni ochish"
+  },
+  "Подтвердить готовность номера": {
+    "en": "Confirm room readiness",
+    "uz": "Xona tayyorligini tasdiqlash"
+  },
+  "Оформить тестовое заселение": {
+    "en": "Record test check-in",
+    "uz": "Sinov joylashtirishini rasmiylashtirish"
+  },
+  "Оформить тестовый выезд": {
+    "en": "Record test check-out",
+    "uz": "Sinov chiqishini rasmiylashtirish"
+  },
+  "Номер {unit}": {
+    "en": "Room {unit}",
+    "uz": "{unit}-xona"
+  },
+  "· бронь": {
+    "en": "· booking",
+    "uz": "· bron"
+  },
+  " После подтверждения номер станет доступен для следующего тестового заселения.": {
+    "en": " After confirmation, the room will be available for the next test check-in.",
+    "uz": " Tasdiqlangach, xona keyingi sinov joylashtirishi uchun mavjud boʻladi."
+  },
+  " Реальная оплата и государственная регистрация гостя не выполняются.": {
+    "en": " No real payment or government guest registration is performed.",
+    "uz": " Haqiqiy toʻlov yoki mehmonni davlat roʻyxatidan oʻtkazish bajarilmaydi."
+  },
+  "Подтвердить действие": {
+    "en": "Confirm action",
+    "uz": "Amalni tasdiqlash"
+  },
+  "Отмена": {
+    "en": "Cancel",
+    "uz": "Bekor qilish"
+  },
+  "Ожидаем подтверждение сервера…": {
+    "en": "Waiting for server confirmation…",
+    "uz": "Server tasdigʻi kutilmoqda…"
+  },
+  "Просмотр недоступен. Проверьте сессию и доступ к брони.": {
+    "en": "Preview is unavailable. Check your session and booking access.",
+    "uz": "Koʻrish mavjud emas. Seans va bronga kirishni tekshiring."
+  },
+  "Результат не подтверждён. Повторите то же решение или закройте просмотр и обновите статус. Просроченный просмотр нужно открыть заново.": {
+    "en": "The result is unconfirmed. Retry the same decision or close the preview and refresh the status. An expired preview must be reopened.",
+    "uz": "Natija tasdiqlanmadi. Xuddi shu qarorni takrorlang yoki koʻrishni yopib, holatni yangilang. Muddati tugagan koʻrishni qayta ochish kerak."
+  },
+  "Просмотр тестового файла": {
+    "en": "Test file preview",
+    "uz": "Sinov faylini koʻrish"
+  },
+  "Искусственный тестовый файл": {
+    "en": "Synthetic test file",
+    "uz": "Sunʼiy sinov fayli"
+  },
+  "Не удостоверяет личность. Просмотр закроется через минуту или при скрытии вкладки.": {
+    "en": "This does not verify identity. The preview closes after one minute or when the tab is hidden.",
+    "uz": "Bu shaxsni tasdiqlamaydi. Koʻrish bir daqiqadan keyin yoki varaq yashirilganda yopiladi."
+  },
+  "Загрузка файла…": {
+    "en": "Loading file…",
+    "uz": "Fayl yuklanmoqda…"
+  },
+  "Я просмотрел искусственный тестовый файл": {
+    "en": "I have viewed the synthetic test file",
+    "uz": "Sunʼiy sinov faylini koʻrdim"
+  },
+  "Принять тестовый документ": {
+    "en": "Accept test document",
+    "uz": "Sinov hujjatini qabul qilish"
+  },
+  "Отклонить тестовый документ": {
+    "en": "Reject test document",
+    "uz": "Sinov hujjatini rad etish"
+  },
+  "Закрыть просмотр": {
+    "en": "Close preview",
+    "uz": "Koʻrishni yopish"
+  },
+  "Ожидают уборки (тест)": {
+    "en": "Awaiting cleaning (test)",
+    "uz": "Tozalash kutilmoqda (sinov)"
+  },
+  "Готовность номеров после уборки": {
+    "en": "Room readiness after cleaning",
+    "uz": "Tozalashdan keyingi xona tayyorligi"
+  },
+  "Ожидают подтверждения:": {
+    "en": "Awaiting confirmation:",
+    "uz": "Tasdiqlash kutilmoqda:"
+  },
+  "Текущая очередь после тестовых выездов, независимо от даты ресепшена. Подтверждайте готовность только после проверки номера. Назначение исполнителей и отдельный вход уборщика пока не подключены.": {
+    "en": "Current queue after test check-outs, regardless of reception date. Confirm readiness only after checking the room. Staff assignment and separate cleaner sign-in are not connected yet.",
+    "uz": "Qabulxona sanasidan qatʼi nazar, sinov chiqishlaridan keyingi joriy navbat. Tayyorlikni faqat xonani tekshirgach tasdiqlang. Xodim biriktirish va tozalovchining alohida kirishi hali ulanmagan."
+  },
+  "Поиск уборки по номеру или брони": {
+    "en": "Search cleaning by room or booking",
+    "uz": "Tozalashni xona yoki bron boʻyicha qidirish"
+  },
+  "Порядок очереди уборки": {
+    "en": "Cleaning queue order",
+    "uz": "Tozalash navbati tartibi"
+  },
+  "По плановой дате выезда": {
+    "en": "By planned check-out",
+    "uz": "Rejalashtirilgan ketish boʻyicha"
+  },
+  "По номеру": {
+    "en": "By room number",
+    "uz": "Xona raqami boʻyicha"
+  },
+  "Сбросить поиск уборки": {
+    "en": "Clear cleaning search",
+    "uz": "Tozalash qidiruvini tozalash"
+  },
+  "Загружены первые {shown} из {total} записей. Поиск и сортировка действуют только на загруженную часть очереди.": {
+    "en": "Loaded the first {shown} of {total} records. Search and sorting apply only to the loaded part of the queue.",
+    "uz": "{total} ta yozuvdan dastlabki {shown} tasi yuklangan. Qidiruv va saralash faqat navbatning yuklangan qismiga qoʻllanadi."
+  },
+  "Показано: {shown} из {total} загруженных записей.": {
+    "en": "Showing {shown} of {total} loaded records.",
+    "uz": "Yuklangan {total} ta yozuvdan {shown} tasi koʻrsatilgan."
+  },
+  "Нет номеров, ожидающих подтверждения уборки.": {
+    "en": "No rooms are awaiting cleaning confirmation.",
+    "uz": "Tozalash tasdigʻini kutayotgan xonalar yoʻq."
+  },
+  "Совпадений в загруженной очереди нет. Измените или сбросьте поиск.": {
+    "en": "No matches in the loaded queue. Change or clear the search.",
+    "uz": "Yuklangan navbatda mos yozuv yoʻq. Qidiruvni oʻzgartiring yoki tozalang."
+  },
+  "Бронь:": {
+    "en": "Booking:",
+    "uz": "Bron:"
+  },
+  "Плановый выезд:": {
+    "en": "Planned check-out:",
+    "uz": "Rejalashtirilgan ketish:"
+  },
+  "Выезд оформлен · готовность не подтверждена": {
+    "en": "Checked out · readiness unconfirmed",
+    "uz": "Ketishi rasmiylashtirilgan · tayyorlik tasdiqlanmagan"
+  },
+  "Подтвердить уборку (тест)": {
+    "en": "Confirm cleaning (test)",
+    "uz": "Tozalashni tasdiqlash (sinov)"
+  },
+  "Язык интерфейса": {
+    "en": "Interface language",
+    "uz": "Interfeys tili"
+  },
+  "Светлая тема": {
+    "en": "Light theme",
+    "uz": "Yorugʻ mavzu"
+  },
+  "Тёмная тема": {
+    "en": "Dark theme",
+    "uz": "Tungi mavzu"
+  },
+  "Локальный Core · тест": {
+    "en": "Local Core · test",
+    "uz": "Mahalliy Core · sinov"
+  }
+}

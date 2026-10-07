@@ -1,7 +1,9 @@
+import {useStaffLocale} from './StaffLocale';
 import {useEffect,useState} from 'react';
 import {startAuthentication,startRegistration,type PublicKeyCredentialCreationOptionsJSON,type PublicKeyCredentialRequestOptionsJSON} from '@simplewebauthn/browser';
 type Status={enabled:boolean;registered:boolean;verifiedUntil:string|null;recoveryCodesRemaining:number};
 export function StaffPasskeyPanel({csrf}:{csrf:string}){
+ const {t}=useStaffLocale();
  const [codes,setCodes]=useState<string[]>([]),[recoveryPassword,setRecoveryPassword]=useState(''),[recoveryCode,setRecoveryCode]=useState('');
  const [status,setStatus]=useState<Status|null>(null),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
  async function call<T>(route:string,body:unknown):Promise<T>{
@@ -50,29 +52,29 @@ export function StaffPasskeyPanel({csrf}:{csrf:string}){
   }catch(e){setError(e instanceof DOMException&&e.name==='NotAllowedError'?'Подтверждение отменено. Можно повторить попытку.':'Ключ не подтверждён. Проверьте пароль, доступность ключа и повторите попытку.');}
   finally{setPassword('');setBusy(false);}
  }
- return <section className="localWorkspace localPanel" aria-label="Ключ доступа">
-  <h2>Ключ доступа</h2><p>Проверочный режим. Ключ подтверждает вашу личность в текущей сессии и не меняет права доступа.</p>
-  <p role="status">{status.verifiedUntil?'Личность подтверждена на 5 минут.':status.registered?'Ключ зарегистрирован. Подтвердите личность для текущей сессии.':'Зарегистрируйте ключ с PIN-кодом или биометрией устройства.'}</p>
+ return <section className="localWorkspace localPanel" aria-label={t("Ключ доступа")}>
+  <h2>{t("Ключ доступа")}</h2><p>{t("Проверочный режим. Ключ подтверждает вашу личность в текущей сессии и не меняет права доступа.")}</p>
+  <p role="status">{status.verifiedUntil?t("Личность подтверждена на 5 минут."):status.registered?t("Ключ зарегистрирован. Подтвердите личность для текущей сессии."):t("Зарегистрируйте ключ с PIN-кодом или биометрией устройства.")}</p>
   <form onSubmit={verify}><fieldset disabled={busy}>
-   {!status.registered&&<label>Текущий пароль для ключа<input aria-label="Текущий пароль для ключа" type="password" autoComplete="current-password" required maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/></label>}
-   <button disabled={busy} className="primary">{busy?'Подтверждение…':status.registered?'Подтвердить ключом':'Зарегистрировать ключ'}</button>
-  </fieldset></form>{error&&<p role="alert" className="localError">{error}</p>}
+   {!status.registered&&<label>{t("Текущий пароль для ключа")}<input aria-label={t("Текущий пароль для ключа")} type="password" autoComplete="current-password" required maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/></label>}
+   <button disabled={busy} className="primary">{busy?t("Подтверждение…"):status.registered?t("Подтвердить ключом"):t("Зарегистрировать ключ")}</button>
+  </fieldset></form>{error&&<p role="alert" className="localError">{t(error)}</p>}
   {status.registered&&<>
-   <h3>Резервные коды</h3><p>Доступно кодов: {status.recoveryCodesRemaining}. Новый набор отменяет предыдущий. Для выдачи сначала подтвердите личность действующим ключом.</p>
+   <h3>{t("Резервные коды")}</h3><p>{t('Доступно кодов: {count}. Новый набор отменяет предыдущий. Для выдачи сначала подтвердите личность действующим ключом.',{count:status.recoveryCodesRemaining})}</p>
    <form onSubmit={e=>void manage(e,'codes')}><fieldset disabled={busy}>
-    <p>После регистрации ключа смена пароля требует свежего подтверждения ключом в этой сессии.</p>
-    <label>Пароль для резервных кодов<input aria-label="Пароль для резервных кодов" type="password" autoComplete="current-password" required maxLength={128} value={recoveryPassword} onChange={e=>setRecoveryPassword(e.target.value)}/></label>
-    <button disabled={busy}>Выдать новые резервные коды</button>
+    <p>{t("После регистрации ключа смена пароля требует свежего подтверждения ключом в этой сессии.")}</p>
+    <label>{t("Пароль для резервных кодов")}<input aria-label={t("Пароль для резервных кодов")} type="password" autoComplete="current-password" required maxLength={128} value={recoveryPassword} onChange={e=>setRecoveryPassword(e.target.value)}/></label>
+    <button disabled={busy}>{t("Выдать новые резервные коды")}</button>
    </fieldset></form>
-   {codes.length>0&&<div aria-label="Новые резервные коды"><p>Сохраните коды в безопасном месте. Каждый подходит один раз. После закрытия или перезагрузки их нельзя посмотреть снова; срок действия — 180 дней.</p>
-    <ul>{codes.map(code=><li key={code}><code>{code}</code></li>)}</ul><button onClick={()=>setCodes([])}>Я сохранил коды — скрыть</button></div>}
-   <h3>Замена или восстановление ключа</h3>
-   <p>Подтвердите действующим ключом или введите резервный код. После регистрации нового ключа старый ключ и все коды будут отменены, все сессии завершатся. Отмена регистрации сохраняет старый ключ, но уже принятый код остаётся использованным.</p>
+   {codes.length>0&&<div aria-label={t("Новые резервные коды")}><p>{t("Сохраните коды в безопасном месте. Каждый подходит один раз. После закрытия или перезагрузки их нельзя посмотреть снова; срок действия — 180 дней.")}</p>
+    <ul>{codes.map(code=><li key={code}><code>{code}</code></li>)}</ul><button onClick={()=>setCodes([])}>{t("Я сохранил коды — скрыть")}</button></div>}
+   <h3>{t("Замена или восстановление ключа")}</h3>
+   <p>{t("Подтвердите действующим ключом или введите резервный код. После регистрации нового ключа старый ключ и все коды будут отменены, все сессии завершатся. Отмена регистрации сохраняет старый ключ, но уже принятый код остаётся использованным.")}</p>
    <form onSubmit={e=>void manage(e,'replace')}><fieldset disabled={busy}>
-    <label>Пароль для замены ключа<input aria-label="Пароль для замены ключа" type="password" autoComplete="current-password" required maxLength={128} value={recoveryPassword} onChange={e=>setRecoveryPassword(e.target.value)}/></label>
-    <label>Резервный код, если ключ недоступен<input aria-label="Резервный код" type="password" autoComplete="off" maxLength={64} value={recoveryCode} onChange={e=>setRecoveryCode(e.target.value)}/></label>
-    <button disabled={busy}>Заменить ключ и завершить все сессии</button>
-   </fieldset></form><p className="localHint">Если нет ни ключа, ни кода, восстановление пока недоступно. Вход по паролю сам по себе не заменяет ключ.</p>
+    <label>{t("Пароль для замены ключа")}<input aria-label={t("Пароль для замены ключа")} type="password" autoComplete="current-password" required maxLength={128} value={recoveryPassword} onChange={e=>setRecoveryPassword(e.target.value)}/></label>
+    <label>{t("Резервный код, если ключ недоступен")}<input aria-label={t("Резервный код")} type="password" autoComplete="off" maxLength={64} value={recoveryCode} onChange={e=>setRecoveryCode(e.target.value)}/></label>
+    <button disabled={busy}>{t("Заменить ключ и завершить все сессии")}</button>
+   </fieldset></form><p className="localHint">{t("Если нет ни ключа, ни кода, восстановление пока недоступно. Вход по паролю сам по себе не заменяет ключ.")}</p>
   </>}
  </section>;
 }

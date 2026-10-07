@@ -1,6 +1,8 @@
+import {useStaffLocale} from './StaffLocale';
 import {useEffect,useState,useRef} from 'react';
 import {request} from './LocalCoreWorkspace';
 export function SyntheticDocumentPreview({reservationId,documentId,csrf,onClose}:{reservationId:string;documentId:string;csrf:string;onClose:()=>void}){
+ const {t}=useStaffLocale();
  const [receipt,setReceipt]=useState<string|null>(null),[confirmed,setConfirmed]=useState(false),[saving,setSaving]=useState(false);
  const keys=useRef(new Map<string,string>());
  const [text,setText]=useState(''),[error,setError]=useState('');
@@ -22,14 +24,14 @@ export function SyntheticDocumentPreview({reservationId,documentId,csrf,onClose}
   catch{setError('Результат не подтверждён. Повторите то же решение или закройте просмотр и обновите статус. Просроченный просмотр нужно открыть заново.');}
   finally{setSaving(false);}
  }
- return <section aria-label="Просмотр тестового файла" className="localPanel">
-  <h3>Искусственный тестовый файл</h3>
-  <p>Не удостоверяет личность. Просмотр закроется через минуту или при скрытии вкладки.</p>
-  {error?<p role="alert">{error}</p>:text?<pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{text}</pre>:<p role="status">Загрузка файла…</p>}
-  {text&&receipt&&<div><label><input type="checkbox" checked={confirmed} disabled={saving} onChange={e=>setConfirmed(e.target.checked)}/>Я просмотрел искусственный тестовый файл</label>
-   <button type="button" disabled={!confirmed||saving} onClick={()=>void decide('verified')}>Принять тестовый документ</button>
-   <button type="button" disabled={!confirmed||saving} onClick={()=>void decide('rejected')}>Отклонить тестовый документ</button>
+ return <section aria-label={t("Просмотр тестового файла")} className="localPanel">
+  <h3>{t("Искусственный тестовый файл")}</h3>
+  <p>{t("Не удостоверяет личность. Просмотр закроется через минуту или при скрытии вкладки.")}</p>
+  {error?<p role="alert">{t(error)}</p>:text?<pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{text}</pre>:<p role="status">{t("Загрузка файла…")}</p>}
+  {text&&receipt&&<div><label><input type="checkbox" checked={confirmed} disabled={saving} onChange={e=>setConfirmed(e.target.checked)}/>{t("Я просмотрел искусственный тестовый файл")}</label>
+   <button type="button" disabled={!confirmed||saving} onClick={()=>void decide('verified')}>{t("Принять тестовый документ")}</button>
+   <button type="button" disabled={!confirmed||saving} onClick={()=>void decide('rejected')}>{t("Отклонить тестовый документ")}</button>
   </div>}
-  <button type="button" onClick={onClose}>Закрыть просмотр</button>
+  <button type="button" onClick={onClose}>{t("Закрыть просмотр")}</button>
  </section>;
 }

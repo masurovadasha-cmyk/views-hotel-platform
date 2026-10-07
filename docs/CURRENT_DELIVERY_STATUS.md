@@ -16,7 +16,7 @@ acceptance. Source repository and branch remain unchanged; main is not merged.
 | Government registration | Existing contracts/policy/test provider | Approved real registration adapter/account and current operational/legal rules |
 | Recovery | Disposable mail/auth restore; full local snapshot restored and table digests matched, encrypted files decrypted with separate key | Production recovery, KMS recovery and restored deployment credentials/runbook exercise |
 | Tenant/owner onboarding | Existing model/RLS and property scoping | Verified real inventory/owner data and end-to-end onboarding UI against Core |
-| RU/UZ/EN, accessibility | RU local staff journey, four tested widths, timezone handling | Complete three-language catalog, full keyboard/screen-reader and product-wide accessibility acceptance |
+| RU/UZ/EN, accessibility | Connected local staff screens in RU/UZ/EN (264 messages), persisted language, localized dates/money, three languages at four widths | Guest/demo and future owner/cleaner localization, native-speaker review, full screen-reader/product accessibility acceptance |
 | Android | Recovered shared-web WebView wrapper; native unsigned build and asset/manifest checks pass; four bundled demo photos render without network | Android 10/15 install attempted; WebView syntax fixed and crash recovery added, native UI acceptance remains blocked in software emulation. Existing-key signing helper passes 10 disposable checks; permanent key, update, physical-device and connected HTTPS proof remain |
 | Deployment/CI | Git branch push and local builds/tests | Public GitHub checks read at 6ce5fcc: verify and both mail jobs succeeded; Workers Builds failed. Cloudflare build log access and successful deployment remain unverified |
 | Production release | No activation performed | Explicit owner approval plus preceding operational/provider/legal/device acceptance |
@@ -38,8 +38,9 @@ identity certification, and a turnover confirmation is not proof of physical wor
 2. Paid-stay activation needs provider-approved sandbox onboarding and acceptance;
    no test payment is to be relabeled as a real settlement.
 3. Real owner/inventory onboarding requires owner-provided verified business data.
-4. Localization and the real housekeeping/owner interfaces remain software work;
-   they are not marked complete or mislabeled as external-credential blockers.
+4. Guest/demo localization and the real housekeeping/owner interfaces remain
+   software work. Connected local staff localization is implemented; whole-product
+   localization and native-speaker acceptance are not claimed.
 5. Android wrapper/build and existing-key signing tooling are present. The owner
    confirmed no permanent signing key, host or domain yet (7 October 2026). Real
    device/update acceptance and secure key configuration remain required.
@@ -51,6 +52,7 @@ where applicable and request only missing provider-specific requirements after
 checking them. Available Git transport authentication is already sufficient for
 this branch; no replacement GitHub token is requested.
 
-See STAGE7_TURNOVER_WORKSPACE.md for the latest front-desk increment and checks.
+See STAGE7_STAFF_LOCALIZATION.md for the latest increment and checks.
+STAGE7_TURNOVER_WORKSPACE.md records the front-desk turnover queue.
 STAGE7_ANDROID_SIGNING_AND_DELIVERY.md records signing configuration and native
 emulator failure boundaries.

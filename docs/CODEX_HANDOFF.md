@@ -452,3 +452,25 @@ focus-restoration failures were fixed before passing. Final clean-source private
 reports retain exact SHA/dirty fields. See STAGE7_TURNOVER_WORKSPACE.md.
 Owner/cleaner workflows and complete localization remain unfinished software;
 hosting, permanent Android signing and real provider activation remain gated.
+
+## 28. Connected staff workspace in three languages
+
+Stage 7.45 adds 264 RU-source messages with EN/UZ translations, language selection
+and safe preference storage. All current local staff screens are covered, including
+security warnings/recovery, guest/document controls, reception, booking and turnover.
+Dates retain operational timezone; money retains bigint precision. Language changes
+preserve forms, previews and operation keys without new network requests.
+
+Dirty continuation of 44782b5f74944f4cfc6fadc6c9f1a58d7db608c0: web/Core builds
+and typechecks, root 228/37, staff-auth 20/3, network gate 119, mail policy 15,
+HTTP 13 groups/32 calls, locale browser eight groups, Russian stay 16 groups and
+booking/restart/four widths passed. Disposable mail/passkey 47 groups/60 calls,
+17 loopback SMTP captures passed; persistent runtime restarted without new
+migrations. Android frontend/asset-origin regression passed; no new native proof.
+
+Prepare a fresh cloud:test:auth identity before the third browser suite: auth uses
+six of the eight permitted login attempts. cloud:verify now refreshes the fixture
+before locale proof. Browser login errors report HTTP status without credentials.
+Final clean-source locale/booking reports record their own SHA/dirty state.
+See STAGE7_STAFF_LOCALIZATION.md for evidence and limits. Guest/demo localization,
+owner/cleaner software, native-speaker review and external release gates remain.
