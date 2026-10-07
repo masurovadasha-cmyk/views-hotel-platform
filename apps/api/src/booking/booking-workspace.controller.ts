@@ -1,3 +1,4 @@
+import {stayPilotEnabled} from './booking-stay.service';
 import {BadRequestException,Controller,ForbiddenException,Get,Headers,Query,UnauthorizedException} from "@nestjs/common";
 import type {IncomingHttpHeaders} from "node:http";
 import {randomUUID} from "node:crypto";
@@ -33,7 +34,8 @@ export class BookingWorkspaceController{
           SELECT CASE WHEN $3='today' THEN (clock_timestamp() AT TIME ZONE $4)::date ELSE $3::date END AS day
         ), grouped AS (
           SELECT bucket,r.id AS "reservationId",r.confirmation_code AS "confirmationCode",u.code AS "unitCode",r.status,
-            r.check_in_at AS "checkInAt",r.check_out_at AS "checkOutAt"
+            r.check_in_at AS "checkInAt",r.check_out_at AS "checkOutAt",
+            ($5::boolean AND r.quote_snapshot->>'localStayPilot'='true' AND r.total_minor=0) AS "stayPilot"
           FROM reservations r LEFT JOIN units u ON u.id=r.unit_id CROSS JOIN selected
           CROSS JOIN LATERAL unnest(ARRAY[
             CASE WHEN r.status='confirmed' AND (r.check_in_at AT TIME ZONE $4)::date=selected.day THEN 'arrivals' END,
@@ -48,7 +50,7 @@ export class BookingWorkspaceController{
             SELECT bucket,jsonb_build_object('total',count(*),'truncated',count(*)>100,
               'items',jsonb_agg(to_jsonb(ranked)-'bucket'-'n' ORDER BY n) FILTER(WHERE n<=100)) value
             FROM ranked GROUP BY bucket
-          ) summaries`,[actor.organizationId,propertyId,day,property.timezone])).rows[0];
+          ) summaries`,[actor.organizationId,propertyId,day,property.timezone,stayPilotEnabled(actor.organizationId)])).rows[0];
         const empty={total:0,truncated:false,items:[]};
         return {property,day:result.day,databaseTime:result.databaseTime,
           arrivals:result.groups.arrivals||empty,departures:result.groups.departures||empty,staying:result.groups.staying||empty};

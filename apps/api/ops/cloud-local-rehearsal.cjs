@@ -133,7 +133,7 @@ function coreEnvironment() {
   return { ...process.env, NODE_ENV: 'test', PORT: '3001', VIEWS_ENV: 'local-rehearsal', VIEWS_LOCAL_REHEARSAL: 'true', TRUSTED_PROXY_MODE: 'direct',
     DATABASE_URL: `postgresql://views_app:${config.runtimePassword}@127.0.0.1:55432/views_local`,
     GUEST_AUTH_RATE_LIMIT_SECRET: config.rateSecret, VIEWS_INTERNAL_API_KEY: config.internalSecret,
-    VIEWS_STAFF_AUTH_PILOT_ENABLED: 'true', VIEWS_STAFF_AUTH_ORGANIZATION_ID: ORG,
+    VIEWS_STAFF_AUTH_PILOT_ENABLED: 'true', VIEWS_STAFF_STAY_PILOT_ENABLED: 'true', VIEWS_STAFF_AUTH_ORGANIZATION_ID: ORG,
     VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON: '{"local-workspace":"internal_key_only"}',
     VIEWS_INTERNAL_SERVICE_KEYS_JSON: JSON.stringify({ 'local-workspace': [config.internalSecret] }),
     VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON: '{}', VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON: '{"local-workspace":["127.0.0.1/32"]}',

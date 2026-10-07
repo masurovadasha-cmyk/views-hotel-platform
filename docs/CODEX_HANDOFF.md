@@ -233,3 +233,12 @@ arrivals, scheduled departures and current checked-in stays, scoped to the staff
 property and its timezone. It reads PostgreSQL independently of the last-50 list;
 no check-in/checkout write is enabled. See `STAGE7_RECEPTION_WORKSPACE.md` for
 boundaries, executed evidence and the remaining operational transition work.
+
+## 15. Local stay transitions
+
+Stage 7.32 adds explicitly confirmed check-in/checkout for operator-prepared,
+zero-charge synthetic stays. Migrations 0045–0046 lock live staff authorization through
+the atomic state/inventory/audit/outbox mutation. The cloud-local launcher opts
+into this bounded pilot; normal priced bookings and real guest/compliance/payment
+processing remain excluded. See `STAGE7_LOCAL_STAY_PILOT.md` and the preparation/
+browser proof commands. Applied earlier migrations remain immutable.

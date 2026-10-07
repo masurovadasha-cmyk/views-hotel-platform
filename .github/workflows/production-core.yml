@@ -86,6 +86,8 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0042_staff_passkey_pilot.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0043_staff_passkey_recovery.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0044_staff_password_assurance.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0045_staff_stay_authorization.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0046_staff_stay_property_lock.sql
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
@@ -167,6 +169,9 @@ jobs:
             '20000000-0000-4000-8000-000000000001',id,'active',now() FROM roles WHERE code='front_desk';
           INSERT INTO membership_property_scopes(membership_id,property_id)
           VALUES('73100000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002');
+
+          INSERT INTO staff_private.credentials(membership_id,password_hash,verification_channel)
+          VALUES('73100000-0000-4000-8000-000000000001','scrypt-v1$131072$8$1$'||repeat('0',32)||'$'||repeat('0',128),'local_fixture');
 
           INSERT INTO analytics_dashboard_cache(
             cache_key,organization_id,membership_id,property_id,property_ids,

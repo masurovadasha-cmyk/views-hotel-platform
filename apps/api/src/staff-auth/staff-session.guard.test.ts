@@ -26,6 +26,14 @@ describe('staff session enforcement on the trusted local gateway',()=>{
   await expect(guard.canActivate(context(request('/v1/quotes','POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
   await expect(guard.canActivate(context(request('/v1/bookings/holds','POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
  });
+ it('stay mutations require reservation.manage and a matching live actor',async()=>{
+  const path='/v1/bookings/'+identity.userId+'/stay/check-in';
+  const allowed=new StaffSessionGuard({resolve:async()=>identity} as never);
+  expect(await allowed.canActivate(context(request(path,'POST')))).toBe(true);
+  const reader=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['reservation.read']})} as never);
+  await expect(reader.canActivate(context(request(path,'POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  await expect(allowed.canActivate(context(request(path,'POST',{'x-membership-id':identity.userId})))).rejects.toThrow('STAFF_ACTOR_MISMATCH');
+ });
  it('does not expand the local service into a payment or confirm client',async()=>{
   const guard=new StaffSessionGuard({resolve:async()=>identity} as never);
   for(const p of ['/v1/payments','/v1/bookings/'+identity.userId+'/confirm','/v1/internal/analytics/report-cycle'])

@@ -34,7 +34,7 @@ npm run cloud:start
 npm run cloud:status
 ```
 
-`cloud:start` initializes the local database once, applies all 44 current
+`cloud:start` initializes the local database once, applies all 46 current
 migrations with checksum tracking, prepares the existing synthetic workspace,
 issues an invitation if needed, and starts Core plus the staff web gateway.
 Repeated starts retain database rows, credentials, invitations and running
@@ -131,3 +131,8 @@ Before public operation, complete the already-documented Stage 7.25 email,
 privileged MFA and HTTPS deployment work, supply the actual integration
 credentials through secure environment settings, and validate that deployment.
 Saving the onboarding draft does not publish the environment or the website.
+
+Stage 7.32 enables the zero-charge synthetic stay pilot in the cloud-local launcher.
+Use `npm run cloud:prepare:stay` to add one separate synthetic stay (no existing
+reservation changes). `npm run cloud:test:stay` follows cloud:test:auth and tests
+the explicit check-in/checkout UI; see STAGE7_LOCAL_STAY_PILOT.md.

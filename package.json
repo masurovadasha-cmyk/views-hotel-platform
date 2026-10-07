@@ -13,6 +13,8 @@
     "cloud:stop": "node apps/api/ops/cloud-local-rehearsal.cjs stop",
     "cloud:status": "node apps/api/ops/cloud-local-rehearsal.cjs status",
     "cloud:test:core": "node scripts/cloud-core-tests.cjs",
+    "cloud:prepare:stay": "VIEWS_CLOUD_REHEARSAL=true VIEWS_LOCAL_STATE_DIR=${VIEWS_LOCAL_STATE_DIR:-/workspace/.views-local} node apps/api/ops/prepare-local-stay.cjs --ack=LOCAL_SYNTHETIC_STAY",
+    "cloud:test:stay": "VIEWS_CLOUD_REHEARSAL=true VIEWS_LOCAL_STATE_DIR=${VIEWS_LOCAL_STATE_DIR:-/workspace/.views-local} node scripts/staff-stay-local.browser.cjs --ack=LOCAL_SYNTHETIC_STAY_PROOF",
     "cloud:test:auth": "VIEWS_CLOUD_REHEARSAL=true VIEWS_LOCAL_STATE_DIR=${VIEWS_LOCAL_STATE_DIR:-/workspace/.views-local} node scripts/staff-auth-local-proof.cjs --ack=LOCAL_SYNTHETIC_AUTH_PROOF",
     "cloud:test:browser": "VIEWS_CLOUD_REHEARSAL=true VIEWS_LOCAL_STATE_DIR=${VIEWS_LOCAL_STATE_DIR:-/workspace/.views-local} node scripts/staff-auth-local.browser.cjs --ack=LOCAL_STAFF_BROWSER_TEST",
     "analytics:report-cycle": "node scripts/analytics-report-cycle.mjs",
