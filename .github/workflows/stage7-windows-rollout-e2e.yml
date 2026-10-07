@@ -1,0 +1,50 @@
+name: Stage 7.31 Full Windows Rollout Rehearsal
+on:
+  push:
+    branches: ['stage7/windows-passkey-rollout-v1']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stage731-full-rollout-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  full-rollout:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    env:
+      VIEWS_ROLLOUT_E2E_ACK: DISPOSABLE_WINDOWS_E2E_ONLY
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install locked dependencies on the disposable runner only
+        shell: bash
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm ci --prefix apps/api --ignore-scripts --no-audit --no-fund
+      - name: Run unmodified operator commands on a populated disposable Windows installation
+        shell: bash
+        run: node scripts/windows-rollout-e2e.cjs
+      - name: Validate exact source, both rollouts, data preservation and cleanup
+        shell: bash
+        run: |
+          node scripts/validate-windows-rollout-e2e.cjs rollout-evidence/windows-rollout-e2e.json "$GITHUB_SHA"
+          git archive --format=zip HEAD -o rollout-evidence/rollout-source.zip
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: stage731-full-rollout-verified
+          path: |
+            rollout-evidence/windows-rollout-e2e.json
+            rollout-evidence/rollout-source.zip
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: stage731-full-rollout-failed-diagnostics
+          path: rollout-evidence/windows-rollout-e2e.json
+          if-no-files-found: warn
