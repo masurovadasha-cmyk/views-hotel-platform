@@ -13,7 +13,9 @@ export class StaffSessionGuard implements CanActivate{
     if(req.headers['x-views-service-id']!=='local-workspace')return true;
     const path=new URL(req.originalUrl||req.url,'http://views.internal').pathname;
     if(path.startsWith('/v1/staff-auth/'))return true; // controller validates gateway key
-    const permission=req.method==='GET'&&path==='/v1/booking-workspace'?'reservation.read':
+    const permission=['GET','POST'].includes(req.method)&&path==='/v1/housekeeping'?'housekeeping.work':
+      ['GET','POST'].includes(req.method)&&path==='/v1/owner-inventory'?'property.manage':
+      req.method==='GET'&&path==='/v1/booking-workspace'?'reservation.read':
       req.method==='POST'&&(path==='/v1/quotes'||path==='/v1/bookings/holds'||/^\/v1\/bookings\/[a-f0-9-]{36}\/release$/.test(path)||/^\/v1\/bookings\/[a-f0-9-]{36}\/stay\/(check-in|check-out|guest|document-view|document-review|cleaning-complete)$/.test(path))?'reservation.manage':null;
     if(!permission)throw new ForbiddenException('STAFF_ROUTE_DENIED');
     const identity=await this.auth.resolve(req.headers['x-views-staff-session']);

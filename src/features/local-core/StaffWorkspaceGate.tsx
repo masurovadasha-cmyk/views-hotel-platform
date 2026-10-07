@@ -1,3 +1,5 @@
+import {HousekeepingWorkspace} from './HousekeepingWorkspace';
+import {OwnerInventoryWorkspace} from './OwnerInventoryWorkspace';
 import {useStaffLocale} from './StaffLocale';
 import {useEffect,useState} from 'react';
 import {startAuthentication,type PublicKeyCredentialRequestOptionsJSON} from '@simplewebauthn/browser';
@@ -68,10 +70,13 @@ export function StaffWorkspaceGate(){
   }catch{setError('Подтверждение ключом не завершено. Пароль этой попыткой не менялся. Повторите подтверждение или отмените смену пароля.');}
   finally{setBusy(false);}
  }
+ const owner=!!session.identity&&['owner','manager'].includes(session.identity.role)&&session.identity.permissions.includes('property.manage');
+ const cleaner=session.identity?.role==='housekeeper'&&session.identity.permissions.includes('housekeeping.work');
+ const reception=!!session.identity?.permissions.includes('reservation.manage');
  if(loading)return <main className="localWorkspace"><p role="status">{t("Проверка сессии сотрудника…")}</p></main>;
  if(session.authenticated&&session.identity&&session.csrf)return <>
   <nav className="localWorkspace localNavigation" aria-label={t("Разделы рабочей области")}>
-   <a href="#staff-reception">{t("Ресепшен и уборка")}</a><a href="#staff-cleaning">{t("Очередь уборки")}</a><a href="#staff-booking">{t("Бронирование")}</a><a href="#staff-security">{t("Ключи доступа")}</a><a href="#staff-account">{t("Учётная запись")}</a>
+   {cleaner&&<a href="#staff-housekeeping">{t("Задачи уборки")}</a>}{owner&&<a href="#staff-owner">{t("Объекты и номерной фонд")}</a>}{reception&&<><a href="#staff-reception">{t("Ресепшен и уборка")}</a><a href="#staff-cleaning">{t("Очередь уборки")}</a><a href="#staff-booking">{t("Бронирование")}</a></>}<a href="#staff-security">{t("Ключи доступа")}</a><a href="#staff-account">{t("Учётная запись")}</a>
   </nav>
   <section id="staff-account" tabIndex={-1} className="localWorkspace staffAccount" aria-label={t("Учётная запись сотрудника")}>
    <div><strong>{session.identity.displayName||session.identity.email}</strong><small>{session.identity.email} · {session.identity.role==='front_desk'?t("Ресепшен"):session.identity.role}</small>
@@ -88,8 +93,10 @@ export function StaffWorkspaceGate(){
     <button className="primary" disabled={busy||assurance}>{t("Сохранить новый пароль")}</button></fieldset></form></div>}
   </section>
   <div id="staff-security" tabIndex={-1}><StaffPasskeyPanel csrf={session.csrf}/></div>
-  <div id="staff-reception" tabIndex={-1}><ReceptionWorkspace staffCsrf={session.csrf}/></div>
-  <div id="staff-booking" tabIndex={-1}><LocalCoreWorkspace staffCsrf={session.csrf}/></div>
+  {cleaner&&<div id="staff-housekeeping" tabIndex={-1}><HousekeepingWorkspace staffCsrf={session.csrf}/></div>}
+  {owner&&<div id="staff-owner" tabIndex={-1}><OwnerInventoryWorkspace staffCsrf={session.csrf}/></div>}
+  {reception&&<><div id="staff-reception" tabIndex={-1}><ReceptionWorkspace staffCsrf={session.csrf}/></div>
+  <div id="staff-booking" tabIndex={-1}><LocalCoreWorkspace staffCsrf={session.csrf}/></div></>}
  </>;
  return <main className="localWorkspace staffLogin">
   <span className="localEyebrow">{t("VIEWS · ВХОД СОТРУДНИКА")}</span>

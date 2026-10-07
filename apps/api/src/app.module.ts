@@ -1,3 +1,5 @@
+import {HousekeepingModule} from './housekeeping/housekeeping.module';
+import {OwnerModule} from './owner/owner.module';
 import {Module} from "@nestjs/common";
 import {StaffAuthModule} from "./staff-auth/staff-auth.module";
 import {StaffSessionGuard} from "./staff-auth/staff-session.guard";
@@ -26,7 +28,7 @@ import {ProviderEgressModule} from "./security/egress/provider-egress.module";
   imports:[
     DatabaseModule,InventoryModule,RatesModule,BookingModule,
     PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule,
-    ProviderEgressModule,StaffAuthModule
+    ProviderEgressModule,StaffAuthModule,OwnerModule,HousekeepingModule
   ],
   controllers:[
     HealthController,

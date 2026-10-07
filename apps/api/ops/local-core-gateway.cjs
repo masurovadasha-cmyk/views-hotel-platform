@@ -106,10 +106,28 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     const result=await core('/v1/staff-auth/'+route.split('/').pop(),'POST',body,undefined,token);
     contexts.delete(hash(token));cookie(res,null);json(res,200,result);return true;
    }
-   if(!identity.propertyIds.includes(config.fixture.propertyId))fail(403,'PROPERTY_FORBIDDEN');
    const digest=hash(token);for(const [key,c] of contexts)if(c.expires<=Date.now())contexts.delete(key);
    let s=contexts.get(digest);if(!s){if(contexts.size>=32)fail(429,'SESSION_LIMIT');s={quotes:new Map(),reservations:new Set(),window:Date.now(),requests:0,expires:Date.parse(identity.expiresAt)};contexts.set(digest,s);}
    if(Date.now()-s.window>60000){s.window=Date.now();s.requests=0;}if(++s.requests>120)fail(429,'RATE_LIMIT');
+   if(route==='/local-api/owner-inventory'){
+    if(process.env.VIEWS_OWNER_INVENTORY_DRAFT_ENABLED!=='true')fail(404,'OWNER_INVENTORY_DISABLED');
+    if(!['owner','manager'].includes(identity.role)||!identity.permissions.includes('property.manage'))fail(403,'OWNER_INVENTORY_FORBIDDEN');
+    if(req.method==='GET'){json(res,200,await core('/v1/owner-inventory','GET',undefined,undefined,token,identity));return true;}
+    if(req.method!=='POST')fail(405,'METHOD_DENIED');
+    const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
+    json(res,200,await core('/v1/owner-inventory','POST',await readJson(req,16384),key,token,identity));return true;
+   }
+   if(!identity.propertyIds.includes(config.fixture.propertyId))fail(403,'PROPERTY_FORBIDDEN');
+   if(route==='/local-api/housekeeping'){
+    if(process.env.VIEWS_HOUSEKEEPING_PILOT_ENABLED!=='true')fail(404,'HOUSEKEEPING_DISABLED');
+    if(identity.role!=='housekeeper'||!identity.permissions.includes('housekeeping.work'))fail(403,'HOUSEKEEPING_FORBIDDEN');
+    if(req.method==='GET'){json(res,200,await core('/v1/housekeeping?propertyId='+config.fixture.propertyId,'GET',undefined,undefined,token,identity));return true;}
+    if(req.method!=='POST')fail(405,'METHOD_DENIED');
+    const body=await readJson(req);exactKeys(body,['taskId','action']);
+    if(!UUID.test(body.taskId||'')||!['claim','release','complete'].includes(body.action))fail(400,'INVALID_HOUSEKEEPING_REQUEST');
+    const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
+    json(res,200,await core('/v1/housekeeping','POST',{...body,propertyId:config.fixture.propertyId},key,token,identity));return true;
+   }
    if(req.method==='GET'&&route==='/local-api/reception'){
     const day=u.searchParams.get('day')||'today';if(day!=='today'&&!/^\d{4}-\d{2}-\d{2}$/.test(day))fail(400,'INVALID_RECEPTION_DAY');
     const value=await core('/v1/booking-workspace?propertyId='+config.fixture.propertyId+'&day='+encodeURIComponent(day),'GET',undefined,undefined,token,identity);

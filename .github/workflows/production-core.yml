@@ -173,6 +173,23 @@ jobs:
           INSERT INTO staff_private.credentials(membership_id,password_hash,verification_channel)
           VALUES('73100000-0000-4000-8000-000000000001','scrypt-v1$131072$8$1$'||repeat('0',32)||'$'||repeat('0',128),'local_fixture');
 
+          -- Disposable housekeeping identities only; no live role is promoted.
+          INSERT INTO users(id,email,display_name) VALUES
+          ('74900000-0000-4000-8000-000000000001','cleaner1@views.invalid','Cleaner one'),
+          ('74900000-0000-4000-8000-000000000002','cleaner2@views.invalid','Cleaner two');
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT u.id,'10000000-0000-4000-8000-000000000001',u.id,r.id,'active',now()
+          FROM users u CROSS JOIN roles r WHERE u.id IN ('74900000-0000-4000-8000-000000000001','74900000-0000-4000-8000-000000000002') AND r.code='housekeeper';
+          INSERT INTO membership_property_scopes(membership_id,property_id) VALUES
+          ('74900000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002'),
+          ('74900000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000002');
+          INSERT INTO staff_private.credentials(membership_id,password_hash,verification_channel)
+          SELECT id,'scrypt-v1$131072$8$1$'||repeat('0',32)||'$'||repeat('0',128),'local_fixture'
+          FROM organization_memberships WHERE id IN ('74900000-0000-4000-8000-000000000001','74900000-0000-4000-8000-000000000002');
+          INSERT INTO staff_private.sessions(token_hash,membership_id,credential_version,role_id)
+          SELECT encode(digest(repeat(CASE WHEN id='74900000-0000-4000-8000-000000000001' THEN '7' ELSE '8' END,64),'sha256'),'hex'),id,1,role_id
+          FROM organization_memberships WHERE id IN ('74900000-0000-4000-8000-000000000001','74900000-0000-4000-8000-000000000002');
+
           INSERT INTO analytics_dashboard_cache(
             cache_key,organization_id,membership_id,property_id,property_ids,
             from_date,to_date,schema_version,source_fingerprint,payload,generated_at,expires_at

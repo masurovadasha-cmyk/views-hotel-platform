@@ -1054,5 +1054,213 @@
   "Локальный Core · тест": {
     "en": "Local Core · test",
     "uz": "Mahalliy Core · sinov"
+  },
+  "VIEWS · КАБИНЕТ ВЛАДЕЛЬЦА": {
+    "en": "VIEWS · OWNER WORKSPACE",
+    "uz": "VIEWS · MULKDOR KABINETI"
+  },
+  "Объекты и номерной фонд": {
+    "en": "Properties and rooms",
+    "uz": "Obyektlar va xonalar"
+  },
+  "Подготовка объекта в Узбекистане. Черновики не доступны для бронирования; открытие продаж требует отдельной проверки.": {
+    "en": "Prepare a property in Uzbekistan. Drafts cannot be booked; opening sales requires a separate review.",
+    "uz": "Oʻzbekistondagi obyektni tayyorlash. Qoralamalarni band qilib boʻlmaydi; savdoni ochish uchun alohida tekshiruv kerak."
+  },
+  "Мои объекты": {
+    "en": "My properties",
+    "uz": "Obyektlarim"
+  },
+  "Обновить список": {
+    "en": "Refresh list",
+    "uz": "Roʻyxatni yangilash"
+  },
+  "Объектов пока нет.": {
+    "en": "No properties yet.",
+    "uz": "Hozircha obyektlar yoʻq."
+  },
+  "Показаны последние 100 объектов. Список неполный.": {
+    "en": "Showing the latest 100 properties. This list is incomplete.",
+    "uz": "Oxirgi 100 ta obyekt koʻrsatilgan. Roʻyxat toʻliq emas."
+  },
+  "Номеров: {count}": {
+    "en": "Rooms: {count}",
+    "uz": "Xonalar: {count}"
+  },
+  "Черновик": {
+    "en": "Draft",
+    "uz": "Qoralama"
+  },
+  "Существующий объект": {
+    "en": "Existing property",
+    "uz": "Mavjud obyekt"
+  },
+  "Новый объект": {
+    "en": "New property",
+    "uz": "Yangi obyekt"
+  },
+  "Название объекта": {
+    "en": "Property name",
+    "uz": "Obyekt nomi"
+  },
+  "Город": {
+    "en": "City",
+    "uz": "Shahar"
+  },
+  "Адрес объекта": {
+    "en": "Property address",
+    "uz": "Obyekt manzili"
+  },
+  "Название категории номеров": {
+    "en": "Room category name",
+    "uz": "Xona toifasi nomi"
+  },
+  "Гостей в одном номере": {
+    "en": "Guests per room",
+    "uz": "Bir xonadagi mehmonlar"
+  },
+  "Коды номеров через пробел или запятую": {
+    "en": "Room codes separated by spaces or commas",
+    "uz": "Xona kodlarini boʻsh joy yoki vergul bilan ajrating"
+  },
+  "Цена за ночь, UZS": {
+    "en": "Price per night, UZS",
+    "uz": "Bir kecha narxi, UZS"
+  },
+  "Бесплатная отмена не позднее, часов до заезда": {
+    "en": "Free cancellation deadline, hours before arrival",
+    "uz": "Bepul bekor qilish muddati, kelishdan necha soat oldin"
+  },
+  "После указанного срока возврат стоимости проживания — 0%. Налоги и дополнительные сборы здесь не настраиваются.": {
+    "en": "After this deadline, the accommodation refund is 0%. Taxes and additional fees are not configured here.",
+    "uz": "Ushbu muddatdan keyin turar joy uchun qaytariladigan summa — 0%. Soliqlar va qoʻshimcha yigʻimlar bu yerda sozlanmaydi."
+  },
+  "Цена отправки: {price}": {
+    "en": "Submitted price: {price}",
+    "uz": "Yuborilgan narx: {price}"
+  },
+  "Сохранение…": {
+    "en": "Saving…",
+    "uz": "Saqlanmoqda…"
+  },
+  "Повторить ту же отправку": {
+    "en": "Retry the same submission",
+    "uz": "Xuddi shu soʻrovni qayta yuborish"
+  },
+  "Сохранить черновик объекта": {
+    "en": "Save property draft",
+    "uz": "Obyekt qoralamasini saqlash"
+  },
+  "Кабинет владельца недоступен. Проверьте доступ и повторите загрузку.": {
+    "en": "Owner workspace unavailable. Check access and reload.",
+    "uz": "Mulkdor kabineti mavjud emas. Ruxsatni tekshiring va qayta yuklang."
+  },
+  "Введите цену в сумах, не более двух знаков после запятой.": {
+    "en": "Enter a price in UZS with at most two decimal places.",
+    "uz": "Narxni soʻmda, verguldan keyin koʻpi bilan ikkita raqam bilan kiriting."
+  },
+  "Укажите от 1 до 100 разных кодов номеров: A–Z, цифры, дефис или подчёркивание.": {
+    "en": "Enter 1–100 unique room codes: A–Z, digits, hyphen or underscore.",
+    "uz": "1–100 ta takrorlanmas xona kodini kiriting: A–Z, raqamlar, tire yoki pastki chiziq."
+  },
+  "Черновик сохранён. Продажи не открыты.": {
+    "en": "Draft saved. Sales remain closed.",
+    "uz": "Qoralama saqlandi. Savdo ochilmagan."
+  },
+  "Черновик сохранён, но список не обновился. Повторите загрузку.": {
+    "en": "Draft saved, but the list could not refresh. Reload the list.",
+    "uz": "Qoralama saqlandi, lekin roʻyxat yangilanmadi. Roʻyxatni qayta yuklang."
+  },
+  "Проверьте данные объекта и номеров.": {
+    "en": "Check the property and room details.",
+    "uz": "Obyekt va xona maʼlumotlarini tekshiring."
+  },
+  "Создание недоступно для этой сессии. Данные формы сохранены.": {
+    "en": "Creation is unavailable for this session. Your form is preserved.",
+    "uz": "Bu seansda yaratish mumkin emas. Forma maʼlumotlari saqlanib qoldi."
+  },
+  "Ответ не получен. Повторите ту же отправку: дубликат не будет создан. До подтверждения не меняйте данные.": {
+    "en": "No confirmation received. Retry the same submission to avoid duplicates. Keep the details unchanged until confirmed.",
+    "uz": "Tasdiq olinmadi. Takroriy yozuv yaratilmasligi uchun xuddi shu soʻrovni qayta yuboring. Tasdiqlanguncha maʼlumotlarni oʻzgartirmang."
+  },
+  "VIEWS · КАБИНЕТ ГОРНИЧНОЙ": {
+    "en": "VIEWS · HOUSEKEEPING",
+    "uz": "VIEWS · XONALARNI TOZALASH"
+  },
+  "Задачи уборки": {
+    "en": "Cleaning tasks",
+    "uz": "Tozalash vazifalari"
+  },
+  "Тестовая очередь после выезда. Подтверждайте готовность только после завершения уборки.": {
+    "en": "Test queue after checkout. Confirm readiness only after cleaning is complete.",
+    "uz": "Chiqishdan keyingi test navbati. Tayyorlikni faqat tozalash tugagandan keyin tasdiqlang."
+  },
+  "Очередь уборки недоступна. Проверьте доступ и повторите загрузку.": {
+    "en": "Cleaning queue unavailable. Check access and reload.",
+    "uz": "Tozalash navbati mavjud emas. Ruxsatni tekshiring va qayta yuklang."
+  },
+  "Действие сохранено.": {
+    "en": "Action saved.",
+    "uz": "Amal saqlandi."
+  },
+  "Действие сохранено, но список не обновился. Повторите загрузку.": {
+    "en": "Action saved, but the list could not refresh. Reload the list.",
+    "uz": "Amal saqlandi, lekin roʻyxat yangilanmadi. Roʻyxatni qayta yuklang."
+  },
+  "Задача изменилась или недоступна. Обновите очередь перед следующим действием.": {
+    "en": "The task changed or is unavailable. Refresh the queue before the next action.",
+    "uz": "Vazifa oʻzgardi yoki mavjud emas. Keyingi amaldan oldin navbatni yangilang."
+  },
+  "Ответ не получен. Повторите то же действие, чтобы проверить результат без дубликата.": {
+    "en": "No confirmation received. Retry the same action to check the result without a duplicate.",
+    "uz": "Tasdiq olinmadi. Natijani takroriy yozuvsiz tekshirish uchun xuddi shu amalni qayta bajaring."
+  },
+  "Повторить то же действие": {
+    "en": "Retry the same action",
+    "uz": "Xuddi shu amalni qayta bajarish"
+  },
+  "Поиск по номеру": {
+    "en": "Search by room",
+    "uz": "Xona boʻyicha qidirish"
+  },
+  "Только мои задачи": {
+    "en": "Only my tasks",
+    "uz": "Faqat mening vazifalarim"
+  },
+  "Показаны первые 100 задач. Поиск работает только по загруженной части очереди.": {
+    "en": "Showing the first 100 tasks. Search covers only the loaded part of the queue.",
+    "uz": "Birinchi 100 ta vazifa koʻrsatilgan. Qidiruv faqat navbatning yuklangan qismida ishlaydi."
+  },
+  "Задач по выбранному фильтру нет.": {
+    "en": "No tasks match this filter.",
+    "uz": "Tanlangan filtrga mos vazifalar yoʻq."
+  },
+  "Моя задача": {
+    "en": "My task",
+    "uz": "Mening vazifam"
+  },
+  "Свободная задача": {
+    "en": "Available task",
+    "uz": "Boʻsh vazifa"
+  },
+  "В работе у коллеги": {
+    "en": "Assigned to a colleague",
+    "uz": "Hamkasb bajarmoqda"
+  },
+  "Взять задачу": {
+    "en": "Claim task",
+    "uz": "Vazifani olish"
+  },
+  "Уборка завершена": {
+    "en": "Cleaning complete",
+    "uz": "Tozalash tugadi"
+  },
+  "Вернуть в очередь": {
+    "en": "Return to queue",
+    "uz": "Navbatga qaytarish"
+  },
+  "После подтверждения номер можно использовать для следующего тестового заселения.": {
+    "en": "After confirmation, the room can be used for the next test check-in.",
+    "uz": "Tasdiqlangandan keyin xonadan keyingi test joylashtirish uchun foydalanish mumkin."
   }
 }

@@ -34,6 +34,16 @@ describe('staff session enforcement on the trusted local gateway',()=>{
   await expect(reader.canActivate(context(request(path,'POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
   await expect(allowed.canActivate(context(request(path,'POST',{'x-membership-id':identity.userId})))).rejects.toThrow('STAFF_ACTOR_MISMATCH');
  });
+ it('front desk cannot access owner inventory through a trusted gateway',async()=>{
+  const guard=new StaffSessionGuard({resolve:async()=>identity} as never);
+  for(const method of ['GET','POST'])await expect(guard.canActivate(context(request('/v1/owner-inventory',method)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+ });
+ it('housekeeper can use only its dedicated route, not reception, owner or booking writes',async()=>{
+  const guard=new StaffSessionGuard({resolve:async()=>({...identity,role:'housekeeper',permissions:['property.read','housekeeping.work']})} as never);
+  expect(await guard.canActivate(context(request('/v1/housekeeping','GET')))).toBe(true);
+  expect(await guard.canActivate(context(request('/v1/housekeeping','POST')))).toBe(true);
+  for(const [path,method] of [['/v1/booking-workspace','GET'],['/v1/quotes','POST'],['/v1/owner-inventory','GET']])await expect(guard.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+ });
  it('does not expand the local service into a payment or confirm client',async()=>{
   const guard=new StaffSessionGuard({resolve:async()=>identity} as never);
   for(const p of ['/v1/payments','/v1/bookings/'+identity.userId+'/confirm','/v1/internal/analytics/report-cycle'])

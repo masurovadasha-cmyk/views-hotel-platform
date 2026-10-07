@@ -497,3 +497,25 @@ and four widths; original Android offline-photo/navigation/SMS proof also passed
 Final clean-source artifact reports record SHA/dirty status. See
 STAGE7_GUEST_LOCALIZATION.md. Native device, permanent signing/publication, real
 guest/provider integration, owner/cleaner and legacy staff localization remain open.
+
+
+## 30. Stage 7.47–7.48 — owner draft and housekeeper software
+
+Added atomic default-off owner inventory drafting, existing authority locking,
+exact minor money and retries; no active units/rates are created. Added separate
+scoped synthetic housekeeper queue, self-claim/release/complete, locked session
+authority, explicit confirmation, audit/outbox and replay. No guest data is in
+the queue. New screens are RU/UZ/EN. Existing accounts/roles are unchanged.
+
+Dirty base 664df32: root 238/39, disposable Core 298/59, network gate 126 files,
+mail policy 15, builds/typechecks and both offline role UI proofs passed. After
+persistent restart migrations 0048–0049 were applied with prior checksums intact;
+auth/stay/booking/locale proofs passed. Restore matched 71 tables, 7 private
+tables, 24 encrypted documents and 16 turnovers. Flags remain off in the normal
+launcher. Owner login is still gated by the identity pilot. New housekeeper
+credentials exist only in disposable CI fixtures. Browser role proofs use
+synthetic HTTP responses: do not call them connected role onboarding.
+
+See STAGE7_OWNER_AND_HOUSEKEEPING.md and CURRENT_DELIVERY_STATUS.md. Continue
+legacy staff localization and real inventory/role/provider integration only
+within their stated scope. No main merge, public deployment or new APK release.
