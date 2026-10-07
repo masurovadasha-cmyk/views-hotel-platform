@@ -21,9 +21,12 @@ jobs:
           POSTGRES_DB: views_local
           POSTGRES_USER: views_owner
           POSTGRES_PASSWORD: fixture-owner
+          # A single health-cmd argument avoids runner/shell quoting ambiguity.
+          PGUSER: views_owner
+          PGDATABASE: views_local
         ports: ['55432:5432']
         options: >-
-          --health-cmd 'pg_isready -U views_owner -d views_local'
+          --health-cmd pg_isready
           --health-interval 5s --health-timeout 3s --health-retries 20
     env:
       PGPASSWORD: fixture-owner
@@ -32,9 +35,16 @@ jobs:
       STAFF_MAIL_PROOF_OWNER_URL: postgresql://views_owner:fixture-owner@127.0.0.1:55432/views_local
     steps:
       - uses: actions/checkout@v4
+        id: checkout
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Test fail-closed evidence validation and workflow contract
+        id: gate_tests
+        run: |
+          set -euo pipefail
+          mkdir -p mail-evidence
+          node --test scripts/staff-ci-evidence.test.cjs | tee mail-evidence/gate.tap
       - name: Install existing Core plus pinned SMTP library
         working-directory: apps/api
         run: npm ci --ignore-scripts --no-audit --no-fund
@@ -58,22 +68,47 @@ jobs:
             psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -f "$file"
           done
       - name: Mail policy and token binding unit checks
+        id: units
         run: |
-          mkdir -p mail-evidence
-          set -o pipefail
+          set -euo pipefail
           node --test scripts/staff-mail.acceptance.cjs | tee mail-evidence/unit.tap
       - name: Real loopback SMTP, Core HTTP and restricted PostgreSQL proof
+        id: integration
         env:
           VIEWS_MAIL_TEST_CONTAINER: ${{ job.services.postgres.id }}
         run: node scripts/staff-mail.integration.cjs
-      - name: Preserve exact source without secrets or captured email bodies
-        if: always()
-        run: git archive --format=zip HEAD -o /tmp/views-stage726-source.zip
+      - name: Validate exact-source mail, browser, passkey, recovery and restore evidence
+        id: verify_evidence
+        if: ${{ success() && steps.integration.outcome == 'success' && steps.units.outcome == 'success' && steps.gate_tests.outcome == 'success' }}
+        run: node scripts/staff-ci-evidence.cjs mail-evidence
+      - name: Archive only a verified successful checkout
+        id: archive
+        if: ${{ success() && steps.checkout.outcome == 'success' && steps.verify_evidence.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          git archive --format=zip HEAD -o mail-evidence/views-stage726-source.zip
+          test -s mail-evidence/views-stage726-source.zip
+          cd mail-evidence
+          sha256sum integration.json unit.tap gate.tap validated.json views-stage726-source.zip > SHA256SUMS
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ success() && steps.verify_evidence.outcome == 'success' && steps.archive.outcome == 'success' }}
         with:
           name: staff-email-delivery-evidence
           path: |
-            mail-evidence/
-            /tmp/views-stage726-source.zip
+            mail-evidence/integration.json
+            mail-evidence/unit.tap
+            mail-evidence/gate.tap
+            mail-evidence/validated.json
+            mail-evidence/views-stage726-source.zip
+            mail-evidence/SHA256SUMS
+          if-no-files-found: error
+      - name: Preserve available failure diagnostics, never label them proof
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() && steps.checkout.outcome == 'success' && (hashFiles('mail-evidence/integration.json') != '' || hashFiles('mail-evidence/unit.tap') != '' || hashFiles('mail-evidence/gate.tap') != '') }}
+        with:
+          name: staff-email-delivery-diagnostics
+          path: |
+            mail-evidence/integration.json
+            mail-evidence/unit.tap
+            mail-evidence/gate.tap
           if-no-files-found: error
