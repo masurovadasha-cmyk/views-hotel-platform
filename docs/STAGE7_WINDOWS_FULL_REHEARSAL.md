@@ -34,6 +34,25 @@ reservation must remain releasable, with zero payment intents created. Logout an
 process cleanup are checked afterward. All private fixture files/dumps stay out
 of artifacts, and no live process's data directory is deleted.
 
+## Microsecond observation regression
+
+The first full Windows rehearsal at 9451a43 passed, but the parallel Linux native
+suite failed at the positive audit/session observation. Its earlier successful
+runs did not establish determinism. The observer read PostgreSQL's current time
+as a JavaScript Date, which discarded microseconds, then sent that rounded-down
+value back as an upper SQL bound. An audit event written during the same
+millisecond could consequently be omitted despite preceding the actual clock.
+
+The observer now obtains UTC text with six fractional digits directly from
+PostgreSQL and preserves that exact text in BOTH SQL bounds and saved observation
+start times. It refuses an accidental Date/millisecond-only clock value. Unit
+regressions verify unchanged .123456/.123789 bounds and refusal before evidence
+queries when precision has already been lost. The native suite executes the real
+revised SQL on Windows PostgreSQL and Linux PostgreSQL 16; no arbitrary sleep,
+retry-until-green, widened audit window or disabled test hides the failure.
+
+Primary contract: https://node-postgres.com/features/types (timestamp precision).
+
 ## Evidence
 
 Only a source-bound report with all required scenarios, both completed rollouts,

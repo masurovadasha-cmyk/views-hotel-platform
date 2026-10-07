@@ -1,12 +1,19 @@
 'use strict';
 const {createHash}=require('node:crypto');
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
+const PRECISE_UTC=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 /** Read-only DB evidence; never creates a key, session, proof or audit record. */
 async function readPasskeySnapshot(client,organizationId,membershipId,since){
- if(!UUID.test(organizationId)||!UUID.test(membershipId)||!Number.isFinite(Date.parse(since)))throw Error('PASSKEY_SNAPSHOT_CONTEXT_INVALID');
+ if(!UUID.test(organizationId)||!UUID.test(membershipId)||typeof since!=='string'||!Number.isFinite(Date.parse(since)))throw Error('PASSKEY_SNAPSHOT_CONTEXT_INVALID');
  await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
  try{
-  const now=(await client.query('SELECT clock_timestamp() AS checked_at')).rows[0].checked_at;
+  // node-postgres turns timestamptz into JS Date, dropping microseconds. An
+  // upper bound rounded down to milliseconds can hide a just-created audit
+  // event. Keep the DB clock as precise UTC text for SQL bounds AND the next
+  // observation's start; never convert it through Date/toISOString.
+  const now=(await client.query(`SELECT to_char(clock_timestamp() AT TIME ZONE 'UTC',
+   'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS checked_at`)).rows[0].checked_at;
+  if(typeof now!=='string'||!PRECISE_UTC.test(now)||!Number.isFinite(Date.parse(now)))throw Error('PASSKEY_CLOCK_PRECISION_INVALID');
   const keys=(await client.query(`SELECT k.id,k.public_key FROM staff_private.passkeys k
    JOIN public.organization_memberships m ON m.id=k.membership_id
    WHERE m.organization_id=$1 AND m.id=$2 ORDER BY k.id`,[organizationId,membershipId])).rows;
@@ -23,7 +30,7 @@ async function readPasskeySnapshot(client,organizationId,membershipId,since){
     AND s.revoked_at IS NULL AND s.expires_at>$4 AND s.idle_expires_at>$4 AND s.passkey_verified_until>$4
     AND m.status='active' AND u.status='active' AND c.enabled AND c.version=s.credential_version AND m.role_id=s.role_id
    ORDER BY a.created_at,a.id`,[organizationId,membershipId,since,now])).rows.map(r=>r.action);
-  const result={checkedAt:now.toISOString(),passkeyCount:keys.length,
+  const result={checkedAt:now,passkeyCount:keys.length,
    publicKeyBytes:keys.length===1?keys[0].public_key.length:0,
    keyFingerprints:keys.map(k=>createHash('sha256').update(k.id).update('\0').update(k.public_key).digest('hex')),
    auditActions:audit,sessionProofObserved:audit.length>0};
