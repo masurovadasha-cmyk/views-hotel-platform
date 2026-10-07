@@ -33,7 +33,7 @@ export class BookingWorkspaceController{
         const result=(await client.query(`WITH selected AS (
           SELECT CASE WHEN $3='today' THEN (clock_timestamp() AT TIME ZONE $4)::date ELSE $3::date END AS day
         ), grouped AS (
-          SELECT bucket,r.id AS "reservationId",r.confirmation_code AS "confirmationCode",u.code AS "unitCode",r.status,
+          SELECT bucket,r.id AS "reservationId",r.confirmation_code AS "confirmationCode",u.code AS "unitCode",r.status,r.version,
             r.check_in_at AS "checkInAt",r.check_out_at AS "checkOutAt",
             ($5::boolean AND r.quote_snapshot->'localStayPilot'='true'::jsonb AND r.total_minor=0) AS "stayPilot",
             CASE WHEN $5::boolean AND r.quote_snapshot->'localStayPilot'='true'::jsonb AND r.total_minor=0 THEN jsonb_build_object(

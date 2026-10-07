@@ -69,6 +69,31 @@ describe.sequential('local synthetic stay transitions',()=>{
   expect(next.arrivals.items.find((r:{reservationId:string})=>r.reservationId===ready).readiness.inventoryValid).toBe(false);
   await expect(act(ready,'check-in')).rejects.toThrow('STAY_INVENTORY_INVALID');
  });
+ it('saves primary guest atomically, replays once and rejects stale or changed requests',async()=>{
+  const id=await fixture({guest:false}),key=randomUUID();
+  const guest={firstName:'Test',lastName:'Guest',dateOfBirth:'2000-02-29',nationality:'UZ',expectedVersion:1};
+  const save=(body=guest,k=key)=>service.transition(actor,token,id,k,'guest',body);
+  const results=await Promise.all([save(),save()]);expect(results.filter(r=>r.idempotentReplay)).toHaveLength(1);
+  expect((await query('SELECT first_name FROM reservation_guests WHERE reservation_id=$1',[id])).rows).toEqual([{first_name:'Test'}]);
+  await expect(save({...guest,firstName:'Changed'})).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+  await expect(save(guest,randomUUID())).rejects.toThrow('GUEST_VERSION_CHANGED');
+  await expect(save({...guest,dateOfBirth:'2001-02-29'},randomUUID())).rejects.toThrow('INVALID_GUEST');
+  await expect(service.transition(actor,token,await fixture({marker:false}),randomUUID(),'guest',guest)).rejects.toThrow('STAY_FIXTURE_REQUIRED');
+  const failKey=randomUUID();await query("INSERT INTO outbox_events(organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload) VALUES($1,'reservation',$2,'fixture.collision',$3,'{}')",[org,id,'stay:'+org+':local_guest:'+failKey]);
+  await expect(save({...guest,firstName:'Rollback',expectedVersion:2},failKey)).rejects.toThrow();
+  expect((await query('SELECT first_name FROM reservation_guests WHERE reservation_id=$1',[id])).rows[0].first_name).toBe('Test');
+  expect((await query('SELECT version FROM reservations WHERE id=$1',[id])).rows[0].version).toBe(2);
+  await save({...guest,lastName:'Updated',expectedVersion:2},randomUUID());
+  expect((await query('SELECT last_name FROM reservation_guests WHERE reservation_id=$1',[id])).rows[0].last_name).toBe('Updated');
+  const audit=(await query("SELECT after_state FROM audit_log WHERE entity_id=$1 AND action='staff.local_guest_updated'",[id])).rows;expect(audit).toHaveLength(2);expect(JSON.stringify(audit)).not.toContain('Updated');
+  await act(id,'check-in');await expect(save({...guest,expectedVersion:4},randomUUID())).rejects.toThrow('STAY_STATE_CHANGED');
+ });
+ it('refuses changes to a guest with document records',async()=>{
+  const id=await fixture();
+  await query("INSERT INTO guest_document_records(organization_id,reservation_guest_id,document_type,storage_region,vault_id,object_key) SELECT organization_id,id,'passport','UZ','synthetic','synthetic/not-an-upload' FROM reservation_guests WHERE reservation_id=$1",[id]);
+  await expect(service.transition(actor,token,id,randomUUID(),'guest',{firstName:'Test',lastName:'Guest',dateOfBirth:'2000-01-01',nationality:'UZ',expectedVersion:1})).rejects.toThrow('GUEST_DOCUMENT_REVIEW_REQUIRED');
+  expect((await query('SELECT version FROM reservations WHERE id=$1',[id])).rows[0].version).toBe(1);
+ });
  it('revocation blocks later transitions even with a previously valid session',async()=>{
   const old=await session(),id=await fixture();await db.query('SELECT app.staff_auth_logout($1,false)',[createHash('sha256').update(old).digest('hex')]);
   await expect(act(id,'check-in',randomUUID(),old)).rejects.toThrow('STAFF_SESSION_REQUIRED');

@@ -24,7 +24,7 @@ const PAYMENT_INTENT="95000000-0000-4000-8000-000000000001";
 const PROVIDER_TX="96000000-0000-4000-8000-000000000001";
 const REG_POLICY="97000000-0000-4000-8000-000000000001";
 const FISC_POLICY="97000000-0000-4000-8000-000000000002";
-const RESIDENCY_POLICY="98000000-0000-4000-8000-000000000001";
+let RESIDENCY_POLICY="98000000-0000-4000-8000-000000000001";
 
 const actor={
   organizationId:ORG,userId:USER,membershipId:MEMBERSHIP,requestId:"compliance-integration-test"
@@ -118,14 +118,17 @@ beforeAll(async()=>{
       ]
     );
 
-    await client.query(
+    const residency=await client.query(
       `INSERT INTO data_residency_policies(
          id,organization_id,country_code,data_category,required_storage_region,cross_border_allowed,
          conditions,legal_references,effective_from,active
        ) VALUES($1,$2,'UZ','guest_identity_document','UZ',false,'{}'::jsonb,$3::jsonb,'2026-01-01',true)
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT(organization_id,country_code,data_category,effective_from)
+       DO UPDATE SET required_storage_region='UZ',cross_border_allowed=false,active=true
+       RETURNING id`,
       [RESIDENCY_POLICY,ORG,JSON.stringify(["PRODUCT_DEFAULT_UZ_REGION","CHECK_CURRENT_PERSONAL_DATA_LAW"])]
     );
+    RESIDENCY_POLICY=residency.rows[0].id; // another suite may already own this natural key
 
     await client.query(
       `INSERT INTO booking_quotes(

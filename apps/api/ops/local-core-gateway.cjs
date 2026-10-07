@@ -123,7 +123,7 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     s.reservations=new Set([...s.reservations,...value.reservations.map(r=>r.reservationId)]);json(res,200,{...value,mode:'local-core',syntheticData:true,realPayments:false});return true;
    }
    if(req.method!=='POST')fail(405,'METHOD_DENIED');
-   if(!['/local-api/quotes','/local-api/holds','/local-api/release','/local-api/check-in','/local-api/check-out'].includes(route))fail(404,'ROUTE_NOT_ALLOWED');
+   if(!['/local-api/quotes','/local-api/holds','/local-api/release','/local-api/check-in','/local-api/check-out','/local-api/guest'].includes(route))fail(404,'ROUTE_NOT_ALLOWED');
    if(!identity.permissions.includes('reservation.manage'))fail(403,'STAFF_PERMISSION_DENIED');
    const body=await readJson(req);
    if(route==='/local-api/quotes'){
@@ -138,8 +138,8 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     const value=await core('/v1/bookings/holds','POST',{quoteId:body.quoteId,ttlSeconds:900},key,token,identity);
     if(!UUID.test(value.reservationId||''))fail(502,'CORE_RESPONSE_INVALID');s.reservations.add(value.reservationId);json(res,200,value);return true;
    }
-   exactKeys(body,['reservationId']);if(!UUID.test(body.reservationId||'')||!s.reservations.has(body.reservationId))fail(403,'RESERVATION_OUTSIDE_WORKSPACE');
-   json(res,200,await core('/v1/bookings/'+body.reservationId+(route==='/local-api/release'?'/release':'/stay/'+route.split('/').pop()),'POST',{},key,token,identity));return true;
+   exactKeys(body,route==='/local-api/guest'?['reservationId','guest']:['reservationId']);if(!UUID.test(body.reservationId||'')||!s.reservations.has(body.reservationId))fail(403,'RESERVATION_OUTSIDE_WORKSPACE');
+   json(res,200,await core('/v1/bookings/'+body.reservationId+(route==='/local-api/release'?'/release':'/stay/'+route.split('/').pop()),'POST',route==='/local-api/guest'?body.guest:{},key,token,identity));return true;
   }catch(e){if(e.status===401&&e.message!=='STAFF_LOGIN_FAILED')cookie(res,null);if(!res.headersSent)json(res,e instanceof GatewayError?e.status:500,{error:e instanceof GatewayError?e.message:'LOCAL_GATEWAY_ERROR'});else res.end();return true;}
  };
 }

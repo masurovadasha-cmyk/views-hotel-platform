@@ -7,7 +7,7 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
  const blockedSeed=spawnSync(process.execPath,['apps/api/ops/prepare-local-stay.cjs','--ack=LOCAL_SYNTHETIC_STAY','--without-guest'],{encoding:'utf8'});assert.equal(blockedSeed.status,0);const blocked=JSON.parse(blockedSeed.stdout);
  const login=JSON.parse(fs.readFileSync(path.join(root,'private/staff-browser-fixture.json'),'utf8'));assert.match(login.email,/^auth-proof-[a-f0-9]+@views\.invalid$/);
  const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium'}),context=await browser.newContext(),page=await context.newPage();
- const report={stage:'7.33',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),checks:[],productionEnabled:false,realPayments:false};
+ const report={stage:'7.34',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),checks:[],productionEnabled:false,realPayments:false};
  const errors=[];page.on('pageerror',e=>errors.push(e.name));
  try{
   await page.goto('http://localhost:4173/?api=local-core');await page.getByLabel('Email сотрудника',{exact:true}).fill(login.email);await page.getByLabel('Пароль',{exact:true}).fill(login.password);await page.getByRole('button',{name:'Войти',exact:true}).click();
@@ -25,6 +25,20 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
   const denied=await api('check-in',{reservationId:blocked.reservationId},randomUUID());assert.equal(denied.status,409);assert.equal(denied.body.error,'STAY_GUEST_REQUIRED');
   assert.equal((await api('check-in',{reservationId:fixture.reservationId},randomUUID(),false)).status,403);
   assert.equal((await api('check-in',{reservationId:randomUUID()},randomUUID())).status,403);assert.equal((await api('check-in',{reservationId:fixture.reservationId,localStayPilot:true},randomUUID())).status,400);report.checks.push('csrf_workspace_scope_and_body_allowlist');
+  const guest={firstName:'Synthetic',lastName:'Edited',dateOfBirth:'2000-02-29',nationality:'UZ',expectedVersion:1};
+  assert.equal((await api('guest',{reservationId:blocked.reservationId,guest},randomUUID(),false)).status,403);
+  assert.equal((await api('guest',{reservationId:randomUUID(),guest},randomUUID())).status,403);
+  assert.equal((await api('guest',{reservationId:blocked.reservationId,guest:{...guest,verified:true}},randomUUID())).status,400);
+  await blockedRow.getByRole('button',{name:'Заполнить данные гостя (тест)',exact:true}).click();
+  const form=page.getByRole('form',{name:'Данные тестового гостя'});
+  await form.getByLabel('Имя гостя',{exact:true}).fill(guest.firstName);await form.getByLabel('Фамилия гостя',{exact:true}).fill(guest.lastName);await form.getByLabel('Дата рождения',{exact:true}).fill(guest.dateOfBirth);
+  for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+  await form.getByRole('button',{name:'Сохранить тестового гостя',exact:true}).click();
+  await blockedRow.getByText('Основной гость: Synthetic Edited',{exact:true}).waitFor();
+  await page.reload();await blockedRow.getByText('Основной гость: Synthetic Edited',{exact:true}).waitFor();
+  assert.equal(await blockedRow.getByRole('button',{name:'Заселить (тест)',exact:true}).isEnabled(),true);
+  assert.equal((await api('guest',{reservationId:blocked.reservationId,guest},randomUUID())).status,409);
+  report.checks.push('guest_form_persists_unlocks_arrival_and_rejects_stale_write');
   await arriving.getByRole('button',{name:'Заселить (тест)',exact:true}).click();await reception.getByRole('button',{name:'Отмена',exact:true}).click();await arriving.waitFor();report.checks.push('cancel_keeps_confirmed');
   await arriving.getByRole('button',{name:'Заселить (тест)',exact:true}).click();await reception.getByRole('button',{name:'Подтвердить действие',exact:true}).click();await reception.getByText('Тестовое заселение оформлено.',{exact:true}).waitFor();
   await page.reload();const staying=page.getByRole('region',{name:'Сейчас проживают',exact:true}).locator('[data-stay-id="'+fixture.reservationId+'"]');await staying.waitFor();report.checks.push('check_in_survives_reload');

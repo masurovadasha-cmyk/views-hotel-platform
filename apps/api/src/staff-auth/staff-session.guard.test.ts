@@ -27,7 +27,7 @@ describe('staff session enforcement on the trusted local gateway',()=>{
   await expect(guard.canActivate(context(request('/v1/bookings/holds','POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
  });
  it('stay mutations require reservation.manage and a matching live actor',async()=>{
-  const path='/v1/bookings/'+identity.userId+'/stay/check-in';
+  const path='/v1/bookings/'+identity.userId+'/stay/guest';
   const allowed=new StaffSessionGuard({resolve:async()=>identity} as never);
   expect(await allowed.canActivate(context(request(path,'POST')))).toBe(true);
   const reader=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['reservation.read']})} as never);

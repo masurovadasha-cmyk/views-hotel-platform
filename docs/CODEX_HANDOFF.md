@@ -250,3 +250,22 @@ the local stay pilot. Missing guest, invalid inventory, inactive unit, payment
 intent, timing or occupancy blocks the UI action; the transactional write still
 rechecks every prerequisite. No guest editing or document verification is
 implied. See `STAGE7_STAY_READINESS.md` for verification and remaining scope.
+
+## 17. Local primary guest entry
+
+Stage 7.34 adds explicit primary guest entry/replacement before synthetic check-in,
+with strict input shape, optimistic reservation version, payload-bound idempotency
+and atomic guest/version/command/audit/outbox writes. Document/profile/registration
+links prevent replacement. The form never claims document verification. See
+`STAGE7_GUEST_ENTRY.md`. No migration or production activation.
+
+Dirty continuation of 9e8bea8: web/Core builds and typechecks passed; root 220,
+Core 274 tests / 55 files, mail policy 15, network gate 118 files. Staff HTTP:
+13 groups/32 calls; stay browser: seven groups; booking browser: four widths and
+restart/logout regression passed. A browser rerun after restart with an older
+auth fixture timed out before reaching the stay card; running the documented
+`cloud:test:auth` prerequisite to create a fresh synthetic identity followed by
+`cloud:test:stay` passed. Keep that order for reproducible browser evidence.
+The compliance fixture's order-dependent residency-policy FK was corrected;
+the full disposable Core suite then passed twice. Remaining work includes the
+separate document review workflow and real operational integration gates.
