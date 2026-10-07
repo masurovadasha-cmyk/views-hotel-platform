@@ -84,7 +84,7 @@ async function setup(){
  assert.equal(ready,true,'CORE_NOT_READY');await smtpFixture();
 }
 (async()=>{
- const report={schemaVersion:1,stage:process.env.VIEWS_PASSKEY_PROOF==='true'?'7.27':'7.26',passkeyVirtualAuthenticator:process.env.VIEWS_PASSKEY_PROOF==='true',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim().length>0,checks,externalEmailsSent:0,
+ const report={schemaVersion:1,stage:process.env.VIEWS_PASSKEY_PROOF==='true'?'7.28':'7.26',passkeyVirtualAuthenticator:process.env.VIEWS_PASSKEY_PROOF==='true',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim().length>0,checks,externalEmailsSent:0,
  externalMailboxOwnershipProven:false,productionEnabled:false,privilegedMfaEnabled:false,hostDeploymentConfirmed:false};
  try{
   await setup();

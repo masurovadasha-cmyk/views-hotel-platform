@@ -11,7 +11,7 @@ module.exports=async function passkeyProof({owner,runtime,worker,staff,enqueue,s
   page.on('request',r=>{if(r.url().includes('/passkey/'))diagnostics.push({request:new URL(r.url()).pathname,bytes:r.postData()?.length});});
   page.on('response',async r=>{if(r.url().includes('/passkey/')){const body=await r.json().catch(()=>({}));diagnostics.push({route:new URL(r.url()).pathname,status:r.status(),error:body.error});}});
   const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');
-  await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'usb',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
+  const initialAuthenticator=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'usb',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
   const f=await staff(),q=await enqueue(f);assert.equal((await send(f)).state,'accepted');assert.equal((await rpc('activate',{token:q.token,password})).status,200);
   await page.goto('http://localhost:4173/?api=local-core');await page.getByLabel('Email сотрудника',{exact:true}).fill(f.email);await page.getByLabel('Пароль',{exact:true}).fill(password);await page.getByRole('button',{name:'Войти',exact:true}).click();
   const panel=page.getByRole('region',{name:'Ключ доступа',exact:true});await panel.waitFor();
@@ -106,5 +106,6 @@ module.exports=async function passkeyProof({owner,runtime,worker,staff,enqueue,s
    await owner.query("UPDATE organization_memberships SET status='suspended' WHERE id=$1",[f.member]);await owner.query("UPDATE organization_memberships SET status='active' WHERE id=$1",[f.member]);
    assert.equal((await rpc('passkey/state',{},next.body.token)).status,401);
   });
+  await require('./staff-recovery.browser.cjs')({page,context,cdp,initialAuthenticator,owner,runtime,worker,staff,enqueue,send,rpc,ORG,password,check,api,assertion});
  }catch(e){console.error('PASSKEY_DIAGNOSTICS',JSON.stringify(diagnostics));throw e;}finally{if(browser)await browser.close();web.closeAllConnections();await new Promise(r=>web.close(r));}
 };

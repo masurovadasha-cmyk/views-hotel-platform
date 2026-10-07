@@ -1,3 +1,4 @@
+import {randomBytes} from 'node:crypto';
 import {BadRequestException,Injectable,NotFoundException} from '@nestjs/common';
 import {generateAuthenticationOptions,generateRegistrationOptions,verifyAuthenticationResponse,verifyRegistrationResponse,
  type AuthenticationResponseJSON,type RegistrationResponseJSON} from '@simplewebauthn/server';
@@ -7,8 +8,14 @@ import {StaffAuthService,staffTokenHash} from './staff-auth.service';
 
 const ORIGIN='http://localhost:4173',RP_ID='localhost';
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
-type Ceremony='register'|'authenticate';
-type State={registered:boolean;verifiedUntil:string|null};
+type Ceremony='register'|'authenticate'|'replace';
+type State={registered:boolean;verifiedUntil:string|null;recoveryCodesRemaining:number};
+export function recoveryCodeDigest(org:string,member:string,code:unknown){
+ if(typeof code!=='string'||code.length>64)throw new BadRequestException('STAFF_PASSKEY_INVALID');
+ const normalized=code.trim().toLowerCase().replaceAll('-','');
+ if(!/^[a-f0-9]{32}$/.test(normalized))throw new BadRequestException('STAFF_PASSKEY_INVALID');
+ return staffTokenHash('staff-recovery:v1:'+org+':'+member+':'+normalized);
+}
 type Challenge={id:string;credentialId:string|null;challengeHash:string;publicKey:string;counter:number;membershipId:string};
 /** Local passkey rehearsal only: does not grant privileged roles or enable login bypass. */
 @Injectable()
@@ -25,12 +32,20 @@ export class StaffMfaService{
   if(!r)throw new BadRequestException('STAFF_PASSKEY_INVALID');return r;
  }
  async state(token:string){return {enabled:true,...await this.call<State>(token,'state',{})};}
- async begin(token:string,purpose:Ceremony,password:unknown){
-  this.scope();const identity=purpose==='register'?await this.auth.reauthenticate(token,password):await this.auth.resolve(token);
-  const options=purpose==='register'?await generateRegistrationOptions({rpName:'VIEWS local pilot',rpID:RP_ID,userName:identity.email,
+ async recoveryCodes(token:string,password:unknown){
+  this.scope();const identity=await this.auth.reauthenticate(token,password);
+  const recoveryCodes=Array.from({length:8},()=>randomBytes(16).toString('hex').match(/.{4}/g)!.join('-'));
+  await this.call(token,'recovery_codes',{hashes:recoveryCodes.map(code=>recoveryCodeDigest(identity.organizationId,identity.membershipId,code))});
+  return {recoveryCodes};
+ }
+ async begin(token:string,purpose:Ceremony,password:unknown,recoveryCode:unknown=null){
+  this.scope();const identity=purpose!=='authenticate'?await this.auth.reauthenticate(token,password):await this.auth.resolve(token);
+  const recoveryHash=purpose==='replace'&&recoveryCode!==null?recoveryCodeDigest(identity.organizationId,identity.membershipId,recoveryCode):null;
+  const options=purpose!=='authenticate'?await generateRegistrationOptions({rpName:'VIEWS local pilot',rpID:RP_ID,userName:identity.email,
    userID:new TextEncoder().encode(identity.membershipId),attestationType:'none',supportedAlgorithmIDs:[-7,-257],timeout:120000,
    authenticatorSelection:{residentKey:'required',userVerification:'required'}}):await generateAuthenticationOptions({rpID:RP_ID,userVerification:'required',timeout:120000});
-  const q=await this.call<Challenge>(token,'begin',{purpose,challengeHash:staffTokenHash(options.challenge)});
+  const q=await this.call<Challenge>(token,'begin',{purpose,challengeHash:staffTokenHash(options.challenge),recoveryHash});
+  if(purpose==='replace'&&q.credentialId)Object.assign(options,{excludeCredentials:[{id:q.credentialId,type:'public-key'}]});
   if(purpose==='authenticate'&&q.credentialId)Object.assign(options,{allowCredentials:[{id:q.credentialId,type:'public-key'}]});
   return {challengeId:q.id,options};
  }
@@ -45,7 +60,7 @@ export class StaffMfaService{
    if(data.crossOrigin===true||data.topOrigin!==undefined)throw Error('CROSS_ORIGIN');
    const expectedChallenge=(challenge:string)=>staffTokenHash(challenge)===q.challengeHash;
    let proof:Record<string,unknown>;
-   if(purpose==='register'){
+   if(purpose!=='authenticate'){
     const r=response as RegistrationResponseJSON;
     // Reject attestation paths that could consult external certificate/metadata services.
     if(decodeAttestationObject(Buffer.from(r.response.attestationObject,'base64url')).get('fmt')!=='none')throw Error('ATTESTATION_NOT_NONE');
@@ -65,7 +80,7 @@ export class StaffMfaService{
     if(!result.verified)throw Error('NOT_VERIFIED');
     proof={credentialId:q.credentialId,counter:result.authenticationInfo.newCounter,previousCounter:q.counter};
    }
-   return await this.call<{ok:true}>(token,'finish',{purpose,challengeId,...proof});
+   return await this.call<{ok:true;loginRequired?:boolean}>(token,'finish',{purpose,challengeId,...proof});
   }catch{throw new BadRequestException('STAFF_PASSKEY_INVALID');}
  }
 }

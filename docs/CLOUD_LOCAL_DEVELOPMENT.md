@@ -34,7 +34,7 @@ npm run cloud:start
 npm run cloud:status
 ```
 
-`cloud:start` initializes the local database once, applies all 42 current
+`cloud:start` initializes the local database once, applies all 43 current
 migrations with checksum tracking, prepares the existing synthetic workspace,
 issues an invitation if needed, and starts Core plus the staff web gateway.
 Repeated starts retain database rows, credentials, invitations and running
@@ -104,8 +104,8 @@ Playwright is pinned in the root lockfile; Chromium must be installed separately
 using Playwright. Never run the fixture against the persistent development DB.
 
 `npm run cloud:test:passkey` runs the same disposable suite with the Stage 7.27
-passkey pilot enabled, adding a Chromium virtual authenticator and actual
-registration/step-up/replay/revocation tests. The normal launcher leaves this
+passkey pilot and Stage 7.28 recovery enabled, adding a Chromium virtual authenticator and actual
+registration/step-up/replay/revocation/recovery tests. The normal launcher leaves this
 feature off. See `STAGE7_PASSKEY_PILOT.md` for the current scope and MFA gates.
 
 ## Stop, restart and diagnose

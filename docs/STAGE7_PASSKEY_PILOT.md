@@ -110,3 +110,7 @@ or physical security-key validation is claimed.
 - https://simplewebauthn.dev/docs/packages/server
 - https://simplewebauthn.dev/docs/packages/browser
 - https://www.w3.org/TR/webauthn-3/
+
+Stage 7.28 implements local replacement/recovery codes described in
+`STAGE7_PASSKEY_RECOVERY.md`; earlier replacement-unavailable statements above
+describe the Stage 7.27 checkpoint. Production and privileged gates remain.

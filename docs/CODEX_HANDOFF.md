@@ -199,3 +199,13 @@ unchanged. The existing branch/stack is preserved. Default staff login and
 booking behavior remain unchanged; privileged MFA is NOT enabled. Continue next
 with reviewed factor replacement/revocation and recovery, then enforce assurance
 for approved privileged flows only after HTTPS/email/owner gates are satisfied.
+
+## 11. Local recovery and replacement continuation
+
+Stage 7.28 adds single-use recovery code issuance/rotation, replacement with
+password plus an existing UV key or recovery code, and atomic old-key/code/
+session revocation. See `STAGE7_PASSKEY_RECOVERY.md`. Migration 0043 preserves
+applied 0042 and invalidates only pre-existing unfinished MFA ceremonies. The
+local opt-in boundary remains; lost-all-factors recovery and privileged access
+are not enabled. The combined disposable suite includes real Chromium recovery
+flows, replay/concurrency failures and nonempty recovery-table restoration.

@@ -24,7 +24,9 @@ export function StaffWorkspaceGate(){
  useEffect(()=>{let alive=true;
   authCall<Session>('session').then(s=>{if(alive)setSession(s);}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive)setLoading(false);});
   const expired=()=>{setSession({authenticated:false});setChange(false);setCurrent('');setNext('');setError('Сессия завершена или доступ отозван. Войдите снова.');};
-  window.addEventListener('views-staff-expired',expired);return()=>{alive=false;window.removeEventListener('views-staff-expired',expired);};
+  const replaced=()=>{expired();setError('');setNotice('Ключ заменён. Все сессии завершены. Войдите заново.');};
+  window.addEventListener('views-staff-key-replaced',replaced);
+  window.addEventListener('views-staff-expired',expired);return()=>{alive=false;window.removeEventListener('views-staff-expired',expired);window.removeEventListener('views-staff-key-replaced',replaced);};
  },[]);
  async function submit(e:React.FormEvent){
   e.preventDefault();setError('');setNotice('');

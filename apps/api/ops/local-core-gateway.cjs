@@ -95,9 +95,10 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    }
    const identity=await authenticate(token);
    if(!same(req.headers['x-csrf-token'],csrf(token)))fail(403,'CSRF_REQUIRED');
-   if(req.method==='POST'&&['/local-api/passkey/state','/local-api/passkey/options','/local-api/passkey/verify'].includes(route)){
+   if(req.method==='POST'&&['/local-api/passkey/state','/local-api/passkey/options','/local-api/passkey/verify','/local-api/passkey/recovery-codes','/local-api/passkey/replace/options'].includes(route)){
     const body=await readJson(req,16384);
-    const result=await core('/v1/staff-auth/passkey/'+route.split('/').pop(),'POST',body,undefined,token);
+    const result=await core('/v1/staff-auth/'+route.slice('/local-api/'.length),'POST',body,undefined,token);
+    if(result.loginRequired===true){contexts.delete(hash(token));cookie(res,null);}
     json(res,200,result);return true;
    }
    if(req.method==='POST'&&['/local-api/logout','/local-api/password'].includes(route)){

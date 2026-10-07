@@ -23,6 +23,8 @@ module.exports=async function restoreProof({owner,ownerURL,keys}){
   for(const job of jobs){const original=(await owner.query('SELECT * FROM staff_private.mail_jobs WHERE id=$1',[job.id])).rows[0];assert.equal(deriveToken(job,keys),deriveToken(original,keys));assert.ok(!JSON.stringify(job).includes(keys.fixture));}
   // The keyring stays only in the calling process; PostgreSQL restore alone cannot issue links.
   assert.throws(()=>deriveToken(jobs[0],{}));
-  return {tables:tables.length,privateTables:tables.filter(t=>t.schemaname==='staff_private').length,separateKeyring:true};
+  const recoveryCodeRows=(await restored.query('SELECT count(*)::int n FROM staff_private.passkey_recovery_codes')).rows[0].n;
+  if(process.env.VIEWS_PASSKEY_PROOF==='true')assert.ok(recoveryCodeRows>=8,'NONEMPTY_RECOVERY_RESTORE_REQUIRED');
+  return {recoveryCodeRows,tables:tables.length,privateTables:tables.filter(t=>t.schemaname==='staff_private').length,separateKeyring:true};
  }finally{await restored.end();}
 };

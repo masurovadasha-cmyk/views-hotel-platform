@@ -62,10 +62,18 @@ export class StaffAuthController{
     if(b.purpose!=='register'&&b.purpose!=='authenticate')throw new BadRequestException('STAFF_REQUEST_INVALID');
     return this.mfa.begin(token,b.purpose,b.password);
   }
+  @Post('passkey/recovery-codes') @HttpCode(200)
+  recoveryCodes(@Req() req:Request,@Headers('x-views-staff-session') token:string,@Body() body:unknown){
+    this.authorize(req);const b=exact(body,['password']);return this.mfa.recoveryCodes(token,b.password);
+  }
+  @Post('passkey/replace/options') @HttpCode(200)
+  replaceOptions(@Req() req:Request,@Headers('x-views-staff-session') token:string,@Body() body:unknown){
+    this.authorize(req);const b=exact(body,['password','recoveryCode']);return this.mfa.begin(token,'replace',b.password,b.recoveryCode);
+  }
   @Post('passkey/verify') @HttpCode(200)
   passkeyVerify(@Req() req:Request,@Headers('x-views-staff-session') token:string,@Body() body:unknown){
     this.authorize(req);const b=exact(body,['purpose','challengeId','response']);
-    if(b.purpose!=='register'&&b.purpose!=='authenticate')throw new BadRequestException('STAFF_REQUEST_INVALID');
+    if(b.purpose!=='register'&&b.purpose!=='authenticate'&&b.purpose!=='replace')throw new BadRequestException('STAFF_REQUEST_INVALID');
     return this.mfa.finish(token,b.purpose,b.challengeId,b.response);
   }
 
