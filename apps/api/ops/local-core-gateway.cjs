@@ -78,7 +78,7 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
   if(!req.url?.startsWith('/local-api'))return false;
   try{
    if(!config)fail(503,'LOCAL_WORKSPACE_NOT_PREPARED');requireSameOrigin(req,req.method!=='GET');
-   const u=new URL(req.url,'http://127.0.0.1:4173');if(u.search||u.hash||u.pathname!==req.url)fail(400,'INVALID_ROUTE');
+   const u=new URL(req.url,'http://127.0.0.1:4173');if(u.pathname+u.search!==req.url||u.hash||(u.search&&(u.pathname!=='/local-api/reception'||[...u.searchParams.keys()].some(k=>k!=='day')||u.searchParams.getAll('day').length!==1)))fail(400,'INVALID_ROUTE');
    const route=u.pathname,token=tokenFrom(req);
    if(req.method==='GET'&&route==='/local-api/session'){
     if(!token){json(res,200,{authenticated:false});return true;}
@@ -110,6 +110,12 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    const digest=hash(token);for(const [key,c] of contexts)if(c.expires<=Date.now())contexts.delete(key);
    let s=contexts.get(digest);if(!s){if(contexts.size>=32)fail(429,'SESSION_LIMIT');s={quotes:new Map(),reservations:new Set(),window:Date.now(),requests:0,expires:Date.parse(identity.expiresAt)};contexts.set(digest,s);}
    if(Date.now()-s.window>60000){s.window=Date.now();s.requests=0;}if(++s.requests>120)fail(429,'RATE_LIMIT');
+   if(req.method==='GET'&&route==='/local-api/reception'){
+    const day=u.searchParams.get('day')||'today';if(day!=='today'&&!/^\d{4}-\d{2}-\d{2}$/.test(day))fail(400,'INVALID_RECEPTION_DAY');
+    const value=await core('/v1/booking-workspace?propertyId='+config.fixture.propertyId+'&day='+encodeURIComponent(day),'GET',undefined,undefined,token,identity);
+    if(value.property?.id!==config.fixture.propertyId||!value.arrivals||!value.departures||!value.staying)fail(502,'CORE_RESPONSE_INVALID');
+    json(res,200,value);return true;
+   }
    if(req.method==='GET'&&route==='/local-api/workspace'){
     const value=await core('/v1/booking-workspace?propertyId='+config.fixture.propertyId,'GET',undefined,undefined,token,identity);
     if(value.property?.id!==config.fixture.propertyId||!Array.isArray(value.reservations)||!Array.isArray(value.units))fail(502,'CORE_RESPONSE_INVALID');

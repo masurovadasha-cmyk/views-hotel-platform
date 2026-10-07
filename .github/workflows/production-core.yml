@@ -161,6 +161,13 @@ jobs:
           ('30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000002'),
           ('30000000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000002');
 
+          -- Isolated nonprivileged reception fixture with valid HTTP UUIDs.
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '73100000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001',
+            '20000000-0000-4000-8000-000000000001',id,'active',now() FROM roles WHERE code='front_desk';
+          INSERT INTO membership_property_scopes(membership_id,property_id)
+          VALUES('73100000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002');
+
           INSERT INTO analytics_dashboard_cache(
             cache_key,organization_id,membership_id,property_id,property_ids,
             from_date,to_date,schema_version,source_fingerprint,payload,generated_at,expires_at

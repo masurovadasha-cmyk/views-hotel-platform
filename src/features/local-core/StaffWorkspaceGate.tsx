@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react';
 import {startAuthentication,type PublicKeyCredentialRequestOptionsJSON} from '@simplewebauthn/browser';
 import {StaffPasskeyPanel} from './StaffPasskeyPanel';
+import {ReceptionWorkspace} from './ReceptionWorkspace';
 import {LocalCoreWorkspace} from './LocalCoreWorkspace';
 import './local-core.css';
 type Identity={email:string;displayName:string;role:string;permissions:string[];emailVerified:boolean;expiresAt:string};
@@ -82,6 +83,7 @@ export function StaffWorkspaceGate(){
     <button className="primary" disabled={busy||assurance}>Сохранить новый пароль</button></fieldset></form></div>}
   </section>
   <StaffPasskeyPanel csrf={session.csrf}/>
+  <ReceptionWorkspace staffCsrf={session.csrf}/>
   <LocalCoreWorkspace staffCsrf={session.csrf}/>
  </>;
  return <main className="localWorkspace staffLogin">

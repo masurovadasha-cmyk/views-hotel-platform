@@ -225,3 +225,11 @@ After a server assurance refusal it clears password fields, offers explicit key
 confirmation and requires a new explicit password submission. Lost responses are
 reported as unknown outcomes, without automatic retry. See
 `STAGE7_PASSWORD_ASSURANCE_UX.md`; no new migration or privilege activation.
+
+## 14. Reception overview continuation
+
+Stage 7.31 adds a read-only reception projection and date selector: confirmed
+arrivals, scheduled departures and current checked-in stays, scoped to the staff
+property and its timezone. It reads PostgreSQL independently of the last-50 list;
+no check-in/checkout write is enabled. See `STAGE7_RECEPTION_WORKSPACE.md` for
+boundaries, executed evidence and the remaining operational transition work.

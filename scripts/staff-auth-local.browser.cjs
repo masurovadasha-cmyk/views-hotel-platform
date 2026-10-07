@@ -32,6 +32,17 @@ const {chromium}=require('playwright');
   const [held]=await Promise.all([page.waitForResponse(r=>r.url().endsWith('/local-api/holds')),page.getByRole('button',{name:'Создать тестовый резерв',exact:true}).click()]);
   assert.equal(held.status(),200);const reservationId=(await held.json()).reservationId;
   await page.reload({waitUntil:'networkidle'});const row=page.locator('[data-reservation-id="'+reservationId+'"]');await row.waitFor();
+  const reception=page.getByRole('region',{name:'Ресепшен',exact:true});
+  await reception.getByRole('region',{name:'Ожидаемые заезды',exact:true}).waitFor();
+  await reception.getByLabel('Дата ресепшена',{exact:true}).fill(day(0));
+  const [summary]=await Promise.all([page.waitForResponse(r=>r.url().includes('/local-api/reception?day='+day(0))),reception.getByRole('button',{name:'Показать сводку',exact:true}).click()]);
+  assert.equal(summary.status(),200);const board=await summary.json();assert.equal(board.day,day(0));assert.equal(board.property.timezone,'Asia/Tashkent');
+  assert.ok(!board.arrivals.items.some(r=>r.reservationId===reservationId));
+  const invalid=await page.evaluate(async()=>{
+   const session=await(await fetch('/local-api/session',{headers:{'X-Views-Local-Workspace':'1'}})).json();
+   const headers={'X-Views-Local-Workspace':'1','X-CSRF-Token':session.csrf};
+   return Promise.all(['/local-api/reception?day=2034-02-30','/local-api/reception?day=today&propertyId=forged'].map(async path=>(await fetch(path,{headers})).status));
+  });assert.deepEqual(invalid,[400,400]);report.reception={serverProjection:true,holdExcluded:true,invalidDateAndScopeOverrideDenied:true};
   await page.screenshot({path:path.join(evidence,'stage725-staff-workspace.png'),fullPage:true});
   for(const width of [360,390,768,1440]){
    await page.setViewportSize({width,height:1000});await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));

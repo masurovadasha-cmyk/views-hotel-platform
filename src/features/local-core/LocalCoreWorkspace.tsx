@@ -7,7 +7,7 @@ type Workspace={property:{id:string;name:Record<string,string>;timezone:string};
 type Quote={quoteId:string;currency:string;nights:number;totalMinor:string;expiresAt:string;lines:Array<{code:string;label:Record<string,string>;amountMinor:string}>};
 type Hold={reservationId:string;confirmationCode:string;holdExpiresAt:string;status:string;idempotentReplay:boolean};
 
-async function request<T>(route:string,csrf?:string,body?:unknown,key?:string):Promise<T>{
+export async function request<T>(route:string,csrf?:string,body?:unknown,key?:string):Promise<T>{
   const headers:Record<string,string>={"X-Views-Local-Workspace":"1"};
   if(csrf)headers["X-CSRF-Token"]=csrf;
   if(body!==undefined)headers["Content-Type"]="application/json";

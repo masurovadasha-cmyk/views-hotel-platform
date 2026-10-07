@@ -9,13 +9,14 @@ import {requireUuid} from "../identity/actor-context";
 export class BookingWorkspaceController{
   constructor(private readonly db:DatabaseService){}
   @Get()
-  async read(@Headers() headers:IncomingHttpHeaders,@Query("propertyId") propertyId:string){
+  async read(@Headers() headers:IncomingHttpHeaders,@Query("propertyId") propertyId:string,@Query("day") day?:string){
     let actor;
     try{actor={organizationId:requireUuid(single(headers["x-organization-id"]),"organization_id"),
       userId:requireUuid(single(headers["x-user-id"]),"user_id"),
       membershipId:requireUuid(single(headers["x-membership-id"]),"membership_id"),requestId:randomUUID()};}
     catch{throw new UnauthorizedException("valid actor context required");}
     try{propertyId=requireUuid(propertyId,"property_id");}catch{throw new BadRequestException("INVALID_PROPERTY_ID");}
+    if(day!==undefined&&day!=='today'&&(day.startsWith('0000')||!/^\d{4}-\d{2}-\d{2}$/.test(day)||!Number.isFinite(Date.parse(day))||new Date(day).toISOString().slice(0,10)!==day))throw new BadRequestException("INVALID_RECEPTION_DAY");
     return this.db.withActor(actor,async client=>{
       await client.query("SET LOCAL statement_timeout='5s'");
       const allowed=(await client.query<{allowed:boolean}>(`SELECT app.can_access_property($1::uuid) AND EXISTS(
@@ -27,6 +28,31 @@ export class BookingWorkspaceController{
       const property=(await client.query<{id:string;name:Record<string,string>;timezone:string}>(
         "SELECT id,name,timezone FROM properties WHERE id=$1 AND organization_id=$2",[propertyId,actor.organizationId])).rows[0];
       if(!property)throw new ForbiddenException("PROPERTY_FORBIDDEN");
+      if(day!==undefined){
+        const result=(await client.query(`WITH selected AS (
+          SELECT CASE WHEN $3='today' THEN (clock_timestamp() AT TIME ZONE $4)::date ELSE $3::date END AS day
+        ), grouped AS (
+          SELECT bucket,r.id AS "reservationId",r.confirmation_code AS "confirmationCode",u.code AS "unitCode",r.status,
+            r.check_in_at AS "checkInAt",r.check_out_at AS "checkOutAt"
+          FROM reservations r LEFT JOIN units u ON u.id=r.unit_id CROSS JOIN selected
+          CROSS JOIN LATERAL unnest(ARRAY[
+            CASE WHEN r.status='confirmed' AND (r.check_in_at AT TIME ZONE $4)::date=selected.day THEN 'arrivals' END,
+            CASE WHEN r.status='checked_in' AND (r.check_out_at AT TIME ZONE $4)::date=selected.day THEN 'departures' END,
+            CASE WHEN r.status='checked_in' THEN 'staying' END
+          ]) bucket
+          WHERE r.organization_id=$1 AND r.property_id=$2 AND bucket IS NOT NULL
+        ), ranked AS (
+          SELECT *,row_number() OVER(PARTITION BY bucket ORDER BY "checkInAt","reservationId") n FROM grouped
+        ) SELECT (SELECT day::text FROM selected) AS day,clock_timestamp() AS "databaseTime",
+          COALESCE(jsonb_object_agg(bucket,value),'{}'::jsonb) AS groups FROM (
+            SELECT bucket,jsonb_build_object('total',count(*),'truncated',count(*)>100,
+              'items',jsonb_agg(to_jsonb(ranked)-'bucket'-'n' ORDER BY n) FILTER(WHERE n<=100)) value
+            FROM ranked GROUP BY bucket
+          ) summaries`,[actor.organizationId,propertyId,day,property.timezone])).rows[0];
+        const empty={total:0,truncated:false,items:[]};
+        return {property,day:result.day,databaseTime:result.databaseTime,
+          arrivals:result.groups.arrivals||empty,departures:result.groups.departures||empty,staying:result.groups.staying||empty};
+      }
       const units=(await client.query(`SELECT u.id AS "unitId",u.code,ut.name AS "unitTypeName",ut.max_guests AS "maxGuests",
         rp.id AS "ratePlanId",rp.name AS "rateName",rp.currency,rp.base_nightly_minor::text AS "baseNightlyMinor"
         FROM units u JOIN unit_types ut ON ut.id=u.unit_type_id
