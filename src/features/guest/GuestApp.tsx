@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
+import {SmsUnavailableDialog} from "./SmsUnavailableDialog";
 import {
   AlertCircle,Bath,BedDouble,Bell,CalendarDays,Car,CheckCircle2,ChevronLeft,ChevronRight,CircleHelp,
   ConciergeBell,CreditCard,Heart,Map as MapIcon,MapPin,MessageCircle,Search,Send,Shirt,ShoppingBag,
@@ -39,7 +40,6 @@ export function GuestApp({live=false}:{live?:boolean}){
     {id:"n2",kind:"service",title:"Service updates",detail:"Cleaning and concierge updates are grouped here."}
   ]);
   const [supportQuery,setSupportQuery]=useState("");
-  const [smsCode,setSmsCode]=useState("");
   const [showSms,setShowSms]=useState(false);
 
   const filtered=useMemo(()=>apartments.filter(a=>a.capacity>=guests),[guests]);
@@ -131,7 +131,7 @@ export function GuestApp({live=false}:{live?:boolean}){
 
     <nav className="guestNav">{[["explore",Search],["bookings",CalendarDays],["services",ConciergeBell],["messages",MessageCircle],["profile",UserRound]].map(([id,Icon])=><button className={tab===id?"active":""} key={id as string} onClick={()=>setTab(id as Tab)}><Icon size={18}/><span>{id as string}</span></button>)}</nav>
 
-    {showSms&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)setShowSms(false)}}><div className="phoneModal"><div className="brandMini"><span className="vmark">V</span><b>VIEWS</b></div><h2>Enter code</h2><p>We sent a verification code to your phone.</p><div className="smsDigits"><input value={smsCode} onChange={e=>setSmsCode(e.target.value.replace(/\D/g,"").slice(0,6))} inputMode="numeric" placeholder="123456"/></div><button className="primary" onClick={()=>setShowSms(false)}>Verify</button><button onClick={()=>setShowSms(false)}>Cancel</button></div></div>}
+    {showSms&&<SmsUnavailableDialog onClose={()=>setShowSms(false)}/>}
 
     {selected&&<div className="modalBack" onMouseDown={e=>{if(e.target===e.currentTarget)closeFlow()}}><div className="modal journeyModal">
       <div className="journeyHead"><button onClick={()=>flow==="apartment"?closeFlow():go(flow==="booking"?"apartment":flow==="guest-data"?"booking":flow==="payment"?"guest-data":"apartment")}><ChevronLeft/></button><div><small>VIEWS GUEST JOURNEY</small><b>{flow.replace(/-/g," ")}</b></div><button onClick={closeFlow}>Close</button></div>

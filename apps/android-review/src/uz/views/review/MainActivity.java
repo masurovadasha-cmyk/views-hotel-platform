@@ -14,6 +14,9 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.RenderProcessGoneDetail;
+import android.webkit.WebResourceError;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.io.ByteArrayInputStream;
@@ -27,10 +30,11 @@ public final class MainActivity extends Activity {
   private static final String PREFIX="/views-hotel-platform/";
   private static final String HOME="https://"+HOST+PREFIX;
   private WebView web;
+  private LinearLayout root;
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
-    LinearLayout root=new LinearLayout(this);
+    root=new LinearLayout(this);
     root.setOrientation(LinearLayout.VERTICAL);
     root.setBackgroundColor(Color.rgb(246,245,242));
     // Keep the review label visible, including when the web app is in dark mode.
@@ -46,13 +50,17 @@ public final class MainActivity extends Activity {
       .setMessage("Проверка интерфейса VIEWS. Данные демонстрационные. Реальные платежи, вход и серверная синхронизация не подключены. Не вводите паспорта, карты и другие реальные персональные данные.")
       .setPositiveButton("Понятно",null).show());
     root.addView(banner);
-    web=new WebView(this);
-    root.addView(web,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1));
     setContentView(root);
     root.setOnApplyWindowInsetsListener((v,insets)->{
       v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
       return insets.consumeSystemWindowInsets();
     });
+    openReview();
+  }
+
+  private void openReview(){
+    web=new WebView(this);
+    root.addView(web,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1));
     WebView.setWebContentsDebuggingEnabled(false);
     WebSettings settings=web.getSettings();
     settings.setJavaScriptEnabled(true);
@@ -69,6 +77,16 @@ public final class MainActivity extends Activity {
     CookieManager.getInstance().setAcceptThirdPartyCookies(web,false);
     web.setWebChromeClient(new WebChromeClient());
     web.setWebViewClient(new WebViewClient(){
+      @Override public boolean onRenderProcessGone(WebView view,RenderProcessGoneDetail detail){
+        showRecovery(view);
+        return true;
+      }
+      @Override public void onReceivedError(WebView view,WebResourceRequest request,WebResourceError error){
+        if(request.isForMainFrame())showRecovery(view);
+      }
+      @Override public void onReceivedHttpError(WebView view,WebResourceRequest request,WebResourceResponse error){
+        if(request.isForMainFrame())showRecovery(view);
+      }
       @Override public WebResourceResponse shouldInterceptRequest(WebView view,WebResourceRequest request){
         Uri uri=request.getUrl();
         if(!HOST.equals(uri.getHost()))return denied();
@@ -102,6 +120,28 @@ public final class MainActivity extends Activity {
     });
     web.loadUrl(HOME+"?api=demo");
   }
+  private void showRecovery(WebView failed){
+    if(failed!=web)return;
+    root.removeView(failed);
+    web=null;
+    failed.destroy();
+    LinearLayout recovery=new LinearLayout(this);
+    recovery.setOrientation(LinearLayout.VERTICAL);
+    int pad=(int)(24*getResources().getDisplayMetrics().density);
+    recovery.setPadding(pad,pad,pad,pad);
+    TextView message=new TextView(this);
+    message.setText("Не удалось открыть экран приложения. Попробуйте ещё раз.");
+    message.setTextColor(Color.rgb(26,29,36));
+    message.setTextSize(18);
+    message.setAccessibilityLiveRegion(android.view.View.ACCESSIBILITY_LIVE_REGION_POLITE);
+    recovery.addView(message);
+    Button retry=new Button(this);
+    retry.setText("Повторить открытие");
+    retry.setOnClickListener(v->{root.removeView(recovery);openReview();});
+    recovery.addView(retry);
+    root.addView(recovery,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,0,1));
+    retry.requestFocus();
+  }
   private static WebResourceResponse denied(){
     return new WebResourceResponse("text/plain","UTF-8",404,"Not Found",new HashMap<String,String>(),new ByteArrayInputStream(new byte[0]));
   }
@@ -118,8 +158,8 @@ public final class MainActivity extends Activity {
     if(path.endsWith(".woff"))return "font/woff";
     return "application/octet-stream";
   }
-  @Override public void onBackPressed(){if(web.canGoBack())web.goBack();else super.onBackPressed();}
-  @Override protected void onPause(){web.onPause();super.onPause();}
+  @Override public void onBackPressed(){if(web!=null&&web.canGoBack())web.goBack();else super.onBackPressed();}
+  @Override protected void onPause(){if(web!=null)web.onPause();super.onPause();}
   @Override protected void onResume(){super.onResume();if(web!=null)web.onResume();}
   @Override protected void onDestroy(){if(web!=null)web.destroy();super.onDestroy();}
 }

@@ -15,8 +15,8 @@ const assert=require('node:assert/strict');
    const u=new URL(route.request().url());
    if(u.origin!==origin||!u.pathname.startsWith(prefix)){external.push({origin:u.origin,type:route.request().resourceType()});return route.abort();}
    const relative=decodeURIComponent(u.pathname.slice(prefix.length))||'index.html';
-   const file=path.resolve('dist',relative);
-   if(!file.startsWith(path.resolve('dist')+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
+   const file=path.resolve('dist-android',relative);
+   if(!file.startsWith(path.resolve('dist-android')+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
    const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.jpg':'image/jpeg'}[path.extname(file)];
    await route.fulfill({path:file,contentType:mime});
   });
@@ -25,6 +25,18 @@ const assert=require('node:assert/strict');
   assert.ok((await page.locator('#root').innerText()).length>100);
   assert.ok(await page.locator('button:visible').count()>0);
   assert.equal(await page.getByRole('heading',{name:'Вход в рабочую область',exact:true}).count(),0);
+  const sms=page.getByRole('button',{name:'SMS verification',exact:true});
+  await sms.click();
+  const smsStatus=page.getByRole('dialog',{name:'SMS verification unavailable',exact:true});
+  await smsStatus.waitFor();
+  assert.equal(await smsStatus.locator('input').count(),0);
+  assert.equal(await smsStatus.getByRole('button',{name:'Verify',exact:true}).count(),0);
+  assert.equal(await smsStatus.getByRole('button',{name:'Close',exact:true}).evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('Tab');
+  assert.equal(await smsStatus.getByRole('button',{name:'Close',exact:true}).evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('Escape');
+  assert.equal(await smsStatus.count(),0);
+  assert.equal(await sms.evaluate(el=>el===document.activeElement),true);
   const photos=page.locator('.photoButton img');
   assert.equal(await photos.count(),4);
   async function verifyPhotos(){
@@ -44,6 +56,6 @@ const assert=require('node:assert/strict');
   await page.getByRole('button',{name:'Guest App',exact:true}).click();
   await verifyPhotos();
   assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
-  console.log(JSON.stringify({result:'pass',bundledAndroidOrigin:true,explicitDemo:true,loadedListingPhotos:4,legacyStringApiAbsent:true,staffNavigation:true,detailPhotoLoaded:true,reloadPhotosLoaded:true,viewports:[360,390,768,1440],blockedImageRequests:external.length,externalRequestsSent:0,pageErrors:0,androidDeviceTested:false}));
+  console.log(JSON.stringify({result:'pass',bundledAndroidOrigin:true,explicitDemo:true,loadedListingPhotos:4,smsHonestAndKeyboardAccessible:true,legacyStringApiAbsent:true,staffNavigation:true,detailPhotoLoaded:true,reloadPhotosLoaded:true,viewports:[360,390,768,1440],blockedImageRequests:external.length,externalRequestsSent:0,pageErrors:0,androidDeviceTested:false}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -27,10 +27,10 @@ python3 scripts/build-android-review.py
 ```
 
 The browser proof intercepts the reserved HTTPS asset origin and serves the same
-built dist files. It checks rendered demo mode and refuses external requests.
+built dist-android files. It checks rendered demo mode and refuses external requests.
 It is not a native WebView, emulator, installation or physical-device test.
-After packaging, restore `npm run build` for the existing root-mounted local
-server. Generated review-output is ignored by Git.
+Android builds use dist-android, separate from the root-mounted local server dist.
+Generated review-output and dist-android are ignored by Git.
 
 The initial SDK/javac blocker was resolved in Stage 7.40. Toolchain installation
 and native packaging now pass in this cloud session. No signed APK, Android
@@ -56,7 +56,7 @@ npm run build
 ```
 
 Native Java compilation, DEX conversion, resource packaging, zip alignment and
-compiled manifest inspection passed. Every embedded dist file is compared byte
+compiled manifest inspection passed. Every embedded dist-android file is compared byte
 for byte. Packaging refuses an ordinary root-mounted web build, since it would
 break the Android asset prefix. Build evidence records source SHA/dirty flag,
 asset count, artifact size and SHA-256. This is unsigned review mode, without

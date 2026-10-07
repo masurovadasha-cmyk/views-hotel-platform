@@ -17,8 +17,8 @@ acceptance. Source repository and branch remain unchanged; main is not merged.
 | Recovery | Disposable mail/auth restore; full local snapshot restored and table digests matched, encrypted files decrypted with separate key | Production recovery, KMS recovery and restored deployment credentials/runbook exercise |
 | Tenant/owner onboarding | Existing model/RLS and property scoping | Verified real inventory/owner data and end-to-end onboarding UI against Core |
 | RU/UZ/EN, accessibility | RU local staff journey, four tested widths, timezone handling | Complete three-language catalog, full keyboard/screen-reader and product-wide accessibility acceptance |
-| Android | Recovered shared-web WebView wrapper; native unsigned build and asset/manifest checks pass; four bundled demo photos render without network | Emulator install/launch attempted: WebView syntax fixed, software graphics still prevent UI acceptance; stable signing, update, physical-device and connected HTTPS proof remain |
-| Deployment/CI | Git branch push and local builds/tests | GitHub REST read unavailable in this session; hosted check state not independently established. Historical Cloudflare failure is not declared fixed |
+| Android | Recovered shared-web WebView wrapper; native unsigned build and asset/manifest checks pass; four bundled demo photos render without network | Android 10/15 install attempted; WebView syntax fixed and crash recovery added, native UI acceptance remains blocked in software emulation. Existing-key signing helper passes 10 disposable checks; permanent key, update, physical-device and connected HTTPS proof remain |
+| Deployment/CI | Git branch push and local builds/tests | Public GitHub checks read at 6ce5fcc: verify and both mail jobs succeeded; Workers Builds failed. Cloudflare build log access and successful deployment remain unverified |
 | Production release | No activation performed | Explicit owner approval plus preceding operational/provider/legal/device acceptance |
 
 ## Current active local chain
@@ -40,8 +40,9 @@ identity certification, and a turnover confirmation is not proof of physical wor
 3. Real owner/inventory onboarding requires owner-provided verified business data.
 4. Localization and the real housekeeping/owner interfaces remain software work;
    they are not marked complete or mislabeled as external-credential blockers.
-5. Android release needs the actual wrapper/build source and approved persistent
-   signing setup. A new temporary APK would not close the update-path requirement.
+5. Android wrapper/build and existing-key signing tooling are present. The owner
+   confirmed no permanent signing key, host or domain yet (7 October 2026). Real
+   device/update acceptance and secure key configuration remain required.
 6. Public hosting, external email, real payments, recurring services, main merge
    and production remain explicit activation gates from AGENTS.md.
 
@@ -49,3 +50,6 @@ Do not request secret values in chat. Reuse existing secure environment bindings
 where applicable and request only missing provider-specific requirements after
 checking them. Available Git transport authentication is already sufficient for
 this branch; no replacement GitHub token is requested.
+
+See STAGE7_ANDROID_SIGNING_AND_DELIVERY.md for the final local verification
+checkpoint, signing configuration and native emulator failure boundaries.

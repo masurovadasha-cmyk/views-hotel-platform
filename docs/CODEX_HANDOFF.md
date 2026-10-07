@@ -404,3 +404,34 @@ GPU font/raster failures prevented usable UI acceptance. No /dev/kvm is availabl
 attempted renderer flags did not resolve it. No native UI/physical-device success
 is claimed. See STAGE7_ANDROID_WEBVIEW_COMPATIBILITY.md; optional verified emulator
 tooling is reproducible. Owned emulator/ADB container stopped, release unchanged.
+
+## 26. Delivery preparation, build isolation and honest failure states
+
+Stage 7.43 separates Android dist-android from web dist, fixing APK builds
+overwriting the running loopback web assets. Android browser proof confirms
+no external requests, four widths, guest/staff navigation and the SMS unavailable
+dialog with keyboard focus restoration; the false SMS-delivered/verified flow
+is removed. Native WebView failures now replace the broken view with a retry
+panel; compilation passes, native recovery UI acceptance remains unproven.
+
+Existing-key signing requires a clean matching build, expected public certificate
+pin, private external secret files and verified unsigned checksum/manifest/assets.
+Ten disposable signing checks pass; no permanent identity is generated or replaced.
+See STAGE7_ANDROID_SIGNING_AND_DELIVERY.md for secure configuration and limits.
+
+Full clean 6ce5fcc cloud:verify passed: root 222/36, Core 283/56, mail policy 15,
+HTTP 13 groups/32 calls, stay 13 groups, booking four widths. Full restore matched
+71 tables/7 private, 12 encrypted documents and 5 turnovers. Dirty continuation:
+root 222, Android/browser/packaging, unchanged web hash across Android build,
+10 signing guards, combined mail/passkey 47 groups/60 HTTP calls passed. The
+mail fixture initially refused occupied ports, then needed root-built assets;
+Android output isolation fixes that build collision. Persistent runtime restarted.
+
+Android 15/WebView 124 installed but software emulation produced renderer crash
+and System UI ANR; native UI acceptance still fails. Owned emulator/ADB stopped,
+temporary emulator key removed. User confirmed no host/domain/permanent Android
+key yet. Public GitHub checks at 6ce5fcc show verify/mail success and Workers
+Builds failure; external Cloudflare diagnostic logs are still unavailable.
+Remaining localization and owner/housekeeper software are explicitly OPEN, not
+credential blockers. No whole-product, production or physical-device completion
+is claimed. Final private reports identify the exact final SHA/dirty state.

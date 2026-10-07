@@ -57,3 +57,8 @@ signing material is not a deliverable and is not stored in Git.
 Next native acceptance needs a working Android graphics environment (preferably
 hardware-accelerated) and must verify rendered guest/staff screens, photo detail,
 back navigation and cold restart. An `am start` success alone is insufficient.
+
+Stage 7.43 repeated native testing with Android 15 / WebView 124. Installation
+succeeded, but software emulation still failed to render; recovery UI was added.
+See STAGE7_ANDROID_SIGNING_AND_DELIVERY.md. Neither native attempt is a passed
+Android UI acceptance result.

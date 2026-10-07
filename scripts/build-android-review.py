@@ -3,6 +3,7 @@
 import hashlib, json, os, pathlib, shutil, subprocess, tempfile, zipfile
 import xml.etree.ElementTree as ET
 ROOT=pathlib.Path(__file__).resolve().parents[1]
+WEB=ROOT/'dist-android'
 os.chdir(ROOT)
 def run(*args):
     subprocess.run([str(arg) for arg in args],check=True)
@@ -14,9 +15,9 @@ tools=sdk/'build-tools/35.0.0'
 assert (tools/'aapt2').exists() and (tools/'d8').exists(),'Android build-tools 35.0.0 required'
 android=sdk/'platforms/android-35/android.jar'
 assert android.exists(),'Android platform 35 required'
-assert (ROOT/'dist/index.html').exists(),'Build the web app first'
-assert '/views-hotel-platform/assets/' in (ROOT/'dist/index.html').read_text(), 'Run npm run build:android before Android packaging'
-marker=ROOT/'dist/android-build.json'
+assert (WEB/'index.html').exists(),'Build the web app first'
+assert '/views-hotel-platform/assets/' in (WEB/'index.html').read_text(), 'Run npm run build:android before Android packaging'
+marker=WEB/'android-build.json'
 assert marker.exists() and json.loads(marker.read_text())=={'schemaVersion':1,'target':'chrome74','mode':'static-demo'}, 'Android-compatible build required: npm run build:android'
 source=ROOT/'apps/android-review'
 output=ROOT/'review-output'
@@ -26,7 +27,7 @@ if not shutil.which('javac'):
 with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
     work=pathlib.Path(directory)
     (work/'classes').mkdir(); (work/'dex').mkdir(); (work/'assets/www').mkdir(parents=True)
-    shutil.copytree(ROOT/'dist',work/'assets/www',dirs_exist_ok=True)
+    shutil.copytree(WEB,work/'assets/www',dirs_exist_ok=True)
     manifest=(source/'AndroidManifest.xml').read_text()
     version=738001
     manifest=manifest.replace('717001',str(version))
@@ -59,9 +60,9 @@ with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
     assert root.find('application/activity').get(A+'name') in ['.MainActivity','uz.views.review.MainActivity']
     assert [p.get(A+'name') for p in root.findall('uses-permission')]==['android.permission.INTERNET']
     with zipfile.ZipFile(apk) as archive:
-        assets=[p for p in (ROOT/'dist').rglob('*') if p.is_file()]
+        assets=[p for p in (WEB).rglob('*') if p.is_file()]
         for asset in assets:
-            assert archive.read('assets/www/'+asset.relative_to(ROOT/'dist').as_posix())==asset.read_bytes(), str(asset)
+            assert archive.read('assets/www/'+asset.relative_to(WEB).as_posix())==asset.read_bytes(), str(asset)
         assert not any(name.startswith('META-INF/') and name.endswith(('.RSA','.DSA','.EC')) for name in archive.namelist())
         assert 'classes.dex' in archive.namelist()
     sha=hashlib.sha256(apk.read_bytes()).hexdigest()

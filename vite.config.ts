@@ -6,5 +6,5 @@ const androidBuildTarget:Plugin={
 };
 export default defineConfig(({mode})=>({
   plugins:[react(),...(mode==="android"?[androidBuildTarget]:[])],
-  build:{sourcemap:true,...(mode==="android"?{target:"chrome74"}:{})}
+  build:{outDir:mode==="android"?"dist-android":"dist",sourcemap:true,...(mode==="android"?{target:"chrome74"}:{})}
 }));

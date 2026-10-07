@@ -1,5 +1,10 @@
 # VIEWS release gates
 
+Historical Pages/D1 preview checklist. Current PostgreSQL Core delivery and
+remaining gates are tracked in [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
+D1 is not the operational source of truth; passing this historical checklist
+does not authorize production activation.
+
 A VIEWS release candidate is acceptable only when all of the following are green:
 
 1. Production dependency audit
