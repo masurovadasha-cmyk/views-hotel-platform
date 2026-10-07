@@ -68,7 +68,22 @@ async function startCore(enabled,key,org){
   stage='database';cluster=fs.mkdtempSync(path.join(process.env.RUNNER_TEMP,'views-stage731-pg-'));
   await new Promise((resolve,reject)=>{const s=net.createServer();s.once('error',()=>reject(Error('CI_PORT_ALREADY_IN_USE')));s.listen(55432,'127.0.0.1',()=>s.close(resolve));});
   command(pg('initdb'),['-D',path.join(cluster,'data'),'-U','views_stage731_owner','--encoding=UTF8','--locale=C','--auth=trust']);
-  command(pg('pg_ctl'),['start','-D',path.join(cluster,'data'),'-l',path.join(cluster,'server.log'),'-o','-h 127.0.0.1 -p 55432','-w','-t','30'],{log:path.join(cluster,'ctl.log')});started=true;
+  // Debian packages default to a shared system socket directory. Keep this
+  // disposable cluster's socket inside its own directory; no sudo/chmod needed.
+  if(process.platform!=='win32'){
+   const escaped=cluster.replace(/'/g,"''");
+   fs.appendFileSync(path.join(cluster,'data','postgresql.conf'),"\nunix_socket_directories = '"+escaped+"'\n");
+  }
+  try{
+   command(pg('pg_ctl'),['start','-D',path.join(cluster,'data'),'-l',path.join(cluster,'server.log'),'-o','-h 127.0.0.1 -p 55432','-w','-t','30'],{log:path.join(cluster,'ctl.log')});
+   started=true;
+  }catch(e){
+   // At this point there are no test credentials, users or application queries
+   // in PostgreSQL. Retain startup diagnostics only, never a private dump.
+   const out=path.join(REPO,'rollout-evidence');fs.mkdirSync(out,{recursive:true});
+   for(const name of ['ctl.log','server.log']){const f=path.join(cluster,name);if(fs.existsSync(f))fs.copyFileSync(f,path.join(out,'startup-'+name));}
+   throw e;
+  }
   connection={host:'127.0.0.1',port:55432,database:'views_local',user:'views_stage731_owner',connectionTimeoutMillis:5000};
   const admin=new Client({...connection,database:'postgres'});await admin.connect();await admin.query('CREATE DATABASE views_local');await admin.end();
   owner=new Client(connection);await owner.connect();
