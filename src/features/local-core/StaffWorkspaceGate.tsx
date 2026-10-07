@@ -68,7 +68,10 @@ export function StaffWorkspaceGate(){
  }
  if(loading)return <main className="localWorkspace"><p role="status">Проверка сессии сотрудника…</p></main>;
  if(session.authenticated&&session.identity&&session.csrf)return <>
-  <section className="localWorkspace staffAccount" aria-label="Учётная запись сотрудника">
+  <nav className="localWorkspace localNavigation" aria-label="Разделы рабочей области">
+   <a href="#staff-reception">Ресепшен и уборка</a><a href="#staff-booking">Бронирование</a><a href="#staff-security">Ключи доступа</a><a href="#staff-account">Учётная запись</a>
+  </nav>
+  <section id="staff-account" tabIndex={-1} className="localWorkspace staffAccount" aria-label="Учётная запись сотрудника">
    <div><strong>{session.identity.displayName||session.identity.email}</strong><small>{session.identity.email} · {session.identity.role==='front_desk'?'Ресепшен':session.identity.role}</small>
    <small>Сессия PostgreSQL · {session.identity.emailVerified?'Email подтверждён':'Локальная проверка приглашения, не подтверждение email'}</small></div>
    <div className="staffAccountActions"><button disabled={busy} onClick={()=>{setChange(v=>!v);setCurrent('');setNext('');setAssurance(false);setChangeNotice('');setError('');}}>Изменить пароль</button>
@@ -82,9 +85,9 @@ export function StaffWorkspaceGate(){
     <label>Новый пароль<input aria-label="Новый пароль" type="password" required minLength={15} maxLength={128} autoComplete="new-password" value={next} onChange={e=>setNext(e.target.value)}/></label>
     <button className="primary" disabled={busy||assurance}>Сохранить новый пароль</button></fieldset></form></div>}
   </section>
-  <StaffPasskeyPanel csrf={session.csrf}/>
-  <ReceptionWorkspace staffCsrf={session.csrf}/>
-  <LocalCoreWorkspace staffCsrf={session.csrf}/>
+  <div id="staff-security" tabIndex={-1}><StaffPasskeyPanel csrf={session.csrf}/></div>
+  <div id="staff-reception" tabIndex={-1}><ReceptionWorkspace staffCsrf={session.csrf}/></div>
+  <div id="staff-booking" tabIndex={-1}><LocalCoreWorkspace staffCsrf={session.csrf}/></div>
  </>;
  return <main className="localWorkspace staffLogin">
   <span className="localEyebrow">VIEWS · ВХОД СОТРУДНИКА</span>

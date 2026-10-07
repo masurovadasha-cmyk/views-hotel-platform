@@ -326,3 +326,22 @@ ledger table. No production/physical-device/hosted-CI success is claimed.
 `npm run cloud:verify` is the complete local verification command; private reports
 record exact SHA/dirty status. `cloud:test:restore` keeps the source read-only and
 uses a new disposable container. The live rehearsal retains 47 immutable migrations.
+
+## 21. Connected default entry and workspace navigation
+
+Stage 7.38 fixes the dedicated HTTP loopback server on port 4173 opening the
+legacy Live API when the URL had no query parameter. It now defaults to the
+authenticated PostgreSQL workspace. Explicit demo/live modes and public origins
+retain their previous behavior. Section links reach reception/turnover, booking,
+passkeys and account without unmounting active forms. No grants or API changes.
+
+Dirty continuation of 02bf81eb27df5a9a5411730d9ae025aa518d08f9:
+web build and root 221 tests/36 files passed. Staff HTTP 13 groups/32 calls and
+stay browser 13 groups passed. Booking browser passed from the actual bare URL
+with four widths, navigation, reload, gateway restart and logout. Repeated tests
+on an old fixture hit the intended account login rate limit (HTTP 429); the stay
+runner now reports that safe diagnostic instead of a later card timeout. Keep
+cloud:test:auth before browser proofs to prepare a new synthetic identity; do not
+relax rate limits. No existing accounts changed. Clean-source reports remain in
+the private evidence directory with exact SHA and dirty status. Remaining delivery
+gates are listed in CURRENT_DELIVERY_STATUS.md; production is not enabled.

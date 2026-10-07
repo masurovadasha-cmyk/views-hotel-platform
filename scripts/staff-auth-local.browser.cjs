@@ -15,7 +15,7 @@ const {chromium}=require('playwright');
   trackedSourceDirty:spawnSync('git',['diff','--quiet','HEAD'],{windowsHide:true}).status!==0,pageErrors,sizes,
   browser:process.platform==='win32'?'Microsoft Edge isolated profile':'Chromium Linux isolated profile',productionEnabled:false,realPayments:false,emailDeliveryUsed:false};
  try{
-  await page.goto('http://127.0.0.1:4173/?api=local-core',{waitUntil:'networkidle'});
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
   await page.getByRole('heading',{name:'Вход в рабочую область',exact:true}).waitFor();
   assert.equal(await page.getByRole('button',{name:'Рассчитать через Core',exact:true}).count(),0);
   await page.screenshot({path:path.join(evidence,'stage725-staff-login.png'),fullPage:true});
@@ -50,6 +50,11 @@ const {chromium}=require('playwright');
    if(width===390)await page.screenshot({path:path.join(evidence,'stage725-staff-mobile.png'),fullPage:true});
   }
   await row.getByRole('button',{name:'Снять резерв',exact:true}).click();await row.getByText('Отменён',{exact:true}).waitFor();
+  const navigation=page.getByRole('navigation',{name:'Разделы рабочей области',exact:true});
+  for(const [label,target] of [['Ресепшен и уборка','staff-reception'],['Бронирование','staff-booking'],['Ключи доступа','staff-security'],['Учётная запись','staff-account']]){
+   await navigation.getByRole('link',{name:label,exact:true}).click();assert.equal(new URL(page.url()).hash,'#'+target);assert.equal(await page.locator('#'+target).count(),1);
+  }
+  assert.equal(new URL(page.url()).search,'');report.defaultLocalEntry=true;report.workspaceNavigation=true;
   // Restart only the owned local gateway. Authentication must persist in Core DB.
   const node=process.platform==='win32'?path.join(root,'tools/node-v22.23.3-win-x64/node.exe'):process.execPath;
   const launcher=path.resolve(__dirname,process.platform==='win32'?'../apps/api/ops/local-web-launch.cjs':'../apps/api/ops/cloud-local-rehearsal.cjs');

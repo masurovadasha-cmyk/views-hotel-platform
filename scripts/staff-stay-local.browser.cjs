@@ -12,7 +12,7 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
  const report={stage:'7.37',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),checks:[],productionEnabled:false,realPayments:false};
  const errors=[];page.on('pageerror',e=>errors.push(e.name));
  try{
-  await page.goto('http://localhost:4173/?api=local-core');await page.getByLabel('Email сотрудника',{exact:true}).fill(login.email);await page.getByLabel('Пароль',{exact:true}).fill(login.password);await page.getByRole('button',{name:'Войти',exact:true}).click();
+  await page.goto('http://localhost:4173/?api=local-core');await page.getByLabel('Email сотрудника',{exact:true}).fill(login.email);await page.getByLabel('Пароль',{exact:true}).fill(login.password);const loginResponsePromise=page.waitForResponse(r=>r.url().endsWith('/local-api/login'));await page.getByRole('button',{name:'Войти',exact:true}).click();const loginResponse=await loginResponsePromise;if(loginResponse.status()!==200){const failure=await loginResponse.json();throw Error('LOGIN_HTTP_'+loginResponse.status()+'_'+(failure.error||'UNKNOWN'));}
   const reception=page.getByRole('region',{name:'Ресепшен',exact:true});
   const arriving=reception.getByRole('region',{name:'Ожидаемые заезды',exact:true}).locator('[data-stay-id="'+fixture.reservationId+'"]');await arriving.waitFor();
   await arriving.getByText('Основной гость: Synthetic Local Stay',{exact:true}).waitFor();
@@ -89,6 +89,6 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
   assert.equal((await api('logout',{all:false},randomUUID())).status,200);
   assert.equal((await api('document-view',{reservationId:previewFixture.reservationId,documentId:previewData.documentId},randomUUID())).status,401);report.checks.push('document_preview_denied_after_logout');
   Object.assign(report,{result:'pass',pageErrors:errors,checkedAt:new Date().toISOString()});
- }catch(e){report.failure={code:e.code||e.name,safeDetail:/^REVIEW_HTTP_[A-Z0-9_]+$/.test(e.message)?e.message:undefined,frames:String(e.stack||'').split('\n').filter(l=>/^\s+at /.test(l)).slice(0,4)};process.exitCode=1;}
+ }catch(e){report.failure={code:e.code||e.name,safeDetail:/^(?:REVIEW|LOGIN)_HTTP_[A-Z0-9_]+$/.test(e.message)?e.message:undefined,frames:String(e.stack||'').split('\n').filter(l=>/^\s+at /.test(l)).slice(0,4)};process.exitCode=1;}
  finally{await browser.close();fs.writeFileSync(path.join(root,'evidence/stage732-stay.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));}
 })().catch(()=>{console.error('STAY_BROWSER_PROOF_FAILED');process.exitCode=1;});

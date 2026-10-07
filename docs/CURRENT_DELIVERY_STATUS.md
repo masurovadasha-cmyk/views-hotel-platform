@@ -6,7 +6,7 @@ acceptance. Source repository and branch remain unchanged; main is not merged.
 
 | Block | What works / exists | What is still not complete |
 | --- | --- | --- |
-| Core environment | PostgreSQL 16, restricted runtime, immutable migration ledger, repeatable cloud startup | Persistent public host, named HTTPS endpoint, HA/failover |
+| Core environment | PostgreSQL 16, restricted runtime, immutable migration ledger, repeatable cloud startup; dedicated local server opens connected staff workspace by default | Persistent public host, named HTTPS endpoint, HA/failover |
 | Staff identity | Invitation/password login, sessions/CSRF, scoped staff, password reset/change, local email verification, passkeys/recovery | Real mail delivery, approved public HTTPS and privileged production MFA |
 | Booking | PostgreSQL quote/hold/release; synthetic confirmed stay transitions with inventory, audit/outbox and retries | Real inventory/tariff onboarding and paid-stay operational integration |
 | Guests | Versioned synthetic primary guest entry/replacement; related-document edits blocked | Real PII onboarding, policy-approved data collection and retention |
