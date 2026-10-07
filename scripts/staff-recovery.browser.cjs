@@ -90,4 +90,44 @@ module.exports=async function recoveryProof({page,context,cdp,initialAuthenticat
   const rows=(await owner.query("SELECT action,after_state FROM audit_log WHERE action LIKE 'staff.recovery_%' OR action LIKE 'staff.passkey_replace%'")).rows;assert.ok(rows.length>=6);
   const audit=JSON.stringify(rows);for(const code of [...codes,...oldCodes,...newCodes,...reserve]){assert.ok(!audit.includes(code));assert.ok(!audit.includes(code.replaceAll('-','')));}
  });
+ // A separate member preserves recovery restore fixtures and existing rate budgets.
+ const a=await fixture();
+ const session=(await context.cookies('http://localhost:4173/local-api/session')).find(c=>c.name==='views_staff_session').value;
+ const sessionHash=createHash('sha256').update(session).digest('hex');
+ const credentials=(await owner.query('SELECT version,password_hash FROM staff_private.credentials WHERE membership_id=$1',[a.member])).rows[0];
+ const change=token=>rpc('password',{currentPassword:password,password:password+' assurance'},token);
+ const sqlChange=()=>runtime.query('SELECT app.staff_auth_change($1,$2,$3) ok',[sessionHash,credentials.version,credentials.password_hash]);
+ await check('assurance_password_change_requires_same_session_uv_even_via_direct_core',async()=>{
+  const sibling=(await rpc('login',{email:a.email,password})).body.token;
+  assert.equal((await change(sibling)).status,403);
+  await owner.query('UPDATE staff_private.sessions SET passkey_verified_until=NULL WHERE token_hash=$1',[sessionHash]);
+  assert.equal((await change(session)).status,403);
+  await assert.rejects(sqlChange(),e=>e.code==='P0001'&&e.message==='STAFF_ASSURANCE_REQUIRED');
+  assert.equal((await owner.query('SELECT version FROM staff_private.credentials WHERE membership_id=$1',[a.member])).rows[0].version,credentials.version);
+  assert.equal((await rpc('session',undefined,session)).status,200);
+ });
+ await check('assurance_expiry_after_lock_wait_blocks_mutation',async()=>{
+  await auth();const lock=await owner.connect();let result;
+  try{
+   await owner.query("UPDATE staff_private.sessions SET passkey_verified_until=clock_timestamp()+interval '1 second' WHERE token_hash=$1",[sessionHash]);
+   await lock.query('BEGIN');await lock.query('SELECT 1 FROM staff_private.passkeys WHERE membership_id=$1 FOR UPDATE',[a.member]);
+   result=sqlChange().then(()=>({allowed:true}),e=>({code:e.code,message:e.message}));
+   let waiting=false;for(let i=0;i<50;i++){waiting=(await owner.query("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE usename='views_app' AND wait_event_type='Lock') waiting")).rows[0].waiting;if(waiting)break;await new Promise(r=>setTimeout(r,10));}
+   assert.equal(waiting,true);await owner.query('SELECT pg_sleep(1.1)');await lock.query('COMMIT');
+   assert.deepEqual(await result,{code:'P0001',message:'STAFF_ASSURANCE_REQUIRED'});
+  }finally{await lock.query('ROLLBACK');lock.release();if(result)await result;}
+  assert.equal((await change(session)).status,403);
+ });
+ await check('assurance_fresh_uv_allows_one_atomic_change_and_revokes_sessions',async()=>{
+  await auth();
+  const sibling=(await rpc('login',{email:a.email,password})).body.token;
+  const attempts=await Promise.all([change(session),change(session)]);
+  assert.deepEqual(attempts.map(r=>r.status).sort(),[200,401]);assert.equal(attempts.find(r=>r.status===200).body.loginRequired,true);
+  assert.equal((await rpc('session',undefined,session)).status,401);assert.equal((await rpc('session',undefined,sibling)).status,401);
+  assert.equal((await sqlChange()).rows[0].ok,false);
+  assert.equal((await owner.query('SELECT version FROM staff_private.credentials WHERE membership_id=$1',[a.member])).rows[0].version,credentials.version+1);
+  const logged=await rpc('login',{email:a.email,password:password+' assurance'});assert.equal(logged.status,200);
+  assert.equal((await rpc('passkey/state',{},logged.body.token)).body.verifiedUntil,null);
+ });
+
 };

@@ -59,6 +59,7 @@ export function StaffPasskeyPanel({csrf}:{csrf:string}){
   {status.registered&&<>
    <h3>Резервные коды</h3><p>Доступно кодов: {status.recoveryCodesRemaining}. Новый набор отменяет предыдущий. Для выдачи сначала подтвердите личность действующим ключом.</p>
    <form onSubmit={e=>void manage(e,'codes')}><fieldset disabled={busy}>
+    <p>После регистрации ключа смена пароля требует свежего подтверждения ключом в этой сессии.</p>
     <label>Пароль для резервных кодов<input aria-label="Пароль для резервных кодов" type="password" autoComplete="current-password" required maxLength={128} value={recoveryPassword} onChange={e=>setRecoveryPassword(e.target.value)}/></label>
     <button disabled={busy}>Выдать новые резервные коды</button>
    </fieldset></form>

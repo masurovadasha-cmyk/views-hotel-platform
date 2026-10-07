@@ -209,3 +209,11 @@ applied 0042 and invalidates only pre-existing unfinished MFA ceremonies. The
 local opt-in boundary remains; lost-all-factors recovery and privileged access
 are not enabled. The combined disposable suite includes real Chromium recovery
 flows, replay/concurrency failures and nonempty recovery-table restoration.
+
+## 12. Transactional assurance continuation
+
+Stage 7.29 protects authenticated password change for enrolled local staff.
+Migration 0044 enforces session-bound fresh UV proof inside the password mutation,
+including expiry after lock waits. The API maps denial to HTTP 403. Existing
+password-only staff without a key retain their flow; privileged routes remain
+closed. See `STAGE7_PASSWORD_ASSURANCE.md` for the boundary and proof commands.

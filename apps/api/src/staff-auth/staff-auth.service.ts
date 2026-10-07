@@ -92,8 +92,15 @@ export class StaffAuthService{
     if(!await this.kdf(()=>verifyStaffPassword(body.currentPassword,row?.password_hash||DUMMY_PASSWORD_HASH))||!row)
       throw new UnauthorizedException('STAFF_LOGIN_FAILED');
     const encoded=await this.kdf(()=>hashStaffPassword(body.password));
-    const ok=(await this.db.query<{ok:boolean}>('SELECT app.staff_auth_change($1,$2,$3) AS ok',
-      [staffTokenHash(token as string),row.version,encoded])).rows[0]?.ok;
+    let ok:boolean|undefined;
+    try{
+      ok=(await this.db.query<{ok:boolean}>('SELECT app.staff_auth_change($1,$2,$3) AS ok',
+        [staffTokenHash(token as string),row.version,encoded])).rows[0]?.ok;
+    }catch(error){
+      const failure=error as {code?:string;message?:string};
+      if(failure.code==='P0001'&&failure.message==='STAFF_ASSURANCE_REQUIRED')throw new ForbiddenException('STAFF_ASSURANCE_REQUIRED');
+      throw error;
+    }
     if(!ok)throw new UnauthorizedException('STAFF_SESSION_REQUIRED');
     return {ok:true,loginRequired:true};
   }
