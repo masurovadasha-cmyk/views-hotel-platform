@@ -46,6 +46,7 @@ export class BookingWorkspaceController{
             ) ELSE NULL END AS readiness,
             CASE WHEN $5::boolean AND r.quote_snapshot->'localStayPilot'='true'::jsonb AND r.total_minor=0 THEN (
               SELECT jsonb_build_object('total',count(*),'items',COALESCE(jsonb_agg(jsonb_build_object(
+                'previewId',CASE WHEN docs.vault_id='views-synthetic-document-v1' AND docs.encrypted_fields IS NOT NULL THEN docs.id ELSE NULL END,
                 'type',docs.document_type,'status',docs.verification_status,
                 'expired',docs.expires_on IS NOT NULL AND docs.expires_on<(clock_timestamp() AT TIME ZONE $4)::date,
                 'uploadFinalized',COALESCE(docs.object_checksum_sha256 ~ '^[a-fA-F0-9]{64}$',false)

@@ -3,7 +3,7 @@
 const fs=require('node:fs'),path=require('node:path'),{randomUUID}=require('node:crypto');
 const {Client}=require('pg'),{localState}=require('./local-state.cjs');
 (async()=>{
- if(process.argv.length>4||(process.argv[3]&&!['--without-guest','--document-statuses'].includes(process.argv[3])))throw Error('INVALID_STAY_FIXTURE_OPTION');
+ if(process.argv.length>4||(process.argv[3]&&!['--without-guest','--document-statuses','--document-preview'].includes(process.argv[3])))throw Error('INVALID_STAY_FIXTURE_OPTION');
  if(process.argv[2]!=='--ack=LOCAL_SYNTHETIC_STAY')throw Error('LOCAL_STAY_ACK_REQUIRED');
  const {privateDir,scope}=localState(),secret=JSON.parse(fs.readFileSync(path.join(privateDir,'runtime.json'),'utf8'));
  if(secret.scope!==scope)throw Error('LOCAL_SCOPE_REQUIRED');
@@ -23,6 +23,12 @@ const {Client}=require('pg'),{localState}=require('./local-state.cjs');
    FROM reservation_guests g CROSS JOIN (VALUES
     ('pending',NULL::date,NULL::text),('pending',NULL::date,repeat('a',64)),('rejected',NULL::date,repeat('b',64)),('verified',DATE '2000-01-01',repeat('c',64))
    ) d(status,expiry,checksum) WHERE g.reservation_id=$1 AND g.is_primary`,[id]);
+  if(process.argv[3]==='--document-preview'){
+   const {SYNTHETIC_VAULT,sealSyntheticDocument}=require('../dist/compliance/synthetic-document-vault.js');
+   const guest=(await db.query('SELECT id FROM reservation_guests WHERE reservation_id=$1 AND is_primary',[id])).rows[0];
+   const doc=randomUUID(),sealed=sealSyntheticDocument({organizationId:org,reservationId:id,guestId:guest.id,documentId:doc},secret.documentVaultKey||'');
+   await db.query("INSERT INTO guest_document_records(id,organization_id,reservation_guest_id,document_type,encrypted_fields,object_checksum_sha256,storage_region,vault_id,encryption_key_ref) VALUES($1,$2,$3,'other',$4,$5,'LOCAL_SYNTHETIC',$6,'local-synthetic-v1')",[doc,org,guest.id,sealed.encrypted,sealed.checksum,SYNTHETIC_VAULT]);
+  }
   await db.query('COMMIT');console.log(JSON.stringify({reservationId:id,confirmationCode:code,syntheticData:true,paymentsCreated:0}));
  }catch(e){await db.query('ROLLBACK');throw e;}finally{await db.end();}
 })().catch(e=>{console.error(JSON.stringify({result:'fail',code:e.code||'LOCAL_STAY_FIXTURE_FAILED'}));process.exitCode=1;});

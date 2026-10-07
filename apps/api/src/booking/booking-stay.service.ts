@@ -1,3 +1,4 @@
+import {openSyntheticDocument,SYNTHETIC_VAULT} from '../compliance/synthetic-document-vault';
 import {createHash} from 'node:crypto';
 import {BadRequestException,ConflictException,ForbiddenException,Injectable,NotFoundException,UnauthorizedException} from '@nestjs/common';
 import {DatabaseService} from '../database/database.service';
@@ -14,7 +15,9 @@ export function validateGuest(value:unknown):GuestInput{
 @Injectable()
 export class BookingStayService{
  constructor(private readonly db:DatabaseService){}
- async transition(actor:RequestActorContext,token:string,id:string,key:string,action:'check-in'|'check-out'|'guest',input?:unknown){
+ async transition(actor:RequestActorContext,token:string,id:string,key:string,action:'check-in'|'check-out'|'guest'|'document-view',input?:unknown){
+  const documentId=action==='document-view'?(input as {documentId?:unknown})?.documentId:undefined;
+  if(action==='document-view'&&(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).join(',')!=='documentId'||typeof documentId!=='string'||! /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(documentId)))throw new BadRequestException('INVALID_DOCUMENT_REQUEST');
   const guest=action==='guest'?validateGuest(input):undefined;
   const requestHash=guest?createHash('sha256').update(JSON.stringify({id,...guest})).digest('hex'):id;
   if(!stayPilotEnabled(actor.organizationId))throw new NotFoundException('STAY_PILOT_DISABLED');
@@ -34,6 +37,21 @@ export class BookingStayService{
    if(r.quote_snapshot?.localStayPilot!==true||r.total_minor!=='0'||!r.unit_id)throw new ConflictException('STAY_FIXTURE_REQUIRED');
    const unit=(await c.query('SELECT status FROM units WHERE id=$1 AND property_id=$2 FOR UPDATE',[r.unit_id,r.property_id])).rows[0];
    await authorize(); // wall-clock expiry after reservation/unit lock waits
+   if(action==='document-view'){
+    if(process.env.VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED!=='true')throw new NotFoundException('DOCUMENT_PREVIEW_DISABLED');
+    if(!['confirmed','checked_in'].includes(r.status))throw new ConflictException('STAY_STATE_CHANGED');
+    const doc=(await c.query(`SELECT d.id,d.reservation_guest_id,d.encrypted_fields,d.object_checksum_sha256
+      FROM guest_document_records d JOIN reservation_guests g ON g.id=d.reservation_guest_id AND g.organization_id=d.organization_id
+      WHERE d.id=$1 AND g.reservation_id=$2 AND g.organization_id=$3 AND g.is_primary AND d.vault_id=$4
+      FOR SHARE OF d`,[documentId,id,actor.organizationId,SYNTHETIC_VAULT])).rows[0];
+    await authorize();
+    if(!doc)throw new NotFoundException('SYNTHETIC_DOCUMENT_UNAVAILABLE');
+    let text:string;
+    try{text=openSyntheticDocument({organizationId:actor.organizationId,reservationId:id,guestId:doc.reservation_guest_id,documentId:doc.id},process.env.VIEWS_LOCAL_DOCUMENT_KEY||'',doc.encrypted_fields,doc.object_checksum_sha256);}
+    catch{throw new ConflictException('SYNTHETIC_DOCUMENT_UNAVAILABLE');}
+    await c.query("INSERT INTO audit_log(organization_id,actor_user_id,actor_membership_id,action,entity_type,entity_id,after_state) VALUES($1,$2,$3,'staff.synthetic_document_viewed','guest_document',$4,$5)",[actor.organizationId,actor.userId,actor.membershipId,doc.id,{reservationId:id,syntheticData:true}]);
+    return {documentId:doc.id,text,syntheticData:true};
+   }
    const type='local_'+action;
    const prior=(await c.query('SELECT request_hash,result_snapshot FROM booking_commands WHERE organization_id=$1 AND command_type=$2 AND idempotency_key=$3',[actor.organizationId,type,key])).rows[0];
    if(prior){if(prior.request_hash!==requestHash)throw new ConflictException('IDEMPOTENCY_CONFLICT');return {...prior.result_snapshot,idempotentReplay:true};}

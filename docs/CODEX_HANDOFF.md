@@ -286,3 +286,19 @@ Core 278 / 55 files, mail policy 15, network gate 118 files. Staff HTTP proof:
 expiry; booking/reception regression passed on four widths with restart/logout.
 No new migration; 46 retained. Final clean-commit HTTP/browser reports are kept
 outside Git and include source SHA and dirty flag.
+
+## 19. Encrypted synthetic document preview
+
+Stage 7.36 adds an operator-prepared fixed-text encrypted file and authenticated
+preview, with AES-GCM identity binding, separate persisted private key, no-store
+responses and per-view audit. The preview is local/test-only and accepts no real
+file content. See `STAGE7_SYNTHETIC_DOCUMENT_PREVIEW.md`; private key backup is
+necessary alongside any DB restore containing these synthetic blobs.
+
+Dirty continuation of a666564: web/Core build/typecheck passed; root 220/36,
+Core 280/56, mail policy 15, network gate 119 files. Staff HTTP: 13 groups/32 calls;
+stay browser: 11 groups, including reading the same encrypted file after a full
+owned Core/gateway restart, manual/timed close, cache headers, CSRF/scope and
+post-logout refusal. Booking regression also passed on four widths. No migrations;
+46 retained. Final clean-source HTTP/browser reports remain private with SHA and
+dirty flag. Actual document uploads/review/registration and production remain OFF.

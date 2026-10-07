@@ -1,3 +1,4 @@
+import {sealSyntheticDocument,SYNTHETIC_VAULT} from '../compliance/synthetic-document-vault';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {randomUUID,randomBytes,createHash} from 'node:crypto';
 import {DatabaseService} from '../database/database.service';
@@ -76,7 +77,7 @@ describe.sequential('local synthetic stay transitions',()=>{
   if(!('arrivals' in board))throw Error('MISSING_BOARD');
   const row=board.arrivals.items.find((r:{reservationId:string})=>r.reservationId===id);
   expect(row.documents.total).toBe(12);expect(row.documents.items).toHaveLength(10);
-  expect(row.documents.items[0]).toEqual({type:'passport',status:'verified',expired:true,uploadFinalized:true});
+  expect(row.documents.items[0]).toEqual({previewId:null,type:'passport',status:'verified',expired:true,uploadFinalized:true});
   expect(JSON.stringify(row.documents)).not.toContain('private-hidden-path');
   expect(board.arrivals.items.find((r:{reservationId:string})=>r.reservationId===normal).documents).toBeNull();
  });
@@ -104,6 +105,24 @@ describe.sequential('local synthetic stay transitions',()=>{
   await query("INSERT INTO guest_document_records(organization_id,reservation_guest_id,document_type,storage_region,vault_id,object_key) SELECT organization_id,id,'passport','UZ','synthetic','synthetic/not-an-upload' FROM reservation_guests WHERE reservation_id=$1",[id]);
   await expect(service.transition(actor,token,id,randomUUID(),'guest',{firstName:'Test',lastName:'Guest',dateOfBirth:'2000-01-01',nationality:'UZ',expectedVersion:1})).rejects.toThrow('GUEST_DOCUMENT_REVIEW_REQUIRED');
   expect((await query('SELECT version FROM reservations WHERE id=$1',[id])).rows[0].version).toBe(1);
+ });
+ it('decrypts only scoped synthetic files, audits reads and denies tampering or revoked sessions',async()=>{
+  const id=await fixture(),doc=randomUUID(),guest=(await query('SELECT id FROM reservation_guests WHERE reservation_id=$1',[id])).rows[0].id;
+  const secret=randomBytes(32).toString('hex');process.env.VIEWS_LOCAL_DOCUMENT_KEY=secret;process.env.VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED='true';
+  const binding={organizationId:org,reservationId:id,guestId:guest,documentId:doc},sealed=sealSyntheticDocument(binding,secret);
+  await query("INSERT INTO guest_document_records(id,organization_id,reservation_guest_id,document_type,encrypted_fields,object_checksum_sha256,storage_region,vault_id) VALUES($1,$2,$3,'other',$4,$5,'LOCAL_SYNTHETIC',$6)",[doc,org,guest,sealed.encrypted,sealed.checksum,SYNTHETIC_VAULT]);
+  const view=(res=id,t=token)=>service.transition(actor,t,res,randomUUID(),'document-view',{documentId:doc});
+  await expect(service.transition(actor,token,id,randomUUID(),'document-view',{documentId:'-'.repeat(36)})).rejects.toThrow('INVALID_DOCUMENT_REQUEST');
+  const result=await view();expect(result.text).toContain('Not an identity document');
+  expect(JSON.stringify((await query("SELECT after_state FROM audit_log WHERE entity_id=$1 AND action='staff.synthetic_document_viewed'",[doc])).rows)).not.toContain('Not an identity document');
+  expect((await query("SELECT count(*)::int n FROM booking_commands WHERE reservation_id=$1 AND command_type='local_document-view'",[id])).rows[0].n).toBe(0);
+  await expect(view(await fixture())).rejects.toThrow('SYNTHETIC_DOCUMENT_UNAVAILABLE');
+  const revoked=await session();await db.query('SELECT app.staff_auth_logout($1,false)',[createHash('sha256').update(revoked).digest('hex')]);
+  await expect(view(id,revoked)).rejects.toThrow('STAFF_SESSION_REQUIRED');
+  process.env.VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED='false';await expect(view()).rejects.toThrow('DOCUMENT_PREVIEW_DISABLED');process.env.VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED='true';
+  const damaged=Buffer.from(sealed.encrypted);damaged[30]^=1;
+  await query('UPDATE guest_document_records SET encrypted_fields=$2 WHERE id=$1',[doc,damaged]);await expect(view()).rejects.toThrow('SYNTHETIC_DOCUMENT_UNAVAILABLE');
+  expect((await query("SELECT count(*)::int n FROM audit_log WHERE entity_id=$1 AND action='staff.synthetic_document_viewed'",[doc])).rows[0].n).toBe(1);
  });
  it('revocation blocks later transitions even with a previously valid session',async()=>{
   const old=await session(),id=await fixture();await db.query('SELECT app.staff_auth_logout($1,false)',[createHash('sha256').update(old).digest('hex')]);

@@ -44,6 +44,8 @@ function prepare() {
   if (config.scope !== state.scope || !['ownerPassword', 'runtimePassword', 'rateSecret', 'internalSecret'].every(k => /^[a-f0-9]{64}$/.test(config[k]))) {
     throw Error('LOCAL_RUNTIME_CONFIGURATION_INVALID');
   }
+  if(config.documentVaultKey===undefined){config.documentVaultKey=randomBytes(32).toString('hex');write(file,config);}
+  if(!/^[a-f0-9]{64}$/.test(config.documentVaultKey))throw Error('LOCAL_DOCUMENT_KEY_INVALID');
   const pw = path.join(state.privateDir, 'postgres-password');
   if (!fs.existsSync(pw)) fs.writeFileSync(pw, config.ownerPassword, { mode: 0o600, flag: 'wx' });
   container = 'views-local-' + createHash('sha256').update(state.root).digest('hex').slice(0, 12);
@@ -133,6 +135,7 @@ function coreEnvironment() {
   return { ...process.env, NODE_ENV: 'test', PORT: '3001', VIEWS_ENV: 'local-rehearsal', VIEWS_LOCAL_REHEARSAL: 'true', TRUSTED_PROXY_MODE: 'direct',
     DATABASE_URL: `postgresql://views_app:${config.runtimePassword}@127.0.0.1:55432/views_local`,
     GUEST_AUTH_RATE_LIMIT_SECRET: config.rateSecret, VIEWS_INTERNAL_API_KEY: config.internalSecret,
+    VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED:'true', VIEWS_LOCAL_DOCUMENT_KEY:config.documentVaultKey,
     VIEWS_STAFF_AUTH_PILOT_ENABLED: 'true', VIEWS_STAFF_STAY_PILOT_ENABLED: 'true', VIEWS_STAFF_AUTH_ORGANIZATION_ID: ORG,
     VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON: '{"local-workspace":"internal_key_only"}',
     VIEWS_INTERNAL_SERVICE_KEYS_JSON: JSON.stringify({ 'local-workspace': [config.internalSecret] }),

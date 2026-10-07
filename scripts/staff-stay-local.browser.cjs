@@ -6,9 +6,10 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
  const seed=spawnSync(process.execPath,['apps/api/ops/prepare-local-stay.cjs','--ack=LOCAL_SYNTHETIC_STAY'],{encoding:'utf8'});assert.equal(seed.status,0);const fixture=JSON.parse(seed.stdout);
  const blockedSeed=spawnSync(process.execPath,['apps/api/ops/prepare-local-stay.cjs','--ack=LOCAL_SYNTHETIC_STAY','--without-guest'],{encoding:'utf8'});assert.equal(blockedSeed.status,0);const blocked=JSON.parse(blockedSeed.stdout);
  const docsSeed=spawnSync(process.execPath,['apps/api/ops/prepare-local-stay.cjs','--ack=LOCAL_SYNTHETIC_STAY','--document-statuses'],{encoding:'utf8'});assert.equal(docsSeed.status,0);const docsFixture=JSON.parse(docsSeed.stdout);
+ const previewSeed=spawnSync(process.execPath,['apps/api/ops/prepare-local-stay.cjs','--ack=LOCAL_SYNTHETIC_STAY','--document-preview'],{encoding:'utf8'});assert.equal(previewSeed.status,0);const previewFixture=JSON.parse(previewSeed.stdout);
  const login=JSON.parse(fs.readFileSync(path.join(root,'private/staff-browser-fixture.json'),'utf8'));assert.match(login.email,/^auth-proof-[a-f0-9]+@views\.invalid$/);
  const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium'}),context=await browser.newContext(),page=await context.newPage();
- const report={stage:'7.35',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),checks:[],productionEnabled:false,realPayments:false};
+ const report={stage:'7.36',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),checks:[],productionEnabled:false,realPayments:false};
  const errors=[];page.on('pageerror',e=>errors.push(e.name));
  try{
   await page.goto('http://localhost:4173/?api=local-core');await page.getByLabel('Email сотрудника',{exact:true}).fill(login.email);await page.getByLabel('Пароль',{exact:true}).fill(login.password);await page.getByRole('button',{name:'Войти',exact:true}).click();
@@ -29,6 +30,22 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
    const r=await fetch('/local-api/'+route,{method:'POST',headers:{'X-Views-Local-Workspace':'1','Content-Type':'application/json','Idempotency-Key':key,...(csrf?{'X-CSRF-Token':session.csrf}:{})},body:JSON.stringify(body)});
    return {status:r.status,body:await r.json()};
   },{route,body,key,csrf});}
+  const previewRow=reception.getByRole('region',{name:'Ожидаемые заезды',exact:true}).locator('[data-stay-id="'+previewFixture.reservationId+'"]');
+  const responsePromise=page.waitForResponse(r=>r.url().endsWith('/local-api/document-view'));
+  await previewRow.getByRole('button',{name:'Открыть тестовый файл',exact:true}).click();
+  const response=await responsePromise;assert.equal(response.status(),200);assert.equal(response.headers()['cache-control'],'no-store');
+  const previewData=await response.json();assert.equal(previewData.syntheticData,true);
+  const preview=page.getByRole('region',{name:'Просмотр тестового файла',exact:true});await preview.getByText('Not an identity document.',{exact:false}).waitFor();
+  for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
+  assert.equal((await api('document-view',{reservationId:previewFixture.reservationId,documentId:previewData.documentId},randomUUID(),false)).status,403);
+  assert.equal((await api('document-view',{reservationId:fixture.reservationId,documentId:previewData.documentId},randomUUID())).status,404);
+  for(const mode of ['stop','start'])assert.equal(spawnSync(process.execPath,['apps/api/ops/cloud-local-rehearsal.cjs',mode],{encoding:'utf8'}).status,0);
+  await page.reload();await previewRow.getByRole('button',{name:'Открыть тестовый файл',exact:true}).click();await preview.getByText('Not an identity document.',{exact:false}).waitFor();
+  report.checks.push('same_encrypted_file_survives_core_and_gateway_restart');
+  await preview.getByRole('button',{name:'Закрыть просмотр',exact:true}).click();assert.equal(await preview.count(),0);
+  await page.clock.install();await previewRow.getByRole('button',{name:'Открыть тестовый файл',exact:true}).click();await preview.getByText('Not an identity document.',{exact:false}).waitFor();
+  await page.clock.fastForward(61000);assert.equal(await preview.count(),0);await page.clock.resume();
+  report.checks.push('encrypted_preview_no_store_scope_csrf_close_and_timeout');
   const denied=await api('check-in',{reservationId:blocked.reservationId},randomUUID());assert.equal(denied.status,409);assert.equal(denied.body.error,'STAY_GUEST_REQUIRED');
   assert.equal((await api('check-in',{reservationId:fixture.reservationId},randomUUID(),false)).status,403);
   assert.equal((await api('check-in',{reservationId:randomUUID()},randomUUID())).status,403);assert.equal((await api('check-in',{reservationId:fixture.reservationId,localStayPilot:true},randomUUID())).status,400);report.checks.push('csrf_workspace_scope_and_body_allowlist');
@@ -53,6 +70,8 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
   for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}report.checks.push('four_widths');
   await staying.getByRole('button',{name:'Оформить выезд (тест)',exact:true}).click();await reception.getByRole('button',{name:'Подтвердить действие',exact:true}).click();await reception.getByText('Тестовый выезд оформлен.',{exact:false}).waitFor();
   await page.reload();await page.getByRole('region',{name:'Сейчас проживают',exact:true}).waitFor();assert.equal(await staying.count(),0);report.checks.push('check_out_survives_reload');assert.deepEqual(errors,[]);
+  assert.equal((await api('logout',{all:false},randomUUID())).status,200);
+  assert.equal((await api('document-view',{reservationId:previewFixture.reservationId,documentId:previewData.documentId},randomUUID())).status,401);report.checks.push('document_preview_denied_after_logout');
   Object.assign(report,{result:'pass',pageErrors:errors,checkedAt:new Date().toISOString()});
  }catch(e){report.failure={code:e.code||e.name,frames:String(e.stack||'').split('\n').filter(l=>/^\s+at /.test(l)).slice(0,4)};process.exitCode=1;}
  finally{await browser.close();fs.writeFileSync(path.join(root,'evidence/stage732-stay.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

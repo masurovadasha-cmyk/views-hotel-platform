@@ -1,3 +1,4 @@
+import {SyntheticDocumentPreview} from './SyntheticDocumentPreview';
 import {useEffect,useRef,useState} from 'react';
 import {request} from './LocalCoreWorkspace';
 type Readiness={primaryGuest:string|null;unitActive:boolean;inventoryValid:boolean;paymentFree:boolean;timeAllowed:boolean;unitVacant:boolean};
@@ -5,12 +6,12 @@ function blockers(r:Readiness|null|undefined){
  if(!r)return ['Проверки готовности не получены. Обновите сводку.'];
  return [!r.primaryGuest&&'Не указан основной гость.',!r.unitActive&&'Номер не назначен или недоступен.',!r.inventoryValid&&'Не подтверждён резерв номера на весь срок.',!r.paymentFree&&'Есть финансовая операция — требуется отдельная проверка.',!r.timeAllowed&&'Операция недоступна в текущий момент по датам брони.',!r.unitVacant&&'В номере ещё проживает другой гость.'].filter(Boolean) as string[];
 }
-type DocumentSummary={total:number;items:{type:string;status:string;expired:boolean;uploadFinalized:boolean}[]};
-function DocumentStatus({documents}:{documents?:DocumentSummary|null}){
+type DocumentSummary={total:number;items:{previewId?:string|null;type:string;status:string;expired:boolean;uploadFinalized:boolean}[]};
+function DocumentStatus({documents,onView}:{documents?:DocumentSummary|null;onView:(id:string)=>void}){
  const names:Record<string,string>={passport:'Паспорт',id_card:'ID-карта',birth_certificate:'Свидетельство о рождении',residence_permit:'Вид на жительство',travel_document:'Проездной документ',other:'Другой документ'};
  return <div aria-label="Документы основного гостя"><strong>Документы основного гостя</strong>
   {!documents?<p>Статусы документов не получены. Обновите сводку.</p>:documents.total===0?<p>Документы не добавлены.</p>:<>
-   <ul>{documents.items.map((d,i)=><li key={i}>{names[d.type]||'Документ'}: {d.expired||d.status==='expired'?'Срок действия истёк':d.status==='rejected'?'Отклонён':!d.uploadFinalized?'Загрузка не завершена':d.status==='verified'?'Проверен в Core':d.status==='pending'?'Ожидает проверки':'Неизвестный статус'}</li>)}</ul>
+   <ul>{documents.items.map((d,i)=><li key={i}>{names[d.type]||'Документ'}: {d.expired||d.status==='expired'?'Срок действия истёк':d.status==='rejected'?'Отклонён':!d.uploadFinalized?'Загрузка не завершена':d.status==='verified'?'Проверен в Core':d.status==='pending'?'Ожидает проверки':'Неизвестный статус'}{d.previewId&&<button type="button" onClick={()=>onView(d.previewId!)}>Открыть тестовый файл</button>}</li>)}</ul>
    {documents.total>documents.items.length&&<p>Показаны {documents.items.length} из {documents.total} документов.</p>}
   </>}
   <p className="localHint">Показаны статусы записей тестовой среды. Просмотр файлов и проверка реальных документов не подключены. Это не подтверждение государственной регистрации.</p>
@@ -42,6 +43,7 @@ type Group={total:number;truncated:boolean;items:Row[]};
 type Board={property:{name:Record<string,string>;timezone:string};day:string;databaseTime:string;arrivals:Group;departures:Group;staying:Group};
 export function ReceptionWorkspace({staffCsrf}:{staffCsrf:string}){
  const [data,setData]=useState<Board|null>(null),[day,setDay]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [preview,setPreview]=useState<{reservationId:string;documentId:string}|null>(null);
  const [editing,setEditing]=useState<Row|null>(null);
  const sequence=useRef(0),keys=useRef(new Map<string,string>());
  const [pending,setPending]=useState<{row:Row;action:'check-in'|'check-out'}|null>(null),[notice,setNotice]=useState('');
@@ -69,6 +71,7 @@ export function ReceptionWorkspace({staffCsrf}:{staffCsrf:string}){
    <label>Дата ресепшена<input aria-label="Дата ресепшена" type="date" required value={day} disabled={busy||!!editing} onChange={e=>setDay(e.target.value)}/></label>
    <button disabled={busy||!!editing}>Показать сводку</button>
   </form>
+  {preview&&<SyntheticDocumentPreview key={preview.documentId} {...preview} csrf={staffCsrf} onClose={()=>setPreview(null)}/>}
   {editing&&<GuestForm row={editing} csrf={staffCsrf} done={async()=>{setEditing(null);await load(day);}}/>}
   {notice&&<p role="status" className="localSuccess">{notice}</p>}
   {pending&&<div className="localWarning"><p>{pending.action==='check-in'?'Оформить тестовое заселение':'Оформить тестовый выезд'}: {pending.row.confirmationCode}? Реальная оплата и регистрация гостя в государственных системах не выполняются.</p>
@@ -84,7 +87,7 @@ export function ReceptionWorkspace({staffCsrf}:{staffCsrf:string}){
       <small>{format(r.checkInAt)} — {format(r.checkOutAt)}</small>
       {r.stayPilot&&<div className="stayReadiness"><p>Основной гость: {r.readiness?.primaryGuest||'не указан'}</p><p className="localHint">Тестовая карточка. Проверка документов и государственная регистрация не выполнялись.</p>
        {blockers(r.readiness).length?<ul aria-label="Причины блокировки">{blockers(r.readiness).map(reason=><li key={reason}>{reason}</li>)}</ul>:<p>Проверки тестовой брони пройдены. При подтверждении сервер проверит её снова.</p>}
-       <DocumentStatus documents={r.documents}/>
+       <DocumentStatus documents={r.documents} onView={documentId=>setPreview({reservationId:r.reservationId,documentId})}/>
        {!!r.documents?.total&&<p>Изменение данных гостя заблокировано: есть связанные документы.</p>}
        {r.status==='confirmed'&&<button disabled={busy||!!editing||!!pending||!!r.documents?.total} onClick={()=>setEditing(r)}>Заполнить данные гостя (тест)</button>}
        <button disabled={busy||!!editing||blockers(r.readiness).length>0} onClick={()=>{setNotice('');setPending({row:r,action:r.status==='confirmed'?'check-in':'check-out'});}}>{r.status==='confirmed'?'Заселить (тест)':'Оформить выезд (тест)'}</button></div>}
