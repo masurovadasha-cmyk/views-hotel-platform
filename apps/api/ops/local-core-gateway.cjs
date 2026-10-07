@@ -40,9 +40,9 @@ function validateStay(input,fixture){
  return {propertyId:fixture.propertyId,unitId:unit.unitId,ratePlanId:unit.ratePlanId,checkInAt:input.checkIn+'T14:00:00+05:00',
  checkOutAt:input.checkOut+'T12:00:00+05:00',guests:Array.from({length:input.guests},()=>({age:18,residency:'resident'}))};
 }
-async function readJson(req){
+async function readJson(req,limit=4096){
  if(req.headers['content-type']!=='application/json'||req.headers['content-encoding'])fail(415,'JSON_REQUIRED');
- let size=0;const parts=[];for await(const part of req){size+=part.length;if(size>4096)fail(413,'BODY_TOO_LARGE');parts.push(part);}
+ let size=0;const parts=[];for await(const part of req){size+=part.length;if(size>limit)fail(413,'BODY_TOO_LARGE');parts.push(part);}
  try{return JSON.parse(Buffer.concat(parts).toString('utf8'));}catch{fail(400,'INVALID_JSON');}
 }
 function tokenFrom(req){const parts=(req.headers.cookie||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(COOKIE+'='));
@@ -95,6 +95,11 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    }
    const identity=await authenticate(token);
    if(!same(req.headers['x-csrf-token'],csrf(token)))fail(403,'CSRF_REQUIRED');
+   if(req.method==='POST'&&['/local-api/passkey/state','/local-api/passkey/options','/local-api/passkey/verify'].includes(route)){
+    const body=await readJson(req,16384);
+    const result=await core('/v1/staff-auth/passkey/'+route.split('/').pop(),'POST',body,undefined,token);
+    json(res,200,result);return true;
+   }
    if(req.method==='POST'&&['/local-api/logout','/local-api/password'].includes(route)){
     const body=await readJson(req);exactKeys(body,route.endsWith('logout')?['all']:['currentPassword','password']);
     const result=await core('/v1/staff-auth/'+route.split('/').pop(),'POST',body,undefined,token);

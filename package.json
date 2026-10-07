@@ -24,9 +24,11 @@
     "security:core-network-primitives": "node scripts/core-network-primitive-gate.mjs",
     "security:egress-domain-policy": "node scripts/egress-domain-policy-gate.mjs",
     "security:core-egress-relay": "node scripts/core-egress-relay-gate.mjs",
-    "cloud:test:mail": "node scripts/cloud-mail-tests.cjs"
+    "cloud:test:mail": "node scripts/cloud-mail-tests.cjs",
+    "cloud:test:passkey": "VIEWS_PASSKEY_PROOF=true node scripts/cloud-mail-tests.cjs"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "14.0.0",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

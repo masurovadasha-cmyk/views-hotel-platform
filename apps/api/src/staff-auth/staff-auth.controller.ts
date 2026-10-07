@@ -3,6 +3,7 @@ import type {Request} from 'express';
 import type {IncomingHttpHeaders} from 'node:http';
 import {loadConfig} from '../config';
 import {trustedInternalServiceIdentity} from '../security/internal-service-identity';
+import {StaffMfaService} from './staff-mfa.service';
 import {StaffAuthService} from './staff-auth.service';
 
 function exact(body:unknown,keys:string[]):Record<string,unknown>{
@@ -13,7 +14,7 @@ function exact(body:unknown,keys:string[]):Record<string,unknown>{
 /** Trusted local gateway only. No open registration or invitation issuance API. */
 @Controller('v1/staff-auth')
 export class StaffAuthController{
-  constructor(private readonly auth:StaffAuthService){}
+  constructor(private readonly auth:StaffAuthService,private readonly mfa:StaffMfaService){}
   private authorize(request:Request){
     this.auth.scope();const c=loadConfig();let identity;
     try{identity=trustedInternalServiceIdentity(request.headers,{legacyKeys:c.internalApiKeys,serviceKeys:c.internalServiceKeys,
@@ -51,4 +52,21 @@ export class StaffAuthController{
   password(@Req() req:Request,@Headers('x-views-staff-session') token:string|undefined,@Body() body:unknown){
     this.authorize(req);const b=exact(body,['currentPassword','password']);return this.auth.change(token,{currentPassword:b.currentPassword,password:b.password});
   }
+  @Post('passkey/state') @HttpCode(200)
+  passkeyState(@Req() req:Request,@Headers('x-views-staff-session') token:string,@Body() body:unknown){
+    this.authorize(req);exact(body,[]);return this.mfa.state(token);
+  }
+  @Post('passkey/options') @HttpCode(200)
+  passkeyOptions(@Req() req:Request,@Headers('x-views-staff-session') token:string,@Body() body:unknown){
+    this.authorize(req);const b=exact(body,['purpose','password']);
+    if(b.purpose!=='register'&&b.purpose!=='authenticate')throw new BadRequestException('STAFF_REQUEST_INVALID');
+    return this.mfa.begin(token,b.purpose,b.password);
+  }
+  @Post('passkey/verify') @HttpCode(200)
+  passkeyVerify(@Req() req:Request,@Headers('x-views-staff-session') token:string,@Body() body:unknown){
+    this.authorize(req);const b=exact(body,['purpose','challengeId','response']);
+    if(b.purpose!=='register'&&b.purpose!=='authenticate')throw new BadRequestException('STAFF_REQUEST_INVALID');
+    return this.mfa.finish(token,b.purpose,b.challengeId,b.response);
+  }
+
 }

@@ -190,3 +190,12 @@ unchanged; 0041 contains revocation/lease fixes. Mail-link browser and private
 schema restore proofs now run in the disposable mail workflow. Earlier WIP and
 unverified-browser statements above describe the original checkpoint.
 External delivery, privileged MFA, Windows rollout and production remain OFF.
+
+## 10. Local passkey continuation
+
+Stage 7.27 adds an opt-in, nonprivileged WebAuthn step-up pilot; see
+`STAGE7_PASSKEY_PILOT.md`. New migration 0042 leaves applied mail migrations
+unchanged. The existing branch/stack is preserved. Default staff login and
+booking behavior remain unchanged; privileged MFA is NOT enabled. Continue next
+with reviewed factor replacement/revocation and recovery, then enforce assurance
+for approved privileged flows only after HTTPS/email/owner gates are satisfied.

@@ -78,13 +78,13 @@ async function setup(){
  VIEWS_INTERNAL_API_KEY:internalKey,VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON:'{"local-workspace":"internal_key_only"}',
  VIEWS_INTERNAL_SERVICE_KEYS_JSON:JSON.stringify({'local-workspace':[internalKey]}),VIEWS_INTERNAL_SERVICE_KEY_REFS_JSON:'',VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON:'{}',
  VIEWS_INTERNAL_SERVICE_SOURCE_CIDRS_JSON:'{"local-workspace":["127.0.0.1/32"]}',VIEWS_TRUSTED_PROXY_CIDRS_JSON:'',
- GUEST_AUTH_RATE_LIMIT_SECRET:randomBytes(32).toString('hex'),VIEWS_STAFF_AUTH_PILOT_ENABLED:'true',VIEWS_STAFF_AUTH_ORGANIZATION_ID:ORG,VIEWS_PAYME_SANDBOX_ENABLED:'false'};
+ GUEST_AUTH_RATE_LIMIT_SECRET:randomBytes(32).toString('hex'),VIEWS_STAFF_PASSKEY_PILOT_ENABLED:process.env.VIEWS_PASSKEY_PROOF==='true'?'true':'false',VIEWS_STAFF_AUTH_PILOT_ENABLED:'true',VIEWS_STAFF_AUTH_ORGANIZATION_ID:ORG,VIEWS_PAYME_SANDBOX_ENABLED:'false'};
  child=spawn(process.execPath,[path.join(API,'dist/main.js')],{env:childEnv,cwd:API,stdio:'ignore'});
  let ready=false;for(let i=0;i<50;i++){try{const r=await fetch('http://127.0.0.1:3001/readiness',{signal:AbortSignal.timeout(500)});if(r.ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,200));}
  assert.equal(ready,true,'CORE_NOT_READY');await smtpFixture();
 }
 (async()=>{
- const report={schemaVersion:1,stage:'7.26',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim().length>0,checks,externalEmailsSent:0,
+ const report={schemaVersion:1,stage:process.env.VIEWS_PASSKEY_PROOF==='true'?'7.27':'7.26',passkeyVirtualAuthenticator:process.env.VIEWS_PASSKEY_PROOF==='true',result:'fail',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim().length>0,checks,externalEmailsSent:0,
  externalMailboxOwnershipProven:false,productionEnabled:false,privilegedMfaEnabled:false,hostDeploymentConfirmed:false};
  try{
   await setup();
@@ -199,6 +199,7 @@ async function setup(){
    assert.ok(rows.every(r=>!r.after_state?.recipient_email&&!r.after_state?.token));
   });
   await require('./staff-mail.browser.cjs')({owner,staff,enqueue,send,rpc,messages,decodedText,internalKey,ORG,password,check});
+  if(process.env.VIEWS_PASSKEY_PROOF==='true')await require('./staff-passkey.browser.cjs')({owner,runtime,worker,staff,enqueue,send,rpc,internalKey,ORG,password,check});
   await check('private_auth_backup_restore_with_separate_keyring',async()=>{report.restore=await require('./staff-mail.restore.cjs')({owner,ownerURL,keys});});
   Object.assign(report,{result:'pass',checkCount:checks.length,httpCalls,smtpMessagesCaptured:messages.length,
    actualSMTPTransportExercised:true,SMTPReceiptPositiveBranchSimulated:true,queueReplaysPrevented:true,

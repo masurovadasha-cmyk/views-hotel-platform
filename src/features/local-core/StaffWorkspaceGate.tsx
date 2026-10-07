@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react';
+import {StaffPasskeyPanel} from './StaffPasskeyPanel';
 import {LocalCoreWorkspace} from './LocalCoreWorkspace';
 import './local-core.css';
 type Identity={email:string;displayName:string;role:string;permissions:string[];emailVerified:boolean;expiresAt:string};
@@ -57,6 +58,7 @@ export function StaffWorkspaceGate(){
     <label>Новый пароль<input aria-label="Новый пароль" type="password" required minLength={15} maxLength={128} autoComplete="new-password" value={next} onChange={e=>setNext(e.target.value)}/></label>
     <button className="primary" disabled={busy}>Сохранить новый пароль</button></form>}
   </section>
+  <StaffPasskeyPanel csrf={session.csrf}/>
   <LocalCoreWorkspace staffCsrf={session.csrf}/>
  </>;
  return <main className="localWorkspace staffLogin">

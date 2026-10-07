@@ -1,4 +1,4 @@
-name: Stage 7.26 Staff Email Delivery
+name: Stage 7.26–7.27 Staff Email and Passkey Pilot
 on:
   push:
     branches: ['stage7/staff-email-delivery-v1']
@@ -27,6 +27,7 @@ jobs:
           --health-interval 5s --health-timeout 3s --health-retries 20
     env:
       PGPASSWORD: fixture-owner
+      VIEWS_PASSKEY_PROOF: "true"
       VIEWS_MAIL_PROOF_ACK: DISPOSABLE_MAIL_ONLY
       STAFF_MAIL_PROOF_OWNER_URL: postgresql://views_owner:fixture-owner@127.0.0.1:55432/views_local
     steps:
