@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """Install pinned, verified Linux x64 tooling under a user-writable directory."""
-import hashlib, json, os, pathlib, platform, tarfile, urllib.request, zipfile
+import argparse, hashlib, json, os, pathlib, platform, tarfile, urllib.request, zipfile
 if platform.system() != 'Linux' or platform.machine() not in ('x86_64', 'AMD64'):
     raise SystemExit('This toolchain is for Linux x64 only')
+parser=argparse.ArgumentParser()
+parser.add_argument('--with-emulator',action='store_true',help='Also install pinned Android 10 x64 test image, emulator and ADB (about 1 GiB downloads)')
+args=parser.parse_args()
 repo = pathlib.Path(__file__).resolve().parents[1]
 root = pathlib.Path(os.environ.get('VIEWS_ANDROID_TOOLS', '/workspace/android-tools'))
 root.mkdir(parents=True, exist_ok=True)
-for item in json.loads((repo/'apps/android-review/toolchain-linux-x64.json').read_text()):
+items=json.loads((repo/'apps/android-review/toolchain-linux-x64.json').read_text())
+if args.with_emulator:
+    items+=json.loads((repo/'apps/android-review/emulator-linux-x64.json').read_text())
+for item in items:
     archive = root/item['file']
     if not archive.exists():
         request = urllib.request.Request(item['url'], headers={'User-Agent': 'VIEWS-build-setup'})
@@ -35,7 +41,9 @@ for item in json.loads((repo/'apps/android-review/toolchain-linux-x64.json').rea
                     target.mkdir(parents=True, exist_ok=True)
                 else:
                     target.parent.mkdir(parents=True, exist_ok=True)
-                    target.write_bytes(contents.read(entry))
+                    payload=contents.read(entry)
+                    if not target.exists() or target.read_bytes()!=payload:
+                        target.write_bytes(payload)
                     target.chmod((entry.external_attr >> 16) & 0o777 or 0o644)
     print(item['file']+': checksum verified, installed')
 print('Set JAVA_HOME='+str(root/'java/jdk-21.0.12.1+1'))

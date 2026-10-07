@@ -29,7 +29,8 @@
     "cloud:test:mail": "node scripts/cloud-mail-tests.cjs",
     "cloud:test:passkey": "VIEWS_PASSKEY_PROOF=true node scripts/cloud-mail-tests.cjs",
     "cloud:test:restore": "VIEWS_CLOUD_REHEARSAL=true VIEWS_LOCAL_STATE_DIR=${VIEWS_LOCAL_STATE_DIR:-/workspace/.views-local} node scripts/cloud-local-restore.cjs --ack=LOCAL_SYNTHETIC_RESTORE",
-    "cloud:verify": "npm run build && npm --prefix apps/api run build && npm test && npm run cloud:test:core && node scripts/core-network-primitive-gate.mjs && node --test scripts/staff-mail.acceptance.cjs && npm run cloud:stop && npm run cloud:start && npm run cloud:test:auth && npm run cloud:test:stay && npm run cloud:test:browser && npm run cloud:test:restore"
+    "cloud:verify": "npm run build && npm --prefix apps/api run build && npm test && npm run cloud:test:core && node scripts/core-network-primitive-gate.mjs && node --test scripts/staff-mail.acceptance.cjs && npm run cloud:stop && npm run cloud:start && npm run cloud:test:auth && npm run cloud:test:stay && npm run cloud:test:browser && npm run cloud:test:restore",
+    "build:android": "npm run typecheck && vite build --mode android --base=/views-hotel-platform/"
   },
   "dependencies": {
     "@simplewebauthn/browser": "14.0.0",

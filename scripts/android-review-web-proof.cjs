@@ -7,6 +7,7 @@ const assert=require('node:assert/strict');
  const browser=await chromium.launch({headless:true,executablePath:process.env.VIEWS_BROWSER_EXECUTABLE||'/usr/bin/chromium'});
  try {
   const page=await browser.newPage({viewport:{width:390,height:844}});
+  await page.addInitScript(()=>{delete String.prototype.replaceAll;});
   const errors=[],external=[];
   page.on('pageerror',e=>errors.push(e.message));
   const origin='https://appassets.androidplatform.net',prefix='/views-hotel-platform/';
@@ -27,7 +28,7 @@ const assert=require('node:assert/strict');
   const photos=page.locator('.photoButton img');
   assert.equal(await photos.count(),4);
   async function verifyPhotos(){
-   assert.ok(await photos.evaluateAll(images=>images.every(img=>img.complete&&img.naturalWidth>0)));
+   await page.waitForFunction(()=>{const images=[...document.querySelectorAll('.photoButton img')];return images.length===4&&images.every(img=>img.complete&&img.naturalWidth>0);});
   }
   await verifyPhotos();
   for(const width of [360,390,768,1440]){
@@ -38,7 +39,11 @@ const assert=require('node:assert/strict');
   const detail=page.locator('.modalPhoto');await detail.waitFor();
   assert.ok(await detail.evaluate(img=>img.complete&&img.naturalWidth>0));
   await page.reload({waitUntil:'networkidle'});await verifyPhotos();
+  await page.getByRole('button',{name:'Staff CRM',exact:true}).click();
+  await page.getByRole('heading',{name:'Overview',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Guest App',exact:true}).click();
+  await verifyPhotos();
   assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
-  console.log(JSON.stringify({result:'pass',bundledAndroidOrigin:true,explicitDemo:true,loadedListingPhotos:4,detailPhotoLoaded:true,reloadPhotosLoaded:true,viewports:[360,390,768,1440],blockedImageRequests:external.length,externalRequestsSent:0,pageErrors:0,androidDeviceTested:false}));
+  console.log(JSON.stringify({result:'pass',bundledAndroidOrigin:true,explicitDemo:true,loadedListingPhotos:4,legacyStringApiAbsent:true,staffNavigation:true,detailPhotoLoaded:true,reloadPhotosLoaded:true,viewports:[360,390,768,1440],blockedImageRequests:external.length,externalRequestsSent:0,pageErrors:0,androidDeviceTested:false}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -15,7 +15,9 @@ assert (tools/'aapt2').exists() and (tools/'d8').exists(),'Android build-tools 3
 android=sdk/'platforms/android-35/android.jar'
 assert android.exists(),'Android platform 35 required'
 assert (ROOT/'dist/index.html').exists(),'Build the web app first'
-assert '/views-hotel-platform/assets/' in (ROOT/'dist/index.html').read_text(), 'Run npm run build:pages before Android packaging'
+assert '/views-hotel-platform/assets/' in (ROOT/'dist/index.html').read_text(), 'Run npm run build:android before Android packaging'
+marker=ROOT/'dist/android-build.json'
+assert marker.exists() and json.loads(marker.read_text())=={'schemaVersion':1,'target':'chrome74','mode':'static-demo'}, 'Android-compatible build required: npm run build:android'
 source=ROOT/'apps/android-review'
 output=ROOT/'review-output'
 output.mkdir(exist_ok=True)

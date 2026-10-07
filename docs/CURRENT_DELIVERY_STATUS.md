@@ -17,7 +17,7 @@ acceptance. Source repository and branch remain unchanged; main is not merged.
 | Recovery | Disposable mail/auth restore; full local snapshot restored and table digests matched, encrypted files decrypted with separate key | Production recovery, KMS recovery and restored deployment credentials/runbook exercise |
 | Tenant/owner onboarding | Existing model/RLS and property scoping | Verified real inventory/owner data and end-to-end onboarding UI against Core |
 | RU/UZ/EN, accessibility | RU local staff journey, four tested widths, timezone handling | Complete three-language catalog, full keyboard/screen-reader and product-wide accessibility acceptance |
-| Android | Recovered shared-web WebView wrapper; native unsigned build and asset/manifest checks pass; four bundled demo photos render without network | Stable signing store, install/update, emulator and physical-device proof absent; connected HTTPS backend remains |
+| Android | Recovered shared-web WebView wrapper; native unsigned build and asset/manifest checks pass; four bundled demo photos render without network | Emulator install/launch attempted: WebView syntax fixed, software graphics still prevent UI acceptance; stable signing, update, physical-device and connected HTTPS proof remain |
 | Deployment/CI | Git branch push and local builds/tests | GitHub REST read unavailable in this session; hosted check state not independently established. Historical Cloudflare failure is not declared fixed |
 | Production release | No activation performed | Explicit owner approval plus preceding operational/provider/legal/device acceptance |
 

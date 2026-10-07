@@ -92,7 +92,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
   return <div className="staffLayout">
     <aside className="sidebar"><div className="sideBrand">VIEWS <small>OPERATIONS</small></div><nav>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} onClick={()=>setActive(id)}><Icon size={17}/><span>{labels[id]??id}</span></button>})}</nav></aside>
     <main className="staffMain">
-      <header className="staffHead"><div><small>VIEWS OPERATIONS</small><h1>{labels[current]??current}</h1></div>{allowRoleSwitch?<select value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{r.replaceAll("_"," ")}</option>)}</select>:<span className="roleLock">{role.replaceAll("_"," ")}</span>}</header>
+      <header className="staffHead"><div><small>VIEWS OPERATIONS</small><h1>{labels[current]??current}</h1></div>{allowRoleSwitch?<select value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{r.replace(/_/g," ")}</option>)}</select>:<span className="roleLock">{role.replace(/_/g," ")}</span>}</header>
       {content()}
     </main>
     <StaffMobileDock tab={mobileTab} setTab={setMobileTab}/>
@@ -102,9 +102,9 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
 
 function Dashboard({orders,role}:{orders:ServiceOrder[];role:HospitalityRole}){
   return <>
-    <section className="kpis"><article><span>Tasks today</span><b>{orders.length}</b></article><article><span>Check-ins</span><b>0</b></article><article><span>Open SLA</span><b>{orders.filter(o=>o.status!=="done").length}</b></article><article><span>Role</span><b>{role.replaceAll("_"," ")}</b></article></section>
+    <section className="kpis"><article><span>Tasks today</span><b>{orders.length}</b></article><article><span>Check-ins</span><b>0</b></article><article><span>Open SLA</span><b>{orders.filter(o=>o.status!=="done").length}</b></article><article><span>Role</span><b>{role.replace(/_/g," ")}</b></article></section>
     <div className="staffBoard">
-      <Panel title="Today's tasks"><div className="compactRows">{orders.slice(0,5).map(o=><div key={o.id}><span>10:00</span><b>{o.title}</b><small>{o.unit?"Apt "+o.unit:"Operational task"}</small><i className={"status "+o.status}>{o.status.replaceAll("_"," ")}</i></div>)}</div></Panel>
+      <Panel title="Today's tasks"><div className="compactRows">{orders.slice(0,5).map(o=><div key={o.id}><span>10:00</span><b>{o.title}</b><small>{o.unit?"Apt "+o.unit:"Operational task"}</small><i className={"status "+o.status}>{o.status.replace(/_/g," ")}</i></div>)}</div></Panel>
       <Panel title="Schedule / Calendar"><div className="timelineBoard"><div className="timelineHeader"><span>12 Oct</span><span>13 Oct</span><span>14 Oct</span><span>15 Oct</span></div><div className="timelineRow"><b>U-Tower #235</b><i className="bar guest">Guest stay</i></div><div className="timelineRow"><b>Nest One #12</b><i className="bar cleaning">Cleaning</i></div><div className="timelineRow"><b>Gardens #14</b><i className="bar maintenance">Maintenance</i></div></div></Panel>
     </div>
   </>;
@@ -182,7 +182,7 @@ function AdminPanel({orders,act}:{orders:ServiceOrder[];act:(id:string,a:"accept
 }
 
 function IntegrationHub(){
-  return <Panel title="Integration Hub"><div className="integrationGrid">{integrationCatalog.map(item=><article className="integrationCard" key={item.provider}><div><b>{item.label}</b><span>{item.capabilities.join(" · ")}</span></div><span className={"status "+(item.status==="configured"?"done":"assigned")}>{item.status.replaceAll("_"," ")}</span></article>)}</div><div className="notice">Credentials are never stored in this UI, browser storage or GitHub. Live secrets are added only to the deployment secret store.</div></Panel>;
+  return <Panel title="Integration Hub"><div className="integrationGrid">{integrationCatalog.map(item=><article className="integrationCard" key={item.provider}><div><b>{item.label}</b><span>{item.capabilities.join(" · ")}</span></div><span className={"status "+(item.status==="configured"?"done":"assigned")}>{item.status.replace(/_/g," ")}</span></article>)}</div><div className="notice">Credentials are never stored in this UI, browser storage or GitHub. Live secrets are added only to the deployment secret store.</div></Panel>;
 }
 
 function TeamPanel({orders}:{orders:ServiceOrder[]}){
@@ -198,7 +198,7 @@ function UnifiedInbox({orders,act,onOpen}:{orders:ServiceOrder[];act:(id:string,
 }
 
 function Orders({orders,act,onOpen}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;onOpen?:(o:ServiceOrder)=>void}){
-  return <Panel title="Service Orders">{orders.length===0?<div className="emptyLine">No requests in this queue.</div>:<div className="orderList">{orders.map(o=><article className="order" key={o.id}><div onClick={()=>onOpen?.(o)}><b>{o.title}</b><span>Apt {o.unit??"—"} · {o.category.replaceAll("_"," ")} · {o.guestName??"No guest"}</span></div><span className={"status "+o.status}>{o.status.replaceAll("_"," ")}</span><div className="orderActions"><button onClick={()=>act(o.id,"accept")}>Accept</button><button className="primary" onClick={()=>act(o.id,"start")}>Start</button><button onClick={()=>act(o.id,"complete")}>Complete</button></div></article>)}</div>}</Panel>;
+  return <Panel title="Service Orders">{orders.length===0?<div className="emptyLine">No requests in this queue.</div>:<div className="orderList">{orders.map(o=><article className="order" key={o.id}><div onClick={()=>onOpen?.(o)}><b>{o.title}</b><span>Apt {o.unit??"—"} · {o.category.replace(/_/g," ")} · {o.guestName??"No guest"}</span></div><span className={"status "+o.status}>{o.status.replace(/_/g," ")}</span><div className="orderActions"><button onClick={()=>act(o.id,"accept")}>Accept</button><button className="primary" onClick={()=>act(o.id,"start")}>Start</button><button onClick={()=>act(o.id,"complete")}>Complete</button></div></article>)}</div>}</Panel>;
 }
 
 
@@ -235,7 +235,7 @@ function MobileCreateTask({live,role,onCreated}:{live:boolean;role:HospitalityRo
   }
 
   return <div><h3>Create task</h3>{categories.length===0?<div className="notice">This role cannot create operational tasks.</div>:<div className="mobileCreate">
-    <label>Type<select value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(x=><option key={x} value={x}>{x.replaceAll("_"," ")}</option>)}</select></label>
+    <label>Type<select value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(x=><option key={x} value={x}>{x.replace(/_/g," ")}</option>)}</select></label>
     <label>Description<textarea value={title} onChange={e=>setTitle(e.target.value)} placeholder="What needs to be done?"/></label>
     <label>Priority<select value={priority} onChange={e=>setPriority(e.target.value)}><option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
     <button className="primary" disabled={busy} onClick={submit}>{busy?"Creating…":"Create"}</button>

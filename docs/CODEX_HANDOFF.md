@@ -388,3 +388,19 @@ packaging passed. All eight web assets matched their APK copies. Final clean SHA
 and artifact checksum are recorded in ignored review-output/build-evidence.json.
 No signing, emulator, physical-device or connected mobile claim. Restore the
 ordinary root web build after Android packaging; no public release is performed.
+
+## 25. Native WebView compatibility; emulator UI not accepted
+
+Stage 7.42 discovered native WebView 74 rejecting optional chaining/nullish syntax
+in the ordinary web bundle. build:android transpiles for chrome74 and emits a
+required packaging marker; demo guest/staff labels no longer use replaceAll.
+The browser proof removes that API and checks guest/staff navigation as well as
+photos/reload/four widths. Dirty continuation of cb29adc9dfed580f0414fb4e07fa0fa0e30d46f6:
+222 tests/36 files, Android build, browser regression and unsigned packaging pass.
+
+Native Android 10 install with temporary test-only signing passed. After the fix
+launch returned Status: ok and the prior syntax error disappeared, but software
+GPU font/raster failures prevented usable UI acceptance. No /dev/kvm is available;
+attempted renderer flags did not resolve it. No native UI/physical-device success
+is claimed. See STAGE7_ANDROID_WEBVIEW_COMPATIBILITY.md; optional verified emulator
+tooling is reproducible. Owned emulator/ADB container stopped, release unchanged.

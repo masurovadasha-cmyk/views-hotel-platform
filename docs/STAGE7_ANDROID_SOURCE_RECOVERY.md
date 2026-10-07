@@ -21,7 +21,7 @@ Use existing checkout; install JDK with javac, Android platform 35, build-tools
 ANDROID_HOME or ANDROID_SDK_ROOT. Do not copy secrets into this repository.
 
 ```
-npm run build:pages
+npm run build:android
 node scripts/android-review-web-proof.cjs
 python3 scripts/build-android-review.py
 ```
@@ -49,7 +49,7 @@ The helper was rerun successfully using the cached, verified downloads.
 export JAVA_HOME=/workspace/android-tools/java/jdk-21.0.12.1+1
 export ANDROID_HOME=/workspace/android-tools/sdk
 export PATH="$JAVA_HOME/bin:$PATH"
-npm run build:pages
+npm run build:android
 node scripts/android-review-web-proof.cjs
 python3 scripts/build-android-review.py
 npm run build
@@ -69,6 +69,11 @@ src/assets/demo/sources.json. No new photo content or real inventory is introduc
 Vite generates base-aware asset paths for both root web and Android/Pages builds.
 The browser proof now requires all four listing images and the detail image to
 decode, including after reload, and rejects every external request (zero allowed).
-It exercises widths 360/390/768/1440. Native packaging verifies all eight embedded
-web files, including the four photos. This remains a demo and does not establish
+It exercises widths 360/390/768/1440. Native packaging verifies all nine embedded
+web files, including the four photos and compatibility marker. This remains a demo and does not establish
 native-device execution or real inventory onboarding.
+
+Stage 7.42 adds build:android targeting WebView 74 and checks its marker before
+packaging. Native install/launch was exercised, but software graphics prevented UI
+acceptance. See STAGE7_ANDROID_WEBVIEW_COMPATIBILITY.md for the failed/partial
+evidence; this supersedes the earlier statement that no emulator run occurred.
