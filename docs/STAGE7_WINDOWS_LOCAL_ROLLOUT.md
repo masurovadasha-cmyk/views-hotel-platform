@@ -1,118 +1,121 @@
-# Stage 7.31 — safe Windows rollout and real-device passkey evidence
+# Stage 7.31 — Windows runtime repair and verified local rollout gates
 
-This stage prepares the verified Stage 7.26–7.30 branch for the existing
-loopback-only Windows rehearsal. It does **not** make the local host public,
-enable production, send external email, activate payments, merge main, or claim
-a physical authenticator succeeded before a user actually completes its OS prompt.
+## Current scope
 
-## Why this stage exists
+This fixes the three defects found after the first Stage 7.31 unit/syntax pass.
+The prior pass did NOT prove that Windows child processes or the observation SQL
+worked. Current completion claims must refer to the new native Windows and
+PostgreSQL runtime workflow, not the earlier seven mock/syntax tests.
 
-The hosted disposable suite now proves the application flow with a virtual
-WebAuthn authenticator, but the user's Windows checkout and persistent local
-PostgreSQL were intentionally left untouched by that CI fix. The next operation
-must preserve local data, applied migration checksums and private auth tables
-before applying migrations 0041–0044 and rebuilding the local Core.
+No user-computer deployment is implied by the CI result. A platform safety layer
+blocked the previous local preparation operation. Do not bypass that denial with
+a differently encoded script, different tool or broader sandbox permission.
+These repository changes and disposable CI tests are separate work. User-host
+execution must use a legitimately permitted session, not an evasion of that block.
 
-The physical-device check is necessarily partly interactive. Windows Hello and
-security-key user verification happen in OS-controlled UI. The application can
-prove that a real local WebAuthn ceremony reached Core, stored/used a public key,
-created the expected audit event and set fresh session assurance. With the
-current schema it cannot cryptographically attest the authenticator's commercial
-make/model. The final report therefore records the operator-observed authenticator
-separately from database evidence.
+## Fixed defects
 
-## Rollout command
+1. Observation uses the real public.audit_log.created_at column. The shared
+   read-only snapshot query joins each audit event to the SAME live session and
+   verifies tenant/member, role, credential version, absolute/idle expiry and
+   fresh passkey assurance. It cannot borrow assurance from another session.
+2. Builds invoke the selected Node executable with its bundled
+   node_modules/npm/bin/npm-cli.js. No direct npm.cmd spawn and no arbitrary shell
+   interpolation. The npm CLI and both typechecks are checked BEFORE downtime.
+3. The rollout explicitly opts in through windows-local-passkey-start.cjs. This
+   wrapper sets the local pilot flag for the Core subprocess only, retains the
+   existing local/test boundaries, and records its source and selected mode.
+   An actual protected-handler probe must return STAFF_SESSION_REQUIRED (401)
+   when no user token is supplied; a healthy readiness response is not enough.
+   Disabled mode (404), wrong gateway auth and an unprotected 200 all fail proof.
 
-Only on the authorized Windows rehearsal machine, on a clean checkout of
-`stage7/windows-passkey-rollout-v1`:
+The default VIEWS Local Start is unchanged. After an ordinary stop/restart the
+pilot may be off. A separately approved local restart can use:
+
+```text
+node apps/api/ops/windows-local-passkey-start.cjs --ack=LOCAL_PASSKEY_PILOT
+```
+
+This is not production enablement, a new service or an always-on scheduler.
+
+## Rollout
+
+In a clean existing Windows checkout of stage7/windows-passkey-rollout-v1:
 
 ```text
 node apps/api/ops/windows-local-rollout.cjs apply --ack=LOCAL_STAGE731_ROLLOUT --expected=<exact-current-sha>
 ```
 
-The command fails closed unless:
+The verified 0903a01 source must be an ancestor; all applied migration byte hashes
+must match. Existing migration 0040 is required. No reset, clean, force push,
+package install, firewall change, new Windows service or public tunnel is done.
+Only the owned Core and web processes are stopped. PostgreSQL stays running.
+The existing helper applies only forward migrations; applied SQL is unchanged.
 
-- the branch is exactly the Stage 7.31 rollout branch;
-- `<exact-current-sha>` is the checked out SHA;
-- the verified `0903a01` CI commit is an ancestor;
-- tracked and untracked source are clean;
-- every already-applied migration still matches its saved SHA-256;
-- migration 0040 is already present.
+Backup and row-manifest use one exported PostgreSQL snapshot. A full custom dump
+is restored into a uniquely named TEMPORARY database, and public/staff_private
+row counts and row-content digests must match. The dump is retained privately;
+only the temporary restored database is deleted. Both schemas are required, and
+empty/malformed evidence cannot pass. MD5 row multisets are consistency checks,
+not a signature against an adversarial backup source. Dump SHA-256 is retained.
+Global roles, external secret keys and restore privilege equivalence are NOT
+claimed verified by this row-content test.
 
-Before applying anything it stops only the owned loopback web/Core processes,
-leaves PostgreSQL running, creates a full custom-format backup, restores it into
-a temporary database, and compares row counts plus row-content digests for every
-`public` and `staff_private` table. The temporary database is then dropped while
-the backup is retained under `%LOCALAPPDATA%\\VIEWS-Staging\\backups`.
+After building and restarting, the runtime/session-required probe and migration
+ledger are rechecked. Reports contain the actual completed phase, so a build
+failure cannot imply successful activation. A failure does not auto-restore the
+persistent DB or claim the old application has been restarted.
 
-Only after the restore proof passes does it invoke the existing migration helper,
-build web and Core from installed dependencies, restart loopback services and
-re-verify the restricted runtime role/listeners. A failure writes a redacted
-report and does not silently restore or delete the retained backup.
+## Physical passkey observation
 
-Evidence is written to:
-
-```text
-%LOCALAPPDATA%\VIEWS-Staging\evidence\stage731-local-rollout.json
-```
-
-The rollout script does not fetch Git, install packages, edit the firewall,
-install Windows services, reboot the machine or open a public tunnel.
-
-## Real-device passkey proof
-
-After a successful Stage 7.31 rollout, start an interactive observation:
+After a permitted, successful local rollout:
 
 ```text
 node apps/api/ops/windows-physical-passkey-proof.cjs begin --ack=LOCAL_PHYSICAL_PASSKEY_PROOF --expected=<same-sha>
 ```
 
-This opens **http://localhost:4173/?api=local-core** in Edge. `localhost` is
-intentional: the passkey pilot fixes its local RP ID to `localhost`, while the
-ordinary booking review may also be opened through `127.0.0.1`.
+The command checks the running process's source/mode record and protected handler,
+records a 30-minute observation window and existing key fingerprints, then opens
+http://localhost:4173/?api=local-core. localhost is the fixed WebAuthn RP origin.
+It does NOT log in, set a password, read browser profiles or create a credential.
 
-Log in with the existing local staff fixture. Do not send the password or any
-recovery code to chat. In **Ключ доступа**:
-
-- if no key is registered, enter the current password, choose
-  **Зарегистрировать ключ**, then complete Windows Hello/security-key user
-  verification;
-- if a key already exists, choose **Подтвердить ключом** and complete the prompt.
-
-The browser action itself is the user-presence step. After observing the OS
-prompt and success in the UI, finish with one of:
+The user signs in and chooses Register key or Confirm with key in the existing
+panel, then completes the native Windows Hello/security-key prompt. PIN/password
+and recovery codes must never be sent to chat. Finish only after an actual user
+confirmation:
 
 ```text
 node apps/api/ops/windows-physical-passkey-proof.cjs finish --ack=LOCAL_PHYSICAL_PASSKEY_PROOF --expected=<same-sha> --authenticator=windows-hello --user-verified=yes
-node apps/api/ops/windows-physical-passkey-proof.cjs finish --ack=LOCAL_PHYSICAL_PASSKEY_PROOF --expected=<same-sha> --authenticator=security-key --user-verified=yes
 ```
 
-Other allowed observation labels are `platform-passkey` and `other-local`.
+Use security-key/platform-passkey/other-local only for the actually observed UI.
+Registration requires a new key plus a registration event; authentication requires
+an unchanged key fingerprint plus a verification event. Expired/revoked/mismatched
+sessions and out-of-window records are rejected. Missing evidence leaves the
+observation pending instead of falsely marking success. Hardware make/model is
+operator-observed, NOT cryptographically attested by the current schema.
 
-The finish command requires durable database evidence: expected passkey count,
-a valid stored public key, a fresh `staff.passkey_registered` or
-`staff.passkey_verified` audit action, and a fresh session assurance proof.
-It explicitly records that hardware make/model attestation is **not**
-cryptographically proven by the current schema.
+## Runtime CI and limitations
 
-Evidence is written to:
+stage7-windows-rollout.yml runs on standard Windows Server 2025 and Ubuntu 24.04
+hosted runners. Windows actually invokes bundled npm (including a directory with
+spaces) and builds the real web/Core. A new disposable local PostgreSQL cluster
+uses the runner's preinstalled binaries; the tool/server version is recorded.
+Linux uses PostgreSQL 16. No user VIEWS-Staging state, browser profile, credentials
+or persistent data are accessed.
 
-```text
-%LOCALAPPDATA%\VIEWS-Staging\evidence\stage731-physical-passkey.json
-```
+Both runners apply all existing migrations, run the exact observation SQL against
+synthetic keys/sessions/audit, exercise negative evidence cases, run real dump and
+restore, and start Core with the pilot disabled/enabled to check its protection.
+Positive audit/session fixtures are deliberately simulated: they do NOT certify
+physical WebAuthn or Windows Hello. The hosted test does not run the user-specific
+stop/switch/migration orchestration end-to-end, and does not certify that the
+user's installed dependencies or computer are ready. Report those separately.
 
-## CI coverage
+No production/main/public web/APK changes, real email or payment activation.
 
-`windows-local-rollout-safety.test.mjs` exercises only pure fail-closed logic:
-source binding, migration checksums/order, full restore manifests and passkey
-evidence assessment. CI does not pretend to be Windows Hello and does not touch
-the user's database. The two Windows operator scripts are additionally syntax
-checked through the normal repository build/review process.
+## Primary references
 
-## Remaining gates
-
-A successful local Windows Hello/security-key check still does not enable
-privileged production roles. Real email ownership, public HTTPS/Secure cookies,
-approved privileged MFA policy, actual sender infrastructure, monitoring,
-physical Android update/signing tests and production rollout remain separate
-owner-approved stages.
+- Node 22 Windows .cmd limitations: https://nodejs.org/download/release/latest-jod/docs/api/child_process.html
+- PostgreSQL 16 exported dump snapshot: https://www.postgresql.org/docs/16/app-pgdump.html
+- Windows passkey user verification: https://learn.microsoft.com/en-us/windows/apps/develop/security/reference

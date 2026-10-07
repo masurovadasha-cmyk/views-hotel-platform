@@ -1,0 +1,71 @@
+name: Stage 7.31 Windows and PostgreSQL Runtime Proof
+on:
+  push:
+    branches: ['stage7/windows-passkey-rollout-v1']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stage731-runtime-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  runtime:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      VIEWS_ROLLOUT_CI_ACK: DISPOSABLE_STAGE731_ONLY
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install locked dependencies in disposable CI workspace
+        shell: bash
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm ci --prefix apps/api --ignore-scripts --no-audit --no-fund
+      - name: Select preinstalled Windows PostgreSQL (no user machine or service)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (!$env:PGBIN -or !(Test-Path "$env:PGBIN\initdb.exe")) { throw 'POSTGRES_BINARY_REQUIRED' }
+          "VIEWS_TEST_PG_BIN=$env:PGBIN" >> $env:GITHUB_ENV
+      - name: Select PostgreSQL 16 binaries
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          test -x /usr/lib/postgresql/16/bin/initdb
+          echo 'VIEWS_TEST_PG_BIN=/usr/lib/postgresql/16/bin' >> "$GITHUB_ENV"
+          npm run build
+          npm run build --prefix apps/api
+      - name: Runtime regression unit checks
+        shell: bash
+        run: |
+          mkdir -p rollout-evidence
+          set -o pipefail
+          node --test scripts/windows-rollout-runtime.acceptance.cjs | tee rollout-evidence/runtime-tests.tap
+          npx vitest run scripts/windows-local-rollout-safety.test.mjs
+      - name: Real native builds, SQL queries, dump/restore and Core activation probes
+        shell: bash
+        run: node scripts/windows-rollout-integration.cjs
+      - name: Verify source-bound evidence before publishing success
+        shell: bash
+        run: |
+          node -e 'const fs=require("fs"),f="rollout-evidence/integration-"+process.platform+".json",r=JSON.parse(fs.readFileSync(f));if(r.result!=="pass"||r.sourceCommit!==process.env.GITHUB_SHA||r.migrationsApplied<44||r.restore.privateTableCount<7||r.negativeProbe.sessionRequired!==true)throw Error("PROOF_INCOMPLETE")'
+          git archive --format=zip HEAD -o rollout-evidence/source.zip
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: stage731-runtime-${{ runner.os }}
+          path: rollout-evidence/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: stage731-failed-diagnostics-${{ runner.os }}
+          path: rollout-evidence/
+          if-no-files-found: warn
