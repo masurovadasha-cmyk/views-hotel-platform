@@ -1,3 +1,4 @@
+import {GuestLinkStaffPanel} from './GuestLinkStaffPanel';
 import {localeTags} from './staff-locale';
 import {useStaffLocale} from './StaffLocale';
 import {TurnoverPanel,type TurnoverRow} from './TurnoverPanel';
@@ -93,6 +94,7 @@ export function ReceptionWorkspace({staffCsrf}:{staffCsrf:string}){
      {group.total===0?<p>{t("Нет записей.")}</p>:<ul>{group.items.map(r=><li key={r.reservationId} data-stay-id={r.reservationId}>
       <strong>{r.confirmationCode}</strong><div>{r.unitCode||t("Номер не назначен")} · {r.status==='checked_out'?t("Выезд оформлен"):r.status==='confirmed'?t("Подтверждена"):t("Заселён")}</div>
       <small>{format(r.checkInAt)} — {format(r.checkOutAt)}</small>
+      <GuestLinkStaffPanel reservationId={r.reservationId} csrf={staffCsrf}/>
       {r.stayPilot&&r.status!=='checked_out'&&<div className="stayReadiness"><p>{t("Основной гость:")}{' '}{r.readiness?.primaryGuest||t("не указан")}</p><p className="localHint">{t("Тестовая карточка. Проверка документов и государственная регистрация не выполнялись.")}</p>
        {blockers(r.readiness).length?<ul aria-label={t("Причины блокировки")}>{blockers(r.readiness).map(reason=><li key={reason}>{t(reason)}</li>)}</ul>:<p>{t("Проверки тестовой брони пройдены. При подтверждении сервер проверит её снова.")}</p>}
        <DocumentStatus documents={r.documents} onView={documentId=>setPreview({reservationId:r.reservationId,documentId})}/>

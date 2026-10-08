@@ -6,7 +6,7 @@ const COOKIE='views_guest_email';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ERRORS=new Set(['INVALID_GUEST_EMAIL_REQUEST','GUEST_EMAIL_LINK_INVALID','GUEST_EMAIL_SESSION_INVALID',
  'EMAIL_RESEND_COOLDOWN','RATE_LIMITED','GUEST_EMAIL_DELIVERY_UNCERTAIN','GUEST_EMAIL_CHALLENGE_INACTIVE',
- 'GUEST_EMAIL_NOT_CONNECTED','GUEST_EMAIL_DISABLED','GUEST_EMAIL_KEY_REQUIRED','GUEST_TRIPS_DISABLED','GUEST_TRIP_NOT_FOUND','INVALID_GUEST_TRIP_CURSOR','INVALID_GUEST_TRIP_QUERY']);
+ 'GUEST_EMAIL_NOT_CONNECTED','GUEST_EMAIL_DISABLED','GUEST_EMAIL_KEY_REQUIRED','GUEST_TRIPS_DISABLED','GUEST_TRIP_NOT_FOUND','INVALID_GUEST_TRIP_CURSOR','INVALID_GUEST_TRIP_QUERY','GUEST_LINK_DISABLED','GUEST_LINK_INVALID','GUEST_LINK_INPUT_INVALID']);
 function loopbackOrigin(value){
  const u=new URL(value);
  if(u.protocol!=='http:'||u.hostname!=='127.0.0.1'||!u.port||u.origin!==value)throw Error('GUEST_GATEWAY_LOOPBACK_ONLY');
@@ -64,8 +64,9 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
    reply(res,403,{error:'GUEST_ORIGIN_REJECTED'});return true;
   }
   const route=req.url.slice('/guest-api/'.length);
+  const linkRoute=['reservation-link/preview','reservation-link/accept'].includes(route);
   const tripRoute=/^trips(?:\?cursor=[A-Za-z0-9_-]{1,300}|\/[a-fA-F0-9-]{36})?$/.test(route);
-  if((!tripRoute&&!['session','request','exchange','logout'].includes(route))||req.method!==((tripRoute||route==='session')?'GET':'POST')){
+  if((!tripRoute&&!linkRoute&&!['session','request','exchange','logout'].includes(route))||req.method!==((tripRoute||route==='session')?'GET':'POST')){
    reply(res,404,{error:'GUEST_ROUTE_NOT_FOUND'});return true;
   }
   if(inFlight>=12){reply(res,503,{error:'GUEST_CORE_UNAVAILABLE'});return true;}
@@ -89,8 +90,17 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
     reply(res,200,{authenticated:true,profile:{userId,email,locale,expiresAt,role},csrf:csrf(token)});return true;
    }
    let body;try{body=await jsonBody(req);}catch{reply(res,400,{error:'INVALID_GUEST_EMAIL_REQUEST'});return true;}
-   const keys=route==='request'?['email','locale']:route==='exchange'?['challengeId','token']:[];
+   const keys=linkRoute?['token']:route==='request'?['email','locale']:route==='exchange'?['challengeId','token']:[];
    if(!exact(body,keys)){reply(res,400,{error:'INVALID_GUEST_EMAIL_REQUEST'});return true;}
+   if(linkRoute){
+    if(!token){reply(res,401,{error:'GUEST_EMAIL_SESSION_INVALID'});return true;}
+    const supplied=req.headers['x-views-guest-csrf'];
+    if(typeof supplied!=='string'||!/^[a-f0-9]{64}$/.test(supplied)||!timingSafeEqual(Buffer.from(supplied,'hex'),Buffer.from(csrf(token),'hex'))){reply(res,403,{error:'GUEST_CSRF_REJECTED'});return true;}
+    const result=await upstream(route,body,token);
+    if(result.status===401)cookie(res,'');
+    if(result.status!==200){failed(res,result);return true;}
+    reply(res,200,require('./guest-link-projection.cjs')(result.body));return true;
+   }
    if(route==='logout'){
     if(!token){cookie(res,'');reply(res,200,{ok:true});return true;}
     const supplied=req.headers['x-views-guest-csrf'];

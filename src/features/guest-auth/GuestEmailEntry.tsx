@@ -1,3 +1,4 @@
+import {GuestReservationLink} from './GuestReservationLink';
 import {GuestTrips} from './GuestTrips';
 import {useEffect,useRef,useState} from 'react';
 import {guestEmail,GuestEmailError,type GuestSession} from '../../api/guest-email';
@@ -23,6 +24,7 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
  const [session,setSession]=useState<GuestSession|null>(null),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true);
  const [error,setError]=useState(initialLink.invalid?INVALID:''),[notice,setNotice]=useState('');
  const [deadline,setDeadline]=useState(0),[clock,setClock]=useState(Date.now()),[online,setOnline]=useState(navigator.onLine);
+ const [tripRevision,setTripRevision]=useState(0);
  const running=useRef(false),generation=useRef(0);
  const seconds=Math.max(0,Math.ceil((deadline-clock)/1000));
  useEffect(()=>{if(!deadline)return;const id=setInterval(()=>setClock(Date.now()),1000);return()=>clearInterval(id);},[deadline]);
@@ -85,6 +87,7 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
    </form>:null}
    {!loading&&<button disabled={disabled} onClick={()=>void act('refresh')}>{t('Check session again')}</button>}
   </section>
-  {session?.authenticated&&<GuestTrips key={session.profile.userId} online={online} onSessionExpired={()=>setSession({authenticated:false})}/>}
+  {session?.authenticated&&<GuestTrips key={session.profile.userId+':'+tripRevision} online={online} onSessionExpired={()=>setSession({authenticated:false})}/>}
+  {session?.authenticated&&<GuestReservationLink key={session.profile.userId} csrf={session.csrf} online={online} onLinked={()=>setTripRevision(v=>v+1)} onExpired={()=>setSession({authenticated:false})}/>}
  </main>;
 }

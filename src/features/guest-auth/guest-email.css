@@ -14,5 +14,5 @@
 .dark .guestEmail aside{background:#37372c}.dark .guestEmail input{background:#1c1e1a;color:#efece5;border-color:#8c8879}
 .dark .guestEmail button.primary{background:#d9c394;color:#252015}.dark .guestEmailError{background:#3f2220;color:#ffcec8}
 @media(max-width:720px){.guestEmail{grid-template-columns:1fr;gap:24px;margin:28px auto;padding:0 16px}.guestEmailCard{padding:24px}.guestEmail aside{margin-top:20px}}
-.guestTrips{grid-column:1/-1;border-top:1px solid #aaa08e;padding-top:24px}.guestTripsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:20px}
-.guestTrips article{border:1px solid #aaa08e;border-radius:14px;padding:20px;min-width:0;overflow-wrap:anywhere}.guestTrips h3{margin-top:0}.guestTrips dl{margin:0}.guestTrips dt{margin-top:12px;font-size:13px}.guestTrips dd{margin:4px 0 0;font-weight:600}
+.guestTrips,.guestReservationLink{grid-column:1/-1;border-top:1px solid #aaa08e;padding-top:24px}.guestTripsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:20px}
+.guestTrips article,.guestReservationLink article{border:1px solid #aaa08e;border-radius:14px;padding:20px;min-width:0;overflow-wrap:anywhere}.guestTrips h3{margin-top:0}.guestTrips dl{margin:0}.guestTrips dt{margin-top:12px;font-size:13px}.guestTrips dd{margin:4px 0 0;font-weight:600}

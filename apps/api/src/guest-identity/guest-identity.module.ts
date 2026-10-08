@@ -1,3 +1,6 @@
+import {StaffAuthModule} from '../staff-auth/staff-auth.module';
+import {GuestReservationLinkService} from './guest-reservation-link.service';
+import {StaffGuestLinkController,GuestReservationLinkController} from './guest-reservation-link.controller';
 import {GuestTripsService} from './guest-trips.service';
 import {GuestTripsController} from './guest-trips.controller';
 import {Module} from '@nestjs/common';
@@ -8,5 +11,5 @@ import {SecurityRateLimitService} from '../security/rate-limit.service';
 import {GuestEmailController} from './guest-email.controller';
 import {GuestEmailService} from './guest-email.service';
 import {GuestEmailRegistry} from './guest-email.registry';
-@Module({controllers:[GuestIdentityController,GuestEmailController,GuestTripsController],providers:[GuestTripsService,GuestIdentityService,GuestSmsRegistry,SecurityRateLimitService,GuestEmailService,GuestEmailRegistry],exports:[GuestIdentityService,GuestSmsRegistry,GuestEmailService,GuestEmailRegistry]})
+@Module({imports:[StaffAuthModule],controllers:[StaffGuestLinkController,GuestReservationLinkController,GuestIdentityController,GuestEmailController,GuestTripsController],providers:[GuestReservationLinkService,GuestTripsService,GuestIdentityService,GuestSmsRegistry,SecurityRateLimitService,GuestEmailService,GuestEmailRegistry],exports:[GuestIdentityService,GuestSmsRegistry,GuestEmailService,GuestEmailRegistry]})
 export class GuestIdentityModule{}

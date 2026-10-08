@@ -731,3 +731,32 @@ No association API yet: profiles must already have a trusted explicit user_id;
 fixtures are not a production linking process. Next block is verified reservation
 association with audit, never automatic email matching or client-supplied userId.
 Guest cancellation/payment and real email/public Core remain unfinished.
+
+
+## 43. Reservation-scoped guest invitation and acceptance
+
+0060 adds a private FORCE-RLS link registry and scoped SECURITY DEFINER issue,
+inspect, revoke and preview/accept functions.0061 extends guest trip projection
+for an accepted reservation grant; never writes guest_profiles.user_id or exposes
+other stays sharing that profile. Staff session+permission+property scope and
+recipient guest email session are required. One-hour pending HMAC code, hashed
+storage, stable issue replay, explicit confirmation, locks, audit and atomic
+linked/unlinked outbox. Revocation and primary guest changes close reads.
+
+Default-off local/test flag VIEWS_GUEST_LINK_PILOT_ENABLED and separate64hex
+VIEWS_GUEST_LINK_TOKEN_KEY. Manual handoff only; no invitation mail adapter.
+RU/UZ/EN guest preview/accept with recovery after lost reply; staff panel supports
+issue/status recovery/revoke without returning the token on GET. Cookie/CSRF
+boundaries retained. Real staff HTTP plus guest browser tested end-to-end;
+staff panel itself still requires manual browser acceptance.
+
+Dirty17065b9: Core430/76, root267/46, API/web typechecks/builds, network154/mail15;
+4 new link browser/Core/PG groups plus4 owned-trip,4 email and3 HTTP/SMTP pass.
+Review build public entry regression passes4 directions/3 languages/4 widths.
+Logs /tmp/views-guest-link-{core,root}.log.0060/61 applied only to disposable DB;
+old migrations and persistent views_local untouched. No public release/APK,
+real mail, main merge or role promotion. See stages-b/02-guest-reservation-link.md.
+Section42 association backlog is superseded by this manual invitation process.
+Next code increment: guest cancellation preview/confirmation with frozen policy;
+real mail/public Core and remaining stages remain open. Existing environment
+startup is unchanged; the disposable test runner supplies and restores new flags.

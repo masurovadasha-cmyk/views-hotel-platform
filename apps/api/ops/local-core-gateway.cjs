@@ -113,6 +113,15 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     const result=await core('/v1/staff-auth/'+route.split('/').pop(),'POST',body,undefined,token);
     contexts.delete(hash(token));cookie(res,null);json(res,200,result);return true;
    }
+   if(['GET','POST'].includes(req.method)&&/^\/local-api\/reservations\/[a-f0-9-]{36}\/guest-link(?:\/revoke)?$/i.test(route)){
+    if(process.env.VIEWS_GUEST_LINK_PILOT_ENABLED!=='true')fail(404,'GUEST_LINK_DISABLED');
+    if(!identity.permissions.includes('reservation.manage'))fail(403,'STAFF_PERMISSION_DENIED');
+    if(req.method==='GET'){if(route.endsWith('/revoke'))fail(404,'ROUTE_NOT_FOUND');json(res,200,await core('/v1/bookings/'+route.split('/')[3]+'/guest-link','GET',undefined,undefined,token,identity));return true;}
+    const body=await readJson(req),revoke=route.endsWith('/revoke');exactKeys(body,revoke?['linkId']:['email']);
+    const key=req.headers['idempotency-key'];if(!revoke&&!UUID.test(key||''))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
+    const result=await core('/v1/bookings/'+route.split('/')[3]+'/guest-link'+(revoke?'/revoke':''),'POST',body,key,token,identity);
+    json(res,200,result);return true;
+   }
    const digest=hash(token);for(const [key,c] of contexts)if(c.expires<=Date.now())contexts.delete(key);
    let s=contexts.get(digest);if(!s){if(contexts.size>=32)fail(429,'SESSION_LIMIT');s={quotes:new Map(),reservations:new Set(),window:Date.now(),requests:0,expires:Date.parse(identity.expiresAt)};contexts.set(digest,s);}
    if(Date.now()-s.window>60000){s.window=Date.now();s.requests=0;}if(++s.requests>120)fail(429,'RATE_LIMIT');

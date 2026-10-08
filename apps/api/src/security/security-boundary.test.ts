@@ -4,7 +4,7 @@ import {redactSecurityText,redactTelemetryValue} from "./redacting-logger";
 
 describe("security telemetry redaction",()=>{
   it('redacts email link/session and SMS session tokens in text and errors',()=>{
-    for(const prefix of ['vgel_','vges_','vgs_']){
+    for(const prefix of ['vgel_','vges_','vgs_','vglk_']){
       const token=prefix+'x'.repeat(43);
       expect(redactSecurityText('token='+token)).toBe('token=[GUEST_TOKEN_REDACTED]');
       expect(JSON.stringify(redactTelemetryValue(new Error(token)))).not.toContain(token);

@@ -1,0 +1,86 @@
+{
+  "Add an existing booking": {
+    "ru": "Добавить существующую бронь",
+    "uz": "Mavjud bronni qo‘shish"
+  },
+  "Ask reception for an invitation for your account email. The booking number alone is not enough. Invitations are handed over manually on this test stand.": {
+    "ru": "Получите у ресепшн приглашение для email вашего аккаунта. Одного номера брони недостаточно. На этом стенде приглашения передаются вручную.",
+    "uz": "Hisobingiz emaili uchun resepshndan taklif oling. Faqat bron raqami yetarli emas. Bu sinovda takliflar qo‘lda beriladi."
+  },
+  "Invitation code": {
+    "ru": "Код приглашения",
+    "uz": "Taklif kodi"
+  },
+  "Check invitation": {
+    "ru": "Проверить приглашение",
+    "uz": "Taklifni tekshirish"
+  },
+  "Confirm booking link": {
+    "ru": "Подтвердить привязку брони",
+    "uz": "Bronni bog‘lashni tasdiqlash"
+  },
+  "Confirm only if this is your booking. Other bookings in the same guest profile will not be linked.": {
+    "ru": "Подтверждайте только свою бронь. Другие брони из того же профиля гостя не будут привязаны.",
+    "uz": "Faqat o‘z broningizni tasdiqlang. Shu mehmon profilidagi boshqa bronlar bog‘lanmaydi."
+  },
+  "Invitation is invalid, expired, revoked or intended for another account.": {
+    "ru": "Приглашение недействительно, истекло, отозвано или предназначено другому аккаунту.",
+    "uz": "Taklif yaroqsiz, muddati tugagan, bekor qilingan yoki boshqa hisob uchun mo‘ljallangan."
+  },
+  "Booking linking is not connected on this server.": {
+    "ru": "Привязка бронирований на этом сервере не подключена.",
+    "uz": "Bu serverda bronlarni bog‘lash ulanmagan."
+  },
+  "The operation was not confirmed. Retry manually with the same code.": {
+    "ru": "Операция не подтверждена. Повторите вручную с тем же кодом.",
+    "uz": "Amal tasdiqlanmadi. Xuddi shu kod bilan qo‘lda qayta urinib ko‘ring."
+  },
+  "Booking linked. Your trips have been refreshed.": {
+    "ru": "Бронь привязана. Список поездок обновлён.",
+    "uz": "Bron bog‘landi. Safarlar ro‘yxati yangilandi."
+  },
+  "Guest booking invitation": {
+    "ru": "Приглашение гостя к брони",
+    "uz": "Mehmonni bronga taklif qilish"
+  },
+  "Verify the guest and account email before issuing. Hand the code only to this guest. No email is sent automatically.": {
+    "ru": "Перед выпуском проверьте гостя и email аккаунта. Передайте код только этому гостю. Письмо автоматически не отправляется.",
+    "uz": "Berishdan oldin mehmon va hisob emailini tekshiring. Kodni faqat shu mehmonga bering. Xat avtomatik yuborilmaydi."
+  },
+  "Recipient email": {
+    "ru": "Email получателя",
+    "uz": "Qabul qiluvchi emaili"
+  },
+  "Issue invitation": {
+    "ru": "Выдать приглашение",
+    "uz": "Taklif berish"
+  },
+  "Expires at": {
+    "ru": "Действует до",
+    "uz": "Amal qilish muddati"
+  },
+  "Revoke this invitation": {
+    "ru": "Отозвать приглашение",
+    "uz": "Taklifni bekor qilish"
+  },
+  "Invitation and its access revoked.": {
+    "ru": "Приглашение и доступ по нему отозваны.",
+    "uz": "Taklif va unga tegishli kirish bekor qilindi."
+  },
+  "Change recipient": {
+    "ru": "Изменить получателя",
+    "uz": "Qabul qiluvchini o‘zgartirish"
+  },
+  "Refresh invitation": {
+    "ru": "Обновить приглашение",
+    "uz": "Taklifni yangilash"
+  },
+  "An invitation exists. Revoke it before issuing a replacement.": {
+    "ru": "Приглашение уже существует. Отзовите его перед выпуском нового.",
+    "uz": "Taklif allaqachon mavjud. Yangisini berishdan oldin uni bekor qiling."
+  },
+  "Accepted. Access remains until revoked.": {
+    "ru": "Принято. Доступ сохраняется до отзыва.",
+    "uz": "Qabul qilingan. Kirish bekor qilinmaguncha saqlanadi."
+  }
+}
