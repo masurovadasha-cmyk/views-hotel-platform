@@ -87,7 +87,7 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
    </form>:null}
    {!loading&&<button disabled={disabled} onClick={()=>void act('refresh')}>{t('Check session again')}</button>}
   </section>
-  {session?.authenticated&&<GuestTrips key={session.profile.userId+':'+tripRevision} online={online} onSessionExpired={()=>setSession({authenticated:false})}/>}
+  {session?.authenticated&&<GuestTrips key={session.profile.userId+':'+tripRevision} csrf={session.csrf} online={online} onSessionExpired={()=>setSession({authenticated:false})}/>}
   {session?.authenticated&&<GuestReservationLink key={session.profile.userId} csrf={session.csrf} online={online} onLinked={()=>setTripRevision(v=>v+1)} onExpired={()=>setSession({authenticated:false})}/>}
  </main>;
 }

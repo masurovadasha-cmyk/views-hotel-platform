@@ -13,7 +13,7 @@
  "Property time zone":{"ru":"Часовой пояс объекта","uz":"Obyekt vaqt mintaqasi"},
  "Booking total":{"ru":"Сумма бронирования","uz":"Bron summasi"},
  "Confirmation code":{"ru":"Код бронирования","uz":"Bron kodi"},
- "Viewing only. Changes, cancellation and payment are not connected here yet.":{"ru":"Доступен только просмотр. Изменение, отмена и оплата здесь пока не подключены.","uz":"Faqat ko‘rish mumkin. O‘zgartirish, bekor qilish va to‘lov hali ulanmagan."},
+ "Booking changes and payment are not connected here yet.":{"ru":"Изменение брони и оплата здесь пока не подключены.","uz":"Bronni o‘zgartirish va to‘lov hali ulanmagan."},
  "Back to trips":{"ru":"К поездкам","uz":"Safarlarga qaytish"},
  "View trip":{"ru":"Открыть поездку","uz":"Safarni ochish"},
  "Next trips":{"ru":"Следующие поездки","uz":"Keyingi safarlar"},

@@ -760,3 +760,38 @@ Section42 association backlog is superseded by this manual invitation process.
 Next code increment: guest cancellation preview/confirmation with frozen policy;
 real mail/public Core and remaining stages remain open. Existing environment
 startup is unchanged; the disposable test runner supplies and restores new flags.
+
+
+## 44. Team increment: guest cancellation and staff invitation UI proof
+
+User explicitly requested team continuation. Core/UI/gateway were split, with
+independent read-only financial review; prior staff invitation browser gap closed.
+New0062 adds private quote/command registries and actor_kind staff/guest without
+creating memberships. Guest scope from verified session and explicit trip grant,
+rechecked after intent→reservation→profile locks and before replay. Frozen policy,
+actual cash allocation, bigint strings, 5min/threshold expiry, complete state
+fingerprint and stable account+command replay. SQL independently validates money
+and eligibility; deferred constraint requires refund queue and posted liability
+journal before commit. Existing recovery handles late captures. No provider call.
+
+Default-off VIEWS_GUEST_CANCELLATION_PILOT_ENABLED in test/local only. Strict
+cookie/Origin/CSRF gateway, RU/UZ/EN preview/explicit confirmation, offline and
+same-key manual uncertainty retry, cancelled trip state and truthful pending
+refund receipt. Receipt is not live provider tracking. Uncollected penalty is
+not automatically charged. Preview/confirm limited30 per5min/account.
+
+Dirty97f43f5 final proof: Core438/77, root274/48, API/web typecheck/build,
+network156/mail15.8 new real PG groups plus4 new guest cancellation browser/Core/PG
+and4 staff invitation UI HTTP-fixture groups; all previous trip/link/email/SMTP
+proofs passed. Staff fixture proof does not claim full real staff UI/Core/mail
+operation. First fixture missed required external_capture_id; initial snapshot
+also raced active migration edits. Fixed/frozen full rerun passed exit0:
+/tmp/views-guest-cancel-core-final.log and /tmp/views-guest-cancel-root.log.
+
+0062 only applied to disposable databases,0001–0061 untouched, persistent data
+unchanged. No public Core/email/payment rollout, web/APK deployment or main merge.
+See stages-b/02-guest-cancellation.md for run/risks and NEXT_PROGRAMMING_BLOCKS.md
+for actual ordered remaining B3–B11 backlog. Environment startup remains unchanged.
+Next self-contained software scope: B4 folio API/night audit and full500-unit
+operational pagination; B3 provider-backed reconciliation/deposits/fiscalization
+still need verified external contracts and must not be silently skipped as done.

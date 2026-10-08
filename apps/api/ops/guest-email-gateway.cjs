@@ -6,7 +6,7 @@ const COOKIE='views_guest_email';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ERRORS=new Set(['INVALID_GUEST_EMAIL_REQUEST','GUEST_EMAIL_LINK_INVALID','GUEST_EMAIL_SESSION_INVALID',
  'EMAIL_RESEND_COOLDOWN','RATE_LIMITED','GUEST_EMAIL_DELIVERY_UNCERTAIN','GUEST_EMAIL_CHALLENGE_INACTIVE',
- 'GUEST_EMAIL_NOT_CONNECTED','GUEST_EMAIL_DISABLED','GUEST_EMAIL_KEY_REQUIRED','GUEST_TRIPS_DISABLED','GUEST_TRIP_NOT_FOUND','INVALID_GUEST_TRIP_CURSOR','INVALID_GUEST_TRIP_QUERY','GUEST_LINK_DISABLED','GUEST_LINK_INVALID','GUEST_LINK_INPUT_INVALID']);
+ 'GUEST_EMAIL_NOT_CONNECTED','GUEST_EMAIL_DISABLED','GUEST_EMAIL_KEY_REQUIRED','GUEST_TRIPS_DISABLED','GUEST_TRIP_NOT_FOUND','INVALID_GUEST_TRIP_CURSOR','INVALID_GUEST_TRIP_QUERY','GUEST_LINK_DISABLED','GUEST_LINK_INVALID','GUEST_LINK_INPUT_INVALID','GUEST_CANCELLATION_DISABLED','GUEST_CANCELLATION_INPUT_INVALID','GUEST_CANCELLATION_QUOTE_STALE','GUEST_CANCELLATION_NOT_AVAILABLE','GUEST_CANCELLATION_RECONCILIATION_REQUIRED','GUEST_CANCELLATION_COMMAND_CONFLICT']);
 function loopbackOrigin(value){
  const u=new URL(value);
  if(u.protocol!=='http:'||u.hostname!=='127.0.0.1'||!u.port||u.origin!==value)throw Error('GUEST_GATEWAY_LOOPBACK_ONLY');
@@ -37,9 +37,9 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
  if(!/^[a-f0-9]{64}$/.test(csrfKey))throw Error('GUEST_GATEWAY_KEY_REQUIRED');
  const csrf=token=>createHmac('sha256',Buffer.from(csrfKey,'hex')).update('guest-csrf:v1:'+token).digest('hex');
  let inFlight=0;
- async function upstream(route,body,token){
+ async function upstream(route,body,token,key){
   const response=await fetch(coreOrigin+'/v1/guest-identity/email/'+route,{method:body===undefined?'GET':'POST',
-   headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},
+   headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{}),...(key?{'Idempotency-Key':key}:{})},
    body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(10000)});
   let size=0;const chunks=[];
   for await(const chunk of response.body){size+=chunk.length;if(size>131072)throw Error('INVALID_RESPONSE');chunks.push(chunk);}
@@ -48,7 +48,7 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
  function failed(res,result){
   const code=ERRORS.has(result.body?.message)?result.body.message:'GUEST_CORE_UNAVAILABLE';
   const retry=result.body?.retryAfterSeconds;
-  reply(res,[400,401,404,429,503].includes(result.status)?result.status:502,
+  reply(res,[400,401,404,409,429,503].includes(result.status)?result.status:502,
    {error:code,...(Number.isInteger(retry)&&retry>0&&retry<=3600?{retryAfterSeconds:retry}:{})});
  }
  return async function handle(req,res){
@@ -65,8 +65,9 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
   }
   const route=req.url.slice('/guest-api/'.length);
   const linkRoute=['reservation-link/preview','reservation-link/accept'].includes(route);
+  const cancellation=/^trips\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\/cancellation\/(preview|confirm)$/i.exec(route);
   const tripRoute=/^trips(?:\?cursor=[A-Za-z0-9_-]{1,300}|\/[a-fA-F0-9-]{36})?$/.test(route);
-  if((!tripRoute&&!linkRoute&&!['session','request','exchange','logout'].includes(route))||req.method!==((tripRoute||route==='session')?'GET':'POST')){
+  if((!tripRoute&&!linkRoute&&!cancellation&&!['session','request','exchange','logout'].includes(route))||req.method!==((tripRoute||route==='session')?'GET':'POST')){
    reply(res,404,{error:'GUEST_ROUTE_NOT_FOUND'});return true;
   }
   if(inFlight>=12){reply(res,503,{error:'GUEST_CORE_UNAVAILABLE'});return true;}
@@ -90,16 +91,18 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
     reply(res,200,{authenticated:true,profile:{userId,email,locale,expiresAt,role},csrf:csrf(token)});return true;
    }
    let body;try{body=await jsonBody(req);}catch{reply(res,400,{error:'INVALID_GUEST_EMAIL_REQUEST'});return true;}
-   const keys=linkRoute?['token']:route==='request'?['email','locale']:route==='exchange'?['challengeId','token']:[];
+   const keys=cancellation?(cancellation[1]==='confirm'?['quoteId']:[]):linkRoute?['token']:route==='request'?['email','locale']:route==='exchange'?['challengeId','token']:[];
    if(!exact(body,keys)){reply(res,400,{error:'INVALID_GUEST_EMAIL_REQUEST'});return true;}
-   if(linkRoute){
+   if(linkRoute||cancellation){
     if(!token){reply(res,401,{error:'GUEST_EMAIL_SESSION_INVALID'});return true;}
     const supplied=req.headers['x-views-guest-csrf'];
     if(typeof supplied!=='string'||!/^[a-f0-9]{64}$/.test(supplied)||!timingSafeEqual(Buffer.from(supplied,'hex'),Buffer.from(csrf(token),'hex'))){reply(res,403,{error:'GUEST_CSRF_REJECTED'});return true;}
-    const result=await upstream(route,body,token);
+    const command=cancellation?.[1]==='confirm'?req.headers['idempotency-key']:undefined;
+    if(cancellation?.[1]==='confirm'&&(typeof command!=='string'||!UUID.test(command))){reply(res,400,{error:'GUEST_CANCELLATION_INPUT_INVALID'});return true;}
+    const result=await upstream(route,body,token,command);
     if(result.status===401)cookie(res,'');
     if(result.status!==200){failed(res,result);return true;}
-    reply(res,200,require('./guest-link-projection.cjs')(result.body));return true;
+    reply(res,200,(cancellation?require('./guest-cancellation-projection.cjs')(result.body,cancellation[1]):require('./guest-link-projection.cjs')(result.body)));return true;
    }
    if(route==='logout'){
     if(!token){cookie(res,'');reply(res,200,{ok:true});return true;}

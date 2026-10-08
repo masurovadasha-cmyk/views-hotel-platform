@@ -42,6 +42,8 @@ module.exports=async function guestEmailBrowserProof({coreOrigin,smtp,setLinkOri
   assert.equal(identity.body.token,undefined);checks.push('real_smtp_link_explicit_confirmation_httponly_cookie_reload_no_token_storage');
   phase='owned_trips';await require('./guest-trips-browser-proof.cjs')({page,api,admin,identity:identity.body});
   phase='reservation_link';await require('./guest-reservation-link-browser-proof.cjs')({page,api,admin,identity:identity.body,coreOrigin});
+  phase='guest_cancellation';await require('./guest-cancellation-browser-proof.cjs')({page,api,admin,identity:identity.body});
+  phase='staff_invitation_panel';await require('./guest-link-staff-browser-proof.cjs')({browser});
   phase='gateway_boundaries';assert.equal((await api('logout','POST',{})).status,403);
   assert.equal((await api('logout','POST',{}, {'X-Views-Guest-Csrf':'0'.repeat(64)})).status,403);
   assert.equal((await api('exchange','POST',{challengeId:'invalid',token:'invalid'})).status,409);
