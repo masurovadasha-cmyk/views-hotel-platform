@@ -48,3 +48,9 @@ export interface PaymentProviderPort{
   verifyAndParseWebhook(rawBody:string,headers:Record<string,string|undefined>):Promise<VerifiedWebhookEvent>;
   refund(input:RefundRequest):Promise<RefundResult>;
 }
+
+/** An adapter may use this only when it can prove no refund request was sent.
+ * Timeouts, reset connections and unknown provider responses are not proof. */
+export class RefundNotSentError extends Error{
+ constructor(){super('REFUND_NOT_SENT');this.name='RefundNotSentError';}
+}

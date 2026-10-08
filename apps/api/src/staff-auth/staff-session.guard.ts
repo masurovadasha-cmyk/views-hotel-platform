@@ -16,7 +16,7 @@ export class StaffSessionGuard implements CanActivate{
     const permission=['GET','POST'].includes(req.method)&&path==='/v1/housekeeping'?'housekeeping.work':
       ['GET','POST'].includes(req.method)&&(/^\/v1\/owner-inventory(?:\/[a-f0-9-]{36}(?:\/(?:calendar|rates(?:\/[a-f0-9-]{36})?))?)?$/i.test(path))?'property.manage':
       req.method==='GET'&&['/v1/booking-workspace','/v1/inventory-search'].includes(path)?'reservation.read':
-      req.method==='POST'&&(path==='/v1/quotes'||path==='/v1/bookings/holds'||/^\/v1\/bookings\/[a-f0-9-]{36}\/release$/.test(path)||/^\/v1\/bookings\/[a-f0-9-]{36}\/stay\/(check-in|check-out|guest|document-view|document-review|cleaning-complete)$/.test(path))?'reservation.manage':null;
+      req.method==='POST'&&(path==='/v1/quotes'||path==='/v1/bookings/holds'||/^\/v1\/bookings\/[a-f0-9-]{36}\/(release|cancel)$/.test(path)||/^\/v1\/bookings\/[a-f0-9-]{36}\/stay\/(check-in|check-out|guest|document-view|document-review|cleaning-complete)$/.test(path))?'reservation.manage':null;
     if(!permission)throw new ForbiddenException('STAFF_ROUTE_DENIED');
     const identity=await this.auth.resolve(req.headers['x-views-staff-session']);
     for(const [header,key] of [['x-organization-id','organizationId'],['x-user-id','userId'],['x-membership-id','membershipId']] as const)
