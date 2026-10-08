@@ -15,9 +15,11 @@ jobs:
         run: |
           sha256sum -c SHA256SUMS.txt
           test "$(sha256sum VIEWS-0.8.0-preview.apk | cut -d ' ' -f 1)" = 2eedce790ec5575229bfdaac03bc41428d23535c96a8311c149e6d94af58e5d7
-          SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          SIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -x "$SIGNER"
           test -n "$SIGNER"
-          "$SIGNER" verify --verbose --print-certs VIEWS-0.8.0-preview.apk > signature.txt
+          "$SIGNER" verify --verbose --print-certs VIEWS-0.8.0-preview.apk | tee signature.txt
+          test "${PIPESTATUS[0]}" = 0
           grep -F 'Signer #1 certificate SHA-256 digest: 3a973f0de0333ced89769ddfdae476fe826da605910c952212bbfd1c8179e052' signature.txt
           python3 - <<'PY'
           import json, zipfile, hashlib
