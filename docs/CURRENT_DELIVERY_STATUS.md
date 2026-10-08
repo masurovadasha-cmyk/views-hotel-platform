@@ -25,6 +25,17 @@ acceptance. Source repository and branch remain unchanged; main is not merged.
 | Wider product scope | Core foundations and legacy/demo presentation exist | Connected guest search/maps/trip, Telegram bot/mini app, host verification, full messaging/services/reviews/loyalty/payouts; Next.js guest/host and Flutter/React Native apps; see PRODUCT_REQUIREMENTS.md |
 | Production release | No activation performed | Explicit owner approval plus preceding operational/provider/legal/device acceptance |
 
+## Latest execution order and confirmed scale
+
+The owner now requires stages B0–B11 **one at a time**. B0 planning/ADRs are in
+[stages-b/00-plan-and-assumptions.md](stages-b/00-plan-and-assumptions.md).
+Confirmed target: 500 apartments across Tashkent, Samarkand, Bukhara and Khiva;
+current work is owner + Codex, future developer/QA/manager/accountant. No legal
+entity or integration partners yet. The six-month own-inventory launch plan is
+conditional; the full marketplace/integration scope remains open. Calendar rate
+work started before this instruction is uncommitted, typechecked-only WIP and
+must not be counted as a completed block. Next stage is B1 schema analysis.
+
 ## Current active local chain
 
 Staff login → reception → synthetic guest → encrypted synthetic file preview →

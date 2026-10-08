@@ -606,3 +606,32 @@ and booking/restart browser passed. Normal flags remain off and startup contract
 is unchanged. Next local block:
 calendar pricing/restrictions preserving existing price/policy snapshots, then
 PMS processes and connected guest flows under the full requirements map.
+
+
+## 34. Owner's new execution order: stages B0–B11, one at a time
+
+The latest instruction supersedes the previous automatic calendar-pricing queue.
+Start with B0, then B1 schema audit/compatible extensions, B2 backend, B3 payments,
+B4 CRM API, B5 registration/taxes, B6 guest, B7 CRM/staff mobile, B8 host/admin,
+B9 communication, B10 integration and B11 quality/release. Historic Stage7 numbers
+are not completion claims for B7. See docs/stages-b/00-plan-and-assumptions.md and
+ADRs 0003–0006. B0 is a documentation/planning delivery, not an application release.
+
+Confirmed answers: 500 apartments in Tashkent, Samarkand, Bukhara and Khiva. Owner
+currently uses Codex alone; developer, tester, manager and accountant are planned.
+No legal entity or payment/SMS/fiscal/E-mehmon partners yet. Prepare replaceable
+adapters and explicit test providers. Six-month plan is conditional, not a promise
+that all V2/V3 or real integrations are complete by April 2027. Existing 100-row
+UI limits require pagination/import work before accepting a 500-unit launch.
+
+Uncommitted owner-rates WIP was already started before this steering. Preserve it:
+owner-operating-property.ts, owner-rates.input/store/service.ts; edits in owner
+calendar service/controller/module, local gateway, staff guard, quote service.
+Core typecheck passed, functional tests/UI not implemented. This WIP is not part
+of the B0 docs commit, not enabled, not rebuilt into the running Core and not a
+finished pricing stage. Reconcile/test it in B2/B8; do not blindly restore/delete
+these files or claim the whole working tree clean. No production/account changes.
+
+Next authorized work: B1 audit existing migrations/ledger first, then add only
+missing schema/index/RLS/fixtures in a disposable environment. Questions about
+city distribution/provider contracts do not block this local schema analysis.
