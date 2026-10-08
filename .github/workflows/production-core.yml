@@ -42,52 +42,10 @@ jobs:
         run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f infra/postgres/init/001_extensions.sql
       - name: Apply production migrations
         run: |
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0001_core_inventory.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0002_tenant_rls.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0003_identity_access.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0004_identity_rls.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0005_booking_hold_engine.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0006_inventory_rls.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0007_rates_quotes_cancellation.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0008_payments_ledger.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0009_uzbekistan_compliance.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0010_identity_rls_role_helpers.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0011_guest_access_sessions.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0012_guest_auth_challenges.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0013_security_rate_limits.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0014_analytics_foundation.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0015_analytics_dimensions_health.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0016_analytics_worker_slo.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0017_analytics_rollups.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0018_analytics_booking_cohorts.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0019_marketplace_economics.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0020_analytics_marketplace_economics.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0021_booking_attribution.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0022_analytics_portfolio_rollups.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0023_analytics_dashboard_cache.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0024_analytics_dashboard_scope_hardening.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0025_analytics_report_exports.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0026_analytics_report_schedules.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0027_report_governance.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0028_internal_service_request_audit.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0029_internal_auth_rejection_metrics.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0030_signed_service_tokens.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0031_internal_service_credential_posture.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0032_signed_only_auth_mode.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0033_internal_ingress_boundary.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0034_internal_service_posture_type_fix.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0035_provider_egress_audit.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0036_payme_merchant_api.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0037_payme_transaction_invariants.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0038_payme_expiry_scan_index.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0039_staff_password_sessions.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0040_staff_email_delivery.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0041_staff_mail_revocation_leases.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0042_staff_passkey_pilot.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0043_staff_passkey_recovery.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0044_staff_password_assurance.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0045_staff_stay_authorization.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0046_staff_stay_property_lock.sql
+          # Apply the complete ordered chain, matching the disposable cloud runner.
+          for migration in apps/api/db/migrations/[0-9][0-9][0-9][0-9]_*.sql; do
+            psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f "$migration"
+          done
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'

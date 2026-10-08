@@ -1,3 +1,4 @@
+import {OwnerCalendarWorkspace} from './OwnerCalendarWorkspace';
 import {InventoryDraftEditor} from './InventoryDraftEditor';
 import {useEffect,useRef,useState} from 'react';
 import {request} from './LocalCoreWorkspace';
@@ -11,6 +12,7 @@ export function OwnerInventoryWorkspace({staffCsrf}:{staffCsrf:string}){
  const {t,locale}=useStaffLocale();const [form,setForm]=useState(empty),[fund,setFund]=useState<Fund|null>(null);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [attempt,setAttempt]=useState<{key:string;body:Draft}|null>(null),[uncertain,setUncertain]=useState(false);
+ const [calendar,setCalendar]=useState<string|null>(null);
  const [editing,setEditing]=useState<string|null>(null);
  const submitting=useRef(false);
  const refresh=()=>request<Fund>('owner-inventory',staffCsrf).then(setFund);
@@ -43,12 +45,12 @@ export function OwnerInventoryWorkspace({staffCsrf}:{staffCsrf:string}){
   <span className="localEyebrow">{t('VIEWS · КАБИНЕТ ВЛАДЕЛЬЦА')}</span><h1>{t('Объекты и номерной фонд')}</h1>
   <p className="localWarning">{t('Подготовка объекта в Узбекистане. Черновики не доступны для бронирования; открытие продаж требует отдельной проверки.')}</p>
   {error&&<p role="alert" className="localError">{t(error)}</p>}{notice&&<p role="status" className="localSuccess">{t(notice)}</p>}
-  {!editing&&<section className="localPanel"><h2>{t('Мои объекты')}</h2><button disabled={busy} onClick={()=>{setError('');void refresh().catch(()=>setError('Кабинет владельца недоступен. Проверьте доступ и повторите загрузку.'));}}>{t('Обновить список')}</button>
+  {!editing&&!calendar&&<section className="localPanel"><h2>{t('Мои объекты')}</h2><button disabled={busy} onClick={()=>{setError('');void refresh().catch(()=>setError('Кабинет владельца недоступен. Проверьте доступ и повторите загрузку.'));}}>{t('Обновить список')}</button>
    {fund&&fund.properties.length===0&&<p>{t('Объектов пока нет.')}</p>}
    {fund?.truncated&&<p role="status">{t('Показаны последние 100 объектов. Список неполный.')}</p>}
-   <ul>{fund?.properties.map(p=><li key={p.id}><strong>{localizedName(p.name,locale)}</strong> · {p.city} · {t('Номеров: {count}',{count:p.unitCount})} · {t(p.status==='draft'?'Черновик':'Существующий объект')}{p.status==='draft'&&<button disabled={busy||uncertain} onClick={()=>setEditing(p.id)}>{t('Редактировать фонд')}</button>}</li>)}</ul>
+   <ul>{fund?.properties.map(p=><li key={p.id}><strong>{localizedName(p.name,locale)}</strong> · {p.city} · {t('Номеров: {count}',{count:p.unitCount})} · {t(p.status==='draft'?'Черновик':'Существующий объект')}{p.status==='draft'&&<button disabled={busy||uncertain} onClick={()=>setEditing(p.id)}>{t('Редактировать фонд')}</button>}{p.status==='active'&&<button disabled={busy||uncertain} onClick={()=>setCalendar(p.id)}>{t('Календарь занятости')}</button>}</li>)}</ul>
   </section>}
-  {editing?<InventoryDraftEditor key={editing} propertyId={editing} staffCsrf={staffCsrf} onClose={()=>setEditing(null)} onSaved={()=>{void refresh().catch(()=>setError('Черновик сохранён, но список не обновился. Повторите загрузку.'));}}/>:<section className="localPanel"><h2>{t('Новый объект')}</h2><form onSubmit={save}>
+  {calendar?<OwnerCalendarWorkspace key={calendar} propertyId={calendar} staffCsrf={staffCsrf} onClose={()=>setCalendar(null)}/>:editing?<InventoryDraftEditor key={editing} propertyId={editing} staffCsrf={staffCsrf} onClose={()=>setEditing(null)} onSaved={()=>{void refresh().catch(()=>setError('Черновик сохранён, но список не обновился. Повторите загрузку.'));}}/>:<section className="localPanel"><h2>{t('Новый объект')}</h2><form onSubmit={save}>
    <fieldset disabled={busy||uncertain}>
     {([['name','Название объекта',120],['city','Город',100],['address','Адрес объекта',300],['unitTypeName','Название категории номеров',100]] as const).map(([key,label,max])=><label key={key}>{t(label)}<input required maxLength={max} value={form[key]} onChange={e=>change(key,e.target.value)}/></label>)}
     <label>{t('Гостей в одном номере')}<input type="number" required min={1} max={20} step={1} value={form.maxGuests} onChange={e=>change('maxGuests',e.target.value)}/></label>

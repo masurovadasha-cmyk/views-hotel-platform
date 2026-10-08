@@ -1362,5 +1362,141 @@
   "Загрузка…": {
     "en": "Loading…",
     "uz": "Yuklanmoqda…"
+  },
+  "Проверьте даты и номер. Просмотр — до 62 дней, блокировка — до 366 дней.": {
+    "en": "Check the dates and room. View up to 62 days; block up to 366 days.",
+    "uz": "Sana va xonani tekshiring. Ko‘rish — 62 kungacha, band qilish — 366 kungacha."
+  },
+  "Этот интервал пересекается с бронью или другой блокировкой. Данные формы сохранены.": {
+    "en": "This period overlaps a booking or another block. Your form entries are preserved.",
+    "uz": "Bu vaqt oralig‘i bron yoki boshqa band davr bilan kesishadi. Shakldagi ma’lumotlar saqlangan."
+  },
+  "Номер недоступен для ручной блокировки.": {
+    "en": "This room cannot be manually blocked.",
+    "uz": "Bu xonani qo‘lda band qilib bo‘lmaydi."
+  },
+  "Блокировка уже снята, изменена или создана другим инструментом. Обновите календарь.": {
+    "en": "This block was removed, changed or created by another tool. Refresh the calendar.",
+    "uz": "Band davr olib tashlangan, o‘zgartirilgan yoki boshqa vositada yaratilgan. Taqvimni yangilang."
+  },
+  "Календарь этого этапа доступен только для действующего собственного фонда в Узбекистане.": {
+    "en": "This calendar stage supports only active company inventory in Uzbekistan.",
+    "uz": "Ushbu bosqichdagi taqvim faqat kompaniyaning O‘zbekistondagi faol xonalari uchun mavjud."
+  },
+  "Управление календарём пока не включено на этом стенде.": {
+    "en": "Calendar management is not enabled in this environment yet.",
+    "uz": "Bu muhitda taqvim boshqaruvi hali yoqilmagan."
+  },
+  "У вашей роли нет доступа к этому календарю.": {
+    "en": "Your role cannot access this calendar.",
+    "uz": "Sizning rolingiz ushbu taqvimga kira olmaydi."
+  },
+  "Объект не найден или недоступен.": {
+    "en": "Property not found or unavailable.",
+    "uz": "Obyekt topilmadi yoki undan foydalanib bo‘lmaydi."
+  },
+  "Собственные нужды": {
+    "en": "Company use",
+    "uz": "Kompaniya ehtiyojlari"
+  },
+  "Ремонт": {
+    "en": "Maintenance",
+    "uz": "Ta’mirlash"
+  },
+  "Платёжный холд": {
+    "en": "Payment hold",
+    "uz": "To‘lov uchun band qilish"
+  },
+  "Внешний календарь": {
+    "en": "External calendar",
+    "uz": "Tashqi taqvim"
+  },
+  "Не удалось загрузить календарь. Повторите загрузку.": {
+    "en": "Could not load the calendar. Try loading again.",
+    "uz": "Taqvimni yuklab bo‘lmadi. Qayta yuklang."
+  },
+  "Номер закрыт на выбранный интервал.": {
+    "en": "The room is blocked for the selected period.",
+    "uz": "Xona tanlangan vaqt oralig‘ida band qilindi."
+  },
+  "Ручная блокировка снята.": {
+    "en": "The manual block was removed.",
+    "uz": "Qo‘lda qo‘yilgan band davr olib tashlandi."
+  },
+  "Изменение сохранено, но календарь не загрузился. Повторите загрузку.": {
+    "en": "Change saved, but the calendar could not be loaded. Try loading again.",
+    "uz": "O‘zgarish saqlandi, lekin taqvim yuklanmadi. Qayta yuklang."
+  },
+  "Календарь занятости": {
+    "en": "Occupancy calendar",
+    "uz": "Bandlik taqvimi"
+  },
+  "Время объекта — Ташкент (UTC+5). Начало включено, конец не включён. Снимаются только ручные блокировки, созданные здесь; брони и платёжные холды не изменяются.": {
+    "en": "Property time is Tashkent (UTC+5). The start is included; the end is excluded. Only manual blocks created here can be removed; bookings and payment holds are unchanged.",
+    "uz": "Obyekt vaqti — Toshkent (UTC+5). Boshlanish kiritiladi, tugash kiritilmaydi. Faqat shu yerda qo‘lda yaratilgan band davrlar olib tashlanadi; bronlar va to‘lov uchun band davrlar o‘zgarmaydi."
+  },
+  "Показать с даты": {
+    "en": "Show from date",
+    "uz": "Shu sanadan ko‘rsatish"
+  },
+  "До даты, не включая": {
+    "en": "Until date, exclusive",
+    "uz": "Shu sanagacha, sana kiritilmaydi"
+  },
+  "Обновить календарь": {
+    "en": "Refresh calendar",
+    "uz": "Taqvimni yangilash"
+  },
+  "Показан интервал: {start} — {end}": {
+    "en": "Showing: {start} — {end}",
+    "uz": "Ko‘rsatilgan davr: {start} — {end}"
+  },
+  "Показана только часть календаря: максимум 100 номеров и 1000 интервалов. Отсутствие записи не подтверждает доступность.": {
+    "en": "Only part of the calendar is shown: up to 100 rooms and 1000 periods. A missing entry does not confirm availability.",
+    "uz": "Taqvimning faqat bir qismi ko‘rsatilgan: 100 tagacha xona va 1000 tagacha vaqt oralig‘i. Yozuv yo‘qligi xona bo‘shligini tasdiqlamaydi."
+  },
+  "Занятых интервалов в показанной части календаря нет. Доступность повторно проверяется при бронировании.": {
+    "en": "No occupied periods in the displayed calendar. Availability is checked again when booking.",
+    "uz": "Taqvimning ko‘rsatilgan qismida band davrlar yo‘q. Bron qilishda mavjudlik qayta tekshiriladi."
+  },
+  "Ожидает освобождения холда": {
+    "en": "Awaiting hold release",
+    "uz": "Band davrning bo‘shatilishi kutilmoqda"
+  },
+  "Снять эту ручную блокировку?": {
+    "en": "Remove this manual block?",
+    "uz": "Ushbu qo‘lda qo‘yilgan band davr olib tashlansinmi?"
+  },
+  "Снять блокировку": {
+    "en": "Remove block",
+    "uz": "Band davrni olib tashlash"
+  },
+  "Закрыть номер на интервал": {
+    "en": "Block a room for a period",
+    "uz": "Xonani vaqt oralig‘ida band qilish"
+  },
+  "Номер для блокировки": {
+    "en": "Room to block",
+    "uz": "Band qilinadigan xona"
+  },
+  "Причина закрытия": {
+    "en": "Reason for blocking",
+    "uz": "Band qilish sababi"
+  },
+  "Начало блокировки": {
+    "en": "Block starts",
+    "uz": "Band davr boshlanishi"
+  },
+  "Конец блокировки": {
+    "en": "Block ends",
+    "uz": "Band davr tugashi"
+  },
+  "Закрыть номер": {
+    "en": "Block room",
+    "uz": "Xonani band qilish"
+  },
+  "Команда уже выполнялась. Актуальное состояние — в календаре.": {
+    "en": "This command was already applied. See the calendar for the current state.",
+    "uz": "Bu buyruq avval bajarilgan. Joriy holatni taqvimdan ko‘ring."
   }
 }

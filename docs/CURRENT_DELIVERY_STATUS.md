@@ -1,6 +1,8 @@
 # VIEWS — current delivery status, 8 October 2026 (Tashkent)
 
-This is the current map of the whole delivery sequence. It supersedes old WIP
+This is the current implementation/release snapshot. PRODUCT_REQUIREMENTS.md
+is the complete owner-supplied MVP/V2/V3 scope, including previously omitted
+Telegram, marketplace, search, service and application requirements. It supersedes old WIP
 labels in the historical handoff, but does not turn local proofs into production
 acceptance. Source repository and branch remain unchanged; main is not merged.
 
@@ -16,9 +18,11 @@ acceptance. Source repository and branch remain unchanged; main is not merged.
 | Government registration | Existing contracts/policy/test provider | Approved real registration adapter/account and current operational/legal rules |
 | Recovery | Disposable mail/auth restore; full local snapshot restored and table digests matched, encrypted files decrypted with separate key | Production recovery, KMS recovery and restored deployment credentials/runbook exercise |
 | Tenant/owner onboarding | Default-off owner/manager creation and aggregate editing: up to 20 categories/100 rooms, occupancy, independent rates/cancellation, conflict detection, atomic audit/outbox and retries; isolated Core/UI proofs | Verified business data, privileged login/MFA proof, operational inventory editing and sales activation |
-| RU/UZ/EN, accessibility | Connected staff/owner/housekeeper (341 entries), guest/public entry (223) and legacy CRM (547) in RU/UZ/EN; separate preferences, keyboard dialogs, mobile role navigation and three languages at four widths | Native-speaker review, full screen-reader/product accessibility acceptance |
-| Android | Shared-web WebView wrapper; refreshed unsigned package includes current RU/UZ/EN assets, native compilation/manifest/alignment and all 9 bundled assets verified | Android 10/15 install attempted; WebView syntax fixed and crash recovery added, native UI acceptance remains blocked in software emulation. Existing-key signing helper passes 10 disposable checks; permanent key, update, physical-device and connected HTTPS proof remain |
+| Calendar blocks | Default-off owner/manager calendar for active platform inventory in UZ: atomic manual block/unblock, unified EXCLUDE, replay, scoped reads and RU/UZ/EN UI; actual Core race against a payment hold passed | Privileged user rollout, pagination, drag-and-drop PMS, room moves, calendar pricing UI and channel synchronization |
+| RU/UZ/EN, accessibility | Connected staff/owner/housekeeper (375 entries), guest/public entry (223) and legacy CRM (547) in RU/UZ/EN; separate preferences, keyboard dialogs, mobile role navigation and three languages at four widths | Native-speaker review, full screen-reader/product accessibility acceptance |
+| Android | Shared-web WebView wrapper; unsigned native package verified at Stage 7.49–7.50, with manifest/alignment and 9 assets checked. Later owner editing/calendar changes are web-source increments, not a newly packaged APK | Android 10/15 install attempted; WebView syntax fixed and crash recovery added, native UI acceptance remains blocked in software emulation. Existing-key signing helper passes 10 disposable checks; permanent key, update, physical-device and connected HTTPS proof remain |
 | Deployment/CI | Git branch push and local builds/tests | Public GitHub checks read at 6ce5fcc: verify and both mail jobs succeeded; Workers Builds failed. Cloudflare build log access and successful deployment remain unverified |
+| Wider product scope | Core foundations and legacy/demo presentation exist | Connected guest search/maps/trip, Telegram bot/mini app, host verification, full messaging/services/reviews/loyalty/payouts; Next.js guest/host and Flutter/React Native apps; see PRODUCT_REQUIREMENTS.md |
 | Production release | No activation performed | Explicit owner approval plus preceding operational/provider/legal/device acceptance |
 
 ## Current active local chain
@@ -53,7 +57,8 @@ where applicable and request only missing provider-specific requirements after
 checking them. Available Git transport authentication is already sufficient for
 this branch; no replacement GitHub token is requested.
 
-See STAGE7_INVENTORY_EDITING.md for the latest checks.
+See STAGE7_OWNER_CALENDAR.md for the latest checks.
+STAGE7_INVENTORY_EDITING.md records draft inventory editing.
 STAGE7_LEGACY_CRM_AND_CONNECTED_HOUSEKEEPING.md records the preceding increment.
 STAGE7_OWNER_AND_HOUSEKEEPING.md records the initial gated role implementations.
 STAGE7_GUEST_LOCALIZATION.md records guest/public-entry localization.

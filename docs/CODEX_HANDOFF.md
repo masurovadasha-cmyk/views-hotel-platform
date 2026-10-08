@@ -575,3 +575,34 @@ identity restrictions stand. This completes the requested local draft-editing
 block without a host/domain. Real business data, privileged role rollout, sales
 activation, operational inventory changes and external provider/release gates
 remain separate; do not repeat the obsolete multi-category-editing backlog item.
+
+
+## 33. Stage 7.52 — complete product scope and manual owner calendar
+
+The owner supplied the full specification on 8 October 2026. PRODUCT_REQUIREMENTS.md
+now records one Core / three layers, complete MVP/V2/V3 features, roles/countries,
+Telegram and frontend/mobile gaps, invariants, performance targets, and externally
+unverified legal/market assertions. Prior short status lists were not the whole
+product backlog. Do not call Vite/WebView Next.js or Flutter/React Native delivery.
+
+Added default-off VIEWS_OWNER_CALENDAR_ENABLED for existing owner/manager authority
+on active UZ/Tashkent platform inventory. The API/UI lists occupied periods and
+creates/removes manual maintenance/host_block records in the existing inventory
+EXCLUDE table. No new migration. Outbox provenance and exact interval matching
+protect bookings/holds/external or altered periods. Expired unreleased holds stay
+visible. Writes/audit/outbox are atomic; replay never recreates a removed block.
+
+Dirty base 26b61ab: root 243/40, disposable Core 320/63, network 130, mail 15,
+web/Core builds/typechecks and all owner/housekeeper browser proofs passed. New
+calendar UI has five groups, three languages/four widths, with HTTP fixtures;
+actual Core tests include a race against BookingHoldService. No privileged owner
+login, native APK or public activation proof. See STAGE7_OWNER_CALENDAR.md.
+
+Found production-core CI only applied migrations through 0046. Replaced the
+stale manual list with the complete ordered chain; local disposable tests apply
+all 49 and workflow YAML parses. Hosted CI success still needs observation.
+Persistent restart reported ready with 49 migrations/zero new; auth 13/32 HTTP
+and booking/restart browser passed. Normal flags remain off and startup contract
+is unchanged. Next local block:
+calendar pricing/restrictions preserving existing price/policy snapshots, then
+PMS processes and connected guest flows under the full requirements map.

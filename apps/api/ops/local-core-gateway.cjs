@@ -78,7 +78,10 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
   if(!req.url?.startsWith('/local-api'))return false;
   try{
    if(!config)fail(503,'LOCAL_WORKSPACE_NOT_PREPARED');requireSameOrigin(req,req.method!=='GET');
-   const u=new URL(req.url,'http://127.0.0.1:4173');if(u.pathname+u.search!==req.url||u.hash||(u.search&&(u.pathname!=='/local-api/reception'||[...u.searchParams.keys()].some(k=>k!=='day')||u.searchParams.getAll('day').length!==1)))fail(400,'INVALID_ROUTE');
+   const u=new URL(req.url,'http://127.0.0.1:4173');
+   const calendarRoute=/^\/local-api\/owner-inventory\/[a-f0-9-]{36}\/calendar$/i.test(u.pathname);
+   const validSearch=calendarRoute?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1;
+   if(u.pathname+u.search!==req.url||u.hash||(u.search&&!validSearch))fail(400,'INVALID_ROUTE');
    const route=u.pathname,token=tokenFrom(req);
    if(req.method==='GET'&&route==='/local-api/session'){
     if(!token){json(res,200,{authenticated:false});return true;}
@@ -109,10 +112,10 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    const digest=hash(token);for(const [key,c] of contexts)if(c.expires<=Date.now())contexts.delete(key);
    let s=contexts.get(digest);if(!s){if(contexts.size>=32)fail(429,'SESSION_LIMIT');s={quotes:new Map(),reservations:new Set(),window:Date.now(),requests:0,expires:Date.parse(identity.expiresAt)};contexts.set(digest,s);}
    if(Date.now()-s.window>60000){s.window=Date.now();s.requests=0;}if(++s.requests>120)fail(429,'RATE_LIMIT');
-   if(route==='/local-api/owner-inventory'||/^\/local-api\/owner-inventory\/[a-f0-9-]{36}$/i.test(route)){
-    if(process.env.VIEWS_OWNER_INVENTORY_DRAFT_ENABLED!=='true')fail(404,'OWNER_INVENTORY_DISABLED');
+   if(route==='/local-api/owner-inventory'||/^\/local-api\/owner-inventory\/[a-f0-9-]{36}(?:\/calendar)?$/i.test(route)){
+    if(process.env[calendarRoute?'VIEWS_OWNER_CALENDAR_ENABLED':'VIEWS_OWNER_INVENTORY_DRAFT_ENABLED']!=='true')fail(404,calendarRoute?'OWNER_CALENDAR_DISABLED':'OWNER_INVENTORY_DISABLED');
     if(!['owner','manager'].includes(identity.role)||!identity.permissions.includes('property.manage'))fail(403,'OWNER_INVENTORY_FORBIDDEN');
-    if(req.method==='GET'){json(res,200,await core(route.replace('/local-api/','/v1/'),'GET',undefined,undefined,token,identity));return true;}
+    if(req.method==='GET'){json(res,200,await core(route.replace('/local-api/','/v1/')+u.search,'GET',undefined,undefined,token,identity));return true;}
     if(req.method!=='POST')fail(405,'METHOD_DENIED');
     const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
     json(res,200,await core(route.replace('/local-api/','/v1/'),'POST',await readJson(req,32768),key,token,identity));return true;

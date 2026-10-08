@@ -36,12 +36,12 @@ describe('staff session enforcement on the trusted local gateway',()=>{
  });
  it('front desk cannot access owner inventory through a trusted gateway',async()=>{
   const guard=new StaffSessionGuard({resolve:async()=>identity} as never);
-  for(const path of ['/v1/owner-inventory','/v1/owner-inventory/'+identity.userId])for(const method of ['GET','POST'])await expect(guard.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  for(const path of ['/v1/owner-inventory','/v1/owner-inventory/'+identity.userId,'/v1/owner-inventory/'+identity.userId+'/calendar'])for(const method of ['GET','POST'])await expect(guard.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
  });
  it('requires a matched owner session and permission on draft detail and edits',async()=>{
   const guard=new StaffSessionGuard({resolve:async()=>({...identity,role:'owner',permissions:['property.manage']})} as never);
-  for(const method of ['GET','POST']){
-   const path='/v1/owner-inventory/'+identity.userId;
+  for(const suffix of ['', '/calendar'])for(const method of ['GET','POST']){
+   const path='/v1/owner-inventory/'+identity.userId+suffix;
    expect(await guard.canActivate(context(request(path,method)))).toBe(true);
    await expect(guard.canActivate(context(request(path,method,{'x-membership-id':identity.userId})))).rejects.toThrow('STAFF_ACTOR_MISMATCH');
   }
