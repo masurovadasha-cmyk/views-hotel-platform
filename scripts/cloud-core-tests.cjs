@@ -55,6 +55,9 @@ const run = args => {
     console.log('B2 SMS administrative clock and identity proofs PASS (rolled back).');
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b2.email.sql'), 'utf8'));
     console.log('B2 email expiry, supersession and role separation proofs PASS (rolled back).');
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b4.supply-auth.sql'), 'utf8'));
+    console.log('Supply staff invitation, mail, assurance and restricted role proofs PASS (rolled back).');
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/supply-auth.synthetic.sql'), 'utf8'));
     await assert.rejects(admin.query(`INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,source_ref,stay_period)
       VALUES('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',
       '00000000-0000-0000-0000-000000000004','maintenance','cloud-ci-overlap',tstzrange('2026-10-11T12:00:00+05','2026-10-13T12:00:00+05','[)'))`), { code: '23P01' });

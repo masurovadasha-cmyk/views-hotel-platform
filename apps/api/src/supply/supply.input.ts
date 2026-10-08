@@ -1,0 +1,11 @@
+import {BadRequestException} from '@nestjs/common';
+export const invalid=():never=>{throw new BadRequestException('SUPPLY_INPUT_INVALID');};
+export function id(v:unknown){if(typeof v!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(v))return invalid();return v.toLowerCase();}
+export function exact(v:unknown,keys:string[]){if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).length!==keys.length||!keys.every(k=>Object.hasOwn(v,k)))return invalid();return v as Record<string,unknown>;}
+export function text(v:unknown,max:number){if(typeof v!=='string'||v!==v.trim()||v.length<1||v.length>max||/[\u0000-\u001f\u007f]/.test(v))return invalid();return v;}
+export function quantity(v:unknown){if(typeof v!=='string'||!/^[1-9]\d{0,18}$/.test(v)||BigInt(v)>9223372036854775807n)return invalid();return v;}
+export function item(v:unknown){const b=exact(v,['propertyId','sku','name','unit']);if(typeof b.sku!=='string'||!/^[A-Z0-9_-]{1,40}$/.test(b.sku)||!['piece','gram','millilitre'].includes(b.unit as string))return invalid();return {propertyId:id(b.propertyId),sku:b.sku,name:text(b.name,120),unit:b.unit as string};}
+export function order(v:unknown){const b=exact(v,['propertyId','reference','lines']);if(!Array.isArray(b.lines)||!b.lines.length||b.lines.length>20)return invalid();const lines=b.lines.map(value=>{const l=exact(value,['itemId','quantity']);return {itemId:id(l.itemId),quantity:quantity(l.quantity)};}).sort((a,b)=>a.itemId.localeCompare(b.itemId));if(new Set(lines.map(l=>l.itemId)).size!==lines.length)return invalid();return {propertyId:id(b.propertyId),reference:text(b.reference,160),lines};}
+export function issue(v:unknown){const b=exact(v,['propertyId','itemId','quantity','reference']);return {propertyId:id(b.propertyId),itemId:id(b.itemId),quantity:quantity(b.quantity),reference:text(b.reference,160)};}
+export function cursor(v:unknown,scope:string){if(v===undefined)return null;try{if(typeof v!=='string'||v.length>700||!/^[A-Za-z0-9_-]+$/.test(v))throw Error();const p:unknown=JSON.parse(Buffer.from(v,'base64url').toString());if(!Array.isArray(p)||p.length!==2||p[0]!==scope)throw Error();return id(p[1]);}catch{return invalid();}}
+export const next=(scope:string,last:string)=>Buffer.from(JSON.stringify([scope,last])).toString('base64url');

@@ -90,5 +90,13 @@
   "Android build & release notes": {
     "ru": "Android и информация о версии",
     "uz": "Android va versiya haqida maʼlumot"
+  },
+  "Purchasing & warehouse": {
+    "ru": "Закупки и склад",
+    "uz": "Xaridlar va ombor"
+  },
+  "Purchases, receiving, stock and supplies for every property.": {
+    "ru": "Закупки, приёмка, остатки и снабжение каждого объекта.",
+    "uz": "Har bir obyekt uchun xaridlar, qabul qilish, qoldiqlar va ta’minot."
   }
 }

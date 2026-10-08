@@ -1,0 +1,230 @@
+{
+  "Reception": {
+    "ru": "Ресепшен",
+    "uz": "Resepshn"
+  },
+  "Housekeeping": {
+    "ru": "Уборка",
+    "uz": "Tozalash"
+  },
+  "Maintenance": {
+    "ru": "Техник",
+    "uz": "Texnik"
+  },
+  "Concierge": {
+    "ru": "Консьерж",
+    "uz": "Konsyerj"
+  },
+  "Accounting": {
+    "ru": "Бухгалтерия",
+    "uz": "Buxgalteriya"
+  },
+  "Management": {
+    "ru": "Управляющий",
+    "uz": "Boshqaruvchi"
+  },
+  "Owner workspace": {
+    "ru": "Кабинет владельца",
+    "uz": "Egasi kabineti"
+  },
+  "Welcome guests and manage each stay.": {
+    "ru": "Встречайте гостей и управляйте проживанием.",
+    "uz": "Mehmonlarni kutib oling va yashashni boshqaring."
+  },
+  "Your assigned apartments and cleaning tasks.": {
+    "ru": "Назначенные вам апартаменты и задачи уборки.",
+    "uz": "Sizga biriktirilgan apartamentlar va tozalash vazifalari."
+  },
+  "Repairs and equipment care.": {
+    "ru": "Ремонт и обслуживание оборудования.",
+    "uz": "Ta’mirlash va uskunalarga xizmat ko‘rsatish."
+  },
+  "Guest requests and services in one place.": {
+    "ru": "Запросы гостей и услуги в одном месте.",
+    "uz": "Mehmon so‘rovlari va xizmatlar bir joyda."
+  },
+  "Operational charges and financial reconciliation.": {
+    "ru": "Начисления по проживанию и финансовая сверка.",
+    "uz": "Yashash hisoblari va moliyaviy solishtirish."
+  },
+  "Coordinate property operations and the team.": {
+    "ru": "Управляйте работой объектов и команды.",
+    "uz": "Obyektlar va jamoa ishini boshqaring."
+  },
+  "Your properties and financial oversight.": {
+    "ru": "Ваши объекты и финансовый контроль.",
+    "uz": "Obyektlaringiz va moliyaviy nazorat."
+  },
+  "Arrivals and departures": {
+    "ru": "Заезды и выезды",
+    "uz": "Kelish va ketish"
+  },
+  "Bookings and guest invitations": {
+    "ru": "Брони и приглашения гостей",
+    "uz": "Bronlar va mehmon takliflari"
+  },
+  "Guest folios": {
+    "ru": "Фолио гостей",
+    "uz": "Mehmon foliolari"
+  },
+  "Assigned cleaning tasks": {
+    "ru": "Назначенные задачи уборки",
+    "uz": "Biriktirilgan tozalash vazifalari"
+  },
+  "Cleaning checklists": {
+    "ru": "Чек-листы уборки",
+    "uz": "Tozalash ro‘yxatlari"
+  },
+  "Readiness and inspection": {
+    "ru": "Готовность и проверка",
+    "uz": "Tayyorlik va tekshiruv"
+  },
+  "Assigned repair requests": {
+    "ru": "Назначенные заявки на ремонт",
+    "uz": "Biriktirilgan ta’mirlash so‘rovlari"
+  },
+  "Fault details": {
+    "ru": "Описание неисправности",
+    "uz": "Nosozlik tafsilotlari"
+  },
+  "Completion evidence": {
+    "ru": "Подтверждение выполнения",
+    "uz": "Bajarilganlik tasdig‘i"
+  },
+  "Guest requests": {
+    "ru": "Запросы гостей",
+    "uz": "Mehmon so‘rovlari"
+  },
+  "Transfers and services": {
+    "ru": "Трансферы и услуги",
+    "uz": "Transferlar va xizmatlar"
+  },
+  "Communication with guests": {
+    "ru": "Общение с гостями",
+    "uz": "Mehmonlar bilan muloqot"
+  },
+  "Refund reconciliation": {
+    "ru": "Сверка возвратов",
+    "uz": "Qaytarishlarni solishtirish"
+  },
+  "Night audit": {
+    "ru": "Ночной аудит",
+    "uz": "Tungi audit"
+  },
+  "Property operations": {
+    "ru": "Работа объектов",
+    "uz": "Obyektlar faoliyati"
+  },
+  "Apartments and availability": {
+    "ru": "Апартаменты и доступность",
+    "uz": "Apartamentlar va mavjudlik"
+  },
+  "Separate employee sign-ins": {
+    "ru": "Отдельные входы сотрудников",
+    "uz": "Xodimlar uchun alohida kirishlar"
+  },
+  "Choose your work area. This choice does not assign a role or change account permissions.": {
+    "ru": "Выберите своё направление. Выбор не назначает роль и не меняет права аккаунта.",
+    "uz": "Ish yo‘nalishingizni tanlang. Tanlov rol tayinlamaydi va hisob huquqlarini o‘zgartirmaydi."
+  },
+  "Sign in: {role}": {
+    "ru": "Вход: {role}",
+    "uz": "Kirish: {role}"
+  },
+  "Workspace: {role}": {
+    "ru": "Рабочая область: {role}",
+    "uz": "Ish maydoni: {role}"
+  },
+  "My work areas": {
+    "ru": "Мои направления работы",
+    "uz": "Mening ish yo‘nalishlarim"
+  },
+  "A different employee role is signed in.": {
+    "ru": "Выполнен вход сотрудника другого направления.",
+    "uz": "Boshqa yo‘nalish xodimi hisobiga kirilgan."
+  },
+  "This address does not grant access. Continue to your assigned workspace or sign out to use another account.": {
+    "ru": "Этот адрес не даёт дополнительных прав. Откройте назначенную вам область или выйдите для входа в другой аккаунт.",
+    "uz": "Bu manzil qo‘shimcha huquq bermaydi. Tayinlangan ish maydoningizni oching yoki boshqa hisob uchun chiqing."
+  },
+  "Open my workspace": {
+    "ru": "Открыть мою рабочую область",
+    "uz": "Mening ish maydonimni ochish"
+  },
+  "Work tools are not connected for this role yet.": {
+    "ru": "Рабочие инструменты для этого направления ещё не подключены.",
+    "uz": "Bu yo‘nalish uchun ish vositalari hali ulanmagan."
+  },
+  "Requests, assignments and completion records will appear after the operational module is connected. No live tasks are shown here.": {
+    "ru": "Запросы, назначения и результаты появятся после подключения рабочего модуля. Реальные задачи здесь пока не отображаются.",
+    "uz": "So‘rovlar, tayinlashlar va natijalar ish moduli ulangach paydo bo‘ladi. Hozir haqiqiy vazifalar ko‘rsatilmaydi."
+  },
+  "No operational sections are available with your current permissions.": {
+    "ru": "С текущими правами рабочие разделы недоступны.",
+    "uz": "Joriy huquqlaringiz bilan ish bo‘limlari mavjud emas."
+  },
+  "Email sign-in is not connected in this preview. No email is sent and no account is created.": {
+    "ru": "Вход по email в этом предпросмотре не подключён. Письма не отправляются, аккаунты не создаются.",
+    "uz": "Bu ko‘rinishda email orqali kirish ulanmagan. Xat yuborilmaydi va hisob yaratilmaydi."
+  },
+  "Employee email": {
+    "ru": "Email сотрудника",
+    "uz": "Xodim emaili"
+  },
+  "Continue with email": {
+    "ru": "Продолжить с email",
+    "uz": "Email bilan davom etish"
+  },
+  "Explore this role’s demo": {
+    "ru": "Посмотреть демо этого направления",
+    "uz": "Bu yo‘nalish demosini ko‘rish"
+  },
+  "All sign-in directions": {
+    "ru": "Все направления входа",
+    "uz": "Barcha kirish yo‘nalishlari"
+  },
+  "This is a role interface preview with sample data, not an authenticated employee session.": {
+    "ru": "Это предпросмотр интерфейса с примерами данных, а не авторизованная сессия сотрудника.",
+    "uz": "Bu namuna ma’lumotlar bilan interfeys ko‘rinishi, xodimning tasdiqlangan sessiyasi emas."
+  },
+  "Purchasing": {
+    "ru": "Закупщик",
+    "uz": "Xaridchi"
+  },
+  "Warehouse": {
+    "ru": "Заведующий складом",
+    "uz": "Ombor mudiri"
+  },
+  "Purchases, suppliers and deliveries for your properties.": {
+    "ru": "Закупки, поставщики и поставки для ваших объектов.",
+    "uz": "Obyektlaringiz uchun xaridlar, yetkazib beruvchilar va yetkazmalar."
+  },
+  "Receive, store and issue property supplies.": {
+    "ru": "Приёмка, хранение и выдача запасов объектов.",
+    "uz": "Obyekt zaxiralarini qabul qilish, saqlash va berish."
+  },
+  "Purchase requests": {
+    "ru": "Заявки на закупку",
+    "uz": "Xarid so‘rovlari"
+  },
+  "Supplier orders": {
+    "ru": "Заказы поставщикам",
+    "uz": "Yetkazib beruvchilarga buyurtmalar"
+  },
+  "Delivery tracking": {
+    "ru": "Контроль поставок",
+    "uz": "Yetkazmalarni kuzatish"
+  },
+  "Goods receipts": {
+    "ru": "Приёмка товаров",
+    "uz": "Tovarlarni qabul qilish"
+  },
+  "Stock balances": {
+    "ru": "Остатки склада",
+    "uz": "Ombor qoldiqlari"
+  },
+  "Issues and inventory counts": {
+    "ru": "Выдача и инвентаризация",
+    "uz": "Berish va inventarizatsiya"
+  }
+}

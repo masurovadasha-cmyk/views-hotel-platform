@@ -1,18 +1,20 @@
 import {useState} from 'react';
-import {ArrowRight,Building2,Mail,ShieldCheck,UserRound,Users} from 'lucide-react';
+import {ArrowRight,Building2,Mail,ShieldCheck,UserRound,Users,Package} from 'lucide-react';
 import {useGuestLocale} from '../guest/GuestLocale';
 import {translate} from '../../i18n/messages';
 import {AuthPanel} from './AuthPanel';
 import messages from './access-translations.json';
 import release from '../../../release.config.json';
 import './access-portal.css';
+import {StaffRoleLinks} from '../staff-entry/StaffRoleEntry';
 
-export type AccessAudience='guest'|'host'|'staff'|'admin';
+export type AccessAudience='guest'|'host'|'staff'|'admin'|'supplies';
 const directions=[
  {id:'guest',title:'Guests',description:'Find an apartment, manage your trip and order services.',icon:UserRound},
  {id:'host',title:'Hosts & owners',description:'Manage properties, availability, rates and statements.',icon:Building2},
  {id:'staff',title:'Employees',description:'Reception, housekeeping, maintenance and guest care.',icon:Users},
  {id:'admin',title:'Platform administration',description:'Moderation, disputes, commissions and access control.',icon:ShieldCheck}
+ ,{id:'supplies',title:'Purchasing & warehouse',description:'Purchases, receiving, stock and supplies for every property.',icon:Package}
 ] as const;
 export function AccessPortal({demo,onPreview,onDone}:{demo:boolean;onPreview:(audience:AccessAudience)=>void;onDone:()=>void}){
  const {locale}=useGuestLocale(),t=(s:string)=>translate(messages,locale,s);
@@ -34,6 +36,8 @@ export function AccessPortal({demo,onPreview,onDone}:{demo:boolean;onPreview:(au
     <button className="primary" onClick={()=>setShowEmail(true)}><Mail size={17} aria-hidden="true"/>{t('Sign in with email')}</button>
     {demo&&<button className="accessPreview" onClick={()=>onPreview(audience)}>{t('Explore demo screens')}<ArrowRight size={17} aria-hidden="true"/></button>}
    </div>
+   {audience==='staff'&&<StaffRoleLinks locale={locale} roles={['front_desk','housekeeper','technician','concierge','accountant','manager','owner']}/>}
+   {audience==='supplies'&&<StaffRoleLinks locale={locale} roles={['procurement','warehouse']}/>}
    {showEmail&&(demo?<section className="accessEmail" aria-label={t('Email sign-in')}>
     <h3>{t('Email sign-in')}</h3><p role="status">{t('Email sign-in is not connected in this preview. No email is sent and no account is created.')}</p>
     <fieldset disabled><label>{t('Email')}<input type="email" autoComplete="off" placeholder="name@example.com"/></label><button className="primary">{t('Continue with email')}</button></fieldset>

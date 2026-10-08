@@ -795,3 +795,52 @@ for actual ordered remaining B3–B11 backlog. Environment startup remains uncha
 Next self-contained software scope: B4 folio API/night audit and full500-unit
 operational pagination; B3 provider-backed reconciliation/deposits/fiscalization
 still need verified external contracts and must not be silently skipped as done.
+
+
+## 45. Staff directions, procurement/warehouse and operational folios
+
+User requested a separate interface/login for employees and a purchasing/warehouse
+direction. Nine role entry URLs now select presentation only; Core identity and
+permissions select mounted workspaces. Fifth public card exposes procurement and
+warehouse with disconnected email clearly labelled. Public URL parameters never
+promote a user. Technician/concierge work modules remain explicitly unconnected;
+privileged owner/manager/accountant login activation gates are unchanged.
+
+0063 adds immutable folio commands/night plans and property/day audit runs using
+existing reservation.read/manage permissions. Charges and reversals are operational
+only; manual net-accommodation audit uses frozen nightly lines and exact discount
+allocation. Invalid snapshots, early departure and unresolved arrivals block the
+batch; routine checked-in→checked-out preserves the historic revision. All500
+stays are processed, with paginated folio reads. No cash/GL/tax close is implied.
+
+0064 introduces requested procurement/warehouse roles with only supply.read plus
+purchase.manage OR stock.manage. Catalog, internal purchase order, full receipt
+once, quantities-only stock issue and immutable movement history use FORCE RLS,
+compound scope keys, actor checks, transaction locks, nonnegative/overflow guards,
+deferred receipt completeness, command replay and atomic audit/outbox. New0065
+extends eight current staff auth functions only for the two new roles, preserving
+MFA/session/mail gates. No existing user is promoted. Partial receipts, supplier
+messages/payments, transfers, returns, stocktake and valuation remain unfinished.
+
+Dirty source relativec207f06 verified: Core462/81, root294/53, API/web typechecks
+and builds, network169, mail15. Four actual browser/BFF/Core/PG groups each for
+folios and supply pass; authenticated sessions are synthetic, while actual new
+role invitation/password flows have separate runtime and rollback SQL proofs.
+Nine role entries cover3languages/3widths with HTTP fixtures and zero external
+requests; previous guest email/trips/link/cancellation/SMTP scenarios passed.
+Final full normal build and disposable run: /tmp/views-supply-verified.log exit0;
+root /tmp/views-supply-root-final.log. Initial failures were test data using an
+invalid foreign UUID, nested-label selectors and missing read-CSRF headers; fixed
+without weakening assertions or gates. Final UI also handles forbidden reversal
+as a definitive refusal, with a focused translation/classification test.
+
+0063–65 only applied to disposable databases;0001–62 unchanged and persistent
+views_local untouched. Existing setup/start instructions require no change.
+No main merge, production/public Core/email/payment activation or new web/APK
+publication. See stages-b/04-staff-supply.md and04-folios-night-audit.md for routes,
+commands, risks and manual checks; NEXT_PROGRAMMING_BLOCKS.md preserves full
+remaining B3–B11 scope. Next operational work is full reception pagination and
+calendar/unit moves/groups; procurement extensions have their own listed backlog.
+Review-mode build also passed: access portal5directions/3languages/4widths and
+nine role-entry browser groups, exit0 in /tmp/views-supply-public.log. This is
+local compiled-asset verification, not a Cloudflare/GitHub Pages deployment.

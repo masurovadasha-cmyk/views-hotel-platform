@@ -1,0 +1,6 @@
+.folioWorkspace label{display:grid;gap:8px}.folioWorkspace select,.folioWorkspace input{width:100%;max-width:100%;box-sizing:border-box;min-height:44px;font:inherit;padding:10px;border:1px solid #8b8a80;border-radius:8px;background:#fff;color:#242c27}
+.folioWorkspace .localPanel{margin-top:20px}.folioWorkspace p,.folioWorkspace strong,.folioWorkspace dd{overflow-wrap:anywhere}.folioWorkspace button{white-space:normal;min-height:44px;max-width:100%}
+.folioList,.folioEntries{list-style:none;padding:0;display:grid;gap:16px}.folioList li,.folioEntries li{padding:16px;border:1px solid #b1b6ac;border-radius:12px;min-width:0}
+.folioDetail fieldset,.folioAudit fieldset{display:grid;gap:14px;border:1px solid #b1b6ac;border-radius:12px;padding:16px;margin-top:20px;min-width:0}.folioWorkspace dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}.folioWorkspace dd{margin:0;font-variant-numeric:tabular-nums}
+.dark .folioWorkspace select,.dark .folioWorkspace input{background:#202a24;color:#eef2eb;border-color:#859386}
+@media(max-width:480px){.folioWorkspace dl{grid-template-columns:1fr}.folioWorkspace dd{margin-bottom:8px}.folioDetail fieldset,.folioAudit fieldset{padding:12px}}

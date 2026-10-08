@@ -17,16 +17,18 @@ const prefix=target==='dist'?'/':'/views-hotel-platform/',origin='https://views-
  try{
   await page.goto(origin+prefix+'?api=demo&entry=access',{waitUntil:'networkidle'});
   await page.getByRole('heading',{name:'Choose your workspace',exact:true}).waitFor();
-  assert.equal(await page.locator('.accessCards button').count(),4);
+  assert.equal(await page.locator('.accessCards button').count(),5);
   for(const locale of ['ru','uz','en']){
    await page.locator('.guestLanguage select').selectOption(locale);
    for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:1050});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+locale+' '+width);}
-  }checks.push('four_workspaces_three_languages_four_widths');
-  for(let i=0;i<4;i++){
+  }checks.push('five_workspaces_three_languages_four_widths');
+  for(let i=0;i<5;i++){
    await page.locator('.accessCards button').nth(i).click();await page.getByRole('button',{name:'Sign in with email',exact:true}).click();
    await page.getByText('Email sign-in is not connected in this preview. No email is sent and no account is created.',{exact:true}).waitFor();
    assert.equal(await page.locator('.accessEmail input').isDisabled(),true);assert.equal(await page.locator('.accessEmail button').isDisabled(),true);
   }checks.push('all_email_entries_disclose_disconnected_delivery_without_requests');
+  assert.equal(await page.locator('[data-staff-entry="procurement"]').count(),1);assert.equal(await page.locator('[data-staff-entry="warehouse"]').count(),1);
+  checks.push('separate_purchasing_and_warehouse_entry_links');
   for(const [index,selector] of [[0,'.guestShell'],[1,'.staffLayout'],[2,'.staffLayout'],[3,'.staffLayout']]){
    await page.locator('.accessCards button').nth(index).click();await page.getByRole('button',{name:'Explore demo screens',exact:true}).click();
    await page.locator(selector).waitFor();assert.equal(await page.locator('.accessPortal').count(),0);

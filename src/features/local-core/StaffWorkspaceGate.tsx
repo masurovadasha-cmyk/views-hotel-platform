@@ -1,4 +1,7 @@
 import {HousekeepingWorkspace} from './HousekeepingWorkspace';
+import {FolioWorkspace} from './FolioWorkspace';
+import {SupplyWorkspace} from './SupplyWorkspace';
+import {folioWorkspaceTitle} from './FolioWorkspaceLocale';
 import {RefundReconciliationWorkspace} from './RefundReconciliationWorkspace';
 import {OwnerInventoryWorkspace} from './OwnerInventoryWorkspace';
 import {useStaffLocale} from './StaffLocale';
@@ -8,6 +11,8 @@ import {StaffPasskeyPanel} from './StaffPasskeyPanel';
 import {ReceptionWorkspace} from './ReceptionWorkspace';
 import {LocalCoreWorkspace} from './LocalCoreWorkspace';
 import './local-core.css';
+import {StaffRoleHeading,StaffRoleLinks,StaffRoleUnavailable,roleText} from '../staff-entry/StaffRoleEntry';
+import {parseStaffRole,requestedStaffRole,staffEntryUrl,staffRoleMatches,staffSections} from '../staff-entry/staff-roles';
 type Identity={email:string;displayName:string;role:string;permissions:string[];emailVerified:boolean;expiresAt:string};
 type Session={authenticated:boolean;identity?:Identity;csrf?:string};
 const messages:Record<string,string>={STAFF_LOGIN_FAILED:'Неверные данные входа или доступ сотрудника отключён.',
@@ -24,7 +29,7 @@ async function authCall<T>(route:string,body?:unknown,csrf?:string):Promise<T>{
  const value=await response.json();if(!response.ok)throw new StaffRequestError(value.error,messages[value.error]||'Запрос не выполнен. Проверьте сервер и повторите вход.',response.status);return value;
 }
 export function StaffWorkspaceGate(){
- const {t}=useStaffLocale();
+ const {t,locale}=useStaffLocale();
  const [session,setSession]=useState<Session>({authenticated:false}),[loading,setLoading]=useState(true),[mode,setMode]=useState<'login'|'activate'|'reset'>('login');
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[repeat,setRepeat]=useState(''),[token,setToken]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
@@ -71,13 +76,21 @@ export function StaffWorkspaceGate(){
   }catch{setError('Подтверждение ключом не завершено. Пароль этой попыткой не менялся. Повторите подтверждение или отмените смену пароля.');}
   finally{setBusy(false);}
  }
- const owner=!!session.identity&&['owner','manager'].includes(session.identity.role)&&session.identity.permissions.includes('property.manage');
- const cleaner=session.identity?.role==='housekeeper'&&session.identity.permissions.includes('housekeeping.work');
- const reception=!!session.identity?.permissions.includes('reservation.manage');
+ const requested=requestedStaffRole(),actualRole=parseStaffRole(session.identity?.role);
+ const sections=session.identity?staffSections(session.identity.role,session.identity.permissions):[];
+ const owner=sections.includes('inventory'),cleaner=sections.includes('housekeeping'),reception=sections.includes('reception'),folios=sections.includes('folios'),refunds=sections.includes('refunds');
  if(loading)return <main className="localWorkspace"><p role="status">{t("Проверка сессии сотрудника…")}</p></main>;
+ if(session.authenticated&&session.identity&&session.csrf&&!staffRoleMatches(requested,session.identity.role))return <main className="localWorkspace staffRoleMismatch">
+  <h1>{roleText(locale,'A different employee role is signed in.')}</h1><p>{roleText(locale,'This address does not grant access. Continue to your assigned workspace or sign out to use another account.')}</p>
+  {actualRole&&<a href={staffEntryUrl(actualRole,true)}>{roleText(locale,'Open my workspace')}</a>}
+  <button disabled={busy} onClick={()=>void logout(false)}>{t('Выйти')}</button>{error&&<p role="alert">{t(error)}</p>}
+ </main>;
  if(session.authenticated&&session.identity&&session.csrf)return <>
+  {actualRole&&<div className="localWorkspace"><StaffRoleHeading role={actualRole} locale={locale}/></div>}
   <nav className="localWorkspace localNavigation" aria-label={t("Разделы рабочей области")}>
-   {session.identity.permissions.includes('finance.read')&&<a href="#staff-refunds">{t('Сверка возвратов')}</a>}
+   {folios&&<a href="#staff-folios">{folioWorkspaceTitle(locale)}</a>}
+   {sections.includes('supplies')&&actualRole&&<a href="#staff-supplies">{roleText(locale,actualRole==='procurement'?'Purchasing':'Warehouse')}</a>}
+   {refunds&&<a href="#staff-refunds">{t('Сверка возвратов')}</a>}
    {cleaner&&<a href="#staff-housekeeping">{t("Задачи уборки")}</a>}{owner&&<a href="#staff-owner">{t("Объекты и номерной фонд")}</a>}{reception&&<><a href="#staff-reception">{t("Ресепшен и уборка")}</a><a href="#staff-cleaning">{t("Очередь уборки")}</a><a href="#staff-booking">{t("Бронирование")}</a></>}<a href="#staff-security">{t("Ключи доступа")}</a><a href="#staff-account">{t("Учётная запись")}</a>
   </nav>
   <section id="staff-account" tabIndex={-1} className="localWorkspace staffAccount" aria-label={t("Учётная запись сотрудника")}>
@@ -95,7 +108,10 @@ export function StaffWorkspaceGate(){
     <button className="primary" disabled={busy||assurance}>{t("Сохранить новый пароль")}</button></fieldset></form></div>}
   </section>
   <div id="staff-security" tabIndex={-1}><StaffPasskeyPanel csrf={session.csrf}/></div>
-  {session.identity.permissions.includes('finance.read')&&<div id="staff-refunds" tabIndex={-1}><RefundReconciliationWorkspace staffCsrf={session.csrf} canReview={session.identity.permissions.includes('finance.manage')}/></div>}
+  {!sections.length&&<StaffRoleUnavailable locale={locale} noPermission={actualRole!=='technician'&&actualRole!=='concierge'}/>}
+  {sections.includes('supplies')&&(actualRole==='procurement'||actualRole==='warehouse')&&<div id="staff-supplies" tabIndex={-1}><SupplyWorkspace staffCsrf={session.csrf} direction={actualRole} permissions={session.identity.permissions}/></div>}
+  {folios&&<div id="staff-folios" tabIndex={-1}><FolioWorkspace staffCsrf={session.csrf} canManage={session.identity.permissions.includes('reservation.manage')}/></div>}
+  {refunds&&<div id="staff-refunds" tabIndex={-1}><RefundReconciliationWorkspace staffCsrf={session.csrf} canReview={session.identity.permissions.includes('finance.manage')}/></div>}
   {cleaner&&<div id="staff-housekeeping" tabIndex={-1}><HousekeepingWorkspace staffCsrf={session.csrf}/></div>}
   {owner&&<div id="staff-owner" tabIndex={-1}><OwnerInventoryWorkspace staffCsrf={session.csrf}/></div>}
   {reception&&<><div id="staff-reception" tabIndex={-1}><ReceptionWorkspace staffCsrf={session.csrf}/></div>
@@ -103,7 +119,7 @@ export function StaffWorkspaceGate(){
  </>;
  return <main className="localWorkspace staffLogin">
   <span className="localEyebrow">{t("VIEWS · ВХОД СОТРУДНИКА")}</span>
-  <h1>{mode==='login'?t("Вход в рабочую область"):mode==='activate'?t("Активировать приглашение"):t("Восстановить доступ")}</h1>
+  {mode==='login'&&requested?<StaffRoleHeading role={requested} locale={locale} entry/>:<h1>{mode==='login'?t("Вход в рабочую область"):mode==='activate'?t("Активировать приглашение"):t("Восстановить доступ")}</h1>}
   <div className="localWarning"><strong>{t("Локальный стенд с тестовым фондом.")}</strong> {' '}{t("Автоматического входа больше нет. Учётная запись, пароль, сессия и права проверяются Core. Реальные платежи отключены.")}</div>
   <section className="localPanel">
    <p className="localHint">{mode==='login'?t("Доступ только по приглашению. Самостоятельная регистрация и выбор роли запрещены."):t("Введите одноразовый код, выданный администратором. На этом стенде приглашения выдаются локально — письма не отправляются.")}</p>
@@ -120,5 +136,6 @@ export function StaffWorkspaceGate(){
   </section>
   <p className="localHint">{t("Приложение не сохраняет пароль в браузерное хранилище; в БД хранится только защищённый хеш. Вход руководителя и администратора с расширенными правами пока закрыт до подключения MFA и подтверждения email.")}</p>
   <a href="/?api=demo">{t("Открыть отдельный демо-интерфейс")}</a>
+  <StaffRoleLinks locale={locale} local/>
  </main>;
 }
