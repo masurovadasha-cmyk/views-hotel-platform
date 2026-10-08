@@ -1,0 +1,40 @@
+name: Publish signed VIEWS Preview
+on:
+  push:
+    branches: ['release-artifacts/v0.8.0-preview']
+    paths: ['release-artifacts/**', '.github/workflows/publish-signed-preview.yml']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify immutable public APK
+        working-directory: release-artifacts/v0.8.0-preview
+        run: |
+          sha256sum -c SHA256SUMS.txt
+          test "$(sha256sum VIEWS-0.8.0-preview.apk | cut -d ' ' -f 1)" = 2eedce790ec5575229bfdaac03bc41428d23535c96a8311c149e6d94af58e5d7
+          SIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          test -n "$SIGNER"
+          "$SIGNER" verify --verbose --print-certs VIEWS-0.8.0-preview.apk > signature.txt
+          grep -F 'Signer #1 certificate SHA-256 digest: 3a973f0de0333ced89769ddfdae476fe826da605910c952212bbfd1c8179e052' signature.txt
+          python3 - <<'PY'
+          import json, zipfile, hashlib
+          from pathlib import Path
+          proof=json.loads(Path('signing-evidence.json').read_text())
+          assert proof['signatureVerified'] is True and proof['productionEnabled'] is False
+          assert proof['apkSha256']==hashlib.sha256(Path('VIEWS-0.8.0-preview.apk').read_bytes()).hexdigest()
+          with zipfile.ZipFile('VIEWS-0.8.0-preview.apk') as apk:
+              release=json.loads(apk.read('assets/www/release.json'))
+          assert release['sourceCommit']==proof['sourceCommit']=='72bc4b159f7a2f9e620bd98204c8661dff7d9f91'
+          assert release['sourceDirty'] is False and release['emailConnected'] is False
+          assert release['version']=='0.8.0-preview' and release['androidApplicationId']=='uz.views.preview'
+          PY
+      - name: Upload and publish requested prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: release-artifacts/v0.8.0-preview
+        run: |
+          gh release upload v0.8.0-preview VIEWS-0.8.0-preview.apk SHA256SUMS.txt signing-evidence.json
+          gh release edit v0.8.0-preview --draft=false --prerelease
