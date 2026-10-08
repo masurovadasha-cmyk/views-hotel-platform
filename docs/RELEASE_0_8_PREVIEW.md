@@ -113,6 +113,14 @@ prerelease; GitHub Pages and Cloudflare credentials/build status are independent
   `staging/master-reference-v1`, root `/`, build `npm ci && npm run build:review`,
   deploy `npx wrangler@4.148.0 deploy --config wrangler.toml`.
   Current Cloudflare settings cannot be read/changed without account access.
+  **Later owner-provided current log resolved the cause:** build `9bc2f835`
+  correctly installs dependencies from the new source, then runs
+  `npx wrangler preview` (not `deploy`). Wrangler 4.148.0 rejects this command
+  without a `[previews]` table. The root config now contains the required empty
+  table; static assets/build settings stay at the root. The diagnostic also
+  requires this block. There is no evidence that the new build uses wrong code
+  or a wrong root; the older October 4 log does not apply to it. Remote success
+  still must be verified after pushing this correction.
 
 Subsequent recovery-gate/documentation commits do not change the APK/application
 code; the prerelease remains pinned to the clean release-source commit above.
