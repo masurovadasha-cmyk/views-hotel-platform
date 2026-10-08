@@ -124,3 +124,22 @@ prerelease; GitHub Pages and Cloudflare credentials/build status are independent
 
 Subsequent recovery-gate/documentation commits do not change the APK/application
 code; the prerelease remains pinned to the clean release-source commit above.
+
+## Final Cloudflare result
+
+The `[previews]` correction at `cd4cc76096cd69d7d746c4b3a74bd9068240bf5c`
+passed the connected Workers Build on 2026-10-08 at 14:49 UTC:
+[successful staging Preview build](https://dash.cloudflare.com/b3aa874550f12baee308e3e7b4dba309/workers/services/view/views-hotel-platform/production/previews/staging-master-reference-v1/builds/3a7784b1-4f10-4228-a7e8-42c2833a5825).
+All staging GitHub workflows on that commit also succeeded. Public Pages
+`release.json` now reports that clean commit. The APK retains release source
+`72bc4b1`; subsequent changes are deployment configuration/diagnostics/docs only.
+
+Cloudflare's [PR bot report](https://github.com/masurovadasha-cmyk/views-hotel-platform/pull/54#issuecomment-6026707062)
+confirms successful feature-branch Preview deployment too, but explicitly says
+**No Preview URL**. Preview URLs are disabled for the existing Worker. An account
+operator must enable them under the Worker settings / Domains & Routes / Preview
+URLs before a public Cloudflare URL can be verified. There is no authenticated
+local Cloudflare API session to change this account setting. Do not invent a
+workers.dev hostname or describe the dashboard URL as a public application URL.
+The verified public testing link remains GitHub Pages; no production Core/mail
+or financial activation is implied by this successful static Preview deployment.
