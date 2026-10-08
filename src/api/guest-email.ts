@@ -5,7 +5,7 @@ export type GuestSession={authenticated:false}|{authenticated:true;profile:Guest
 export class GuestEmailError extends Error{
  constructor(public code:string,public retryAfterSeconds=0){super(code);}
 }
-async function request(route:string,body?:object,csrf?:string):Promise<Record<string,unknown>>{
+export async function guestEmailRequest(route:string,body?:object,csrf?:string):Promise<Record<string,unknown>>{
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
  try{
   const r=await fetch('/guest-api/'+route,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',redirect:'error',
@@ -21,7 +21,7 @@ async function request(route:string,body?:object,csrf?:string):Promise<Record<st
 }
 export const guestEmail={
  async session():Promise<GuestSession>{
-  const b=await request('session');if(b.authenticated===false)return {authenticated:false};
+  const b=await guestEmailRequest('session');if(b.authenticated===false)return {authenticated:false};
   const p=b.profile as Partial<GuestProfile>|undefined;
   if(b.authenticated!==true||typeof b.csrf!=='string'||!/^[a-f0-9]{64}$/.test(b.csrf)||!p||p.role!=='guest'
    ||typeof p.userId!=='string'||typeof p.email!=='string'||!['ru','uz','en'].includes(p.locale||'')
@@ -29,10 +29,10 @@ export const guestEmail={
   return {authenticated:true,profile:p as GuestProfile,csrf:b.csrf};
  },
  async request(email:string,locale:Locale){
-  const b=await request('request',{email,locale});
+  const b=await guestEmailRequest('request',{email,locale});
   if(b.status!=='provider_accepted'||b.resendAfterSeconds!==60)throw new GuestEmailError('GUEST_CORE_UNAVAILABLE');
   return {resendAfterSeconds:60};
  },
- async exchange(link:GuestEmailLink){const b=await request('exchange',link);if(b.ok!==true)throw new GuestEmailError('GUEST_CORE_UNAVAILABLE');},
- async logout(csrf:string){const b=await request('logout',{},csrf);if(b.ok!==true)throw new GuestEmailError('GUEST_CORE_UNAVAILABLE');}
+ async exchange(link:GuestEmailLink){const b=await guestEmailRequest('exchange',link);if(b.ok!==true)throw new GuestEmailError('GUEST_CORE_UNAVAILABLE');},
+ async logout(csrf:string){const b=await guestEmailRequest('logout',{},csrf);if(b.ok!==true)throw new GuestEmailError('GUEST_CORE_UNAVAILABLE');}
 };

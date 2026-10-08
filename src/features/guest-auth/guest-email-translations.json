@@ -106,5 +106,13 @@
   "Your guest session is saved on this browser.": {
     "ru": "Гостевая сессия сохранена в этом браузере.",
     "uz": "Mehmon sessiyasi ushbu brauzerda saqlangan."
+  },
+  "Your guest session is active. Employee workspaces require separate access.": {
+    "ru": "Гостевая сессия активна. Для рабочих кабинетов сотрудников нужен отдельный доступ.",
+    "uz": "Mehmon sessiyasi faol. Xodimlar kabinetlari uchun alohida kirish kerak."
+  },
+  "This test uses captured email. Real email delivery and payments are not connected.": {
+    "ru": "На стенде письма перехватываются для проверки. Реальная доставка писем и платежи не подключены.",
+    "uz": "Bu sinovda xatlar tekshirish uchun ushlab qolinadi. Haqiqiy xat yetkazish va to‘lovlar ulanmagan."
   }
 }

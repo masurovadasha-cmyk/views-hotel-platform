@@ -41,6 +41,11 @@ describe('guest email cookie boundary',()=>{
   expect(await r.json()).toEqual({authenticated:false});expect(r.headers.get('set-cookie')).toContain('Max-Age=0');
   await call('session',{headers:{Cookie:'views_guest_email='+token+'; views_guest_email='+token}});expect(upstream).toHaveBeenCalledTimes(1);
  });
+ it('clears a revoked trip cookie so the browser can sign in again',async()=>{
+  const call=await fixture((_req,res)=>{res.writeHead(401);res.end(JSON.stringify({message:'GUEST_EMAIL_SESSION_INVALID'}));});
+  const r=await call('trips',{headers:{Cookie:'views_guest_email=vges_'+'a'.repeat(43)}});
+  expect(r.status).toBe(401);expect(r.headers.get('set-cookie')).toContain('Max-Age=0');expect(await r.json()).toEqual({error:'GUEST_EMAIL_SESSION_INVALID'});
+ });
  it('does not forward malformed bodies, identity headers or arbitrary paths',async()=>{
   const upstream=vi.fn(),call=await fixture(upstream);
   for(const body of ['null','[]','{"email":"x@views.invalid","locale":"en","role":"admin"}']){

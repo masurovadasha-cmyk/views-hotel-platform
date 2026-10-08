@@ -1,3 +1,4 @@
+import {GuestTrips} from './GuestTrips';
 import {useEffect,useRef,useState} from 'react';
 import {guestEmail,GuestEmailError,type GuestSession} from '../../api/guest-email';
 import {translate,type MessageValues} from '../../i18n/messages';
@@ -62,14 +63,14 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
  return <main className="guestEmail" aria-busy={busy||loading}>
   <div className="guestEmailIntro"><span className="guestEmailEyebrow">VIEWS · {t('Guest account')}</span><h1>{t(session?.authenticated?'Signed in as guest':link?'Confirm sign-in':'Continue with email')}</h1>
    <p>{t(session?.authenticated?'Your guest session is saved on this browser.':'We will send a single-use link. It expires in 15 minutes.')}</p>
-   <aside><strong>{t('Local email sign-in test')}</strong><p>{t('This test uses captured email. Real email delivery and booking access are not connected.')}</p></aside></div>
+   <aside><strong>{t('Local email sign-in test')}</strong><p>{t('This test uses captured email. Real email delivery and payments are not connected.')}</p></aside></div>
   <section className="guestEmailCard" aria-label={t('Guest account')}>
    {!online&&<p role="status">{t('You are offline. Restore the connection and retry manually.')}</p>}
    {error&&<p className="guestEmailError" role="alert">{t(error)}</p>}
    {notice&&<p role="status">{t(notice)}</p>}
    {loading?<p role="status">{t('Checking session…')}</p>:session?.authenticated?<>
     <p className="guestEmailAddress" data-testid="guest-identity">{session.profile.email}</p>
-    <p>{t('Your guest session is active. Bookings and employee workspaces are not available through this sign-in yet.')}</p>
+    <p>{t('Your guest session is active. Employee workspaces require separate access.')}</p>
     {link&&<p>{t('Sign out before using a link for another account.')}</p>}
     <button className="primary" disabled={disabled} onClick={()=>void act('logout')}>{t(busy?'Please wait…':'Sign out')}</button>
    </>:session&&link?<>
@@ -84,5 +85,6 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
    </form>:null}
    {!loading&&<button disabled={disabled} onClick={()=>void act('refresh')}>{t('Check session again')}</button>}
   </section>
+  {session?.authenticated&&<GuestTrips key={session.profile.userId} online={online} onSessionExpired={()=>setSession({authenticated:false})}/>}
  </main>;
 }

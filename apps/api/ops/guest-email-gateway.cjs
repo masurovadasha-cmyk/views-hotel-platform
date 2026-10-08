@@ -6,7 +6,7 @@ const COOKIE='views_guest_email';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ERRORS=new Set(['INVALID_GUEST_EMAIL_REQUEST','GUEST_EMAIL_LINK_INVALID','GUEST_EMAIL_SESSION_INVALID',
  'EMAIL_RESEND_COOLDOWN','RATE_LIMITED','GUEST_EMAIL_DELIVERY_UNCERTAIN','GUEST_EMAIL_CHALLENGE_INACTIVE',
- 'GUEST_EMAIL_NOT_CONNECTED','GUEST_EMAIL_DISABLED','GUEST_EMAIL_KEY_REQUIRED']);
+ 'GUEST_EMAIL_NOT_CONNECTED','GUEST_EMAIL_DISABLED','GUEST_EMAIL_KEY_REQUIRED','GUEST_TRIPS_DISABLED','GUEST_TRIP_NOT_FOUND','INVALID_GUEST_TRIP_CURSOR','INVALID_GUEST_TRIP_QUERY']);
 function loopbackOrigin(value){
  const u=new URL(value);
  if(u.protocol!=='http:'||u.hostname!=='127.0.0.1'||!u.port||u.origin!==value)throw Error('GUEST_GATEWAY_LOOPBACK_ONLY');
@@ -42,7 +42,7 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
    headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},
    body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(10000)});
   let size=0;const chunks=[];
-  for await(const chunk of response.body){size+=chunk.length;if(size>16384)throw Error('INVALID_RESPONSE');chunks.push(chunk);}
+  for await(const chunk of response.body){size+=chunk.length;if(size>131072)throw Error('INVALID_RESPONSE');chunks.push(chunk);}
   return {status:response.status,body:JSON.parse(Buffer.concat(chunks).toString('utf8'))};
  }
  function failed(res,result){
@@ -64,13 +64,21 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
    reply(res,403,{error:'GUEST_ORIGIN_REJECTED'});return true;
   }
   const route=req.url.slice('/guest-api/'.length);
-  if(!['session','request','exchange','logout'].includes(route)||req.method!==(route==='session'?'GET':'POST')){
+  const tripRoute=/^trips(?:\?cursor=[A-Za-z0-9_-]{1,300}|\/[a-fA-F0-9-]{36})?$/.test(route);
+  if((!tripRoute&&!['session','request','exchange','logout'].includes(route))||req.method!==((tripRoute||route==='session')?'GET':'POST')){
    reply(res,404,{error:'GUEST_ROUTE_NOT_FOUND'});return true;
   }
   if(inFlight>=12){reply(res,503,{error:'GUEST_CORE_UNAVAILABLE'});return true;}
   inFlight++;
   try{
    const token=sessionToken(req);
+   if(tripRoute){
+    if(!token){reply(res,401,{error:'GUEST_EMAIL_SESSION_INVALID'});return true;}
+    const result=await upstream(route,undefined,token);
+    if(result.status===401)cookie(res,'');
+    if(result.status!==200){failed(res,result);return true;}
+    reply(res,200,require('./guest-trips-projection.cjs')(result.body));return true;
+   }
    if(route==='session'){
     if(!token){cookie(res,'');reply(res,200,{authenticated:false});return true;}
     const result=await upstream('session',undefined,token);

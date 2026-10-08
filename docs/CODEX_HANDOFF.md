@@ -709,3 +709,25 @@ Standard cloud:start is unchanged; new gateway runs only inside disposable proof
 Public preview/APK unchanged; no main merge. Next code scope: participant-owned
 guest booking access, not fake bookings after authenticated profile. Public HTTPS,
 real mail adapter and external-provider acceptance remain open gates.
+
+
+## 42. Guest-owned trips read flow
+
+Added0059 indexes and narrow session-hash SECURITY DEFINER projection; unchanged
+staff RLS. GuestEmail session is resolved again inside the SQL statement. Ownership
+requires profiles.user_id + reservation.primary_guest_id and matching organizations
+across guest/reservation/property; email matches and companion rows grant nothing.
+Default-off VIEWS_GUEST_TRIPS_PILOT_ENABLED, list/detail APIs, cookie BFF projection,
+RU/UZ/EN UI,20-row microsecond-safe keyset pages and exact minor money.401 clears
+cookie/UI; missing and foreign trips return404. No direct guest table RLS grant.
+
+Dirtyfa48ea1: Core424/75, root264/45, network152/mail15, typechecks/builds;4 new actual
+browser/Core/PG groups plus existing4 browser and3 HTTP/SMTP passed. New unit test
+caught undefined cursor coercion; explicit string validation fixed it.0059 only
+applied to disposable DB; persistent state untouched. No new external services,
+public deployment or APK. See stages-b/02-guest-owned-trips.md for run/manual risks.
+
+No association API yet: profiles must already have a trusted explicit user_id;
+fixtures are not a production linking process. Next block is verified reservation
+association with audit, never automatic email matching or client-supplied userId.
+Guest cancellation/payment and real email/public Core remain unfinished.

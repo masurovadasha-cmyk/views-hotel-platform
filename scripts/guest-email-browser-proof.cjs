@@ -40,6 +40,7 @@ module.exports=async function guestEmailBrowserProof({coreOrigin,smtp,setLinkOri
   await page.reload();await visible('[data-testid="guest-identity"]');
   const identity=await api('session');assert.equal(identity.status,200);assert.equal(identity.body.profile.email,email);
   assert.equal(identity.body.token,undefined);checks.push('real_smtp_link_explicit_confirmation_httponly_cookie_reload_no_token_storage');
+  phase='owned_trips';await require('./guest-trips-browser-proof.cjs')({page,api,admin,identity:identity.body});
   phase='gateway_boundaries';assert.equal((await api('logout','POST',{})).status,403);
   assert.equal((await api('logout','POST',{}, {'X-Views-Guest-Csrf':'0'.repeat(64)})).status,403);
   assert.equal((await api('exchange','POST',{challengeId:'invalid',token:'invalid'})).status,409);
@@ -66,6 +67,7 @@ module.exports=async function guestEmailBrowserProof({coreOrigin,smtp,setLinkOri
   assert.ok(await page.locator('[data-testid="guest-identity"]').count());
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await visible('#guest-email');
   assert.equal((await api('session')).body.authenticated,false);
+  assert.equal((await api('trips')).status,401);assert.equal(await page.locator('.guestTrips').count(),0);
   const revoked=await fetch(coreOrigin+'/v1/guest-identity/email/session',{headers:{Authorization:'Bearer '+cookie.value}});assert.equal(revoked.status,401);
   checks.push('three_languages_mobile_dark_offline_and_lost_logout_response_manual_retry');
   const beforeReplay=exchanges;phase='link_replay';await page.goto(link);await page.getByRole('button',{name:'Confirm sign-in',exact:true}).click();
