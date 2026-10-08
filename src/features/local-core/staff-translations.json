@@ -1274,5 +1274,93 @@
   "Static staging demo": {
     "en": "Static staging demo",
     "uz": "Statik test namoyishi"
+  },
+  "Этот объект недоступен для редактирования черновика.": {
+    "en": "This property is not available for draft editing.",
+    "uz": "Ushbu obyekt qoralamasini tahrirlash imkoni yo‘q."
+  },
+  "Отменить несохранённые изменения?": {
+    "en": "Discard unsaved changes?",
+    "uz": "Saqlanmagan o‘zgarishlar bekor qilinsinmi?"
+  },
+  "Не удалось загрузить черновик. Повторите загрузку.": {
+    "en": "Could not load the draft. Try loading again.",
+    "uz": "Qoralamani yuklab bo‘lmadi. Qayta yuklang."
+  },
+  "Коды номеров должны быть разными во всём объекте. Допустимы A–Z, цифры, дефис и подчёркивание; не более 100 номеров.": {
+    "en": "Room codes must be unique across the property. Use A–Z, digits, hyphens or underscores; up to 100 rooms.",
+    "uz": "Xona kodlari butun obyekt bo‘yicha takrorlanmasligi kerak. A–Z, raqamlar, tire va pastki chiziqdan foydalaning; ko‘pi bilan 100 ta xona."
+  },
+  "Изменения сохранены. Продажи не открыты.": {
+    "en": "Changes saved. Sales remain closed.",
+    "uz": "O‘zgarishlar saqlandi. Sotuvlar ochilmadi."
+  },
+  "Изменения сохранены, но черновик не загрузился. Повторите загрузку.": {
+    "en": "Changes saved, but the draft could not be loaded. Try loading again.",
+    "uz": "O‘zgarishlar saqlandi, lekin qoralama yuklanmadi. Qayta yuklang."
+  },
+  "Объект изменён в другой сессии. Ваши данные сохранены в форме. Загрузите свежую версию перед следующей отправкой.": {
+    "en": "The property was changed in another session. Your entries remain in the form. Load the latest version before submitting again.",
+    "uz": "Obyekt boshqa seansda o‘zgartirildi. Kiritgan ma’lumotlaringiz shaklda saqlangan. Qayta yuborishdan oldin so‘nggi versiyani yuklang."
+  },
+  "Редактирование номерного фонда": {
+    "en": "Edit room inventory",
+    "uz": "Xonalar fondini tahrirlash"
+  },
+  "До 20 категорий и 100 номеров в объекте. Изменения применяются вместе после сохранения. Каждая категория имеет свой тариф и условия отмены.": {
+    "en": "Up to 20 categories and 100 rooms per property. All changes are applied together when saved. Each category has its own rate and cancellation terms.",
+    "uz": "Har bir obyektda 20 tagacha toifa va 100 tagacha xona. Barcha o‘zgarishlar saqlanganda birgalikda qo‘llanadi. Har bir toifaning o‘z tarifi va bekor qilish shartlari bor."
+  },
+  "Вернуться к объектам": {
+    "en": "Back to properties",
+    "uz": "Obyektlarga qaytish"
+  },
+  "Загрузить свежую версию": {
+    "en": "Load latest version",
+    "uz": "So‘nggi versiyani yuklash"
+  },
+  "Категория {number}": {
+    "en": "Category {number}",
+    "uz": "{number}-toifa"
+  },
+  "Код номера {number}": {
+    "en": "Room code {number}",
+    "uz": "{number}-xona kodi"
+  },
+  "Удалить номер {number}": {
+    "en": "Remove room {number}",
+    "uz": "{number}-xonani olib tashlash"
+  },
+  "Удалить номер": {
+    "en": "Remove room",
+    "uz": "Xonani olib tashlash"
+  },
+  "Добавить номер": {
+    "en": "Add room",
+    "uz": "Xona qo‘shish"
+  },
+  "Удалить категорию": {
+    "en": "Remove category",
+    "uz": "Toifani olib tashlash"
+  },
+  "Добавить категорию": {
+    "en": "Add category",
+    "uz": "Toifa qo‘shish"
+  },
+  "Всего категорий: {categories}. Номеров: {units}.": {
+    "en": "Categories: {categories}. Rooms: {units}.",
+    "uz": "Toifalar: {categories}. Xonalar: {units}."
+  },
+  "Сохранить изменения фонда": {
+    "en": "Save inventory changes",
+    "uz": "Xonalar fondi o‘zgarishlarini saqlash"
+  },
+  "Редактировать фонд": {
+    "en": "Edit inventory",
+    "uz": "Xonalar fondini tahrirlash"
+  },
+  "Загрузка…": {
+    "en": "Loading…",
+    "uz": "Yuklanmoqda…"
   }
 }

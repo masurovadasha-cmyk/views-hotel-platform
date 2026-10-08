@@ -1,4 +1,4 @@
-import {Body,Controller,Get,Headers,Post,UnauthorizedException,Header} from '@nestjs/common';
+import {Body,Controller,Get,Headers,Post,UnauthorizedException,Header,Param} from '@nestjs/common';
 import type {IncomingHttpHeaders} from 'node:http';
 import {randomUUID} from 'node:crypto';
 import {requireUuid} from '../identity/actor-context';
@@ -13,6 +13,10 @@ export class OwnerInventoryController{
  constructor(private readonly inventory:OwnerInventoryService){}
  @Get() @Header('Cache-Control','no-store')
  list(@Headers() h:IncomingHttpHeaders){return this.inventory.list(actor(h));}
+ @Get(':propertyId') @Header('Cache-Control','no-store')
+ detail(@Headers() h:IncomingHttpHeaders,@Param('propertyId') id:string){return this.inventory.detail(actor(h),id);}
+ @Post(':propertyId') @Header('Cache-Control','no-store')
+ update(@Headers() h:IncomingHttpHeaders,@Param('propertyId') id:string,@Body() body:unknown){return this.inventory.update(actor(h),id,body,single(h['idempotency-key'])||'');}
  @Post() @Header('Cache-Control','no-store')
  create(@Headers() h:IncomingHttpHeaders,@Body() body:unknown){return this.inventory.create(actor(h),body,single(h['idempotency-key'])||'');}
 }

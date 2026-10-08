@@ -548,3 +548,30 @@ First real property's details were requested asynchronously. Do not invent
 business data or claim access to the user's other chat. Real guest/vault/payment/
 registration, privileged role rollout, multi-category inventory editing and
 sales/hosting/signing acceptance remain open in CURRENT_DELIVERY_STATUS.md.
+
+
+## 32. Stage 7.51 — multi-category draft inventory editor
+
+The owner workspace now loads and atomically edits its previously created drafts:
+up to 20 categories/100 rooms, occupancy, room codes, exact UZS base prices and
+independent cancellation windows. Existing room IDs survive code swaps; Core
+supports moves, deletion and addition. A stored-state revision prevents stale
+writes; serialized idempotency recovers lost replies. Audit/outbox and all edits
+roll back together. Existing seasonal/weekday/adjustment rules and operational
+records block this draft-only editor. Changed cancellation terms create a fresh
+inactive policy and retain the prior policy. No migration or role promotion.
+
+Dirty base a4e1f36: root 242/40; disposable PostgreSQL Core 310/61; focused staff
+auth 23/3; network gate 128 files; mail acceptance 15; web/Core/Android-frontend
+builds/typechecks passed. Owner create/edit and housekeeping UI proofs passed;
+new editor six groups on both web and Android-target assets, three languages and
+four widths. Browser owner responses remain fixtures; actual PostgreSQL tests
+cover concurrency, rollback, IDs, authority and draft-only invariants. Normal
+restart ready with 49 migrations, none new; persistent auth 13 groups/32 HTTP and
+booking/restart browser passed. No new native APK or privileged-login proof.
+
+See STAGE7_INVENTORY_EDITING.md. Normal feature flags remain off and existing
+identity restrictions stand. This completes the requested local draft-editing
+block without a host/domain. Real business data, privileged role rollout, sales
+activation, operational inventory changes and external provider/release gates
+remain separate; do not repeat the obsolete multi-category-editing backlog item.

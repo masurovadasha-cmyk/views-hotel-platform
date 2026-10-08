@@ -109,13 +109,13 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    const digest=hash(token);for(const [key,c] of contexts)if(c.expires<=Date.now())contexts.delete(key);
    let s=contexts.get(digest);if(!s){if(contexts.size>=32)fail(429,'SESSION_LIMIT');s={quotes:new Map(),reservations:new Set(),window:Date.now(),requests:0,expires:Date.parse(identity.expiresAt)};contexts.set(digest,s);}
    if(Date.now()-s.window>60000){s.window=Date.now();s.requests=0;}if(++s.requests>120)fail(429,'RATE_LIMIT');
-   if(route==='/local-api/owner-inventory'){
+   if(route==='/local-api/owner-inventory'||/^\/local-api\/owner-inventory\/[a-f0-9-]{36}$/i.test(route)){
     if(process.env.VIEWS_OWNER_INVENTORY_DRAFT_ENABLED!=='true')fail(404,'OWNER_INVENTORY_DISABLED');
     if(!['owner','manager'].includes(identity.role)||!identity.permissions.includes('property.manage'))fail(403,'OWNER_INVENTORY_FORBIDDEN');
-    if(req.method==='GET'){json(res,200,await core('/v1/owner-inventory','GET',undefined,undefined,token,identity));return true;}
+    if(req.method==='GET'){json(res,200,await core(route.replace('/local-api/','/v1/'),'GET',undefined,undefined,token,identity));return true;}
     if(req.method!=='POST')fail(405,'METHOD_DENIED');
     const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
-    json(res,200,await core('/v1/owner-inventory','POST',await readJson(req,16384),key,token,identity));return true;
+    json(res,200,await core(route.replace('/local-api/','/v1/'),'POST',await readJson(req,32768),key,token,identity));return true;
    }
    if(!identity.propertyIds.includes(config.fixture.propertyId))fail(403,'PROPERTY_FORBIDDEN');
    if(route==='/local-api/housekeeping'){

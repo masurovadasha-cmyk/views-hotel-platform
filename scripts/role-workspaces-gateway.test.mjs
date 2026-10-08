@@ -18,14 +18,23 @@ async function call({route,role='front_desk',permissions=[],method='GET',body,fl
 afterEach(()=>vi.unstubAllEnvs());
 describe('owner and housekeeping gateway boundaries',()=>{
  it('default-off gates forward no business requests',async()=>{
-  for(const route of ['owner-inventory','housekeeping']){const {res,calls}=await call({route,flag:false});expect(res.status).toBe(404);expect(calls).toHaveLength(1);}
+  for(const route of ['owner-inventory','owner-inventory/'+property,'housekeeping']){const {res,calls}=await call({route,flag:false});expect(res.status).toBe(404);expect(calls).toHaveLength(1);}
  });
  it('front desk cannot use either role workspace',async()=>{
-  for(const route of ['owner-inventory','housekeeping']){const {res,calls}=await call({route,permissions:['reservation.manage']});expect(res.status).toBe(403);expect(calls).toHaveLength(1);}
+  for(const route of ['owner-inventory','owner-inventory/'+property,'housekeeping']){const {res,calls}=await call({route,permissions:['reservation.manage']});expect(res.status).toBe(403);expect(calls).toHaveLength(1);}
  });
  it('owner requires both role and property permission, without adopting fixture scope',async()=>{
   const {res,calls}=await call({route:'owner-inventory',role:'owner',permissions:['property.manage'],scope:[]});expect(res.status).toBe(200);expect(calls[1].url).toBe('http://127.0.0.1:3001/v1/owner-inventory');expect(calls[1].init.headers['x-membership-id']).toBe(member);
   expect((await call({route:'owner-inventory',role:'owner'})).res.status).toBe(403);
+ });
+ it('forwards owner draft detail and edits with session actor and CSRF protection',async()=>{
+  for(const method of ['GET','POST']){
+   const {res,calls}=await call({route:'owner-inventory/'+property,role:'owner',permissions:['property.manage'],scope:[],method,body:method==='POST'?{revision:'fixture'}:undefined});
+   expect(res.status).toBe(200);expect(calls[1].url).toBe('http://127.0.0.1:3001/v1/owner-inventory/'+property);expect(calls[1].init.headers['x-membership-id']).toBe(member);
+   for(const override of [{'x-csrf-token':''},{'x-organization-id':org},{origin:'https://external.invalid'}]){
+    const denied=await call({route:'owner-inventory/'+property,role:'owner',permissions:['property.manage'],method,override});expect(denied.res.status).toBeGreaterThanOrEqual(400);expect(denied.calls.filter(c=>!c.url.endsWith('/session'))).toHaveLength(0);
+   }
+  }
  });
  it('binds housekeeper mutations to the server-owned property and same idempotency key',async()=>{
   const {res,calls}=await call({route:'housekeeping',role:'housekeeper',permissions:['housekeeping.work'],method:'POST',body:{taskId:member,action:'claim'}});
