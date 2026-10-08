@@ -7,13 +7,14 @@ def run(args,**kwargs):
 with tempfile.TemporaryDirectory(prefix='views-sign-proof-') as name:
     temp=pathlib.Path(name);repo=temp/'repo';(repo/'scripts').mkdir(parents=True)
     script=repo/'scripts/sign-android-review.py';shutil.copyfile(ROOT/'scripts/sign-android-review.py',script)
+    shutil.copyfile(ROOT/'release.config.json',repo/'release.config.json')
     (repo/'.gitignore').write_text('review-output/\n');(repo/'README').write_text('synthetic signing fixture\n')
     run(['git','init','-q',repo]);run(['git','-C',repo,'add','.'])
     run(['git','-C',repo,'-c','user.name=VIEWS Test','-c','user.email=synthetic@views.invalid','commit','-qm','fixture'])
     source=run(['git','-C',repo,'rev-parse','HEAD']).stdout.decode().strip()
     output=repo/'review-output';output.mkdir()
     original=(ROOT/'review-output/VIEWS-Review-unsigned.apk').read_bytes();unsigned=output/'VIEWS-Review-unsigned.apk';unsigned.write_bytes(original)
-    evidence={'compiledManifestVerified':True,'assetsMatchWebBuild':True,'applicationId':'uz.views.review','sourceCommit':source,'sourceDirty':False,'mode':'static-demo','productionBackendConnected':False,'productionPaymentsConnected':False,'apkSha256':hashlib.sha256(original).hexdigest()}
+    evidence={'compiledManifestVerified':True,'assetsMatchWebBuild':True,'applicationId':'uz.views.preview','sourceCommit':source,'sourceDirty':False,'mode':'static-demo','productionBackendConnected':False,'productionPaymentsConnected':False,'apkSha256':hashlib.sha256(original).hexdigest()}
     report=output/'build-evidence.json';report.write_text(json.dumps(evidence))
     password=secrets.token_hex(24);pw=temp/'password';pw.write_text(password+'\n');pw.chmod(0o600)
     key=temp/'test.keystore';cert=temp/'certificate.der'

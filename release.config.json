@@ -1,0 +1,8 @@
+{
+  "version": "0.8.0-preview",
+  "androidVersionCode": 800001,
+  "androidApplicationId": "uz.views.preview",
+  "androidLabel": "VIEWS Preview",
+  "mode": "static-demo",
+  "designReference": "https://chatgpt.com/s/m_6ac7a4fbdb2c819181431bb894e4ca47"
+}

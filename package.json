@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build",
-    "build:pages": "npm run typecheck && vite build --base=/views-hotel-platform/",
+    "build:pages": "npm run typecheck && vite build --mode review --base=/views-hotel-platform/",
+    "build:review": "npm run typecheck && vite build --mode review",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:guest": "node scripts/guest-localization.browser.cjs",
@@ -44,6 +45,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/node": "22.19.3",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",

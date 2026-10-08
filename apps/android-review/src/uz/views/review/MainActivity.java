@@ -118,7 +118,7 @@ public final class MainActivity extends Activity {
         return true;
       }
     });
-    web.loadUrl(HOME+"?api=demo");
+    web.loadUrl(HOME+"?api=demo&entry=access");
   }
   private void showRecovery(WebView failed){
     if(failed!=web)return;

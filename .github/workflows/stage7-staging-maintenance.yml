@@ -89,7 +89,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Reproduce config mismatch and compile existing Pages functions without deployment
+      - run: npm ci
+      - name: Validate Worker asset build and retained Pages functions without deployment
         run: node scripts/cloudflare-build-diagnostic.mjs
       - uses: actions/upload-artifact@v4
         if: always()

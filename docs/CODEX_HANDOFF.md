@@ -1,5 +1,11 @@
 # VIEWS development handoff to Codex
 
+Latest 2026-10-08 continuation: see `CURRENT_DELIVERY_STATUS.md` and
+`RELEASE_0_8_PREVIEW.md`. The owner explicitly requested updated public web/APK
+publication. Core B1–B3 baseline is `4a61439`; the older checkpoint below is
+historical. Public release is a disclosed interface preview; public Core/email,
+real payments and physical Android UI acceptance remain incomplete.
+
 Prepared 2026-10-07. Owner request: continue the entire VIEWS development workflow
 in Codex, preserving existing work. This is a project handoff, not a production
 release, not a complete transcript import, and not proof a Codex task has started.

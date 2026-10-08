@@ -5,9 +5,9 @@ import {useEffect,useState} from "react";
 import type {HospitalityRole} from "./domain/types";
 import {GuestApp} from "./features/guest/GuestApp";
 import {StaffApp} from "./features/staff/StaffApp";
-import {AuthPanel} from "./features/auth/AuthPanel";
 import {api} from "./api/client";
 import {detectRuntimeMode,runtimeLabel} from "./api/runtime";
+import {AccessPortal,type AccessAudience} from './features/auth/AccessPortal';
 
 type Session =
  | {mode:"guest";userId:string;guestId:string;organizationId:string}
@@ -23,6 +23,7 @@ function Application(){
   const [demoMode,setDemoMode]=useState<"guest"|"staff">("guest");
   const [demoRole,setDemoRole]=useState<HospitalityRole>("general_manager");
   const [dark,setDark]=useState(false);
+  const [accessOpen,setAccessOpen]=useState(()=>{const q=new URLSearchParams(location.search);return q.get('entry')==='access'||!q.has('api');});
   const [session,setSession]=useState<Session|null>(null);
   const [loading,setLoading]=useState(runtime==="live-api");
 
@@ -39,14 +40,16 @@ function Application(){
   useEffect(()=>{void refreshSession()},[]);
 
   const live=runtime==="live-api";
-  const staffMode=runtime==='local-core'||(live?session?.mode==='staff':demoMode==='staff');
+  const staffMode=runtime==='local-core'||(live?session?.mode==='staff':!accessOpen&&demoMode==='staff');
+  function preview(audience:AccessAudience){setDemoMode(audience==='guest'?'guest':'staff');setDemoRole(audience==='host'?'owner_readonly':audience==='admin'?'super_admin':'general_manager');setAccessOpen(false);}
   useEffect(()=>{const locale=staffMode?staffLocale:guestLocale;document.documentElement.lang=locale;try{localStorage.setItem(staffMode?"views.staff.locale":"views.guest.locale",locale);}catch{/* Language selection still works without storage. */}},[staffMode,staffLocale,guestLocale]);
   const content=()=>{
     if(runtime==="local-core")return <StaffMailEntry/>;
     if(live&&loading)return <main className="authShell"><div className="notice">{guestT('Checking secure session…')}</div></main>;
-    if(live&&!session)return <main className="authShell"><AuthPanel onDone={refreshSession}/></main>;
+    if(live&&!session)return <AccessPortal demo={false} onPreview={preview} onDone={refreshSession}/>;
     if(live&&session?.mode==="guest")return <GuestApp live/>;
     if(live&&session?.mode==="staff")return <div lang={staffLocale}><StaffApp role={session.role} onRoleChange={()=>{}} allowRoleSwitch={false} live/></div>;
+    if(accessOpen)return <AccessPortal demo onPreview={preview} onDone={refreshSession}/>;
     return demoMode==="guest"?<GuestApp/>:<div lang={staffLocale}><StaffApp role={demoRole} onRoleChange={setDemoRole} allowRoleSwitch/></div>;
   };
 
@@ -57,8 +60,9 @@ function Application(){
       <div className="topActions">
         <span className="runtimeBadge">{staffMode?t(runtimeLabel(runtime)):guestT(runtimeLabel(runtime))}</span>
         {staffMode?<StaffLanguageSelector/>:<GuestLanguageSelector/>}
+        {!live&&runtime!=="local-core"&&!accessOpen&&<button onClick={()=>setAccessOpen(true)}>VIEWS · {guestT('Sign in')}</button>}
         <button onClick={()=>setDark(v=>!v)}>{staffMode?t(dark?'Светлая тема':'Тёмная тема'):guestT(dark?'Light':'Dark')}</button>
-        {!live&&runtime!=="local-core"&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==='guest'?guestT('Staff CRM'):t('Гостевое приложение')}</button>}
+        {!live&&runtime!=="local-core"&&!accessOpen&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==='guest'?guestT('Staff CRM'):t('Гостевое приложение')}</button>}
         {live&&session&&<button onClick={async()=>{await api.logout();setSession(null)}}>{staffMode?t('Выйти'):guestT('Sign out')}</button>}
       </div>
     </header>

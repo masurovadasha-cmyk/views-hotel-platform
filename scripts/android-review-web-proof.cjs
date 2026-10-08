@@ -7,7 +7,7 @@ const assert=require('node:assert/strict');
  const browser=await chromium.launch({headless:true,executablePath:process.env.VIEWS_BROWSER_EXECUTABLE||'/usr/bin/chromium'});
  try {
   const page=await browser.newPage({viewport:{width:390,height:844}});
-  await page.addInitScript(()=>{delete String.prototype.replaceAll;});
+  await page.addInitScript(()=>{delete String.prototype.replaceAll;localStorage.setItem('views.guest.locale','en');localStorage.setItem('views.staff.locale','en');});
   const errors=[],external=[];
   page.on('pageerror',e=>errors.push(e.message));
   const origin='https://appassets.androidplatform.net',prefix='/views-hotel-platform/';

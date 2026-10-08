@@ -3,18 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: ["staging/master-reference-v1"]
-    paths:
-      - "functions/**"
-      - "migrations/**"
-      - "src/**"
-      - "scripts/stage4-remote-smoke.sh"
-      - "wrangler.toml"
-      - "package.json"
-      - ".github/workflows/cloudflare-staging.yml"
-
 permissions:
   contents: read
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -22,197 +12,29 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      VIEWS_STAGING_EXTRA_ORIGINS: ${{ vars.VIEWS_STAGING_EXTRA_ORIGINS }}
+      WRANGLER_SEND_METRICS: "false"
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Detect Cloudflare credentials
-        id: gate
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:review
+      - name: Check deployment credentials
+        id: credentials
         run: |
-          set -euo pipefail
-          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-            echo "Cloudflare staging credentials are configured."
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
           else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "Cloudflare staging credentials are not configured; live deploy will be skipped safely."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare deployment NOT executed: repository/environment credentials are absent. The separately connected Workers Builds integration may deploy this same commit." >> "$GITHUB_STEP_SUMMARY"
           fi
-
-      - name: Validate Cloudflare credentials
-        if: steps.gate.outputs.enabled == 'true'
-        run: |
-          set -euo pipefail
-          npx --yes wrangler@4 --version
-
-      - name: Install and verify
-        if: steps.gate.outputs.enabled == 'true'
-        run: |
-          set -euo pipefail
-          npm install
-          npm audit --omit=dev --audit-level=high
-          npm test
-          npm run build
-
-      - name: Ensure D1 staging database
-        if: steps.gate.outputs.enabled == 'true'
-        id: d1
-        run: |
-          set -euo pipefail
-          DB_JSON="$(npx --yes wrangler@4 d1 list --json)"
-          export DB_JSON
-          DB_ID="$(node -e '
-            const raw=JSON.parse(process.env.DB_JSON||"[]");
-            const rows=Array.isArray(raw)?raw:(raw.result||raw.databases||[]);
-            const db=rows.find(x=>x&&x.name==="views-staging");
-            process.stdout.write(String(db?.uuid||db?.id||""));
-          ')"
-          DB_CREATED="false"
-          if [ -z "$DB_ID" ]; then
-            npx --yes wrangler@4 d1 create views-staging
-            DB_CREATED="true"
-            DB_JSON="$(npx --yes wrangler@4 d1 list --json)"
-            export DB_JSON
-            DB_ID="$(node -e '
-              const raw=JSON.parse(process.env.DB_JSON||"[]");
-              const rows=Array.isArray(raw)?raw:(raw.result||raw.databases||[]);
-              const db=rows.find(x=>x&&x.name==="views-staging");
-              process.stdout.write(String(db?.uuid||db?.id||""));
-            ')"
-          fi
-          test -n "$DB_ID" || { echo "Unable to resolve views-staging D1 id"; exit 1; }
-          echo "database_id=$DB_ID" >> "$GITHUB_OUTPUT"
-          echo "created=$DB_CREATED" >> "$GITHUB_OUTPUT"
-
-      - name: Capture D1 pre-migration recovery point
-        if: steps.gate.outputs.enabled == 'true' && steps.d1.outputs.created != 'true'
-        id: recovery
-        run: |
-          set -euo pipefail
-          RECOVERY_TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          npx --yes wrangler@4 d1 time-travel info views-staging --timestamp="$RECOVERY_TIMESTAMP" --json >/tmp/views-d1-recovery.json
-          test -s /tmp/views-d1-recovery.json
-          echo "timestamp=$RECOVERY_TIMESTAMP" >> "$GITHUB_OUTPUT"
-          echo "Validated D1 recovery point at $RECOVERY_TIMESTAMP"
-
-      - name: Ensure Pages project and resolve preview origin
-        if: steps.gate.outputs.enabled == 'true'
-        id: pages
-        run: |
-          set -euo pipefail
-          PROJECTS_JSON="$(npx --yes wrangler@4 pages project list --json)"
-          export PROJECTS_JSON
-          EXISTS="$(node -e '
-            const raw=JSON.parse(process.env.PROJECTS_JSON||"[]");
-            const rows=Array.isArray(raw)?raw:(raw.result||raw.projects||[]);
-            process.stdout.write(rows.some(x=>x&&x.name==="views-hotel-platform")?"yes":"no");
-          ')"
-          if [ "$EXISTS" != "yes" ]; then
-            npx --yes wrangler@4 pages project create views-hotel-platform --production-branch main --compatibility-date 2026-10-04
-          fi
-          PROJECTS_JSON="$(npx --yes wrangler@4 pages project list --json)"
-          export PROJECTS_JSON
-          PAGES_HOST="$(node -e '
-            const raw=JSON.parse(process.env.PROJECTS_JSON||"[]");
-            const rows=Array.isArray(raw)?raw:(raw.result||raw.projects||[]);
-            const p=rows.find(x=>x&&x.name==="views-hotel-platform");
-            const candidate=p?.subdomain||(Array.isArray(p?.domains)?p.domains.find(x=>String(x).endsWith(".pages.dev")):"")||p?.url||"";
-            const host=String(candidate).replace(/^https?:\/\//,"").replace(/\/.*$/,"");
-            process.stdout.write(host);
-          ')"
-          test -n "$PAGES_HOST" || { echo "Unable to resolve Pages subdomain"; exit 1; }
-          STAGING_ORIGIN="https://staging.$PAGES_HOST"
-          echo "staging_origin=$STAGING_ORIGIN" >> "$GITHUB_OUTPUT"
-
-      - name: Build preview-only Wrangler config
-        if: steps.gate.outputs.enabled == 'true'
-        env:
-          DB_ID: ${{ steps.d1.outputs.database_id }}
-          STAGING_ORIGIN: ${{ steps.pages.outputs.staging_origin }}
-        run: |
-          set -euo pipefail
-          ALLOWED_ORIGINS="$STAGING_ORIGIN"
-          if [ -n "${VIEWS_STAGING_EXTRA_ORIGINS:-}" ]; then
-            ALLOWED_ORIGINS="$ALLOWED_ORIGINS,$VIEWS_STAGING_EXTRA_ORIGINS"
-          fi
-          ALLOWED_TOML="$(node -e 'process.stdout.write(JSON.stringify(process.argv[1]))' "$ALLOWED_ORIGINS")"
-          cat > .wrangler.staging.generated.toml <<EOF
-          name = "views-hotel-platform"
-          compatibility_date = "2026-10-04"
-          pages_build_output_dir = "dist"
-
-          [env.preview.vars]
-          VIEWS_ENV = "staging"
-          VIEWS_ALLOW_DEMO_HEADERS = "false"
-          VIEWS_EXPOSE_LOGIN_TOKEN = "false"
-          VIEWS_ALLOWED_ORIGINS = $ALLOWED_TOML
-
-          [[env.preview.d1_databases]]
-          binding = "DB"
-          database_name = "views-staging"
-          database_id = "$DB_ID"
-          EOF
-
-      - name: Apply D1 migrations
-        if: steps.gate.outputs.enabled == 'true'
-        run: npx --yes wrangler@4 d1 migrations apply views-staging --remote
-
-      - name: Deploy Pages staging
-        if: steps.gate.outputs.enabled == 'true'
-        run: npx --yes wrangler@4 pages deploy dist --project-name=views-hotel-platform --branch=staging --config=.wrangler.staging.generated.toml
-
-      - name: Smoke health and readiness
-        if: steps.gate.outputs.enabled == 'true'
-        env:
-          STAGING_ORIGIN: ${{ steps.pages.outputs.staging_origin }}
-        run: |
-          set -euo pipefail
-          for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            if HEALTH="$(curl -fsS "$STAGING_ORIGIN/api/health")" && READY="$(curl -fsS "$STAGING_ORIGIN/api/readiness")"; then
-              export HEALTH READY
-              node -e '
-                const health=JSON.parse(process.env.HEALTH);
-                const ready=JSON.parse(process.env.READY);
-                if(health.status!=="ok") throw new Error("health endpoint is not ok");
-                if(ready.status!=="ready"||ready.database!=="ok"||ready.schema!=="ok") throw new Error("D1 readiness failed");
-              '
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "Staging health/readiness did not become ready" >&2
-          exit 1
-
-      - name: Smoke Stage 4 remote Golden Flow
-        if: steps.gate.outputs.enabled == 'true'
-        env:
-          STAGING_ORIGIN: ${{ steps.pages.outputs.staging_origin }}
-        run: bash scripts/stage4-remote-smoke.sh
-
-      - name: Deployment summary
-        if: steps.gate.outputs.enabled == 'true'
-        env:
-          STAGING_ORIGIN: ${{ steps.pages.outputs.staging_origin }}
-        run: |
-          echo "### VIEWS Cloudflare staging" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Origin: $STAGING_ORIGIN" >> "$GITHUB_STEP_SUMMARY"
-          echo "- D1: views-staging / DB" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Health: PASS" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Live staff session: PASS" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Stage 4 remote Golden Flow: PASS" >> "$GITHUB_STEP_SUMMARY"
-          if [ -n "${{ steps.recovery.outputs.timestamp }}" ]; then
-            echo "- Pre-migration recovery timestamp: ${{ steps.recovery.outputs.timestamp }}" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "- Pre-migration recovery timestamp: fresh D1 / not required" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Staging credential status
-        if: steps.gate.outputs.enabled != 'true'
-        run: |
-          echo "### VIEWS Cloudflare staging" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Live deploy: NOT RUN" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Reason: CLOUDFLARE_API_TOKEN and/or CLOUDFLARE_ACCOUNT_ID are not configured in the views-cloudflare-staging environment." >> "$GITHUB_STEP_SUMMARY"
-          echo "- GitHub Pages preview and all repository CI remain unaffected." >> "$GITHUB_STEP_SUMMARY"
+      - name: Deploy existing review Worker
+        if: steps.credentials.outputs.available == 'true'
+        run: npx --yes wrangler@4.148.0 deploy --config wrangler.toml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-review-build
+          path: dist
+          if-no-files-found: error

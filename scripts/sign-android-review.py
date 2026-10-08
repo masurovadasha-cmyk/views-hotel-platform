@@ -35,7 +35,9 @@ def main():
     source=command(['git','rev-parse','HEAD']).strip()
     if command(['git','status','--porcelain']).strip() or evidence['sourceDirty'] or evidence['sourceCommit']!=source:
         fail('CLEAN_MATCHING_SOURCE_BUILD_REQUIRED')
-    if evidence.get('compiledManifestVerified') is not True or evidence.get('assetsMatchWebBuild') is not True or evidence.get('applicationId')!='uz.views.review':
+    release=json.loads((ROOT/'release.config.json').read_text())
+    if release.get('androidApplicationId')!='uz.views.preview':fail('PREVIEW_IDENTITY_REQUIRED')
+    if evidence.get('compiledManifestVerified') is not True or evidence.get('assetsMatchWebBuild') is not True or evidence.get('applicationId')!=release['androidApplicationId']:
         fail('VERIFIED_REVIEW_PACKAGE_REQUIRED')
     if evidence.get('mode')!='static-demo' or evidence.get('productionBackendConnected') is not False or evidence.get('productionPaymentsConnected') is not False:
         fail('REVIEW_ONLY_BUILD_REQUIRED')

@@ -890,5 +890,9 @@
   "No help topics match your search.": {
     "ru": "По вашему запросу ничего не найдено.",
     "uz": "Qidiruvga mos yordam mavzusi topilmadi."
+  },
+  "Sign in": {
+    "ru": "Войти",
+    "uz": "Kirish"
   }
 }

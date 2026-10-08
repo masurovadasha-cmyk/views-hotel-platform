@@ -1,9 +1,13 @@
 name = "views-hotel-platform"
+main = "workers/review.ts"
 compatibility_date = "2026-10-04"
-pages_build_output_dir = "dist"
 
-# Add free D1 staging binding after database creation:
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "views-staging"
-# database_id = "<cloudflare-generated-id>"
+# Existing Workers Builds invokes `wrangler deploy`. Only an interface preview.
+[build]
+command = "npm run build:review"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
