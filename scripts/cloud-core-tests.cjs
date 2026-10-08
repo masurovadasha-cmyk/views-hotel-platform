@@ -48,6 +48,9 @@ const run = args => {
     const blocks = [...workflow.matchAll(/<<'SQL'\r?\n([\s\S]*?)\r?\n\s+SQL(?:\r?\n|$)/g)].map(m => m[1]);
     assert.equal(blocks.length, 3, 'Review this runner when the CI seed contract changes');
     for (const sql of blocks) await admin.query(sql.replaceAll("'views_app_test'", "'" + runtimePassword + "'"));
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/stage-b1.synthetic.sql'), 'utf8'));
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b1.constraints.sql'), 'utf8'));
+    console.log('B1 administrative constraint proofs: 7 groups PASS (rolled back).');
     await assert.rejects(admin.query(`INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,source_ref,stay_period)
       VALUES('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',
       '00000000-0000-0000-0000-000000000004','maintenance','cloud-ci-overlap',tstzrange('2026-10-11T12:00:00+05','2026-10-13T12:00:00+05','[)'))`), { code: '23P01' });

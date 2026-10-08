@@ -77,3 +77,7 @@ STAGE7_STAFF_LOCALIZATION.md records connected staff translations.
 STAGE7_TURNOVER_WORKSPACE.md records the front-desk turnover queue.
 STAGE7_ANDROID_SIGNING_AND_DELIVERY.md records signing configuration and native
 emulator failure boundaries.
+
+### Этапы Б — Б1 (8 октября 2026)
+
+Совместимое расширение БД проверено: фолио, услуги, промокоды, лояльность, черновики выплат, споры и отзывы; 0050–0053, RLS, индексы и синтетические сиды. Core 327 тестов и 7 SQL-групп, веб 243 теста, сборки успешны. Подробности и ограничения: [Б1](stages-b/01-database.md). Это готовность схемы; выполнение выплат, участники отзывов и экраны относятся к последующим этапам. Продолжается Б2.

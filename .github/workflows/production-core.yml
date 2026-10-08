@@ -46,6 +46,8 @@ jobs:
           for migration in apps/api/db/migrations/[0-9][0-9][0-9][0-9]_*.sql; do
             psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f "$migration"
           done
+      - name: Mark isolated CI database
+        run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE views IS 'VIEWS_DISPOSABLE_CORE_TEST'"
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
@@ -166,6 +168,8 @@ jobs:
           );
           SQL
 
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/seeds/stage-b1.synthetic.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b1.constraints.sql
           OWN=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='00000000-0000-0000-0000-000000000002'; ROLLBACK;" | tail -2 | head -1)
           FOREIGN=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='10000000-0000-4000-8000-000000000002'; ROLLBACK;" | tail -2 | head -1)
           ACCESS=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT app.can_access_property('00000000-0000-0000-0000-000000000002'); ROLLBACK;" | tail -2 | head -1)

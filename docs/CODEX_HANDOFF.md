@@ -635,3 +635,9 @@ these files or claim the whole working tree clean. No production/account changes
 Next authorized work: B1 audit existing migrations/ledger first, then add only
 missing schema/index/RLS/fixtures in a disposable environment. Questions about
 city distribution/provider contracts do not block this local schema analysis.
+
+## 35. Stage B1 — compatible operational registries
+
+Added migrations 0050–0053, twelve FORCE-RLS registries, compound tenant/property/currency FKs, strict actor permission helper, immutable folio reversals, service snapshots/transitions, serialized promo limits, completed-stay loyalty, draft-only payouts, disputes and blind review constraints. Existing 49 migration checksums untouched; persistent views_local ledger inspected at 49 and no seed/reset performed. New seeds require the disposable DB marker; independent synthetic accountant only, no existing account promotion or credentials. Reviews intentionally have no runtime submission policy until B8 participant auth; payouts cannot execute.
+
+Dirty source on 5fc4555: Core 327/64 plus seven rollback-only admin SQL proof groups; root 243/40; web/Core typecheck/build; network134, mail15 pass. See stages-b/01-database.md for schema, risks and exact scope. Workflow/local disposable runner use the same seed and constraints. Persistent migration/restart and hosted CI not yet run. Pricing WIP from before B0 remains separate and is next in B2. User explicitly requests sequential autonomous progress; do not ask to continue.
