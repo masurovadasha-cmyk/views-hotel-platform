@@ -844,3 +844,39 @@ calendar/unit moves/groups; procurement extensions have their own listed backlog
 Review-mode build also passed: access portal5directions/3languages/4widths and
 nine role-entry browser groups, exit0 in /tmp/views-supply-public.log. This is
 local compiled-asset verification, not a Cloudflare/GitHub Pages deployment.
+
+## 46. Authorized publication and supply continuation / 9 October Tashkent
+
+Owner: «Сразу все везде добавь продолжай дальше» authorizes publishing updated
+web/APK. First fast-forwarded staging/master-reference-v1 to verifiedb4a5c12;
+Pages+connectedCloudflare served that clean SHA, public role rendering passed
+with curl-verified TLS downloads (no certificate bypass). DirectCloudflareAPI
+credentials absent; GitHub secrets metadata access403, so cannot infer unknown
+stored bindings. Real public Core/email remain unavailable and labelled.
+
+0066 partial receipt manifests preserve historical full receipt/{} replay;
+per-line cumulative receipt quantities cannot exceed ordered under order lock.
+0067 immutable counts/adjustment linkage, expected quantity+movement revision,
+item lock and deferred completeness prevent stale/forged/partial adjustments.
+Even zero-count delta records observation and advances revision. Existing role
+permissions unchanged. UI explicitly enters shipment/count, previews count
+reason/delta, and repeats identical command only manually after lost reply.
+
+Final dirtyb4a5c12 validation: Core476/83, root299/53, typechecks/builds,
+network172/mail15;6actual supply browser/BFF/Core/PG groups, priorfolio4 and
+allguest/email/role/SMTP proofs pass. /tmp/views-09-core-final.log exit0;
+initial browser assertion used wrong enum 'partial' instead of 'partially_received',
+corrected to actual contract. Midnight stagingCI exposed an existing now-1h
+fixture falling on yesterday in Tashkent. Only two projection tests now seed
+property-local midnight; production board and transition fixtures are unchanged.
+
+0066/67 are disposable-only,0001–65 unchanged, persistent data untouched.
+Review release0.9.0/900001 retains appId uz.views.preview and existing preview
+signing key (private files outsideGit). Previous review-output preserved under
+/workspace/views-previous-apk-nld9agbe/review-output; no key rotation. Build/sign
+requires clean matching source. Source/release/evidence URLs are in RELEASE_0_9_PREVIEW.md;
+final publication SHA/checksum are recorded in GitHub release notes after execution.
+No main merge, real mail/payments or public Core activation. Returns/transfers,
+valuation/suppliers, batch stocktake approval and full B3–B11 backlog remain.
+Future efficiency note:0067 one-time revision backfill could aggregate movement
+counts once for large existing ledgers; no persistent ledger currently migrated.

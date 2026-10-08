@@ -14,7 +14,7 @@ export class StaffSessionGuard implements CanActivate{
     const path=new URL(req.originalUrl||req.url,'http://views.internal').pathname;
     if(path.startsWith('/v1/staff-auth/'))return true; // controller validates gateway key
     const folioRoute=/^\/v1\/folios(?:\/properties|\/reservations\/[a-f0-9-]{36}(?:\/(?:charges|reversals))?)?$/i.test(path)||path==='/v1/night-audit';
-    const supplyPermission=req.method==='GET'&&/^\/v1\/supply\/(properties|items|orders|stock|movements)$/.test(path)?'supply.read':req.method==='POST'&&/^\/v1\/supply\/(items|orders)$/.test(path)?'purchase.manage':req.method==='POST'&&(/^\/v1\/supply\/orders\/[a-f0-9-]{36}\/receive$/i.test(path)||path==='/v1/supply/stock/issue')?'stock.manage':null;
+    const supplyPermission=req.method==='GET'&&/^\/v1\/supply\/(properties|items|orders|stock|movements)$/.test(path)?'supply.read':req.method==='POST'&&/^\/v1\/supply\/(items|orders)$/.test(path)?'purchase.manage':req.method==='POST'&&(/^\/v1\/supply\/orders\/[a-f0-9-]{36}\/receive$/i.test(path)||['/v1/supply/stock/issue','/v1/supply/stocktake/preview','/v1/supply/stocktake/confirm'].includes(path))?'stock.manage':null;
     const permission=supplyPermission??(folioRoute&&req.method==='GET'?'reservation.read':folioRoute&&req.method==='POST'?'reservation.manage':req.method==='GET'&&/^\/v1\/bookings\/[a-f0-9-]{36}\/guest-link$/.test(path)?'reservation.manage':req.method==='GET'&&/^\/v1\/refund-reconciliation(?:\/[a-f0-9-]{36})?$/i.test(path)?'finance.read':
       req.method==='POST'&&/^\/v1\/refund-reconciliation\/[a-f0-9-]{36}\/reviews$/i.test(path)?'finance.manage':
       ['GET','POST'].includes(req.method)&&path==='/v1/housekeeping'?'housekeeping.work':

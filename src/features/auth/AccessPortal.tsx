@@ -44,6 +44,6 @@ export function AccessPortal({demo,onPreview,onDone}:{demo:boolean;onPreview:(au
    </section>:<AuthPanel onDone={onDone}/>)}
   </section>
   {demo&&<aside className="accessDisclosure"><ShieldCheck aria-hidden="true" size={20}/><p>{t('Interface preview with sample data. Real bookings, payments and staff access require a connected server.')}</p></aside>}
-  <footer className="accessFooter"><span>VIEWS · {t('People. Places. Possibilities.')}</span><a href="https://github.com/masurovadasha-cmyk/views-hotel-platform/releases/tag/v0.8.0-preview" target="_blank" rel="noreferrer">{t('Android build & release notes')}</a></footer>
+  <footer className="accessFooter"><span>VIEWS · {t('People. Places. Possibilities.')}</span><a href={'https://github.com/masurovadasha-cmyk/views-hotel-platform/releases/tag/v'+release.version} target="_blank" rel="noreferrer">{t('Android build & release notes')}</a></footer>
  </main>;
 }

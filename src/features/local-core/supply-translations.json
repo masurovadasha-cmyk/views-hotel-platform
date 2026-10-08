@@ -281,5 +281,87 @@
  "The order has no valid lines. Contact the responsible employee before receipt.": {
   "ru": "В заказе нет корректных строк. До приёмки обратитесь к ответственному сотруднику.",
   "uz": "Buyurtmada to‘g‘ri qatorlar yo‘q. Qabul qilishdan oldin mas’ul xodimga murojaat qiling."
+ },
+ "Review received quantities": {
+  "ru": "Проверка количества при приёмке",
+  "uz": "Qabul qilinadigan miqdorlarni tekshirish"
+ },
+ "Enter only quantities physically received now. Use zero to skip an item; the outstanding quantities remain open.": {
+  "ru": "Укажите только количество, фактически полученное сейчас. Ноль пропускает товар; неполученное количество остаётся открытым.",
+  "uz": "Faqat hozir amalda olingan miqdorni kiriting. Tovarni o‘tkazib yuborish uchun nol kiriting; olinmagan miqdor ochiq qoladi."
+ },
+ "Ordered quantity": {
+  "ru": "Заказано",
+  "uz": "Buyurtma qilingan"
+ },
+ "Already received": {
+  "ru": "Уже принято",
+  "uz": "Allaqachon qabul qilingan"
+ },
+ "Outstanding quantity": {
+  "ru": "Осталось получить",
+  "uz": "Qabul qilinishi qolgan"
+ },
+ "Quantity received now": {
+  "ru": "Получено сейчас",
+  "uz": "Hozir qabul qilingan"
+ },
+ "partially_received": {
+  "ru": "Принято частично",
+  "uz": "Qisman qabul qilingan",
+  "en": "Partially received"
+ },
+ "Physical stock count": {
+  "ru": "Фактический пересчёт склада",
+  "uz": "Ombordagi haqiqiy miqdorni sanash"
+ },
+ "Count the physical stock, then review the difference. Previewing does not change stock.": {
+  "ru": "Пересчитайте фактический остаток и проверьте разницу. Предварительный просмотр не меняет склад.",
+  "uz": "Haqiqiy qoldiqni sanang va farqni tekshiring. Dastlabki ko‘rish omborni o‘zgartirmaydi."
+ },
+ "Physical quantity counted": {
+  "ru": "Фактически насчитано",
+  "uz": "Amalda sanalgan miqdor"
+ },
+ "Count reason": {
+  "ru": "Основание пересчёта",
+  "uz": "Sanash asosi"
+ },
+ "Enter a nonnegative whole quantity in the item unit. Zero means no physical stock.": {
+  "ru": "Введите неотрицательное целое количество в единицах товара. Ноль означает отсутствие фактического остатка.",
+  "uz": "Tovar birligida manfiy bo‘lmagan butun miqdorni kiriting. Nol haqiqiy qoldiq yo‘qligini bildiradi."
+ },
+ "Review stock count": {
+  "ru": "Проверить пересчёт",
+  "uz": "Sanashni tekshirish"
+ },
+ "Recorded stock": {
+  "ru": "Остаток по учёту",
+  "uz": "Hisobdagi qoldiq"
+ },
+ "Stock adjustment": {
+  "ru": "Корректировка остатка",
+  "uz": "Qoldiq tuzatishi"
+ },
+ "Confirm only after checking the physical count. If stock changed, reload and review a new count before confirming.": {
+  "ru": "Подтверждайте только после проверки фактического количества. Если остаток изменился, обновите данные и заново проверьте пересчёт перед подтверждением.",
+  "uz": "Faqat haqiqiy miqdorni tekshirgandan keyin tasdiqlang. Qoldiq o‘zgarsa, ma’lumotlarni yangilang va tasdiqlashdan oldin sanashni qayta tekshiring."
+ },
+ "Confirm physical count": {
+  "ru": "Подтвердить фактический пересчёт",
+  "uz": "Haqiqiy sanashni tasdiqlash"
+ },
+ "Stock changed after the preview. Reload stock, enter the count and review it again.": {
+  "ru": "После просмотра остаток изменился. Обновите склад, введите фактическое количество и проверьте расчёт заново.",
+  "uz": "Dastlabki ko‘rishdan keyin qoldiq o‘zgardi. Omborni yangilang, haqiqiy miqdorni kiriting va hisobni qayta tekshiring."
+ },
+ "The received quantity exceeds the outstanding order quantity. Reload the order and check the receipt.": {
+  "ru": "Полученное количество превышает остаток по заказу. Обновите заказ и проверьте приёмку.",
+  "uz": "Qabul qilinadigan miqdor buyurtma qoldig‘idan ko‘p. Buyurtmani yangilang va qabulni tekshiring."
+ },
+ "adjustment": {
+  "ru": "Корректировка по пересчёту",
+  "uz": "Sanash bo‘yicha tuzatish",
+  "en": "Stock count adjustment"
  }
 }

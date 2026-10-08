@@ -12,11 +12,14 @@ const db=new DatabaseService(),service=new BookingStayService(db),previous={...p
 let token:string;const type=randomUUID();
 const query=(sql:string,args:unknown[]=[])=>db.withActor(actor,c=>c.query(sql,args));
 async function session(){const raw=randomBytes(32).toString('hex');const result=await db.query('SELECT app.staff_auth_start($1,1,$2) ok',[actor.membershipId,createHash('sha256').update(raw).digest('hex')]);expect(result.rows[0].ok).toBe(true);return raw;}
-async function fixture({marker=true,total='0',guest=true,future=false}={}){
+async function fixture({marker=true,total='0',guest=true,future=false,today=false}={}){
  const id=randomUUID(),unit=randomUUID();
  await query("INSERT INTO units(id,property_id,unit_type_id,code) VALUES($1,$2,$3,$4)",[unit,property,type,'STAY-'+unit]);
  await query(`INSERT INTO reservations(id,organization_id,property_id,unit_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot,quote_snapshot)
- VALUES($1,$2,$3,$4,$5,'confirmed',clock_timestamp()+$6::interval,clock_timestamp()+interval '2 days','UZS',$7,'{}',$8)`,[id,org,property,unit,'STAY-'+id,future?'1 day':'-1 hour',total,{localStayPilot:marker}]);
+ SELECT $1,$2,$3,$4,$5,'confirmed',
+ CASE WHEN $9::boolean THEN date_trunc('day',clock_timestamp() AT TIME ZONE p.timezone) AT TIME ZONE p.timezone
+ ELSE clock_timestamp()+$6::interval END,clock_timestamp()+interval '2 days','UZS',$7,'{}',$8
+ FROM properties p WHERE p.id=$3`,[id,org,property,unit,'STAY-'+id,future?'1 day':'-1 hour',total,{localStayPilot:marker},today]);
  await query("INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,reservation_id,stay_period) SELECT organization_id,property_id,unit_id,'reservation',id,tstzrange(check_in_at,check_out_at,'[)') FROM reservations WHERE id=$1",[id]);
  if(guest)await query("INSERT INTO reservation_guests(organization_id,reservation_id,is_primary,first_name,last_name,date_of_birth,nationality_country_code) VALUES($1,$2,true,'Synthetic','Stay','2000-01-01','UZ')",[org,id]);
  return id;
@@ -62,7 +65,8 @@ describe.sequential('local synthetic stay transitions',()=>{
  it('projects guest and blockers only for eligible synthetic stays',async()=>{
   const controller=new BookingWorkspaceController(db);
   const headers={'x-organization-id':org,'x-user-id':actor.userId,'x-membership-id':actor.membershipId};
-  const ready=await fixture(),missing=await fixture({guest:false}),normal=await fixture({marker:false});
+  // A today-board fixture must remain on the property's date even just after midnight.
+  const ready=await fixture({today:true}),missing=await fixture({guest:false,today:true}),normal=await fixture({marker:false,today:true});
   const board=await controller.read(headers,property,'today');if(!('arrivals' in board))throw Error('MISSING_BOARD');
   const get=(id:string)=>board.arrivals.items.find((r:{reservationId:string})=>r.reservationId===id);
   expect(get(ready).readiness).toEqual({primaryGuest:'Synthetic Stay',unitActive:true,inventoryValid:true,paymentFree:true,timeAllowed:true,unitVacant:true,cleaningReady:true});
@@ -73,7 +77,7 @@ describe.sequential('local synthetic stay transitions',()=>{
   await expect(act(ready,'check-in')).rejects.toThrow('STAY_INVENTORY_INVALID');
  });
  it('projects bounded document statuses without file identifiers or personal data',async()=>{
-  const id=await fixture(),normal=await fixture({marker:false});
+  const id=await fixture({today:true}),normal=await fixture({marker:false,today:true});
   await query("INSERT INTO guest_document_records(organization_id,reservation_guest_id,document_type,object_key,storage_region,vault_id,expires_on,verification_status,object_checksum_sha256) SELECT g.organization_id,g.id,'passport','private-hidden-path','UZ','synthetic','2000-01-01','verified',repeat('a',64) FROM reservation_guests g CROSS JOIN generate_series(1,12) WHERE g.reservation_id=$1",[id]);
   const board=await new BookingWorkspaceController(db).read({'x-organization-id':org,'x-user-id':actor.userId,'x-membership-id':actor.membershipId},property,'today');
   if(!('arrivals' in board))throw Error('MISSING_BOARD');

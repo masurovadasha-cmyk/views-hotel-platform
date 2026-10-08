@@ -23,6 +23,24 @@ describe('separate purchase and stock gateway permissions',()=>{
   expect((await call({route,permissions,body:{}})).status).toBe(200);
   for(const args of [{permissions},{route,permissions,body:{userId:id}},{headers:{'x-csrf-token':'wrong'}},{headers:{'x-organization-id':org}},{headers:{'idempotency-key':'wrong'}}]){const r=await call(args);expect([400,403]).toContain(r.status);expect(r.calls).toHaveLength(0);}
  });
+ it('forwards explicit partial receipt lines without rounding and rejects unsupported receipt fields',async()=>{
+  vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');const permissions=['supply.read','stock.manage'],route='/supply/orders/'+id+'/receive',body={lines:[{itemId:id,quantity:'9007199254740993'}]};
+  const accepted=await call({route,permissions,body});expect(accepted.status).toBe(200);expect(JSON.parse(accepted.calls[0].init.body)).toEqual(body);expect(accepted.calls[0].init.headers['idempotency-key']).toBe(key);
+  for(const args of [{route,permissions,body:null},{route,permissions,body:[]},{route,permissions,body:{...body,role:'warehouse'}},{route,body},{route,permissions,body,headers:{'x-csrf-token':'wrong'}},{route,permissions,body,headers:{'idempotency-key':undefined}}]){const r=await call(args);expect([400,403]).toContain(r.status);expect(r.calls).toHaveLength(0);}
+ });
+ it('requires stock permission and csrf for explicit stocktake preview; only confirmation needs a command key',async()=>{
+  vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');const permissions=['supply.read','stock.manage'],body={propertyId:property,itemId:id,countedQuantity:'0',reason:'Synthetic physical count'},preview='/supply/stocktake/preview',confirm='/supply/stocktake/confirm',confirmation={...body,expectedQuantity:'9007199254740993',expectedRevision:'2'};
+  const inspected=await call({route:preview,permissions,body,headers:{'idempotency-key':undefined}});expect(inspected.status).toBe(200);expect(JSON.parse(inspected.calls[0].init.body)).toEqual(body);
+  const accepted=await call({route:confirm,permissions,body:confirmation});expect(accepted.status).toBe(200);expect(JSON.parse(accepted.calls[0].init.body)).toEqual(confirmation);expect(accepted.calls[0].init.headers['idempotency-key']).toBe(key);
+  for(const args of [
+   {route:preview,body},{route:confirm,body:confirmation},{route:preview,permissions,body,headers:{'x-csrf-token':'wrong'}},
+   {route:confirm,permissions,body:confirmation,headers:{'idempotency-key':undefined}},
+   {route:preview,permissions,body:{...body,expectedQuantity:'1'}},{route:confirm,permissions,body:{...confirmation,userId:id}},
+   {route:preview,permissions,body:{...body,propertyId:id}},{route:confirm,permissions,body:{...confirmation,propertyId:id}},
+   {route:preview+'?force=true',permissions,body},{route:confirm+'?force=true',permissions,body:confirmation}
+  ]){const r=await call(args);expect([400,403]).toContain(r.status);expect(r.calls).toHaveLength(0);}
+  vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','false');for(const route of [preview,confirm])expect((await call({route,permissions,body:route===preview?body:confirmation})).status).toBe(404);
+ });
  it('bounds property and query access, preserves exact quantities, and disables the pilot by default',async()=>{
   vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');
   expect((await call({route:'/supply/stock?propertyId='+property,method:'GET'})).status).toBe(200);

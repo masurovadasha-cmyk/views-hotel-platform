@@ -2,6 +2,8 @@ import {useEffect,useRef,useState} from 'react';
 import {supplyApi,type SupplyCommand,type SupplyItem,type SupplyOrder,type SupplyPage,type SupplyProperty,type StockItem,type StockMovement} from './supply-api';
 import {supplyDefinitive,supplyError,useSupplyLocale} from './SupplyWorkspaceLocale';
 import {SupplyIssueForm,SupplyItemForm,SupplyOrderForm} from './SupplyWorkspaceForms';
+import {SupplyWorkspaceReceipt} from './SupplyWorkspaceReceipt';
+import {SupplyWorkspaceStocktake} from './SupplyWorkspaceStocktake';
 import {localeTags,localizedName} from './staff-locale';
 import './supply-workspace.css';
 type Props={staffCsrf:string;direction:'procurement'|'warehouse';permissions:string[]};
@@ -53,17 +55,14 @@ export function SupplyWorkspace({staffCsrf,direction,permissions}:Props){
     {canWrite&&<><SupplyItemForm key={'item:'+revision} propertyId={propertyId} disabled={locked} submit={command=>void execute(command)}/><SupplyOrderForm key={'order:'+revision} propertyId={propertyId} items={items.items} disabled={locked} submit={command=>void execute(command)}/></>}
    </section>}
    {orders&&<section className="localPanel"><h2>{t(isPurchase?'Purchase orders':'Goods receipt')}</h2>{!orders.items.length&&<p>{t('No orders on this page.')}</p>}
-    <ul className="supplyRows">{orders.items.map(order=><li key={order.id} data-testid="supply-order"><strong>{order.reference} · {t(order.status)}</strong><p>{when(order.createdAt)}</p><ul>{order.lines.map(line=><li key={line.itemId}>{line.sku} · {line.name} · {count(line.quantity)} {t(line.unit)}</li>)}</ul>
-     {!isPurchase&&canWrite&&order.status==='ordered'&&<button disabled={locked} onClick={()=>setReceipt(order)}>{t('Review goods receipt')}</button>}</li>)}</ul>
+    <ul className="supplyRows">{orders.items.map(order=><li key={order.id} data-testid="supply-order"><strong>{order.reference} · {t(order.status)}</strong><p>{when(order.createdAt)}</p><ul>{order.lines.map(line=><li key={line.itemId}>{line.sku} · {line.name} · {count(line.quantity)} {t(line.unit)} · {t('Already received')}: {count(line.receivedQuantity)} · {t('Outstanding quantity')}: {count(line.remainingQuantity)}</li>)}</ul>
+     {!isPurchase&&canWrite&&order.status!=='received'&&<button disabled={locked} onClick={()=>setReceipt(order)}>{t('Review goods receipt')}</button>}</li>)}</ul>
     {orders.nextCursor&&<button disabled={locked} onClick={()=>void load('orders',orders.nextCursor!)}>{t('Next orders')}</button>}
    </section>}
-   {!isPurchase&&receipt&&<section className="localPanel" data-testid="supply-receipt-preview"><h2>{t('Confirm full receipt')} · {receipt.reference}</h2><p>{t('Confirm only when every listed quantity was physically received. Partial deliveries are not supported here.')}</p><ul>{receipt.lines.map(line=><li key={line.itemId}>{line.sku} · {line.name} · {count(line.quantity)} {t(line.unit)}</li>)}</ul>
-    <button className="primary" data-testid="supply-receive-confirm" disabled={locked||!canWrite} onClick={()=>void execute({kind:'receive',key:crypto.randomUUID(),orderId:receipt.id,body:{}})}>{t('Confirm goods received')}</button>
-    <button disabled={locked} onClick={()=>setReceipt(null)}>{t('Close receipt preview')}</button>
-   </section>}
+   {!isPurchase&&receipt&&<SupplyWorkspaceReceipt key={receipt.id} order={receipt} disabled={locked||!canWrite} submit={command=>void execute(command)} onClose={()=>setReceipt(null)}/>}
    {!isPurchase&&stock&&<section className="localPanel"><h2>{t('Current stock')}</h2><ul className="supplyRows">{stock.items.map(item=><li key={item.itemId} data-testid="supply-stock">{item.sku} · {item.name} · <strong>{count(item.quantity)} {t(item.unit)}</strong></li>)}</ul>{!stock.items.length&&<p>{t('No stock items on this page.')}</p>}
     {stock.nextCursor&&<button disabled={locked} onClick={()=>void load('stock',stock.nextCursor!)}>{t('Next stock items')}</button>}
-    {canWrite&&<SupplyIssueForm key={'issue:'+revision} propertyId={propertyId} stock={stock.items} disabled={locked} submit={command=>void execute(command)}/>}
+    {canWrite&&<><SupplyIssueForm key={'issue:'+revision} propertyId={propertyId} stock={stock.items} disabled={locked} submit={command=>void execute(command)}/><SupplyWorkspaceStocktake key={'stocktake:'+revision} propertyId={propertyId} staffCsrf={staffCsrf} stock={stock.items} disabled={locked} submit={command=>void execute(command)}/></>}
    </section>}
    {!isPurchase&&movements&&<section className="localPanel"><h2>{t('Stock movement history')}</h2><ul className="supplyRows">{movements.items.map(movement=><li key={movement.id} data-testid="supply-movement"><strong>{movement.sku} · {movement.name} · {count(movement.quantity)} {t(movement.unit)}</strong><p>{t(movement.kind)} · {movement.reference} · {when(movement.createdAt)}</p></li>)}</ul>{!movements.items.length&&<p>{t('No stock movements on this page.')}</p>}
     {movements.nextCursor&&<button disabled={locked} onClick={()=>void load('movements',movements.nextCursor!)}>{t('Next movements')}</button>}
