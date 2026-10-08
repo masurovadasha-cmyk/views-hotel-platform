@@ -3,6 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {DatabaseService} from '../database/database.service';
 import {OwnerCalendarService} from './owner-calendar.service';
 import {QuoteService} from '../rates/quote.service';
+import {BookingConflictError} from '../booking/booking.errors';
 import {BookingHoldService} from '../booking/booking-hold.service';
 const db=new DatabaseService(),service=new OwnerCalendarService(db);
 const actor={organizationId:'00000000-0000-0000-0000-000000000001',userId:'20000000-0000-4000-8000-000000000003',membershipId:'30000000-0000-4000-8000-000000000003',requestId:randomUUID()};
@@ -44,6 +45,8 @@ describe.sequential('owner calendar unified inventory',()=>{
   const input=block(id),quote=await new QuoteService(db).createQuote({actor,propertyId:property,unitId:id,ratePlanId:rate,checkInAt:input.start,checkOutAt:input.end,guests:[{age:30,residency:'resident'}]});
   const race=await Promise.allSettled([service.mutate(actor,property,input,randomUUID()),new BookingHoldService(db).createHold({actor,quoteId:quote.quoteId,idempotencyKey:randomUUID(),ttlSeconds:300})]);
   expect(race.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+  if(race[0].status==='rejected')expect(race[0].reason.message).toBe('CALENDAR_PERIOD_CONFLICT');
+  else expect((race[1] as PromiseRejectedResult).reason).toBeInstanceOf(BookingConflictError);
   await db.withActor(actor,async c=>expect((await c.query('SELECT count(*)::int n FROM inventory_periods WHERE unit_id=$1',[id])).rows[0].n).toBe(1));
  });
  it('cannot release externally managed blocks, altered periods or holds, including expired holds',async()=>{
