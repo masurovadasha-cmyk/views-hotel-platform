@@ -33,7 +33,7 @@ function docker(args,buffer=false){const r=spawnSync('docker',args,{encoding:buf
   const roles=(await source.query("SELECT rolname FROM pg_roles WHERE rolname LIKE 'views_%' AND rolname<>'views_owner'")).rows;
   for(const {rolname} of roles)await restored.query('CREATE ROLE "'+rolname.replaceAll('"','""')+'" NOLOGIN');
   docker(['exec',name,'pg_restore','-U','views_owner','-d','views_restored','--exit-on-error','/restore.dump']);
-  const tables=(await source.query("SELECT schemaname,tablename FROM pg_tables WHERE schemaname IN ('public','staff_private') ORDER BY 1,2")).rows;
+  const tables=(await source.query("SELECT schemaname,tablename FROM pg_tables WHERE schemaname IN ('public','staff_private','guest_identity_private') ORDER BY 1,2")).rows;
   for(const t of tables){
    const quoted='"'+t.schemaname.replaceAll('"','""')+'"."'+t.tablename.replaceAll('"','""')+'"';
    const sql=`SELECT count(*)::int n,md5(string_agg(d,',' ORDER BY d)) digest FROM (SELECT md5(row_to_json(t)::text) d FROM ${quoted} t) s`;
@@ -42,7 +42,7 @@ function docker(args,buffer=false){const r=spawnSync('docker',args,{encoding:buf
   const docs=(await restored.query('SELECT d.id,d.organization_id,d.reservation_guest_id,d.encrypted_fields,d.object_checksum_sha256,g.reservation_id FROM guest_document_records d JOIN reservation_guests g ON g.id=d.reservation_guest_id WHERE d.vault_id=$1',[SYNTHETIC_VAULT])).rows;assert.ok(docs.length>0,'NONEMPTY_ENCRYPTED_RESTORE_REQUIRED');
   for(const d of docs){const binding={organizationId:d.organization_id,reservationId:d.reservation_id,guestId:d.reservation_guest_id,documentId:d.id};assert.ok(openSyntheticDocument(binding,config.documentVaultKey,d.encrypted_fields,d.object_checksum_sha256).includes('SYNTHETIC TEST FILE'));assert.throws(()=>openSyntheticDocument(binding,'0'.repeat(64),d.encrypted_fields,d.object_checksum_sha256));}
   const turnovers=(await restored.query('SELECT count(*)::int n FROM local_stay_turnovers')).rows[0].n;assert.ok(turnovers>0,'NONEMPTY_TURNOVER_RESTORE_REQUIRED');
-  const report={result:'pass',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),tables:tables.length,privateTables:tables.filter(t=>t.schemaname==='staff_private').length,encryptedDocuments:docs.length,turnovers,separateKeyRequired:true,allTableDigestsMatch:true,sourceModified:false,rolePasswordsRestored:false,productionRestore:false,checkedAt:new Date().toISOString()};
+  const report={result:'pass',sourceCommit:spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),sourceDirty:!!spawnSync('git',['status','--porcelain'],{encoding:'utf8'}).stdout.trim(),tables:tables.length,privateTables:tables.filter(t=>['staff_private','guest_identity_private'].includes(t.schemaname)).length,encryptedDocuments:docs.length,turnovers,separateKeyRequired:true,allTableDigestsMatch:true,sourceModified:false,rolePasswordsRestored:false,productionRestore:false,checkedAt:new Date().toISOString()};
   fs.writeFileSync(path.join(root,'evidence/local-restore.json'),JSON.stringify(report,null,2),{mode:0o600});console.log(JSON.stringify(report));
  }finally{
   await source.query('ROLLBACK').catch(()=>{});await source.end();if(restored)await restored.end();
