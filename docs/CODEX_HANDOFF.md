@@ -688,3 +688,24 @@ Verified callbacks now match uncertain/blocked, require consistent amount/captur
 Verified dirty60c03eb: Core404/73 + B1/SMS rollback SQL; root246/40; API/web typecheck/build, network147/mail15. Browser5 synthetic HTTP groups cover three languages/widths, bigint, lost response exact retry, stale state, pagination/offline, reader without form. Actual runtime57 migrations (1new), auth13/32HTTP, restore88 tables/private9, documents25/turnovers17 digests match/source unmodified. No actor request returns401. Logs /tmp/views-b3-reconciliation-{core-final,root,web-build,browser,runtime,auth,restore}.log. All commands exit0 after the documented first fixture mismatch; no tests bypassed.
 
 Read docs/stages-b/03-refund-reconciliation.md for API/run/manual acceptance/risks. B3 is still open: concrete Click/Uzum protocol adapters, authenticated provider lookup and resolution of blocked/uncertain without callback, bank authorization/void/capture deposit, fiscal provider, legal payout model. Current review history is not bank reconciliation evidence; no manual completed/resend endpoint. UI browser uses HTTP fixtures, not live provider or full financial browser-to-Core proof. Persistent accountant identity was not created or promoted. Public host/production release/new APK/main merge remain absent. Keep stages sequential; B4–B11 not declared done. Existing environment setup/start instructions remain sufficient, no new secret/config requirements.
+
+
+## 41. Guest email account browser increment
+
+Latest owner steering prioritizes email entry for the guest after backend0058
+(commit1e09005). Added guest-core runtime for explicit loopback only, pre-React
+fragment consumption preserving staff invitations, RU/UZ/EN profile/request/
+confirm/session restore/logout UI, offline/manual retry states. Separate ops
+cookie gateway: HttpOnly/SameSite/Path scope, CSRF logout, strict Origin/Host,
+no actor headers, fixed loopback Core and no staff proxy. All pilot flags remain
+required; review Worker refuses guest-api. No persistent DB change or real mail.
+
+Dirty1e09005: Core417/74, root261/44, network150/mail15, both typechecks/builds,
+four real browser/Core/PG/SMTP groups and three HTTP groups passed; two captured
+synthetic messages. First test counter included an intentionally rejected exchange;
+fixed relative count, re-run passed. Workflow now executes the browser proof.
+See stages-b/02-guest-email-browser.md for commands, current proof and limitations.
+Standard cloud:start is unchanged; new gateway runs only inside disposable proof.
+Public preview/APK unchanged; no main merge. Next code scope: participant-owned
+guest booking access, not fake bookings after authenticated profile. Public HTTPS,
+real mail adapter and external-provider acceptance remain open gates.

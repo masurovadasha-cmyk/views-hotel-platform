@@ -3,7 +3,7 @@ type Env={ASSETS:{fetch:(request:Request)=>Promise<Response>}};
 export default {
  async fetch(request:Request,env:Env):Promise<Response>{
   const path=new URL(request.url).pathname;
-  if(/^\/(api|local-api|v1)(\/|$)/.test(path))return Response.json(
+  if(/^\/(api|local-api|guest-api|v1)(\/|$)/.test(path))return Response.json(
    {error:'PUBLIC_CORE_NOT_CONNECTED',emailConnected:false,realPayments:false},
    {status:503,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
   if(!['GET','HEAD'].includes(request.method))return new Response(null,{status:405,headers:{Allow:'GET, HEAD'}});

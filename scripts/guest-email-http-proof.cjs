@@ -19,11 +19,12 @@ module.exports=async function guestEmailHttpProof({admin,runtimeUrl}){
   assert.match(origin,/^http:\/\/127\.0\.0\.1:\d+$/);
   smtp=await require('./fixtures/guest-email-smtp.cjs')();
   transport=apiRequire('nodemailer').createTransport({host:'127.0.0.1',port:smtp.port,secure:false,ignoreTLS:true,pool:false,logger:false,debug:false,connectionTimeout:3000,socketTimeout:5000,disableFileAccess:true,disableUrlAccess:true});
+  let linkOrigin=origin+'/';
   app.get(GuestEmailRegistry).register({send:async m=>{
    assert.ok(m.email.endsWith('@views.invalid'));
    const fragment=new URLSearchParams({challengeId:m.challengeId,token:m.token});
    const result=await transport.sendMail({from:'guest-auth@views.invalid',to:m.email,subject:'[LOCAL TEST] Guest email identity',textEncoding:'base64',
-    text:'Synthetic capture only; no external mailbox delivery.\n'+origin+'/#'+fragment.toString(),disableFileAccess:true,disableUrlAccess:true});
+    text:'Synthetic capture only; no external mailbox delivery.\n'+linkOrigin+'#'+fragment.toString(),disableFileAccess:true,disableUrlAccess:true});
    assert.deepEqual(result.accepted,[m.email]);assert.deepEqual(result.rejected,[]);return {accepted:true};
   }});
   async function rpc(route,body,token,extra={}){
@@ -54,10 +55,11 @@ module.exports=async function guestEmailHttpProof({admin,runtimeUrl}){
   assert.ok([401,404].includes(staff.status));checks.push('single_use_guest_session_no_staff_membership_or_session');
   assert.equal((await rpc('logout',{},verified.body.token)).status,200);
   assert.equal((await rpc('session',undefined,verified.body.token)).status,401);
+  if(process.env.VIEWS_GUEST_EMAIL_BROWSER_PROOF==='true')await require('./guest-email-browser-proof.cjs')({coreOrigin:origin,smtp,admin,setLinkOrigin:value=>{linkOrigin=value;}});
   process.env.VIEWS_GUEST_EMAIL_PILOT_ENABLED='false';
   assert.equal((await rpc('request',{email,locale:'ru'})).status,404);checks.push('logout_and_default_off_route');
   console.log(JSON.stringify({result:'pass',proof:'guest_email_http_smtp',checks,smtpMessagesCaptured:smtp.messages.length,externalEmailSent:false,productionEnabled:false}));
- }finally{
+ }catch(error){console.error(JSON.stringify({result:'fail',proof:'guest_email_http',checks,error:error.name,frames:error.stack?.split('\n').filter(s=>s.startsWith('    at ')).slice(0,3)}));throw error;}finally{
   transport?.close();if(smtp)await smtp.close();if(app)await app.close();
   for(const [key,value] of Object.entries(saved)){if(value===undefined)delete process.env[key];else process.env[key]=value;}
  }

@@ -894,5 +894,9 @@
   "Sign in": {
     "ru": "Войти",
     "uz": "Kirish"
+  },
+  "Local guest Core · test": {
+    "ru": "Гостевой Core · тест",
+    "uz": "Mehmon Core · sinov"
   }
 }

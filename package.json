@@ -36,7 +36,8 @@
     "build:android": "npm run typecheck && vite build --mode android --base=/views-hotel-platform/",
     "test:workspaces": "node scripts/owner-inventory.browser.cjs && node scripts/owner-inventory-edit.browser.cjs && node scripts/owner-calendar.browser.cjs && node scripts/housekeeping.browser.cjs",
     "test:legacy-staff": "node scripts/legacy-staff-localization.browser.cjs",
-    "cloud:test:housekeeping": "VIEWS_HOUSEKEEPING_HTTP_PROOF=true node scripts/cloud-core-tests.cjs"
+    "cloud:test:housekeeping": "VIEWS_HOUSEKEEPING_HTTP_PROOF=true node scripts/cloud-core-tests.cjs",
+    "cloud:test:guest-email": "npm run build && npm --prefix apps/api run build && VIEWS_GUEST_EMAIL_HTTP_PROOF=true VIEWS_GUEST_EMAIL_BROWSER_PROOF=true node scripts/cloud-core-tests.cjs"
   },
   "dependencies": {
     "@simplewebauthn/browser": "14.0.0",

@@ -1,6 +1,15 @@
-import {describe,expect,it} from "vitest";
+import {describe,expect,it,vi} from "vitest";
 import {detectRuntimeMode,runtimeLabel} from "./runtime";
 describe("runtime mode",()=>{
+  it("enables the guest pilot only on an explicit IPv4 loopback origin",()=>{
+    expect(detectRuntimeMode("http://127.0.0.1:4174/?api=guest-core")).toBe("guest-core");
+    for(const url of ["https://hotel.example/?api=guest-core","http://127.0.0.1.evil.test:4174/?api=guest-core","https://127.0.0.1:4174/?api=guest-core","http://localhost:4174/?api=guest-core"])
+      expect(detectRuntimeMode(url)).toBe("static-demo");
+  });
+  it("cannot activate the guest pilot in a release review build",()=>{
+    vi.stubEnv('VITE_RELEASE_REVIEW','true');
+    try{expect(detectRuntimeMode("http://127.0.0.1:4174/?api=guest-core")).toBe("static-demo");}finally{vi.unstubAllEnvs();}
+  });
   it("keeps explicit local review separate from live API",()=>expect(detectRuntimeMode("http://127.0.0.1:4173/?api=demo")).toBe("static-demo"));
   it("keeps GitHub Pages honest about static demo mode",()=>expect(detectRuntimeMode("https://x.github.io/views-hotel-platform/")).toBe("static-demo"));
   it("allows explicit live API verification",()=>expect(detectRuntimeMode("https://x.github.io/views-hotel-platform/?api=live")).toBe("live-api"));

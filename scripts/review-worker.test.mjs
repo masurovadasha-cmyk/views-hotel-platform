@@ -2,7 +2,7 @@ import {describe,it,expect,vi} from 'vitest';
 import worker from '../workers/review';
 describe('public review Worker',()=>{
  it('refuses every API path without passing credentials to assets or pretending login',async()=>{
-  const fetch=vi.fn();for(const path of ['/api/auth-email','/api/session','/local-api/login','/v1/refund-reconciliation']){
+  const fetch=vi.fn();for(const path of ['/api/auth-email','/api/session','/guest-api/session','/guest-api/exchange','/local-api/login','/v1/refund-reconciliation']){
    const response=await worker.fetch(new Request('https://views.test'+path,{method:'POST',body:'private@example.invalid'}),{ASSETS:{fetch}});
    expect(response.status).toBe(503);expect(await response.json()).toMatchObject({emailConnected:false,realPayments:false});
   }expect(fetch).not.toHaveBeenCalled();

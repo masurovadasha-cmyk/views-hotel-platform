@@ -201,7 +201,13 @@ jobs:
       - name: Build API
         working-directory: apps/api
         run: npm run build
-      - name: Guest email HTTP and local SMTP proof
+      - name: Build guest browser and install isolated browser test runtime
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Guest email browser, HTTP and local SMTP proof
         env:
+          VIEWS_GUEST_EMAIL_BROWSER_PROOF: 'true'
           VIEWS_GUEST_EMAIL_PROOF_OWNER_URL: postgresql://views:views_test@localhost:5432/views
         run: node scripts/guest-email-http-proof.cjs

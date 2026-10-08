@@ -1,3 +1,5 @@
+import {GuestEmailEntry} from './features/guest-auth/GuestEmailEntry';
+import type {GuestEmailLinkState} from './features/guest-auth/guest-email-link';
 import {GuestLocaleProvider,GuestLanguageSelector,useGuestLocale} from './features/guest/GuestLocale';
 import {StaffLocaleProvider,StaffLanguageSelector,useStaffLocale} from './features/local-core/StaffLocale';
 import {StaffMailEntry} from "./features/local-core/StaffMailEntry";
@@ -13,10 +15,10 @@ type Session =
  | {mode:"guest";userId:string;guestId:string;organizationId:string}
  | {mode:"staff";userId:string;role:HospitalityRole;organizationId:string;propertyIds:string[]};
 
-export function App(){
-  return <StaffLocaleProvider manageDocument={false} persist={false}><GuestLocaleProvider manageDocument={false} persist={false}><Application/></GuestLocaleProvider></StaffLocaleProvider>;
+export function App({guestLink}:{guestLink:GuestEmailLinkState}){
+  return <StaffLocaleProvider manageDocument={false} persist={false}><GuestLocaleProvider manageDocument={false} persist={false}><Application guestLink={guestLink}/></GuestLocaleProvider></StaffLocaleProvider>;
 }
-function Application(){
+function Application({guestLink}:{guestLink:GuestEmailLinkState}){
   const {t,locale:staffLocale}=useStaffLocale();
   const {t:guestT,locale:guestLocale}=useGuestLocale();
   const runtime=detectRuntimeMode();
@@ -44,6 +46,7 @@ function Application(){
   function preview(audience:AccessAudience){setDemoMode(audience==='guest'?'guest':'staff');setDemoRole(audience==='host'?'owner_readonly':audience==='admin'?'super_admin':'general_manager');setAccessOpen(false);}
   useEffect(()=>{const locale=staffMode?staffLocale:guestLocale;document.documentElement.lang=locale;try{localStorage.setItem(staffMode?"views.staff.locale":"views.guest.locale",locale);}catch{/* Language selection still works without storage. */}},[staffMode,staffLocale,guestLocale]);
   const content=()=>{
+    if(runtime==="guest-core")return <GuestEmailEntry initialLink={guestLink}/>;
     if(runtime==="local-core")return <StaffMailEntry/>;
     if(live&&loading)return <main className="authShell"><div className="notice">{guestT('Checking secure session…')}</div></main>;
     if(live&&!session)return <AccessPortal demo={false} onPreview={preview} onDone={refreshSession}/>;
@@ -60,9 +63,9 @@ function Application(){
       <div className="topActions">
         <span className="runtimeBadge">{staffMode?t(runtimeLabel(runtime)):guestT(runtimeLabel(runtime))}</span>
         {staffMode?<StaffLanguageSelector/>:<GuestLanguageSelector/>}
-        {!live&&runtime!=="local-core"&&!accessOpen&&<button onClick={()=>setAccessOpen(true)}>VIEWS · {guestT('Sign in')}</button>}
+        {!live&&runtime!=="local-core"&&runtime!=="guest-core"&&!accessOpen&&<button onClick={()=>setAccessOpen(true)}>VIEWS · {guestT('Sign in')}</button>}
         <button onClick={()=>setDark(v=>!v)}>{staffMode?t(dark?'Светлая тема':'Тёмная тема'):guestT(dark?'Light':'Dark')}</button>
-        {!live&&runtime!=="local-core"&&!accessOpen&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==='guest'?guestT('Staff CRM'):t('Гостевое приложение')}</button>}
+        {!live&&runtime!=="local-core"&&runtime!=="guest-core"&&!accessOpen&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==='guest'?guestT('Staff CRM'):t('Гостевое приложение')}</button>}
         {live&&session&&<button onClick={async()=>{await api.logout();setSession(null)}}>{staffMode?t('Выйти'):guestT('Sign out')}</button>}
       </div>
     </header>
