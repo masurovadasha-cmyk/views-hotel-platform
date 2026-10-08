@@ -53,6 +53,8 @@ const run = args => {
     console.log('B1 administrative constraint proofs: 7 groups PASS (rolled back).');
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b2.sms.sql'), 'utf8'));
     console.log('B2 SMS administrative clock and identity proofs PASS (rolled back).');
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b2.email.sql'), 'utf8'));
+    console.log('B2 email expiry, supersession and role separation proofs PASS (rolled back).');
     await assert.rejects(admin.query(`INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,source_ref,stay_period)
       VALUES('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',
       '00000000-0000-0000-0000-000000000004','maintenance','cloud-ci-overlap',tstzrange('2026-10-11T12:00:00+05','2026-10-13T12:00:00+05','[)'))`), { code: '23P01' });
@@ -74,6 +76,7 @@ const run = args => {
     });
     process.exitCode = exitCode;
     if(exitCode===0&&process.env.VIEWS_HOUSEKEEPING_HTTP_PROOF==='true')await require('./housekeeping-connected-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
+    if(exitCode===0&&process.env.VIEWS_GUEST_EMAIL_HTTP_PROOF==='true')await require('./guest-email-http-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
   } finally {
     if (runtime) await runtime.end();
     if (admin) await admin.end();

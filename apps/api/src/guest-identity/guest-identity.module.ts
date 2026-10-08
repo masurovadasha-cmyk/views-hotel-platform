@@ -3,5 +3,8 @@ import {GuestIdentityController} from './guest-identity.controller';
 import {GuestIdentityService} from './guest-identity.service';
 import {GuestSmsRegistry} from './guest-sms.registry';
 import {SecurityRateLimitService} from '../security/rate-limit.service';
-@Module({controllers:[GuestIdentityController],providers:[GuestIdentityService,GuestSmsRegistry,SecurityRateLimitService],exports:[GuestIdentityService,GuestSmsRegistry]})
+import {GuestEmailController} from './guest-email.controller';
+import {GuestEmailService} from './guest-email.service';
+import {GuestEmailRegistry} from './guest-email.registry';
+@Module({controllers:[GuestIdentityController,GuestEmailController],providers:[GuestIdentityService,GuestSmsRegistry,SecurityRateLimitService,GuestEmailService,GuestEmailRegistry],exports:[GuestIdentityService,GuestSmsRegistry,GuestEmailService,GuestEmailRegistry]})
 export class GuestIdentityModule{}

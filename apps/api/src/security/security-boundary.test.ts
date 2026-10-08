@@ -3,6 +3,13 @@ import {clientNetworkKey,resolveClientAddress} from "./client-identity";
 import {redactSecurityText,redactTelemetryValue} from "./redacting-logger";
 
 describe("security telemetry redaction",()=>{
+  it('redacts email link/session and SMS session tokens in text and errors',()=>{
+    for(const prefix of ['vgel_','vges_','vgs_']){
+      const token=prefix+'x'.repeat(43);
+      expect(redactSecurityText('token='+token)).toBe('token=[GUEST_TOKEN_REDACTED]');
+      expect(JSON.stringify(redactTelemetryValue(new Error(token)))).not.toContain(token);
+    }
+  });
   it("redacts guest token-shaped values, email and phone from strings",()=>{
     const input="vge_fixturetoken123 user@example.test +998901234567";
     const output=redactSecurityText(input);
