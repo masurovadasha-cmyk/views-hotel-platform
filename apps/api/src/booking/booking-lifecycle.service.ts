@@ -11,6 +11,11 @@ export class BookingLifecycleService{
 
   async confirmHold(actor:RequestActorContext,reservationId:string,idempotencyKey:string):Promise<LifecycleResult>{
     return this.db.withActor(actor,async client=>{
+      const allowed=await client.query<{allowed:boolean}>(
+        `SELECT app.registry_access(organization_id,property_id,'reservation.manage') AS allowed
+         FROM reservations WHERE id=$1 AND organization_id=$2`,[reservationId,actor.organizationId]);
+      if(!allowed.rows[0])throw new Error('RESERVATION_NOT_FOUND');
+      if(!allowed.rows[0].allowed)throw new Error('PROPERTY_FORBIDDEN');
       const command=await client.query<{request_hash:string;result_snapshot:unknown}>(
         `INSERT INTO booking_commands(id,organization_id,idempotency_key,command_type,reservation_id,request_hash)
          VALUES(gen_random_uuid(),$1,$2,'confirm_hold',$3,$4)
@@ -61,6 +66,11 @@ export class BookingLifecycleService{
 
   async releaseHold(actor:RequestActorContext,reservationId:string,idempotencyKey:string):Promise<LifecycleResult>{
     return this.db.withActor(actor,async client=>{
+      const allowed=await client.query<{allowed:boolean}>(
+        `SELECT app.registry_access(organization_id,property_id,'reservation.manage') AS allowed
+         FROM reservations WHERE id=$1 AND organization_id=$2`,[reservationId,actor.organizationId]);
+      if(!allowed.rows[0])throw new Error('RESERVATION_NOT_FOUND');
+      if(!allowed.rows[0].allowed)throw new Error('PROPERTY_FORBIDDEN');
       const inserted=await client.query(
         `INSERT INTO booking_commands(id,organization_id,idempotency_key,command_type,reservation_id,request_hash)
          VALUES(gen_random_uuid(),$1,$2,'release_hold',$3,$4)

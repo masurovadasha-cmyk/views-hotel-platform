@@ -43,7 +43,7 @@ describe.sequential('owner calendar unified inventory',()=>{
   await db.withActor(actor,c=>c.query(`INSERT INTO cancellation_policy_templates(id,organization_id,code,name,rules) VALUES($1,$2,$3,'{"en":"Calendar proof"}','{"version":1,"rules":[{"minHoursBeforeCheckIn":0,"refundBps":0}],"nonRefundableLineCodes":[]}')`,[policy,actor.organizationId,policy]));
   await db.withActor(actor,c=>c.query(`INSERT INTO rate_plans(id,property_id,unit_type_id,name,currency,base_nightly_minor,cancellation_policy_id) VALUES($1,$2,$3,'{"en":"Calendar proof"}','UZS',100000,$4)`,[rate,property,type,policy]));
   const input=block(id),quote=await new QuoteService(db).createQuote({actor,propertyId:property,unitId:id,ratePlanId:rate,checkInAt:input.start,checkOutAt:input.end,guests:[{age:30,residency:'resident'}]});
-  const race=await Promise.allSettled([service.mutate(actor,property,input,randomUUID()),new BookingHoldService(db).createHold({actor,quoteId:quote.quoteId,idempotencyKey:randomUUID(),ttlSeconds:300})]);
+  const race=await Promise.allSettled([service.mutate(actor,property,input,randomUUID()),new BookingHoldService(db).createHold({actor:{...actor,userId:'20000000-0000-4000-8000-000000000001',membershipId:'30000000-0000-4000-8000-000000000001'},quoteId:quote.quoteId,idempotencyKey:randomUUID(),ttlSeconds:300})]);
   expect(race.filter(r=>r.status==='fulfilled')).toHaveLength(1);
   if(race[0].status==='rejected')expect(race[0].reason.message).toBe('CALENDAR_PERIOD_CONFLICT');
   else expect((race[1] as PromiseRejectedResult).reason).toBeInstanceOf(BookingConflictError);

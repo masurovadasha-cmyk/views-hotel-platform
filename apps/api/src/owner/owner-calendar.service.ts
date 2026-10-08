@@ -1,6 +1,6 @@
-import {BadRequestException,ConflictException,ForbiddenException,Injectable,NotFoundException} from '@nestjs/common';
+import {BadRequestException,ConflictException,Injectable,NotFoundException} from '@nestjs/common';
 import {randomUUID} from 'node:crypto';
-import type {PoolClient} from 'pg';
+import {ownerOperatingProperty} from './owner-operating-property';
 import {DatabaseService} from '../database/database.service';
 import type {RequestActorContext} from '../identity/actor-context';
 import {calendarCommand,calendarId,calendarWindow} from './owner-calendar.input';
@@ -10,16 +10,10 @@ const source=(id:string)=>'owner-calendar:'+id;
 export class OwnerCalendarService{
  constructor(private readonly db:DatabaseService){}
  private enabled(){if(process.env.NODE_ENV!=='test'||process.env.VIEWS_LOCAL_REHEARSAL!=='true'||process.env.VIEWS_OWNER_CALENDAR_ENABLED!=='true')throw new NotFoundException('OWNER_CALENDAR_DISABLED');}
- private async authorize(c:PoolClient,actor:RequestActorContext,id:string){
-  if(!(await c.query('SELECT app.owner_inventory_authorize() allowed')).rows[0]?.allowed)throw new ForbiddenException('OWNER_INVENTORY_FORBIDDEN');
-  const p=(await c.query(`SELECT p.id,p.name,p.timezone,p.status,p.country_code,o.type FROM properties p JOIN organizations o ON o.id=p.organization_id WHERE p.id=$1 AND p.organization_id=$2 FOR SHARE OF p,o`,[id,actor.organizationId])).rows[0];
-  if(!p)throw new NotFoundException('INVENTORY_NOT_FOUND');
-  if(p.status!=='active'||p.type!=='platform'||p.country_code!=='UZ'||p.timezone!=='Asia/Tashkent')throw new ConflictException('CALENDAR_PROPERTY_UNSUPPORTED');return p;
- }
  async list(actor:RequestActorContext,propertyId:string,from:unknown,to:unknown){
   this.enabled();const id=calendarId(propertyId),window=calendarWindow(from,to);
   return this.db.withActor(actor,async c=>{
-   await c.query("SET LOCAL statement_timeout='5s'");const p=await this.authorize(c,actor,id);
+   await c.query("SET LOCAL statement_timeout='5s'");const p=await ownerOperatingProperty(c,actor,id);
    const units=(await c.query("SELECT id,code,status FROM units WHERE property_id=$1 ORDER BY code,id LIMIT 101",[id])).rows;
    const periods=(await c.query(`SELECT ip.id,ip.unit_id AS "unitId",ip.kind,lower(ip.stay_period) AS start,upper(ip.stay_period) AS end,ip.expires_at AS "expiresAt",
     (ip.kind IN ('host_block','maintenance') AND ip.reservation_id IS NULL AND ip.expires_at IS NULL AND ip.source_ref='owner-calendar:'||ip.id::text AND EXISTS(
@@ -34,7 +28,7 @@ export class OwnerCalendarService{
   if(typeof key!=='string'||! /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(key))throw new BadRequestException('IDEMPOTENCY_KEY_REQUIRED');
   const eventKey='owner-calendar-command:'+actor.organizationId+':'+actor.membershipId+':'+key.toLowerCase(),hash=inventoryHash({propertyId:id,input});
   return this.db.withActor(actor,async c=>{
-   await c.query("SET LOCAL statement_timeout='10s'");await this.authorize(c,actor,id);
+   await c.query("SET LOCAL statement_timeout='10s'");await ownerOperatingProperty(c,actor,id);
    await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[eventKey]);
    const prior=(await c.query('SELECT payload FROM outbox_events WHERE organization_id=$1 AND idempotency_key=$2',[actor.organizationId,eventKey])).rows[0]?.payload;
    if(prior){if(prior.inputHash!==hash)throw new ConflictException('IDEMPOTENCY_CONFLICT');return {...prior.result,idempotentReplay:true};}
