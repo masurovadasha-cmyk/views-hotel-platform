@@ -79,3 +79,40 @@ preview. Review screen contrast and translations with native speakers.
 
 Main remains unmerged. Publishing uses the existing staging branch and a
 prerelease; GitHub Pages and Cloudflare credentials/build status are independent.
+
+## Published evidence, 2026-10-08
+
+- Release source/tag: `72bc4b159f7a2f9e620bd98204c8661dff7d9f91`.
+- [Web](https://masurovadasha-cmyk.github.io/views-hotel-platform/) deployed by
+  [Pages run 37793624707](https://github.com/masurovadasha-cmyk/views-hotel-platform/actions/runs/37793624707).
+  HTTP metadata returned that clean commit. Actual public-browser navigation
+  passed all four directions without page errors. Chromium needed a test-only
+  certificate bypass for the environment's proxy; curl used normal TLS checks.
+- [Prerelease and signed APK](https://github.com/masurovadasha-cmyk/views-hotel-platform/releases/tag/v0.8.0-preview)
+  published by [run 37794153913](https://github.com/masurovadasha-cmyk/views-hotel-platform/actions/runs/37794153913).
+  Downloading the public APK again returned SHA-256
+  `2eedce790ec5575229bfdaac03bc41428d23535c96a8311c149e6d94af58e5d7`.
+- Direct workspace uploads to uploads.github.com returned HTTP 401. The isolated
+  `release-artifacts/v0.8.0-preview` branch holds only public APK/evidence files;
+  Actions checked the exact checksum, embedded source and pinned certificate
+  with Android build-tools 35.0.0 before uploading using its own repository token.
+  Private preview key/password remain under `/workspace/.views-preview-signing`,
+  outside Git with restrictive permissions. Arrange secure key backup before
+  deleting/recreating this environment; a GitHub release is not a key backup.
+- GitHub verify/mail/Pages/Core/local E2E checks passed. Historical Stage 4
+  acceptance initially required D1 mutation steps in the public deployment
+  workflow. Its recovery gate now retains CLI/runbook checks while requiring
+  the static Worker deployment to avoid D1 mutations. Local updated gate passed.
+- Cloudflare linked Workers Build `9bc2f835-2136-48d8-9ac2-d13755bf467b` failed
+  remotely; GitHub exposes no error detail. The separate Actions deployment
+  step was skipped because repository/environment Cloudflare credentials are
+  absent. Do not report that green Actions job as a successful CF deployment.
+  Owner supplied older build `57a0b58f` log dated Oct 4: Wrangler found no static
+  project directory. This does not diagnose the new failed build. `main` contains
+  README only; a Cloudflare deployment must select the actual source branch
+  `staging/master-reference-v1`, root `/`, build `npm ci && npm run build:review`,
+  deploy `npx wrangler@4.148.0 deploy --config wrangler.toml`.
+  Current Cloudflare settings cannot be read/changed without account access.
+
+Subsequent recovery-gate/documentation commits do not change the APK/application
+code; the prerelease remains pinned to the clean release-source commit above.
