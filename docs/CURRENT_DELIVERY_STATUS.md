@@ -9,7 +9,8 @@
 Документы: [Б1](stages-b/01-database.md), [Б2](stages-b/02-backend.md),
 [SMS](stages-b/02-guest-sms-identity.md), [Б3](stages-b/03-payments-and-finance.md).
 Последние проверки: Core392/72 + SQL-проверки, root245/40; typecheck/build,
-network144, mail15. Реальные SMS/платежи и публичный выпуск не выполнялись.
+network144, mail15. Локально56 миграций, auth13/32HTTP и restore87 таблиц
+прошли на коде e98ae98. Реальные SMS/платежи и публичный выпуск не выполнялись.
 
 This is the current implementation/release snapshot. PRODUCT_REQUIREMENTS.md
 is the complete owner-supplied MVP/V2/V3 scope, including previously omitted
