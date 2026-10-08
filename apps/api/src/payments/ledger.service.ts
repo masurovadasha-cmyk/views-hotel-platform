@@ -1,3 +1,4 @@
+import {ledgerReplay} from './ledger-replay';
 import {Injectable} from "@nestjs/common";
 import type {PoolClient} from "pg";
 import {publishLedgerProjection} from "./finance-projection-outbox";
@@ -20,11 +21,16 @@ export class LedgerService{
     const result=await client.query<{id:string}>(
       `INSERT INTO ledger_accounts(id,organization_id,code,name,account_type,currency)
        VALUES(gen_random_uuid(),$1,$2,$3,$4,$5)
-       ON CONFLICT(organization_id,code,currency) DO UPDATE SET name=EXCLUDED.name
+       ON CONFLICT(organization_id,code,currency) DO NOTHING
        RETURNING id`,
       [organizationId,code,row.name,row.type,currency]
     );
-    return result.rows[0].id;
+    if(result.rows[0])return result.rows[0].id;
+    const existing=(await client.query<{id:string;account_type:string;active:boolean}>(
+      'SELECT id,account_type,active FROM ledger_accounts WHERE organization_id=$1 AND code=$2 AND currency=$3 FOR SHARE',
+      [organizationId,code,currency])).rows[0];
+    if(!existing||!existing.active||existing.account_type!==row.type)throw Error('LEDGER_ACCOUNT_UNAVAILABLE');
+    return existing.id;
   }
 
   async postCapture(
@@ -116,17 +122,6 @@ export class LedgerService{
     if(components.reduce((sum,x)=>sum+x,0n)!==input.netCollectedMinor){
       throw new Error("ECONOMICS_LEDGER_NOT_BALANCED");
     }
-    if(input.netCollectedMinor===0n)return null;
-
-    const existing=await client.query<{id:string}>(
-      "SELECT id FROM ledger_journals WHERE organization_id=$1 AND idempotency_key=$2",
-      [input.organizationId,input.idempotencyKey]
-    );
-    if(existing.rows[0])return existing.rows[0].id;
-
-    const debit=await this.ensureAccount(
-      client,input.organizationId,"guest_deposits",input.currency
-    );
     const creditCandidates:Array<{code:LedgerAccountCode;amount:bigint;memo:string}>=[
       {code:"platform_commission_revenue",amount:input.platformCommissionMinor,memo:"Platform commission earned"},
       {code:"owner_payable",amount:input.ownerPayableMinor,memo:"Owner settlement payable"},
@@ -134,6 +129,13 @@ export class LedgerService{
       {code:"other_deductions_payable",amount:input.otherDeductionsMinor,memo:"Other settlement deductions"}
     ];
     const credits=creditCandidates.filter(x=>x.amount>0n);
+    const existing=await ledgerReplay(client,{...input,referenceType:'reservation_economics',referenceId:input.snapshotId,
+      lines:input.netCollectedMinor===0n?[]:[{code:'guest_deposits',side:'debit',amountMinor:input.netCollectedMinor,currency:input.currency},
+        ...credits.map(c=>({code:c.code,side:'credit' as const,amountMinor:c.amount,currency:input.currency}))]});
+    if(existing)return existing;
+    if(input.netCollectedMinor===0n)return null;
+    const accounts=await this.accounts(client,input.organizationId,input.currency,['guest_deposits',...credits.map(c=>c.code)]);
+    const debit=accounts.get('guest_deposits')!;
 
     const journalId=(await client.query<{id:string}>(
       `INSERT INTO ledger_journals(
@@ -155,9 +157,7 @@ export class LedgerService{
     );
 
     for(const credit of credits){
-      const account=await this.ensureAccount(
-        client,input.organizationId,credit.code,input.currency
-      );
+      const account=accounts.get(credit.code)!;
       await client.query(
         `INSERT INTO ledger_entries(id,journal_id,account_id,side,amount_minor,currency,memo)
          VALUES(gen_random_uuid(),$1,$2,'credit',$3,$4,$5)`,
@@ -173,6 +173,13 @@ export class LedgerService{
     return journalId;
   }
 
+  private async accounts(client:PoolClient,organizationId:string,currency:string,codes:LedgerAccountCode[]){
+    if(!/^[A-Z]{3}$/.test(currency))throw Error('INVALID_LEDGER_CURRENCY');
+    const result=new Map<LedgerAccountCode,string>();
+    for(const code of [...new Set(codes)].sort())result.set(code,await this.ensureAccount(client,organizationId,code,currency));
+    return result;
+  }
+
   private async postTwoSided(
     client:PoolClient,
     input:{
@@ -182,14 +189,12 @@ export class LedgerService{
     }
   ){
     if(input.amountMinor<=0n)throw new Error("INVALID_LEDGER_AMOUNT");
-    const existing=await client.query<{id:string}>(
-      "SELECT id FROM ledger_journals WHERE organization_id=$1 AND idempotency_key=$2",
-      [input.organizationId,input.idempotencyKey]
-    );
-    if(existing.rows[0])return existing.rows[0].id;
-
-    const debit=await this.ensureAccount(client,input.organizationId,input.debitCode,input.currency);
-    const credit=await this.ensureAccount(client,input.organizationId,input.creditCode,input.currency);
+    const existing=await ledgerReplay(client,{...input,referenceType:'payment_intent',referenceId:input.paymentIntentId,lines:[
+      {code:input.debitCode,side:'debit',amountMinor:input.amountMinor,currency:input.currency},
+      {code:input.creditCode,side:'credit',amountMinor:input.amountMinor,currency:input.currency}]});
+    if(existing)return existing;
+    const accounts=await this.accounts(client,input.organizationId,input.currency,[input.debitCode,input.creditCode]);
+    const debit=accounts.get(input.debitCode)!,credit=accounts.get(input.creditCode)!;
     const journalId=(await client.query<{id:string}>(
       `INSERT INTO ledger_journals(id,organization_id,reference_type,reference_id,idempotency_key,description)
        VALUES(gen_random_uuid(),$1,'payment_intent',$2,$3,$4)
