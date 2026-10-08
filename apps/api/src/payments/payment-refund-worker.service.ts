@@ -59,7 +59,7 @@ export class PaymentRefundWorkerService{
       return rows.rows;
     });
 
-    let submitted=0,failed=0,uncertain=0,blocked=0;
+    let submitted=0,failed=0,uncertain=0,blocked=0,superseded=0;
     for(const request of claimed){
       try{
         const adapter=this.providers.get(request.provider);
@@ -76,21 +76,22 @@ export class PaymentRefundWorkerService{
           return client.query(
             `UPDATE payment_refund_requests
                 SET status='submitted',external_refund_id=$1,lease_until=NULL,locked_by=NULL,last_error=NULL
-              WHERE id=$2 AND locked_by=$3`,
+              WHERE id=$2 AND locked_by=$3 AND status='processing'`,
             [result.externalRefundId,request.id,workerId]
           );
         });
-        if(saved.rowCount)submitted++;else uncertain++;
+        if(saved.rowCount)submitted++;else superseded++;
       }catch(error){
         const status=error instanceof PaymentProviderNotConnectedError?'blocked':error instanceof RefundNotSentError?'pending':'uncertain';
         const diagnostic=status==='blocked'?'REFUND_PROVIDER_NOT_CONNECTED':status==='pending'?'REFUND_NOT_SENT':'REFUND_DELIVERY_UNCERTAIN_RECONCILE';
         const retrySeconds=Math.min(3600,30*Math.pow(2,Math.min(request.attempt_count,6)));
-        await this.db.withOrganization(organizationId,client=>client.query(
+        const saved=await this.db.withOrganization(organizationId,client=>client.query(
           `UPDATE payment_refund_requests SET status=$1,next_attempt_at=now()+make_interval(secs=>$2),lease_until=NULL,locked_by=NULL,last_error=$3
-           WHERE id=$4 AND locked_by=$5`,[status,Math.floor(retrySeconds),diagnostic,request.id,workerId]));
-        if(status==='uncertain')uncertain++;else if(status==='blocked')blocked++;else failed++;
+           WHERE id=$4 AND locked_by=$5 AND status='processing'`,[status,Math.floor(retrySeconds),diagnostic,request.id,workerId]));
+        if(!saved.rowCount)superseded++;
+        else if(status==='uncertain')uncertain++;else if(status==='blocked')blocked++;else failed++;
       }
     }
-    return {claimed:claimed.length,submitted,failed,uncertain,blocked};
+    return {claimed:claimed.length,submitted,failed,uncertain,blocked,superseded};
   }
 }

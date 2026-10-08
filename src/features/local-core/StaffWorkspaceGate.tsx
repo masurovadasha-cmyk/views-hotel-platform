@@ -1,4 +1,5 @@
 import {HousekeepingWorkspace} from './HousekeepingWorkspace';
+import {RefundReconciliationWorkspace} from './RefundReconciliationWorkspace';
 import {OwnerInventoryWorkspace} from './OwnerInventoryWorkspace';
 import {useStaffLocale} from './StaffLocale';
 import {useEffect,useState} from 'react';
@@ -76,6 +77,7 @@ export function StaffWorkspaceGate(){
  if(loading)return <main className="localWorkspace"><p role="status">{t("Проверка сессии сотрудника…")}</p></main>;
  if(session.authenticated&&session.identity&&session.csrf)return <>
   <nav className="localWorkspace localNavigation" aria-label={t("Разделы рабочей области")}>
+   {session.identity.permissions.includes('finance.read')&&<a href="#staff-refunds">{t('Сверка возвратов')}</a>}
    {cleaner&&<a href="#staff-housekeeping">{t("Задачи уборки")}</a>}{owner&&<a href="#staff-owner">{t("Объекты и номерной фонд")}</a>}{reception&&<><a href="#staff-reception">{t("Ресепшен и уборка")}</a><a href="#staff-cleaning">{t("Очередь уборки")}</a><a href="#staff-booking">{t("Бронирование")}</a></>}<a href="#staff-security">{t("Ключи доступа")}</a><a href="#staff-account">{t("Учётная запись")}</a>
   </nav>
   <section id="staff-account" tabIndex={-1} className="localWorkspace staffAccount" aria-label={t("Учётная запись сотрудника")}>
@@ -93,6 +95,7 @@ export function StaffWorkspaceGate(){
     <button className="primary" disabled={busy||assurance}>{t("Сохранить новый пароль")}</button></fieldset></form></div>}
   </section>
   <div id="staff-security" tabIndex={-1}><StaffPasskeyPanel csrf={session.csrf}/></div>
+  {session.identity.permissions.includes('finance.read')&&<div id="staff-refunds" tabIndex={-1}><RefundReconciliationWorkspace staffCsrf={session.csrf} canReview={session.identity.permissions.includes('finance.manage')}/></div>}
   {cleaner&&<div id="staff-housekeeping" tabIndex={-1}><HousekeepingWorkspace staffCsrf={session.csrf}/></div>}
   {owner&&<div id="staff-owner" tabIndex={-1}><OwnerInventoryWorkspace staffCsrf={session.csrf}/></div>}
   {reception&&<><div id="staff-reception" tabIndex={-1}><ReceptionWorkspace staffCsrf={session.csrf}/></div>

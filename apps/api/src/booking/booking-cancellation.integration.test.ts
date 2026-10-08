@@ -96,6 +96,60 @@ describe.sequential('policy cancellation and recovery',()=>{
   expect(calls.filter(id=>id===expired.intent)).toHaveLength(0);
   await db.withActor(actor,async c=>expect((await c.query('SELECT status FROM payment_refund_requests WHERE payment_intent_id=$1',[expired.intent])).rows[0].status).toBe('uncertain'));
  });
+ it('settles uncertain and blocked deliveries from verified callbacks against refunds payable exactly once',async()=>{
+  for(const status of ['uncertain','blocked']){
+   const f=await fixture();await service.cancel(actor,f.reservation,randomUUID());
+   await db.withActor(actor,c=>c.query('UPDATE payment_refund_requests SET status=$1 WHERE payment_intent_id=$2',[status,f.intent]));
+   const tx=await event(f.intent,'refunded',10000n,f.capture!);
+   await db.withActor(actor,async c=>{
+    expect((await c.query('SELECT status,locked_by,lease_until FROM payment_refund_requests WHERE payment_intent_id=$1',[f.intent])).rows).toEqual([{status:'completed',locked_by:null,lease_until:null}]);
+    expect((await c.query(`SELECT a.code FROM ledger_journals j JOIN ledger_entries e ON e.journal_id=j.id JOIN ledger_accounts a ON a.id=e.account_id WHERE j.idempotency_key=$1 AND e.side='debit'`,['refund:payme:'+tx])).rows).toEqual([{code:'refunds_payable'}]);
+   });
+   await recovery.reconcileTenant(actor.organizationId);
+   await db.withActor(actor,async c=>expect((await c.query('SELECT count(*)::int n FROM payment_refund_requests WHERE payment_intent_id=$1',[f.intent])).rows[0].n).toBe(1));
+  }
+ });
+ it('does not overwrite a callback completed during the worker network call, for success or timeout',async()=>{
+  for(const fail of [false,true]){
+   const f=await fixture();await service.cancel(actor,f.reservation,randomUUID());
+   const providers=new PaymentProviderRegistry();
+   providers.register({provider:'payme',refund:async(request:{paymentIntentId:string})=>{
+    if(request.paymentIntentId!==f.intent)return {externalRefundId:randomUUID(),status:'pending'};
+    const tx=await event(f.intent,'refunded',10000n,f.capture!);
+    if(fail)throw Error('SYNTHETIC_RESPONSE_LOST');
+    return {externalRefundId:tx,status:'refunded'};
+   }} as unknown as PaymentProviderPort);
+   expect((await new PaymentRefundWorkerService(db,providers,recovery).processTenantBatch(actor.organizationId,100)).superseded).toBeGreaterThanOrEqual(1);
+   await db.withActor(actor,async c=>{
+    expect((await c.query('SELECT status,locked_by,lease_until,last_error FROM payment_refund_requests WHERE payment_intent_id=$1',[f.intent])).rows).toEqual([{status:'completed',locked_by:null,lease_until:null,last_error:null}]);
+    expect((await c.query('SELECT refunded_minor::text FROM payment_intents WHERE id=$1',[f.intent])).rows[0].refunded_minor).toBe('10000');
+   });
+  }
+ });
+ it('preserves the capture correlation when a verified callback identifies only the acknowledged refund',async()=>{
+  const f=await fixture();await service.cancel(actor,f.reservation,randomUUID());const tx=randomUUID();
+  await db.withActor(actor,c=>c.query("UPDATE payment_refund_requests SET status='uncertain',external_refund_id=$1 WHERE payment_intent_id=$2",[tx,f.intent]));
+  const payload={organizationId:actor.organizationId,paymentIntentId:f.intent,externalEventId:randomUUID(),externalTransactionId:tx,eventType:'refunded' as const,amountMinor:10000n,currency:'UZS',occurredAt:new Date().toISOString(),rawMetadata:{synthetic:true}};
+  expect((await webhooks.processVerified('payme',payload,JSON.stringify({synthetic:tx}))).status).toBe('partially_refunded');
+  expect((await webhooks.processVerified('payme',payload,JSON.stringify({synthetic:tx}))).status).toBe('duplicate');
+  await db.withOrganization(actor.organizationId,c=>recovery.ensureRefundsForIntent(c,{organizationId:actor.organizationId,paymentIntentId:f.intent,provider:'payme',currency:'UZS',reservationId:f.reservation}));
+  await db.withActor(actor,async c=>{
+   expect((await c.query("SELECT related_external_transaction_id FROM provider_transactions WHERE external_transaction_id=$1 AND kind='refund'",[tx])).rows[0].related_external_transaction_id).toBe(f.capture);
+   expect((await c.query('SELECT status FROM payment_refund_requests WHERE payment_intent_id=$1',[f.intent])).rows).toEqual([{status:'completed'}]);
+  });
+ });
+ it('rolls back mismatched or ambiguous refund confirmation rather than guessing a liability account',async()=>{
+  const f=await fixture();await service.cancel(actor,f.reservation,randomUUID());
+  await expect(event(f.intent,'refunded',9999n,f.capture!)).rejects.toThrow('REFUND_RECONCILIATION_MISMATCH');
+  await db.withActor(actor,c=>c.query("UPDATE payment_refund_requests SET external_refund_id='synthetic-acknowledged-id',status='submitted' WHERE payment_intent_id=$1",[f.intent]));
+  await expect(event(f.intent,'refunded',10000n,f.capture!)).rejects.toThrow('REFUND_RECONCILIATION_MISMATCH');
+  await db.withActor(actor,c=>c.query(`INSERT INTO payment_refund_requests(organization_id,payment_intent_id,provider,amount_minor,currency,reason,idempotency_key,external_capture_id) VALUES($1,$2,'payme',10000,'UZS','synthetic-ambiguous',$3,$4)`,[actor.organizationId,f.intent,randomUUID(),f.capture]));
+  await expect(event(f.intent,'refunded',10000n,f.capture!)).rejects.toThrow('REFUND_RECONCILIATION_AMBIGUOUS');
+  await db.withActor(actor,async c=>{
+   expect((await c.query("SELECT count(*)::int n FROM provider_transactions WHERE payment_intent_id=$1 AND kind='refund'",[f.intent])).rows[0].n).toBe(0);
+   expect((await c.query('SELECT refunded_minor::text FROM payment_intents WHERE id=$1',[f.intent])).rows[0].refunded_minor).toBe('0');
+  });
+ });
  it('rolls back cancellation, inventory, refund queue and ledger if audit fails',async()=>{
   const f=await fixture();
   const brokenDb={withActor:(a:typeof actor,work:Parameters<DatabaseService['withActor']>[1])=>db.withActor(a,c=>work(new Proxy(c,{get(target,key){if(key==='query')return(sql:string,args:unknown[])=>{if(sql.startsWith('INSERT INTO audit_log'))throw Error('INJECTED_AUDIT_FAILURE');return target.query(sql,args);};return Reflect.get(target,key);}})))} as DatabaseService;

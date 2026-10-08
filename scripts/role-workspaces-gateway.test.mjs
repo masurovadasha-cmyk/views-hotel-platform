@@ -61,6 +61,18 @@ describe('owner and housekeeping gateway boundaries',()=>{
   for(const suffix of ['&organizationId='+org,'&guests=3'])expect((await call({...settings,route:route+suffix})).res.status).toBe(400);
   expect((await call({...settings,route,override:{'x-csrf-token':''}})).res.status).toBe(403);
  });
+ it('binds reconciliation reads to the workspace and reviews to finance.manage with CSRF',async()=>{
+  const settings={role:'accountant',permissions:['finance.read','finance.manage']},route='refund-reconciliation';
+  const read=await call({...settings,route:route+'?status=uncertain'});expect(read.res.status).toBe(200);expect(read.calls[1].url).toContain('propertyId='+property);
+  for(const suffix of ['?propertyId='+member,'?status=uncertain&status=blocked','?actor='+member])expect((await call({...settings,route:route+suffix})).res.status).toBe(400);
+  const detail=route+'/'+member;expect((await call({...settings,route:detail})).res.status).toBe(200);
+  const mutation={...settings,route:detail+'/reviews',method:'POST',body:{expectedRevision:'a'.repeat(64),action:'investigating',caseReference:'SYNTHETIC'}};
+  expect((await call(mutation)).res.status).toBe(200);
+  for(const patch of [{permissions:['finance.read']},{override:{'x-csrf-token':''}},{override:{'x-user-id':member}},{scope:[]}]){
+   const denied=await call({...mutation,...patch});expect(denied.res.status).toBe(403);expect(denied.calls.filter(c=>c.init.method==='POST')).toHaveLength(0);
+  }
+  expect((await call({...mutation,body:{...mutation.body,status:'completed'}})).res.status).toBe(400);
+ });
  it('binds housekeeper mutations to the server-owned property and same idempotency key',async()=>{
   const {res,calls}=await call({route:'housekeeping',role:'housekeeper',permissions:['housekeeping.work'],method:'POST',body:{taskId:member,action:'claim'}});
   expect(res.status).toBe(200);expect(JSON.parse(calls[1].init.body)).toEqual({taskId:member,action:'claim',propertyId:property});expect(calls[1].init.headers['idempotency-key']).toMatch(/^[a-f0-9-]{36}$/);

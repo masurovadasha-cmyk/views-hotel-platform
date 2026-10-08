@@ -52,6 +52,15 @@ describe('staff session enforcement on the trusted local gateway',()=>{
   expect(await guard.canActivate(context(request('/v1/housekeeping','POST')))).toBe(true);
   for(const [path,method] of [['/v1/booking-workspace','GET'],['/v1/quotes','POST'],['/v1/owner-inventory','GET']])await expect(guard.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
  });
+ it('uses existing finance permissions for review routes without enabling financial commands',async()=>{
+  const reader=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['finance.read']})} as never);
+  const writer=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['finance.read','finance.manage']})} as never);
+  const route='/v1/refund-reconciliation/'+identity.userId;
+  expect(await reader.canActivate(context(request(route)))).toBe(true);
+  await expect(reader.canActivate(context(request(route+'/reviews','POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  expect(await writer.canActivate(context(request(route+'/reviews','POST')))).toBe(true);
+  for(const action of ['resend','complete','refund'])await expect(writer.canActivate(context(request(route+'/'+action,'POST')))).rejects.toThrow('STAFF_ROUTE_DENIED');
+ });
  it('does not expand the local service into a payment or confirm client',async()=>{
   const guard=new StaffSessionGuard({resolve:async()=>identity} as never);
   for(const p of ['/v1/payments','/v1/bookings/'+identity.userId+'/confirm','/v1/internal/analytics/report-cycle'])

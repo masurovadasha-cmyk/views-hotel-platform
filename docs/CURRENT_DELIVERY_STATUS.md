@@ -3,14 +3,18 @@
 Актуальное продолжение этапов Б: Б1 — схема/реестры проверены; Б2 — локальные
 тарифы, поиск, холды, отмена и SMS-идентичность реализованы, внешняя доставка и
 гостевой UI ещё требуют подключения/приёмки. В Б3 исправлены повторы и целостность
-проводок, но Click/Uzum, банковский депозит и реальные выплаты ещё не реализованы.
+проводок; добавлены API/веб сверки возвратов, журнал проверок и защита поздних callback.
+Click/Uzum, банковский депозит и реальные выплаты ещё не реализованы.
 Б4–Б11 остаются в полном плане. Это не завершение всего продукта.
 
 Документы: [Б1](stages-b/01-database.md), [Б2](stages-b/02-backend.md),
 [SMS](stages-b/02-guest-sms-identity.md), [Б3](stages-b/03-payments-and-finance.md).
-Последние проверки: Core392/72 + SQL-проверки, root245/40; typecheck/build,
-network144, mail15. Локально56 миграций, auth13/32HTTP и restore87 таблиц
-прошли на коде e98ae98. Реальные SMS/платежи и публичный выпуск не выполнялись.
+Последний подблок: [сверка возвратов](stages-b/03-refund-reconciliation.md).
+Проверки: Core404/73 + SQL-проверки, root246/40; typecheck/build, network147,
+mail15, браузер5 групп (синтетические HTTP fixtures). Локально57 миграций,
+auth13/32HTTP и restore88 таблиц/private9, документы25/turnovers17 прошли
+на изменённом дереве относительно60c03eb. Реальные SMS/платежи и публичный
+выпуск не выполнялись.
 
 This is the current implementation/release snapshot. PRODUCT_REQUIREMENTS.md
 is the complete owner-supplied MVP/V2/V3 scope, including previously omitted

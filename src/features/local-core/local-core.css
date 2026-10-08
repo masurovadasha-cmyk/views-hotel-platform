@@ -14,3 +14,4 @@
 .ownerInventory fieldset{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px;min-width:0;border:0;padding:0;margin:16px 0}.ownerInventory label{display:grid;gap:6px;min-width:0}.ownerInventory input,.ownerInventory textarea{box-sizing:border-box;width:100%;min-width:0}.ownerInventory li{overflow-wrap:anywhere;margin:12px 0}.ownerInventory .localHint{grid-column:1/-1}
 
 .housekeepingFilters{display:flex;gap:16px;flex-wrap:wrap;align-items:end}.housekeepingFilters label{display:grid;gap:6px;max-width:100%}.housekeepingTasks{list-style:none;padding:0}.housekeepingTasks li{border-top:1px solid #ccd4dd;padding:16px 0;overflow-wrap:anywhere}.housekeepingTasks button{margin:4px 8px 4px 0}
+.refundReference{overflow-wrap:anywhere;word-break:break-word}

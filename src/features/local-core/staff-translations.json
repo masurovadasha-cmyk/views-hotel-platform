@@ -1498,5 +1498,133 @@
   "Команда уже выполнялась. Актуальное состояние — в календаре.": {
     "en": "This command was already applied. See the calendar for the current state.",
     "uz": "Bu buyruq avval bajarilgan. Joriy holatni taqvimdan ko‘ring."
+  },
+  "Требуют сверки": {
+    "en": "Needs reconciliation",
+    "uz": "Tekshirish kerak"
+  },
+  "Результат неизвестен": {
+    "en": "Outcome unknown",
+    "uz": "Natija nomaʼlum"
+  },
+  "Провайдер не подключён": {
+    "en": "Provider not connected",
+    "uz": "Provayder ulanmagan"
+  },
+  "Ожидает подтверждения": {
+    "en": "Awaiting confirmation",
+    "uz": "Tasdiq kutilmoqda"
+  },
+  "Обрабатывается": {
+    "en": "Processing",
+    "uz": "Qayta ishlanmoqda"
+  },
+  "В очереди": {
+    "en": "Queued",
+    "uz": "Navbatda"
+  },
+  "Возврат подтверждён": {
+    "en": "Refund confirmed",
+    "uz": "Pul qaytarilgani tasdiqlandi"
+  },
+  "Проверка начата": {
+    "en": "Investigation started",
+    "uz": "Tekshiruv boshlandi"
+  },
+  "Обращение к провайдеру": {
+    "en": "Provider contacted",
+    "uz": "Provayderga murojaat qilindi"
+  },
+  "Запрошено подтверждение": {
+    "en": "Evidence requested",
+    "uz": "Tasdiqlovchi maʼlumot soʻraldi"
+  },
+  "Очередь сверки недоступна. Повторите загрузку.": {
+    "en": "Reconciliation queue unavailable. Reload to try again.",
+    "uz": "Tekshirish navbati mavjud emas. Qayta yuklang."
+  },
+  "Заявка недоступна. Обновите очередь и проверьте доступ.": {
+    "en": "Request unavailable. Refresh the queue and check your access.",
+    "uz": "Soʻrov mavjud emas. Navbatni yangilang va ruxsatlarni tekshiring."
+  },
+  "Проверка записана. Статус возврата не изменён.": {
+    "en": "Review recorded. Refund status is unchanged.",
+    "uz": "Tekshiruv qayd etildi. Pulni qaytarish holati oʻzgarmadi."
+  },
+  "Заявка изменилась или недоступна. Откройте её заново перед проверкой.": {
+    "en": "Request changed or is unavailable. Reopen it before recording a review.",
+    "uz": "Soʻrov oʻzgargan yoki mavjud emas. Tekshiruvdan oldin uni qayta oching."
+  },
+  "Ответ не получен. Повторите ту же запись проверки.": {
+    "en": "No response received. Retry the same review record.",
+    "uz": "Javob olinmadi. Xuddi shu tekshiruv yozuvini qayta yuboring."
+  },
+  "Сверка возвратов": {
+    "en": "Refund reconciliation",
+    "uz": "Qaytarilgan pullarni tekshirish"
+  },
+  "Тестовый стенд. Подтверждение возврата поступает от провайдера. Запись проверки не отправляет деньги.": {
+    "en": "Test environment. Refund confirmation comes from the provider. Recording a review does not send money.",
+    "uz": "Sinov muhiti. Pulni qaytarish tasdigʻi provayderdan keladi. Tekshiruvni qayd etish pul yubormaydi."
+  },
+  "Повторить ту же запись": {
+    "en": "Retry the same record",
+    "uz": "Shu yozuvni qayta yuborish"
+  },
+  "Статус возврата": {
+    "en": "Refund status",
+    "uz": "Pulni qaytarish holati"
+  },
+  "Обновить очередь сверки": {
+    "en": "Refresh reconciliation queue",
+    "uz": "Tekshirish navbatini yangilash"
+  },
+  "Возвратов по выбранному фильтру нет.": {
+    "en": "No refunds match this filter.",
+    "uz": "Bu filtr boʻyicha qaytarishlar yoʻq."
+  },
+  "Открыть сверку": {
+    "en": "Open reconciliation",
+    "uz": "Tekshiruvni ochish"
+  },
+  "Следующие 50 заявок": {
+    "en": "Next 50 requests",
+    "uz": "Keyingi 50 ta soʻrov"
+  },
+  "Проверка возврата": {
+    "en": "Refund review",
+    "uz": "Pulni qaytarishni tekshirish"
+  },
+  "Транзакция списания": {
+    "en": "Capture transaction",
+    "uz": "Pul yechish tranzaksiyasi"
+  },
+  "Транзакция возврата": {
+    "en": "Refund transaction",
+    "uz": "Pulni qaytarish tranzaksiyasi"
+  },
+  "Действие проверки": {
+    "en": "Review action",
+    "uz": "Tekshiruv amali"
+  },
+  "Номер обращения": {
+    "en": "Case reference",
+    "uz": "Murojaat raqami"
+  },
+  "Укажите служебный номер обращения латиницей, без документов и персональных данных.": {
+    "en": "Enter an internal case reference using Latin characters, without documents or personal data.",
+    "uz": "Hujjatlar va shaxsiy maʼlumotlarsiz, lotin yozuvida xizmat murojaati raqamini kiriting."
+  },
+  "Записать проверку": {
+    "en": "Record review",
+    "uz": "Tekshiruvni qayd etish"
+  },
+  "История проверок": {
+    "en": "Review history",
+    "uz": "Tekshiruvlar tarixi"
+  },
+  "Последние 100 записей. История не удаляется и не меняет статус возврата.": {
+    "en": "Latest 100 records. History cannot be deleted and does not change refund status.",
+    "uz": "Oxirgi 100 ta yozuv. Tarix oʻchirilmaydi va pulni qaytarish holatini oʻzgartirmaydi."
   }
 }

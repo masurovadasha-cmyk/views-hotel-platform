@@ -83,7 +83,8 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    const ratesRoute=/^\/local-api\/owner-inventory\/[a-f0-9-]{36}\/rates(?:\/[a-f0-9-]{36})?$/i.test(u.pathname);
    const rateDetail=ratesRoute&&!u.pathname.endsWith('/rates');
    const catalogSearch=u.pathname==='/local-api/inventory-search'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['from','to','guests','city','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
-   const validSearch=catalogSearch||((calendarRoute||rateDetail)?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1);
+   const refundSearch=u.pathname==='/local-api/refund-reconciliation'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['status','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
+   const validSearch=refundSearch||catalogSearch||((calendarRoute||rateDetail)?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1);
    if(u.pathname+u.search!==req.url||u.hash||(u.search&&!validSearch))fail(400,'INVALID_ROUTE');
    const route=u.pathname,token=tokenFrom(req);
    if(req.method==='GET'&&route==='/local-api/session'){
@@ -129,6 +130,17 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     json(res,200,await core('/v1/inventory-search'+u.search,'GET',undefined,undefined,token,identity));return true;
    }
    if(!identity.propertyIds.includes(config.fixture.propertyId))fail(403,'PROPERTY_FORBIDDEN');
+   if(route==='/local-api/refund-reconciliation'||/^\/local-api\/refund-reconciliation\/[a-f0-9-]{36}(?:\/reviews)?$/i.test(route)){
+    const review=route.endsWith('/reviews');
+    if(req.method!==(review?'POST':'GET'))fail(405,'METHOD_DENIED');
+    if(!identity.permissions.includes(review?'finance.manage':'finance.read'))fail(403,'STAFF_PERMISSION_DENIED');
+    let query='';
+    if(route==='/local-api/refund-reconciliation'){const params=new URLSearchParams(u.search);params.set('propertyId',config.fixture.propertyId);query='?'+params.toString();}
+    if(!review){json(res,200,await core(route.replace('/local-api/','/v1/')+query,'GET',undefined,undefined,token,identity));return true;}
+    const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
+    const body=await readJson(req);exactKeys(body,['expectedRevision','action','caseReference']);
+    json(res,200,await core(route.replace('/local-api/','/v1/'),'POST',body,key,token,identity));return true;
+   }
    if(route==='/local-api/housekeeping'){
     if(process.env.VIEWS_HOUSEKEEPING_PILOT_ENABLED!=='true')fail(404,'HOUSEKEEPING_DISABLED');
     if(identity.role!=='housekeeper'||!identity.permissions.includes('housekeeping.work'))fail(403,'HOUSEKEEPING_FORBIDDEN');
