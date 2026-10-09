@@ -205,6 +205,13 @@ jobs:
           test "$SCOPED" = "t"
       - name: Verify V-Market stock invariants and denied writes
         run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/market_stock_invariants.sql
+      - name: Run market concurrency test with isolated CI admin role
+        working-directory: apps/api
+        env:
+          MARKET_TEST_ADMIN_DATABASE_URL: postgresql://views:views_test@localhost:5432/views
+        run: |
+          npm install
+          npx vitest run src/inventory/market-stock-concurrency.integration.test.ts
       - name: Use restricted runtime database role
         run: echo "DATABASE_URL=postgresql://views_app:views_app_test@localhost:5432/views" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
