@@ -30,6 +30,7 @@ jobs:
       - run: node --check src/pms-sync.mjs
       - run: node --check src/payment-intents.mjs
       - run: node --check src/payment-events.mjs
+      - run: node --check src/payment-provider-contract.mjs
   postgres-migrations:
     runs-on: ubuntu-latest
     services:
