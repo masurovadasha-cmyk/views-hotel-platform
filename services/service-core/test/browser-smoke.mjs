@@ -107,6 +107,20 @@ try{
    assert.deepEqual(errors,[]);
   }finally{await context.close()}
  });
+ await run("guest: recover existing order after fresh page load",async()=>{
+  const {context,page,errors}=await pageFor("/guest",{
+   "GET /api/v1/me/orders":{json:[{id:orderId,fulfillment_status:"confirmed",total_uzs:45000}]},
+   ["GET /api/v1/service-orders/"+orderId]:{json:{id:orderId,fulfillment_status:"confirmed",payment_status:"unpaid",total_uzs:45000}}
+  });
+  try{
+   await page.getByRole("button",{name:"Показать историю заказов"}).click();
+   await page.locator("#order-history button").first().click();
+   await page.getByText("Сумма заказа: 45").waitFor();
+   assert.equal(await page.locator("#checkout").isDisabled(),true);
+   assert.equal(await page.locator("#token").isDisabled(),true);
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ });
  await run("CRM: authorized orders, SLA and details",async()=>{
   const {context,page,errors}=await pageFor("/crm",{
    "GET /api/v1/service-orders":{json:[{id:orderId,fulfillment_status:"confirmed"}]},
