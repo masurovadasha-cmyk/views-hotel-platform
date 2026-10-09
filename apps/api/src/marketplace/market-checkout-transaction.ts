@@ -14,6 +14,12 @@ export async function createMarketOrderInTransaction(client:Pick<PoolClient,"que
  if(new Set(lines.map(x=>x.sku)).size!==lines.length)throw Error("DUPLICATE_SKU");
  for(const line of lines)if(!line.sku||line.sku.length>80||!Number.isSafeInteger(line.quantity)||line.quantity<1||line.quantity>10000)throw Error("INVALID_MARKET_QUANTITY");
  const hash=createHash("sha256").update(JSON.stringify({propertyId:input.propertyId,unitId:input.unitId,deliverySlot:input.deliverySlot,comment:input.comment,lines})).digest("hex");
+ // Authorize before looking up an idempotency key. Replays must not disclose
+ // order existence or status to a caller without property access.
+ const scoped=await client.query<{allowed:boolean}>(
+  "SELECT app.can_access_property($1::uuid) AS allowed",[input.propertyId]
+ );
+ if(!scoped.rows[0]?.allowed)throw Error("MARKET_PROPERTY_FORBIDDEN");
  // Serialize identical keys, including when the order has not been inserted yet.
  await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))",[input.organizationId+":"+input.idempotencyKey]);
  const existing=await client.query<{id:string;request_hash:string;status:string}>(
@@ -24,10 +30,6 @@ export async function createMarketOrderInTransaction(client:Pick<PoolClient,"que
   if(existing.rows[0].request_hash!==hash)throw Error("MARKET_IDEMPOTENCY_CONFLICT");
   return {orderId:existing.rows[0].id,status:existing.rows[0].status,idempotentReplay:true};
  }
- const scoped=await client.query<{allowed:boolean}>(
-  "SELECT app.can_access_property($1::uuid) AS allowed",[input.propertyId]
- );
- if(!scoped.rows[0]?.allowed)throw Error("MARKET_PROPERTY_FORBIDDEN");
  // This is an internal staff checkout primitive only. Guest identity and payment
  // authorization require a separate reviewed endpoint.
  const id=randomUUID();
