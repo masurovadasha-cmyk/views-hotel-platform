@@ -71,6 +71,17 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   await inTenantTransaction(pool,org,async db=>db.query("UPDATE market_catalog SET price_uzs=$1 WHERE organization_id=$2 AND sku=$3",[19000,org,"WATER-15"]));
   const originalSnapshot=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT unit_price_uzs FROM service_order_items WHERE order_id=$1",[order.id])).rows[0]);
   assert.equal(Number(originalSnapshot.unit_price_uzs),15000);
+  const unrelatedDispatcher=sign(org,"dispatcher-without-property",["dispatcher"]);
+  const unrelatedList=await fetch(base+"/api/v1/service-orders",{headers:{Authorization:"Bearer "+unrelatedDispatcher}});
+  assert.equal(unrelatedList.status,200);
+  assert.equal((await unrelatedList.json()).length,0);
+  const unrelatedRead=await fetch(base+"/api/v1/service-orders/"+order.id,{headers:{Authorization:"Bearer "+unrelatedDispatcher}});
+  assert.equal(unrelatedRead.status,404);
+  const unrelatedUpdate=await fetch(base+"/api/v1/service-orders/"+order.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+unrelatedDispatcher},body:JSON.stringify({fulfillmentStatus:"cancelled"})});
+  assert.equal(unrelatedUpdate.status,403);
+  const adminToken=sign(org,"test-admin",["admin"]);
+  const adminList=await fetch(base+"/api/v1/service-orders",{headers:{Authorization:"Bearer "+adminToken}});
+  assert.ok((await adminList.json()).some(x=>x.id===order.id));
   const guestRead=await fetch(base+"/api/v1/service-orders/"+order.id,{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(guestRead.status,404);
   const staffRead=await fetch(base+"/api/v1/service-orders/"+order.id,{headers:{Authorization:"Bearer "+staffToken}});
