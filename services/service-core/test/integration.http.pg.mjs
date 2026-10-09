@@ -102,6 +102,8 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   assert.equal(notMine.status,403);
   const started=await fetch(base+"/api/v1/staff/tasks/"+assignedTask.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+pickerToken},body:JSON.stringify({status:"in_progress"})});
   assert.equal(started.status,200);
+  const regress=await fetch(base+"/api/v1/dispatch/assign",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({orderId:order.id,assigneeId:"picker-1",kind:"market_pick"})});
+  assert.equal(regress.status,409);
   const completed=await fetch(base+"/api/v1/staff/tasks/"+assignedTask.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+pickerToken},body:JSON.stringify({status:"completed"})});
   assert.equal(completed.status,200);
   const repeated=await fetch(base+"/api/v1/staff/tasks/"+assignedTask.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+pickerToken},body:JSON.stringify({status:"completed"})});
