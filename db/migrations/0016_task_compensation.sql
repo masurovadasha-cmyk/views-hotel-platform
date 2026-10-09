@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS service_task_compensation (
  organization_id uuid NOT NULL,
  task_id uuid NOT NULL REFERENCES service_dispatch_tasks(id),
  employee_principal_id text NOT NULL,
+ accrued_by text NOT NULL,
  amount_uzs bigint NOT NULL CHECK(amount_uzs >= 0),
  currency char(3) NOT NULL DEFAULT 'UZS' CHECK(currency='UZS'),
  status text NOT NULL DEFAULT 'accrued' CHECK(status IN ('accrued','approved','voided')),
