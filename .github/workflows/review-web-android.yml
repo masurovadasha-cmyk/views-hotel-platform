@@ -1,0 +1,107 @@
+name: VIEWS Web and Android Review
+on:
+  push:
+    branches: ['review/web-apk-20261006']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: views-review-web-android
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    outputs:
+      release_url: ${{ steps.release.outputs.release_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install existing frontend dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check frontend and build the single web asset bundle
+        run: |
+          npm run typecheck
+          npm test
+          npm run build:pages
+      - name: Prepare Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -1)
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0' >/dev/null
+      - name: Build and verify installable review APK
+        run: python3 scripts/build-android-review.py
+      - name: Install browser test tools
+        run: |
+          npm install --no-save --package-lock=false @playwright/test@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Check guest, staff and mobile web interfaces
+        run: node scripts/review-ui-smoke.mjs
+      - name: Prepare staging downloads and review evidence
+        shell: bash
+        run: |
+          mkdir -p dist/downloads dist/review
+          cp review-output/VIEWS-Review.apk dist/downloads/
+          cp review-output/build-evidence.json review-output/ui-smoke.json review-output/SHA256SUMS.txt review-output/*.png dist/review/
+          touch dist/.nojekyll
+          cat >dist/review/index.html <<'HTML'
+          <!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>VIEWS — проверочная сборка</title><style>body{max-width:760px;margin:50px auto;padding:24px;font:18px/1.6 system-ui;background:#f6f5f2;color:#1a1d24}a{display:block;margin:18px 0;color:#765b30}small{color:#666}img{max-width:100%;border-radius:12px}</style><h1>VIEWS · Web + Android</h1><p>Проверочная демо-сборка интерфейса. Без реальных платежей и подключения постоянного Core.</p><a href="../">Открыть приложение VIEWS</a><a href="../downloads/VIEWS-Review.apk">Скачать APK для Android 8.0+</a><a href="build-evidence.json">Версия и проверка APK</a><a href="ui-smoke.json">Результаты проверки интерфейса</a><a href="SHA256SUMS.txt">Контрольная сумма APK</a><p>В приложении: Guest App / Staff CRM, демонстрационные роли, светлая и тёмная темы. Не вводите реальные паспортные данные и банковские карты.</p><small>APK подписан тестовым ключом. Установка на физическом телефоне пока не проверена.</small><h2>Гостевой интерфейс</h2><img src="guest-mobile.png" alt="VIEWS mobile screenshot"></html>
+          HTML
+          (cd dist && zip -qr ../review-output/VIEWS-Web-Review.zip .)
+      - name: Publish marked review prerelease
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="views-review-20261006-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title 'VIEWS Web + Android — review 2026-10-06' --notes 'Review-only VIEWS frontend. Guest and staff demo interfaces. No production authentication, payments or Core backend. APK minimum Android 8.0; signed with an ephemeral test key. See build-evidence.json and ui-smoke.json for checks. No physical-device run claimed.' review-output/VIEWS-Review.apk review-output/VIEWS-Web-Review.zip review-output/build-evidence.json review-output/ui-smoke.json review-output/SHA256SUMS.txt review-output/apk-verification.txt review-output/apk-manifest.txt review-output/*.png
+          echo "release_url=$(gh release view "$TAG" --json url --jq .url)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: views-review-evidence
+          path: review-output/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: views-staging
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish user-requested staging review
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify published web and APK
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS "${PAGE_URL}review/build-evidence.json?run=${GITHUB_RUN_ID}" -o /tmp/live-evidence.json && curl -fsS "${PAGE_URL}downloads/VIEWS-Review.apk?run=${GITHUB_RUN_ID}" -o /tmp/live.apk; then break; fi
+            sleep 5
+          done
+          python3 - <<'PY'
+          import hashlib,json,os
+          e=json.load(open('/tmp/live-evidence.json'))
+          assert e['sourceCommit']==os.environ['GITHUB_SHA']
+          assert hashlib.sha256(open('/tmp/live.apk','rb').read()).hexdigest()==e['apkSha256']
+          print(json.dumps({'published':True,'url':os.environ['PAGE_URL'],'apkSha256Verified':True}))
+          PY
+          echo "Web: ${PAGE_URL}" >> "$GITHUB_STEP_SUMMARY"
+          echo "APK: ${PAGE_URL}downloads/VIEWS-Review.apk" >> "$GITHUB_STEP_SUMMARY"

@@ -27,3 +27,30 @@
 
 .handoverGrid,.exceptionsGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.exceptionsGrid>.kpis{grid-column:1/-1}.riskList{display:grid}.riskList article{display:grid;gap:3px;padding:12px 14px;border-bottom:1px solid var(--line)}.riskList article:last-child{border:0}.riskList b{font-size:10px}.riskList span{font-size:8px;color:var(--muted)}.riskList .dangerRow{box-shadow:inset 3px 0 #b74b4b}.stayCard{display:grid;gap:12px}.stayCard>header{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px}.stayCard h2{font-family:Georgia,serif;font-size:24px;font-weight:500;margin:2px 0}.stayCard p,.stayCard small{font-size:8px;color:var(--muted)}.stayGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.apartmentTimeline{padding:15px;display:grid}.apartmentTimeline article{display:grid;grid-template-columns:55px 14px 1fr;gap:8px;min-height:52px}.apartmentTimeline time{font-size:8px;color:var(--muted);padding-top:2px}.apartmentTimeline article>span{position:relative;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:2px}.apartmentTimeline article>span:after{content:"";position:absolute;top:9px;left:3px;width:1px;height:42px;background:var(--line)}.apartmentTimeline article:last-child>span:after{display:none}.apartmentTimeline article>div{display:grid;align-content:start;gap:2px}.apartmentTimeline b{font-size:9px}.apartmentTimeline small{font-size:8px;color:var(--muted)}
 @media(max-width:760px){.handoverGrid,.exceptionsGrid,.stayGrid{grid-template-columns:1fr}.exceptionsGrid>.kpis{grid-column:auto}.stayCard>header{grid-template-columns:auto 1fr}.stayCard>header>.status{grid-column:2;justify-self:start}}
+
+/* Apartment photo galleries */
+.photoCount{position:absolute;left:10px;bottom:10px;z-index:2;background:#111c;color:#fff;border:1px solid #ffffff55;border-radius:999px;padding:5px 9px;font-size:8px;backdrop-filter:blur(8px)}
+.apartmentGallery{position:relative;border-radius:16px;overflow:hidden;background:#111;min-height:340px}
+.galleryMainButton{display:block;width:100%;border:0;background:#111;padding:0;cursor:zoom-in}
+.apartmentGallery .modalPhoto{display:block;width:100%;height:390px;object-fit:cover;border-radius:0}
+.galleryArrow{position:absolute;z-index:3;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:1px solid #ffffff88;background:#111b;color:white;display:grid;place-items:center}
+.galleryArrow.prev{left:14px}.galleryArrow.next{right:14px}
+.galleryCounter{position:absolute;z-index:3;right:14px;bottom:14px;background:#111c;color:#fff;border:1px solid #ffffff55;border-radius:999px;padding:6px 10px;font-size:9px}
+.galleryThumbs{display:grid;grid-auto-flow:column;grid-auto-columns:92px;gap:7px;overflow-x:auto;padding:8px 0 4px;scrollbar-width:thin}
+.galleryThumbs button{border:2px solid transparent;background:transparent;border-radius:10px;padding:0;overflow:hidden;height:64px;opacity:.72}
+.galleryThumbs button.active{border-color:var(--gold);opacity:1}
+.galleryThumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.gallerySource{font-size:8px;color:var(--muted);margin:2px 0 10px}
+.galleryFullscreen{position:fixed;z-index:180;inset:0;background:#060708f2;display:grid;place-items:center;padding:28px}
+.galleryFullscreen>img{max-width:min(1400px,92vw);max-height:86vh;object-fit:contain;border-radius:14px;box-shadow:0 30px 100px #000}
+.galleryFullscreen>span{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:white;background:#111a;border:1px solid #ffffff55;border-radius:999px;padding:6px 11px;font-size:10px}
+.galleryClose{position:absolute;z-index:2;right:24px;top:20px;border:1px solid #ffffff66;background:#111a;color:white;border-radius:999px;padding:9px 13px}
+.galleryFsArrow{position:absolute;z-index:2;top:50%;transform:translateY(-50%);width:48px;height:48px;border:1px solid #ffffff66;background:#111a;color:#fff;border-radius:50%;display:grid;place-items:center}
+.galleryFsArrow.prev{left:22px}.galleryFsArrow.next{right:22px}
+@media(max-width:760px){
+  .apartmentGallery{min-height:230px}.apartmentGallery .modalPhoto{height:250px}
+  .galleryThumbs{grid-auto-columns:76px}.galleryThumbs button{height:54px}
+  .galleryFullscreen{padding:10px}.galleryFullscreen>img{max-width:96vw;max-height:80vh}
+  .galleryFsArrow{width:40px;height:40px}.galleryFsArrow.prev{left:8px}.galleryFsArrow.next{right:8px}
+  .galleryClose{right:12px;top:12px}
+}

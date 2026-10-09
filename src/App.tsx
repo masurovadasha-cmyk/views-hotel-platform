@@ -2,6 +2,7 @@ import {useEffect,useState} from "react";
 import type {HospitalityRole} from "./domain/types";
 import {GuestApp} from "./features/guest/GuestApp";
 import {StaffApp} from "./features/staff/StaffApp";
+import {MarketDemo} from "./features/market/MarketDemo";
 import {AuthPanel} from "./features/auth/AuthPanel";
 import {api} from "./api/client";
 import {detectRuntimeMode,runtimeLabel} from "./api/runtime";
@@ -10,9 +11,11 @@ type Session =
  | {mode:"guest";userId:string;guestId:string;organizationId:string}
  | {mode:"staff";userId:string;role:HospitalityRole;organizationId:string;propertyIds:string[]};
 
+type DemoSurface="guest"|"market"|"staff";
+
 export function App(){
   const runtime=detectRuntimeMode();
-  const [demoMode,setDemoMode]=useState<"guest"|"staff">("guest");
+  const [demoMode,setDemoMode]=useState<DemoSurface>("guest");
   const [demoRole,setDemoRole]=useState<HospitalityRole>("general_manager");
   const [dark,setDark]=useState(false);
   const [session,setSession]=useState<Session|null>(null);
@@ -36,6 +39,7 @@ export function App(){
     if(live&&!session)return <main className="authShell"><AuthPanel onDone={refreshSession}/></main>;
     if(live&&session?.mode==="guest")return <GuestApp live/>;
     if(live&&session?.mode==="staff")return <StaffApp role={session.role} onRoleChange={()=>{}} allowRoleSwitch={false} live/>;
+    if(demoMode==="market")return <MarketDemo/>;
     return demoMode==="guest"?<GuestApp/>:<StaffApp role={demoRole} onRoleChange={setDemoRole} allowRoleSwitch/>;
   };
 
@@ -46,7 +50,11 @@ export function App(){
       <div className="topActions">
         <span className="runtimeBadge">{runtimeLabel(runtime)}</span>
         <button onClick={()=>setDark(v=>!v)}>{dark?"Light":"Dark"}</button>
-        {!live&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==="guest"?"Staff CRM":"Guest App"}</button>}
+        {!live&&<>
+          <button className={demoMode==="guest"?"active":""} onClick={()=>setDemoMode("guest")}>Guest App</button>
+          <button className={demoMode==="market"?"active":""} onClick={()=>setDemoMode("market")}>V-Market</button>
+          <button className={demoMode==="staff"?"active":""} onClick={()=>setDemoMode("staff")}>Staff CRM</button>
+        </>}
         {live&&session&&<button onClick={async()=>{await api.logout();setSession(null)}}>Sign out</button>}
       </div>
     </header>
