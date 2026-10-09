@@ -106,6 +106,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   android-debug:
+    needs: [node-tests, postgres-migrations]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
