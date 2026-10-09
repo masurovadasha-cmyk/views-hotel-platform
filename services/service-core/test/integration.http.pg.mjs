@@ -87,6 +87,19 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   assert.equal(assigned.status,201);
   const assignedTask=await assigned.json();
   assert.equal(assignedTask.assigneeId,"picker-1");
+  const pickerToken=sign(org,"picker-1",["staff"]);
+  const myTasks=await fetch(base+"/api/v1/staff/tasks",{headers:{Authorization:"Bearer "+pickerToken}});
+  assert.equal(myTasks.status,200);
+  assert.ok((await myTasks.json()).some(t=>t.id===assignedTask.id));
+  const notMine=await fetch(base+"/api/v1/staff/tasks/"+assignedTask.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+sign(org,"another-worker",["staff"])},body:JSON.stringify({status:"in_progress"})});
+  assert.equal(notMine.status,403);
+  const started=await fetch(base+"/api/v1/staff/tasks/"+assignedTask.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+pickerToken},body:JSON.stringify({status:"in_progress"})});
+  assert.equal(started.status,200);
+  const completed=await fetch(base+"/api/v1/staff/tasks/"+assignedTask.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+pickerToken},body:JSON.stringify({status:"completed"})});
+  assert.equal(completed.status,200);
+  const repeated=await fetch(base+"/api/v1/staff/tasks/"+assignedTask.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+pickerToken},body:JSON.stringify({status:"completed"})});
+  assert.equal(repeated.status,409);
+
   const staffTasks=await fetch(base+"/api/v1/dispatch/tasks",{headers:{Authorization:"Bearer "+staffToken}});
   assert.ok((await staffTasks.json()).some(t=>t.id===assignedTask.id));
   const unauthorizedTasks=await fetch(base+"/api/v1/dispatch/tasks",{headers:{Authorization:"Bearer "+unrelatedDispatcher}});
@@ -111,7 +124,7 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   assert.equal(cancelled.status,200);
   assert.equal((await cancelled.json()).fulfillmentStatus,"cancelled");
   const cancelledTask=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT status FROM service_dispatch_tasks WHERE id=$1",[assignedTask.id])).rows[0]);
-  assert.equal(cancelledTask.status,"cancelled");
+  assert.equal(cancelledTask.status,"completed");
   const cancelGuest=await fetch(base+"/api/v1/service-orders/"+guestOrder.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({fulfillmentStatus:"cancelled"})});
   assert.equal(cancelGuest.status,200);
   const inventory=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT on_hand,reserved FROM inventory_lots WHERE organization_id=$1 AND sku='WATER-15'",[org])).rows[0]);
