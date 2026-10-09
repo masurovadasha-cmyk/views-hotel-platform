@@ -83,6 +83,27 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   await inTenantTransaction(pool,org,async db=>db.query(
    "INSERT INTO service_outbox(organization_id,aggregate_id,event_type,payload) VALUES($1,$2,'service.task.assigned',$3::jsonb)",
    [org,guestOrder.id,JSON.stringify({orderId:guestOrder.id,kind:"market_deliver",assigneeId:"private-employee-identifier"})]));
+  const notifications=await fetch(base+"/api/v1/me/notifications",{headers:{Authorization:"Bearer "+guestToken}});
+  assert.equal(notifications.status,200);
+  const inbox=await notifications.json();
+  assert.ok(inbox.some(n=>n.order_id===guestOrder.id&&n.message==="Назначена доставка"));
+  assert.ok(!JSON.stringify(inbox).includes("private-employee-identifier"));
+  const again=await fetch(base+"/api/v1/me/notifications",{headers:{Authorization:"Bearer "+guestToken}});
+  assert.equal(again.status,200);
+  assert.equal((await again.json()).length,inbox.length);
+  const notification=inbox.find(n=>n.message==="Назначена доставка");
+  const deniedRead=await fetch(base+"/api/v1/me/notifications/"+notification.id+"/read",{method:"POST",headers:{Authorization:"Bearer "+sign(org,"other-guest",["guest"])}});
+  assert.equal(deniedRead.status,404);
+  const crossTenantRead=await fetch(base+"/api/v1/me/notifications/"+notification.id+"/read",{method:"POST",headers:{Authorization:"Bearer "+sign(randomUUID(),"guest-1",["guest"])}});
+  assert.equal(crossTenantRead.status,404);
+  const marked=await fetch(base+"/api/v1/me/notifications/"+notification.id+"/read",{method:"POST",headers:{Authorization:"Bearer "+guestToken}});
+  assert.equal(marked.status,200);
+  const firstRead=await marked.json();
+  assert.ok(firstRead.read_at);
+  const markedAgain=await fetch(base+"/api/v1/me/notifications/"+notification.id+"/read",{method:"POST",headers:{Authorization:"Bearer "+guestToken}});
+  assert.equal((await markedAgain.json()).read_at,firstRead.read_at);
+  const staffNotifications=await fetch(base+"/api/v1/me/notifications",{headers:{Authorization:"Bearer "+staffToken}});
+  assert.equal(staffNotifications.status,403);
   const guestTimeline=await fetch(base+"/api/v1/me/orders/"+guestOrder.id+"/timeline",{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(guestTimeline.status,200);
   const timelineEvents=await guestTimeline.json();
