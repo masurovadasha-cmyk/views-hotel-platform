@@ -1,0 +1,35 @@
+import {afterAll,beforeAll,describe,it,expect} from "vitest";
+import {DatabaseService} from "../database/database.service";
+import {reserveMarketStock} from "./market-stock-transaction";
+
+const ORG="00000000-0000-0000-0000-000000000001";
+const PROPERTY="00000000-0000-0000-0000-000000000002";
+const actor={organizationId:ORG,userId:"20000000-0000-4000-8000-000000000001",membershipId:"30000000-0000-4000-8000-000000000001",requestId:"market-stock-concurrency"};
+const db=new DatabaseService();
+const SKU="CI-CONCURRENT-MARKET";
+
+beforeAll(async()=>{
+ await db.withActor(actor,async client=>{
+  await client.query(`INSERT INTO market_stock_balances(organization_id,property_id,sku,on_hand,reserved)
+    VALUES($1,$2,$3,1,0) ON CONFLICT(organization_id,property_id,sku)
+    DO UPDATE SET on_hand=1,reserved=0`,[ORG,PROPERTY,SKU]);
+  await client.query(`INSERT INTO market_service_orders(id,organization_id,property_id,actor_user_id,idempotency_key,request_hash,subtotal_minor,delivery_slot)
+    VALUES('70000000-0000-4000-8000-000000000001',$1,$2,$3,'stock-test-1',repeat('a',64),0,'now'),
+          ('70000000-0000-4000-8000-000000000002',$1,$2,$3,'stock-test-2',repeat('b',64),0,'now')
+    ON CONFLICT(organization_id,idempotency_key) DO NOTHING`,[ORG,PROPERTY,actor.userId]);
+ });
+});
+afterAll(async()=>{await db.onModuleDestroy()});
+describe.sequential("market stock PostgreSQL concurrency",()=>{
+ it("only one of two simultaneous reservations obtains the last unit",async()=>{
+  const results=await Promise.allSettled([1,2].map(i=>db.withActor(actor,client=>reserveMarketStock(client,{
+   organizationId:ORG,propertyId:PROPERTY,orderId:`70000000-0000-4000-8000-00000000000${i}`,lines:[{sku:SKU,quantity:1}]
+  }))));
+  expect(results.filter(r=>r.status==="fulfilled")).toHaveLength(1);
+  expect(results.filter(r=>r.status==="rejected")).toHaveLength(1);
+  const result=await db.withActor(actor,client=>client.query<{on_hand:number;reserved:number}>(
+   "SELECT on_hand,reserved FROM market_stock_balances WHERE organization_id=$1 AND property_id=$2 AND sku=$3",[ORG,PROPERTY,SKU]
+  ));
+  expect(result.rows[0]).toMatchObject({on_hand:1,reserved:1});
+ });
+});
