@@ -29,3 +29,7 @@ jobs:
           bash -n scripts/stage7-core-egress-proof.sh
           bash -n scripts/stage7-egress-relay-proof.sh
       - run: npm run build
+      - name: Install browser for Canva interface regression
+        run: npx playwright install --with-deps chromium
+      - name: Verify Canva navigation, themes, focus and sample contrast
+        run: node scripts/canva-design.browser.cjs

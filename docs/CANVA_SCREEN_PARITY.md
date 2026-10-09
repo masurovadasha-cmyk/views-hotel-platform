@@ -1,89 +1,104 @@
-# Canva Master Reference parity
+# Canva: соответствие доступных страниц и приложения
 
-Source designs:
-- VIEWS Guest App — DAHW8ckAcO4
-- VIEWS Staff CRM — DAHW8X4U68A
-- VIEWS Staff Mobile — DAHW8tAky5o
-- VIEWS Guest Mobile — DAHW8oD5Fx4
-- VIEWS Design System — DAHW8X09Gpg
-- VIEWS Operations Flow — DAHW8pPKedM
+Дата анализа: 2026-10-09. Базис исходников — `64a9731`, версия `0.9.0-preview`.
+Это **матрица обнаруженных компонентов и пробелов**, а не сертификат полного
+соответствия макетам или готовности production. Новая визуальная адаптация
+разрабатывается поверх этого базиса; её проверки фиксируются отдельно в
+[CANVA_2026_10_09_INTEGRATION.md](CANVA_2026_10_09_INTEGRATION.md).
 
-## Guest journey
-1. Welcome / login
-2. SMS verification
-3. Search & filters
-4. Map/list discovery
-5. Apartment details
-6. Booking calendar + extras
-7. Guest data
-8. Payment provider selector
-9. 3-D Secure / processing
-10. Payment declined
-11. Booking confirmation
-12. Booking details
-13. Cancellation / refund calculation
-14. Services hub
-15. Service request form
-16. Concierge chat
-17. Notifications
-18. Reviews & favorites
-19. Help & support
-20. Profile
+Просмотрены извлечённый текст и изображения всех **32 доступных страниц**:
+Guest App — 9, Staff CRM — 17, Design System — 6. Нумерация ниже соответствует
+страницам этих трёх документов, включая обложку и заключительную страницу CRM.
+Большой Design Pack (60 страниц) и Vertex (50 страниц) не получены из-за лимита
+скачивания 32 MiB; их содержимое этой матрицей не подтверждается.
 
-## Host web
-- Listing wizard
-- Calendar & pricing
-- Bookings
-- External calendar sync health
-- Host finance read model
+Обозначения:
 
-## Staff CRM web
-- Dashboard / today
-- Schedule / calendar
-- Guest card / Guest360
-- Immigration registration queue/readiness
-- Finance & invoices
-- Service Orders / SLA / assignments
-- Housekeeping and maintenance
+- **Демо** — существующий публичный экран с примерами или локальным состоянием;
+  наличие кнопки не означает серверную операцию.
+- **Core, частично** — есть отдельный ограниченный локальный сценарий PostgreSQL;
+  он не доказывает работу всех возможностей страницы макета.
+- **Legacy** — существует компонент `Live*` с вызовами исторического `/api`.
+  Это не доказательство подключения текущего PostgreSQL Core или публичной готовности.
+- **Не реализовано / не подтверждено** — требование отсутствует в указанном
+  сценарии либо его полная работа не установлена этим анализом.
+- **Презентация** — страница описывает продукт или принципы, а не отдельный
+  рабочий экран, который следует буквально встраивать в приложение.
 
-## Staff mobile
-- My Tasks
-- Task detail
-- Before/after proof placeholder
-- Create task
-- Notifications
+## Guest App — 9 страниц
 
-## Admin web
-- Object moderation
-- Disputes / refunds read model
-- Staff roles / RBAC
-- Integration Hub
+| № | Страница источника | Обнаруженное соответствие | Состояние и границы |
+| --- | --- | --- | --- |
+| G1 | Guest Explore | `GuestApp.tsx`: explore, hero, поиск, карточки; `AccessPortal.tsx`: начальный вход | **Демо.** В исходном каталоге иллюстративные объекты; мгновенная реальная доступность и цена из макета публично не подключены. Это содержательная вводная страница, не отдельная пустая обложка. |
+| G2 | Search Results | `GuestApp.tsx`: `filtered`, карточки, избранное, list/map | **Демо.** На базисе работают вместимость и избранное, даты используются в форме расчёта. Полный поиск по доступности, району и реальной общей цене, сравнение и географическая карта с ценовыми пинами не подтверждены. Canvas карты явно обозначен как неподключённый. |
+| G3 | Apartment Details | `GuestDialog.tsx` и apartment flow в `GuestApp.tsx`: изображение, свойства, amenities, переход к датам | **Демо.** Есть карточка и доступное диалоговое окно; нет подтверждения реальных тарифов, занятости или сохранения брони. Слова «Reserve now» в источнике не являются разрешением имитировать успешную бронь. |
+| G4 | Booking Flow | booking/guest-data/payment/state flows, `bookingQuote`; отдельно `LocalCoreWorkspace.tsx` для расчёта и временного резерва сотрудником | **Демо; Core, частично и в другом интерфейсе.** Предпросмотр шагов не выполняет платёж. Провайдер, документы и реальная цена явно отключены. Сквозная гостевая покупка из этого экрана не подтверждена; AED и туристический сбор из слайда не перенесены в тарифные правила. |
+| G5 | My Bookings | bookings tab; `GuestTrips.tsx`, `GuestReservationLink.tsx`, `GuestCancellation.tsx` | **Демо; Core, частично.** Публичный экран не подставляет настоящие брони. Отдельный локальный email-пилот читает собственные поездки, принимает адресное приглашение и предоставляет ограниченный сценарий отмены. Это не публично подключённый личный кабинет. |
+| G6 | Services Hub | `services` в `GuestApp.tsx`: concierge, cleaning, laundry, mini-market, restaurant, bar, rent car; дополнительный spa | **Демо.** Категории и выбор доступны; отправка заказа, исполнение и списание средств в публичном приложении отсутствуют. Дополнительный spa — существующая функция интерфейса, а не восьмая категория на этом слайде. |
+| G7 | Service Request | services tab, форма `serviceRequestMock`; legacy `liveServiceForm` с `createGuestServiceOrder` | **Демо; Legacy.** Публичная форма не отправляет запрос. Автопривязка к активной Core-брони, SLA, реальные обновления исполнителя и доставка запроса не подтверждены этой страницей. Наличие legacy обработчика не закрывает этот пробел. |
+| G8 | Guest Navigation | `.guestNav`: Explore, Bookings, Services, Messages, Profile; контент пяти вкладок | **Демо.** Все пять направлений представлены. Чат — пример с отключённой отправкой, часть профиля не подключена. Имя Alex в иллюстрации не используется как доказательство текущей авторизации. |
+| G9 | Dark Mode | `App.tsx` переключает `.app.dark`; общие CSS-переменные и гостевые состояния | **Интерфейс существует.** Нужна отдельная визуальная приёмка новой адаптации во всех вкладках, диалогах и состояниях. Наличие темы не доказывает WCAG-контраст каждого элемента или полное совпадение со снимками Canva. |
 
-## Visual language
-Near-black / graphite shell, white and warm ivory surfaces, champagne-gold primary actions, compact premium hospitality typography, role-aware navigation, mobile-first guest flow.
+Основные файлы: [GuestApp.tsx](../src/features/guest/GuestApp.tsx),
+[GuestDialog.tsx](../src/features/guest/GuestDialog.tsx),
+[GuestTrips.tsx](../src/features/guest-auth/GuestTrips.tsx),
+[LocalCoreWorkspace.tsx](../src/features/local-core/LocalCoreWorkspace.tsx).
 
+## Staff CRM — 17 страниц
 
-## Additional latest Canva sources integrated
-- VIEWS Implementation Map — DAHW-Pmy-dM
-- VIEWS Implementation Handoff — DAHW8jK49GQ
-- VIEWS Service Catalog — DAHW8tA0U7U
-- VIEWS Hospitality ERD — DAHW8jr5KtY
-- VIEWS RBAC Matrix — DAHW8jtVpo0
-- VIEWS Design Pack — All Latest Canva Images — DAHW-mOxAoo
+| № | Страница источника | Обнаруженное соответствие | Состояние и границы |
+| --- | --- | --- | --- |
+| S1 | Staff CRM — обложка | `AccessPortal.tsx`, `StaffRoleEntry.tsx`, заголовок `StaffApp.tsx` | **Презентация.** Название продукта и переход к рабочим областям представлены. Иллюстрация документов и формулировка Editable UI/UX Board не являются отдельной функцией CRM. |
+| S2 | Manager Dashboard | `Dashboard`, `LiveDashboard`, `OperationsOverviewLive`, `TeamWorkloadLive`; локальная роль manager | **Демо; Legacy; Core, частично.** Карточки и операционные разделы есть. Числа 87%, 14, 11, 23, 3 со слайда не являются текущими KPI. Полный связанный менеджерский dashboard, загрузка смены и согласования не подтверждены. |
+| S3 | Unified Inbox | `UnifiedInbox`, `Orders` в `StaffApp.tsx` | **Демо.** Представлены open/progress/resolved и сортировка приоритета. На базисе расширенные фильтры отключены. Каналы Telegram/email/WhatsApp, reopen/archive/export, все фильтры и серверный SLA-поток не закрыты. |
+| S4 | Service Order Detail | `Orders`, `StaffMobileSheet` detail; legacy `serviceOrderAction` | **Демо; Legacy.** Можно открыть задачу и посмотреть её состояние; демо-переходы меняют локальные данные. Полный журнал комментариев с атрибуцией, фото, переназначение и эскалация в два нажатия не подтверждены для Core. |
+| S5 | Stay Card | `StayCard`, `StayCardLive`; локальные `ReceptionWorkspace`, `FolioWorkspace` | **Демо; Legacy; Core, частично.** Отдельные сведения о проживании и фолио существуют. Единого Core-экрана со всеми платежами, housekeeping, DND, услугами и ремонтом, как на слайде, пока не подтверждено. Maria Santos/VIP Gold — пример макета. |
+| S6 | Apartment Timeline | `ApartmentTimeline`, `ApartmentTimelineLive` | **Демо; Legacy.** Хронология с типами событий представлена. Полная Core-агрегация, фильтры по датам/типам/статусам и переход каждого события к первичному документу не подтверждены. |
+| S7 | Housekeeping | `Housekeeping`, `HousekeepingLive`, `HousekeepingWorkspace`, `TurnoverPanel`, mobile proof | **Демо; Core, частично.** Есть назначенные тестовые уборки и подтверждение готовности в ограниченном рабочем процессе. Фото-загрузка в preview отключена. Геометки, DND-автоперенос, обязательные чек-листы по типам юнита, инспекция pass/fail и автоматические повторные задания не подтверждены в полном объёме. |
+| S8 | Maintenance | `Maintenance`, `MaintenanceLive`, technician role entry | **Демо; Legacy.** Представлены этапы и пример задач. Локальный кабинет техника явно сообщает, что рабочий модуль не подключён. SLA-таймер, фото до/после, запчасти и реальные эскалации не объявляются готовыми. |
+| S9 | Service Requests | Категории `ServiceOrder`, `UnifiedInbox`, `Orders`; гостевой services hub | **Демо; Legacy.** Категории услуг есть. Полные отраслевые формы laundry/F&B/car rental, маршрутизация по смене, room charges и подпись гостя не подтверждены. Каталог услуг не равен исполнению заказа. |
+| S10 | Front Desk | `FrontDesk`, `LiveFrontDesk`, `ReceptionWorkspace`, `TurnoverPanel`, `GuestLinkStaffPanel`, `FolioWorkspace` | **Демо; Core, частично.** Локальные заезд/выезд, данные тестового гостя, готовность, приглашение к брони и фолио есть в отдельных модулях. Реальные ключ-карты, E-mehmon, express checkout, хранение багажа и согласования раннего/позднего пребывания требуют отдельной готовности. |
+| S11 | Shift Handover | `ShiftHandover`, `ShiftHandoverLive` | **Демо; Legacy.** Секции незавершённых запросов, SLA, рисков и follow-up представлены. Создание/подтверждение передачи смены через текущий Core и актуальность всех источников не подтверждены этим анализом. |
+| S12 | Guest 360 | `Guest360`, `Guest360Live`; локальная карточка тестового гостя на ресепшн | **Демо; Legacy; Core, частично.** Профиль и примеры истории есть. Полные предпочтения, lifetime spend, VIP/blacklist и объединение всех взаимодействий не подтверждены. Подпись Verified в демо не является проверкой реального документа. |
+| S13 | Team Workload | `TeamPanel`, `TeamWorkloadLive`, My Tasks; серверные роли и `StaffWorkspaceGate` | **Демо; Legacy; Core, частично.** Есть отдельные роли и узкая очередь уборщика. Распределение по сменам/этажам/навыкам, полноценное capacity planning и редактор прав из слайда не подключаются выбором UI-роли. |
+| S14 | Exceptions | `ExceptionsPanel`, `ExceptionsLive`; отдельно `SupplyWorkspace` и остатки склада | **Демо; Legacy; Core, частично только склад.** Реальный локальный остаток не означает реализованные par alerts/reorder. Lost & Found, damage-photo-to-folio, уведомление гостя и экспорт всей очереди требуют отдельной Core-проверки/реализации. |
+| S15 | Mobile Role Apps | `StaffMobileDock`, `StaffMobileSheet`, девять role entries; локальные reception/housekeeping/supply | **Демо; Core, частично.** Адаптивные области по ролям существуют. Фото и часть действий явно не подключены. APK использует общий веб-интерфейс; автономная очередь синхронизации, все операции за два нажатия и работа камеры на телефоне не подтверждены. |
+| S16 | Dark Mode | `.app.dark`, staff layout, локальные рабочие области | **Интерфейс существует.** В тексте источника указаны cool indigo/blue accents, хотя сами слайды монохромные. Полная новая dark-mode parity требует проверки всех ролей, таблиц, статусов, диалогов и disabled-состояний. |
+| S17 | Thank You — заключительная | Отдельного рабочего экрана не требуется | **Презентация.** Слайд учтён в числе 17. Телефон +1 800 VIEWS-CRM, email и домен в нём не верифицированы как контакты владельца и не переносятся в рабочую поддержку. |
 
-## Additional operational parity
-- Unified Inbox with SLA/status/assignee filtering foundation
-- Shift Handover
-- Team Workload / assignment rules
-- Stay Card
-- Apartment Timeline
-- Lost & Found
-- Damage Reports
-- Minimum Inventory Alerts
-- SLA breach/escalation states
-- DND / Service Declined
-- Housekeeping proof & inspection
-- Maintenance ticket detail
-- Explicit loading / empty / error / offline / read-only system states
-- Spa & Wellness service
-- Service Catalog SLA/owner/status-flow metadata
+Основные файлы: [StaffApp.tsx](../src/features/staff/StaffApp.tsx),
+[LiveGuestStay.tsx](../src/features/staff/LiveGuestStay.tsx),
+[LiveOperationsControl.tsx](../src/features/staff/LiveOperationsControl.tsx),
+[StaffWorkspaceGate.tsx](../src/features/local-core/StaffWorkspaceGate.tsx),
+[StaffRoleEntry.tsx](../src/features/staff-entry/StaffRoleEntry.tsx).
+
+## Design System — 6 страниц
+
+| № | Страница источника | Обнаруженное соответствие | Состояние и границы |
+| --- | --- | --- | --- |
+| D1 | Foundation — вводная | CSS custom properties в `src/styles.css`, светлая/тёмная тема, typography/spacing/radii | **Презентация принципов; реализация частичная.** Слайд перечисляет группы токенов и показывает тёмную сцену с красным акцентом. Полной машинно-читаемой таблицы точных цветов, размеров, шрифтов и теней в доступном материале нет. |
+| D2 | Core Controls | Кнопки, input/select/date/search, вкладки, `.status` | **Компоненты существуют, единая спецификация частичная.** Primary/secondary/tertiary не сведены к полностью доказанному общему набору состояний. Нужны проверки клавиатуры, focus, disabled, ошибок и контраста; sample date 15 May 2024 не становится значением по умолчанию. |
+| D3 | Guest Components | `.apartmentCard`, `.serviceGrid`, `.priceSummary`, `.guestNav` | **Демо.** Визуальные и структурные аналоги есть. $189/$567 и цены услуг из иллюстрации не используются как рабочие тарифы. Четыре пункта nav на этом слайде конфликтуют с пятью в Guest App G8; выбран полный пятираздельный сценарий гостя. |
+| D4 | Staff CRM Components | `.sidebar`, `.order`, `.status`, `.kpis`, mobile tasks | **Демо; Core, частично отдельными областями.** Есть карточки, приоритеты, навигация и показатели; Acme Corporation/Alex Morgan и значения KPI — примеры слайда. Наличие карточки не подтверждает живой SLA или назначения. |
+| D5 | Context Components | `ApartmentTimeline`, `StayCard`, `GuestDialog`, `StayActionConfirmation`, `StaffMobileSheet`, role/status badges | **Смешанное соответствие.** Хронология, краткие карточки и модальные слои представлены. Полные контекстные ветки комментариев, единая drawer-система и аудит всех действий не подтверждены. `Active/In Progress/Inactive` на слайде — состояния, их нельзя автоматически трактовать как права роли. |
+| D6 | System States | Loading/empty/error в списках; offline/manual retry в гостевом Core и supply/folio; read-only permission gates; `.app.dark` | **Core и интерфейс, частично.** Не все экраны имеют одинаковую полноту состояний. Фраза «offline: view but not make changes» не доказывает наличие безопасного offline-cache или очереди синхронизации. Нужна матрица состояний по каждому модулю и проверка отказа доступа. |
+
+## Решение по визуальным противоречиям
+
+Гостевой документ показывает тёплый ivory/gold, Staff CRM — монохромную
+презентацию с текстовым указанием indigo/blue для рабочих экранов, Design System —
+тёмный red-accent concept. Единой непротиворечивой палитры эти три файла не задают.
+Для текущей адаптации выбраны guest ivory/gold, staff indigo и семантический red
+для ошибок/опасных действий. Это **решение реализации**, а не утверждение о
+буквальном переносе извлечённых Canva-токенов. Точные HEX, font family, размеры
+и радиусы считаются инженерным выбором до отдельного согласованного token export.
+
+## Что эта матрица заменяет
+
+Прежний файл перечислял Canva IDs и многочисленные функции как «parity», не
+связывая их со страницами и проверками. Эти исторические названия не доказывают,
+что соответствующие файлы получены и полностью реализованы. Текущая матрица
+заменяет такое обобщение проверяемыми соответствиями всех 32 доступных страниц.
+Host wizard, integrations, payouts и другие прежние пункты сохраняются в общем
+backlog продукта; в трёх рассмотренных файлах им не приписываются вымышленные
+отдельные страницы. Vertex остаётся отдельным продуктом и не смешивается с VIEWS.

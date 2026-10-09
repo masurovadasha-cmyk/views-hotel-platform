@@ -69,7 +69,8 @@ const tr=(locale,key)=>locale==='en'?key:catalog[key][locale];
   await page.getByLabel('Search help…',{exact:true}).fill('no-match-123');await page.getByText('No help topics match your search.',{exact:true}).waitFor();
   report.checks.push('favorites_filter_and_help_search_work');
   await page.locator('.guestLanguage select').selectOption('uz');await page.reload({waitUntil:'networkidle'});assert.equal(await page.locator('.guestLanguage select').inputValue(),'uz');
-  assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage)),['views.guest.locale']);
+  assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage).sort()),['views.guest.locale','views.theme']);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('views.theme')),'light');
   await page.evaluate(()=>localStorage.setItem('views.guest.locale','invalid'));await page.reload({waitUntil:'networkidle'});assert.equal(await page.locator('.guestLanguage select').inputValue(),'en');
   const blocked=await newPage(undefined,true);await blocked.goto(origin+prefix+'?api=demo');await blocked.locator('.guestLanguage select').selectOption('ru');await blocked.getByRole('heading',{name:'Доступные апартаменты',exact:true}).waitFor();await blocked.close();
   report.checks.push('language_persists_invalid_or_blocked_storage_safe');
@@ -93,7 +94,7 @@ const tr=(locale,key)=>locale==='en'?key:catalog[key][locale];
    if(url==='/api/auth-email'){loginCalls++;return route.fulfill({status:503,json:{error:'FIXTURE_UNAVAILABLE'}});}
    unexpected.push(url);return route.abort();
   });
-  await auth.goto(origin+prefix+'?api=live',{waitUntil:'networkidle'});await auth.getByLabel('Email',{exact:true}).fill('synthetic@example.invalid');await auth.locator('.guestLanguage select').selectOption('uz');assert.equal(await auth.getByLabel('Email',{exact:true}).inputValue(),'synthetic@example.invalid');assert.equal(loginCalls,0);
+  await auth.goto(origin+prefix+'?api=live',{waitUntil:'networkidle'});await auth.getByRole('button',{name:'Sign in with email',exact:true}).click();await auth.getByLabel('Email',{exact:true}).fill('synthetic@example.invalid');await auth.locator('.guestLanguage select').selectOption('uz');assert.equal(await auth.getByLabel('Email',{exact:true}).inputValue(),'synthetic@example.invalid');assert.equal(loginCalls,0);
   await auth.getByRole('button',{name:'Email bilan davom etish',exact:true}).click();await auth.getByText('Kirish soʻrovi bajarilmadi. Ulanishni tekshiring va qayta urining.',{exact:true}).waitFor();
   await auth.locator('.guestLanguage select').selectOption('ru');await auth.getByText('Запрос входа не выполнен. Проверьте соединение и повторите попытку.',{exact:true}).waitFor();assert.equal(loginCalls,1);await auth.close();report.checks.push('mocked_public_login_error_retranslates_without_resend');
   assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);Object.assign(report,{result:'pass',pageErrors:0,checkedAt:new Date().toISOString()});

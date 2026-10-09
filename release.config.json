@@ -1,8 +1,16 @@
 {
-  "version": "0.9.0-preview",
-  "androidVersionCode": 900001,
+  "version": "0.10.0-preview",
+  "androidVersionCode": 1000001,
   "androidApplicationId": "uz.views.preview",
   "androidLabel": "VIEWS Preview",
   "mode": "static-demo",
-  "designReference": "https://chatgpt.com/s/m_6ac7a4fbdb2c819181431bb894e4ca47"
+  "designReference": "https://www.canva.com/d/gbOv6FX5RExR_JN",
+  "designSources": {
+    "exportDate": "2026-10-09",
+    "reviewedPages": 32,
+    "guest": "DAHW8ckAcO4",
+    "staff": "DAHW8X4U68A",
+    "system": "DAHW8X09Gpg",
+    "fullDesignPackReviewed": false
+  }
 }

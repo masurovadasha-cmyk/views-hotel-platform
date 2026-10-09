@@ -2186,5 +2186,101 @@
   "other deductions payable": {
     "ru": "Прочие удержания к перечислению",
     "uz": "Oʻtkaziladigan boshqa ushlanmalar"
+  },
+  "Request queues": {
+    "ru": "Очереди заявок",
+    "uz": "Soʻrovlar navbatlari"
+  },
+  "Search requests": {
+    "ru": "Поиск заявок",
+    "uz": "Soʻrovlarni qidirish"
+  },
+  "Task, apartment, guest or assignee": {
+    "ru": "Задача, апартамент, гость или исполнитель",
+    "uz": "Vazifa, apartament, mehmon yoki ijrochi"
+  },
+  "All categories": {
+    "ru": "Все категории",
+    "uz": "Barcha toifalar"
+  },
+  "All priorities": {
+    "ru": "Все приоритеты",
+    "uz": "Barcha ustuvorliklar"
+  },
+  "Sort by": {
+    "ru": "Сортировка",
+    "uz": "Saralash"
+  },
+  "Showing {count} requests": {
+    "ru": "Найдено заявок: {count}",
+    "uz": "Topilgan soʻrovlar: {count}"
+  },
+  "Clear filters": {
+    "ru": "Сбросить фильтры",
+    "uz": "Filtrlarni tozalash"
+  },
+  "Filters apply to loaded requests visible to your role. SLA deadlines are not available here.": {
+    "ru": "Фильтры применяются к загруженным заявкам, доступным вашей роли. Сроки SLA здесь недоступны.",
+    "uz": "Filtrlar rolingizga koʻrinadigan yuklangan soʻrovlarga qoʻllanadi. SLA muddatlari bu yerda mavjud emas."
+  },
+  "Staff workspace panel": {
+    "ru": "Панель сотрудника",
+    "uz": "Xodim paneli"
+  },
+  "Connected workspace": {
+    "ru": "Подключённое рабочее пространство",
+    "uz": "Ulangan ish maydoni"
+  },
+  "Demo workspace · sample data; changes are not saved": {
+    "ru": "Демонстрация · пример данных; изменения не сохраняются",
+    "uz": "Namoyish · namunaviy maʼlumotlar; oʻzgarishlar saqlanmaydi"
+  },
+  "Your shift at a glance": {
+    "ru": "Ваша смена: главное",
+    "uz": "Smenangiz haqida qisqacha"
+  },
+  "Requests visible to your role, with priority and next actions.": {
+    "ru": "Доступные вашей роли заявки, их приоритеты и следующие действия.",
+    "uz": "Rolingizga koʻrinadigan soʻrovlar, ularning ustuvorligi va keyingi amallar."
+  },
+  "Not available": {
+    "ru": "Недоступно",
+    "uz": "Mavjud emas"
+  },
+  "Activity": {
+    "ru": "История действий",
+    "uz": "Amallar tarixi"
+  },
+  "No activity history is available in this view.": {
+    "ru": "В этом представлении история действий недоступна.",
+    "uz": "Bu koʻrinishda amallar tarixi mavjud emas."
+  },
+  "Comments, reassignment and photo uploads are not connected in this view.": {
+    "ru": "Комментарии, переназначение и загрузка фото в этом представлении не подключены.",
+    "uz": "Bu koʻrinishda izohlar, qayta tayinlash va fotosurat yuklash ulanmagan."
+  },
+  "A live notification feed is not connected in this view.": {
+    "ru": "Лента уведомлений в этом представлении не подключена.",
+    "uz": "Bu koʻrinishda jonli bildirishnomalar tasmasi ulanmagan."
+  },
+  "accept": {
+    "ru": "Принято",
+    "uz": "Qabul qilindi"
+  },
+  "start": {
+    "ru": "Начато",
+    "uz": "Boshlandi"
+  },
+  "complete": {
+    "ru": "Выполнено",
+    "uz": "Bajarildi"
+  },
+  "Refresh": {
+    "ru": "Обновить",
+    "uz": "Yangilash"
+  },
+  "maintenance": {
+    "ru": "Техническое обслуживание",
+    "uz": "Texnik xizmat"
   }
 }

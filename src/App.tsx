@@ -12,6 +12,8 @@ import {detectRuntimeMode,runtimeLabel} from "./api/runtime";
 import {AccessPortal,type AccessAudience} from './features/auth/AccessPortal';
 import {StaffRolePreviewEntry,StaffRoleHeading,StaffRoleUnavailable} from './features/staff-entry/StaffRoleEntry';
 import {requestedStaffRole,roleInfo,staffEntryUrl} from './features/staff-entry/staff-roles';
+import {readTheme,saveTheme} from './design-system/theme';
+import {ConnectionNotice} from './design-system/ConnectionNotice';
 
 type Session =
  | {mode:"guest";userId:string;guestId:string;organizationId:string}
@@ -27,7 +29,7 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
   const selectedStaffRole=requestedStaffRole();
   const [demoMode,setDemoMode]=useState<"guest"|"staff">("guest");
   const [demoRole,setDemoRole]=useState<HospitalityRole>("general_manager");
-  const [dark,setDark]=useState(false);
+  const [dark,setDark]=useState(()=>readTheme()==='dark');
   const [accessOpen,setAccessOpen]=useState(()=>{const q=new URLSearchParams(location.search);return q.get('entry')==='access'||!q.has('api');});
   const [rolePreviewOpen,setRolePreviewOpen]=useState(!!selectedStaffRole);
   const [session,setSession]=useState<Session|null>(null);
@@ -44,6 +46,7 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
   }
 
   useEffect(()=>{void refreshSession()},[]);
+  useEffect(()=>{saveTheme(dark?'dark':'light');},[dark]);
 
   const live=runtime==="live-api";
   const staffMode=runtime==='local-core'||(live?session?.mode==='staff':!accessOpen&&demoMode==='staff');
@@ -62,7 +65,7 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
     return demoMode==="guest"?<GuestApp/>:<div lang={staffLocale}><StaffApp role={demoRole} onRoleChange={setDemoRole} allowRoleSwitch={!selectedStaffRole}/></div>;
   };
 
-  return <div className={(dark?"app dark":"app")+(runtime!=="local-core"?" guestLocaleApp":"")}>
+  return <div data-workspace={staffMode||selectedStaffRole&&rolePreviewOpen?'staff':'guest'} className={(dark?"app dark":"app")+(runtime!=="local-core"?" guestLocaleApp":"")}>
     <header className="brandbar">
       <div className="brand" lang="en"><span className="vmark">V</span><div><strong>VIEWS</strong><small>HOTEL & APARTMENTS</small></div><i/><p>One Ecosystem<br/>A Better Experience</p></div>
       <div className="cities" lang="en">TASHKENT · SAMARKAND · BUKHARA · KHIVA · AND BEYOND</div>
@@ -70,11 +73,12 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
         <span className="runtimeBadge">{staffMode?t(runtimeLabel(runtime)):guestT(runtimeLabel(runtime))}</span>
         {staffMode?<StaffLanguageSelector/>:<GuestLanguageSelector/>}
         {!live&&runtime!=="local-core"&&runtime!=="guest-core"&&!accessOpen&&<button onClick={()=>{setRolePreviewOpen(false);setAccessOpen(true);}}>VIEWS · {guestT('Sign in')}</button>}
-        <button onClick={()=>setDark(v=>!v)}>{staffMode?t(dark?'Светлая тема':'Тёмная тема'):guestT(dark?'Light':'Dark')}</button>
+        <button data-theme-toggle aria-pressed={dark} onClick={()=>setDark(v=>!v)}>{staffMode?t(dark?'Светлая тема':'Тёмная тема'):guestT(dark?'Light':'Dark')}</button>
         {!live&&runtime!=="local-core"&&runtime!=="guest-core"&&!accessOpen&&!selectedStaffRole&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==='guest'?guestT('Staff CRM'):t('Гостевое приложение')}</button>}
         {live&&session&&<button onClick={async()=>{await api.logout();setSession(null)}}>{staffMode?t('Выйти'):guestT('Sign out')}</button>}
       </div>
     </header>
+    <ConnectionNotice locale={staffMode?staffLocale:guestLocale}/>
     {content()}
   </div>;
 }

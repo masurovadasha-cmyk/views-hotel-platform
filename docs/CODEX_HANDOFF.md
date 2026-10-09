@@ -880,3 +880,35 @@ No main merge, real mail/payments or public Core activation. Returns/transfers,
 valuation/suppliers, batch stocktake approval and full B3–B11 backlog remain.
 Future efficiency note:0067 one-time revision backfill could aggregate movement
 counts once for large existing ledgers; no persistent ledger currently migrated.
+
+
+## 47. Canva export adaptation / 9 October 2026 (Tashkent)
+
+Owner supplied README and five PDFs after the Canva short link redirected to
+login. Three PDFs downloaded: Guest App9, Staff CRM17, Design System6; all32
+pages inspected as text and contact sheets. Full60-pageVIEWS DesignPack and
+50-pageVertex exceeded the transfer tool32MiB limit and were not read. No claims
+of full-pack integration. Vertex remains separate per owner constraints.
+
+New frontend adaptation retains existing API/auth boundaries: warm guest catalogue,
+destination/amenity filters and matching illustrative map, five-step booking
+progress, unsent service request preview; staff indigo presentation, local queue
+search/category/priority/sort, workflow-valid actions and accessible detail drawer.
+Drawer reads current role-visible order data; real errors remain visible. Common
+theme preference and offline notice added. No backend/schema changes or seed runs.
+
+Review found and fixed filtered map mismatch, guest small-text contrast, background
+transition causing a low-contrast theme flash, native-modal Tab escape and opener
+focus restoration. Drawer contains a language selector to preserve task drafts
+while the page outside is inert. Date/provider functionality is not fabricated.
+Legacy UI proofs updated for the existing AccessPortal email opening step,
+new appearance-only storage key, semantic order buttons, disabled demo create,
+and scoped modal language selector. Assertions on API payloads/no-resend retained.
+
+Release prepared as0.10.0-preview/1000001, sameappId/key. Previous public0.9 APK
+preserved at /workspace/views-before-canva-zv8bxqq2/review-output. See
+CANVA_SCREEN_PARITY.md (32page matrix), CANVA_2026_10_09_INTEGRATION.md and
+RELEASE_0_10_PREVIEW.md for final test evidence and release procedure. Final clean
+SHA/download checksum are recorded in GitHub release notes and release.json at
+publication, not invented in this pre-commit handoff. Public Core/mail/payments
+remain disconnected. No main merge or persistent DB changes.

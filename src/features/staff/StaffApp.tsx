@@ -1,5 +1,5 @@
 import {useLegacyStaffLocale} from './LegacyStaffLocale';
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useMemo,useState,useRef} from "react";
 import {
   Bell,Building2,CalendarDays,Camera,CheckCircle2,ClipboardList,FileText,Gauge,Image as ImageIcon,
   Plus,RefreshCw,ShieldCheck,Sparkles,Users,WalletCards,Wrench
@@ -18,6 +18,10 @@ import {ApartmentTimelineLive,Guest360Live,StayCardLive} from "./LiveGuestStay";
 import {IntegrationHubLive,TeamWorkloadLive} from "./LiveTeamIntegrations";
 import {LiveDashboard} from "./LiveDashboard";
 import {LiveFinance} from "./LiveFinance";
+import {Orders,OrderActions,UnifiedInbox} from "./StaffQueue";
+import {StaffDialog} from "./StaffDialog";
+import {queueOrders} from "./staff-queue";
+import "./staff-canva.css";
 
 const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","general_manager","super_admin"];
 const labels:Record<string,string>={
@@ -32,6 +36,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
   const [active,setActive]=useState(roleNavigation[role][0]);
   const [orders,setOrders]=useState<ServiceOrder[]>(live?[]:initialOrders);
   const [liveError,setLiveError]=useState("");
+  const pendingActions=useRef(new Set<string>());
   const [mobileTab,setMobileTab]=useState<"none"|"tasks"|"detail"|"proof"|"create"|"notifications">("none");
   const [selectedOrder,setSelectedOrder]=useState<ServiceOrder|null>(null);
   const [proofBefore,setProofBefore]=useState(false);
@@ -58,10 +63,13 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
   useEffect(()=>{void loadLiveOrders()},[live,role]);
 
   const act=async(id:string,action:"accept"|"start"|"complete")=>{
+    if(pendingActions.current.has(id))return;
     if(live){
       const order=orders.find(o=>o.id===id);if(!order)return;
+      pendingActions.current.add(id);
       try{await api.serviceOrderAction({id,action,version:order.version??1});await loadLiveOrders()}
       catch(error){setLiveError(error instanceof Error?error.message:"Action failed")}
+      finally{pendingActions.current.delete(id)}
       return;
     }
     setOrders(currentOrders=>currentOrders.map(o=>{
@@ -71,8 +79,8 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
   };
 
   const content=()=>{
-    if(current==="overview")return live?<LiveDashboard role={role}/>:<Dashboard orders={visible} role={role}/>;
-    if(current==="my-tasks")return <><div className="sectionHead"><div><small>{t("OPERATIONS QUEUE")}</small><h2>{t("My Tasks")}</h2></div></div>{liveError&&<div className="notice">{t(String(liveError))}</div>}<Orders orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/></>;
+    if(current==="overview")return live?<LiveDashboard role={role}/>:<Dashboard orders={visible} role={role} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/>;
+    if(current==="my-tasks")return <><div className="sectionHead"><div><small>{t("OPERATIONS QUEUE")}</small><h2>{t("My Tasks")}</h2></div></div><Orders orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/></>;
     if(current==="inbox")return <UnifiedInbox orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/>;
     if(current==="operations")return live?<OperationsOverviewLive/>:<Panel title={t("Operations")}><div className="notice">{t("Live operations data is available in the authenticated staging runtime.")}</div></Panel>;
     if(current==="front-desk")return live?<LiveFrontDesk role={role}/>:<FrontDesk/>;
@@ -91,23 +99,26 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     return <Panel title={labels[current]??current}><div className="notice">{t("Module foundation ready for the next backend slice.")}</div></Panel>;
   };
 
-  return <div className="staffLayout">
+  return <div className="staffLayout canvaStaff">
     <aside className="sidebar"><div className="sideBrand">VIEWS <small>{t("OPERATIONS")}</small></div><nav aria-label={t("Staff sections")}>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} aria-label={t(labels[id]??id)} onClick={()=>setActive(id)}><Icon size={17}/><span>{t(String(labels[id]??id))}</span></button>})}</nav></aside>
     <main className="staffMain">
-      <header className="staffHead"><div><small>{t("VIEWS OPERATIONS")}</small><h1>{t(String(labels[current]??current))}</h1></div>{allowRoleSwitch?<select aria-label={t("Demo staff role")} value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{t(String(r.replace(/_/g," ")))}</option>)}</select>:<span className="roleLock">{t(String(role.replace(/_/g," ")))}</span>}</header>
+      <header className="staffHead" data-testid="staff-header"><div><small>{t("VIEWS OPERATIONS")}</small><h1>{t(String(labels[current]??current))}</h1></div>{allowRoleSwitch?<select aria-label={t("Demo staff role")} value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{t(String(r.replace(/_/g," ")))}</option>)}</select>:<span className="roleLock">{t(String(role.replace(/_/g," ")))}</span>}</header>
+      <div className={"staffMode "+(live?"live":"demo")} role="note"><span/>{live?t("Connected workspace"):t("Demo workspace · sample data; changes are not saved")}</div>
+      {liveError&&<div className="notice" role="alert">{t(String(liveError))}<button onClick={()=>void loadLiveOrders()}>{t("Refresh")}</button></div>}
       {content()}
     </main>
     <StaffMobileDock tab={mobileTab} setTab={setMobileTab}/>
-    <StaffMobileSheet tab={mobileTab} setTab={setMobileTab} orders={visible} selected={selectedOrder} setSelected={setSelectedOrder} act={act} proofBefore={proofBefore} proofAfter={proofAfter} setProofBefore={setProofBefore} setProofAfter={setProofAfter} live={live} role={role} onLiveCreated={loadLiveOrders}/>
+    <StaffMobileSheet error={liveError} tab={mobileTab} setTab={setMobileTab} orders={visible} selected={visible.find(o=>o.id===selectedOrder?.id)??null} setSelected={setSelectedOrder} act={act} proofBefore={proofBefore} proofAfter={proofAfter} setProofBefore={setProofBefore} setProofAfter={setProofAfter} live={live} role={role} onLiveCreated={loadLiveOrders}/>
   </div>;
 }
 
-function Dashboard({orders,role}:{orders:ServiceOrder[];role:HospitalityRole}){
+function Dashboard({orders,role,onOpen}:{orders:ServiceOrder[];role:HospitalityRole;onOpen:(order:ServiceOrder)=>void}){
   const {t,locale}=useLegacyStaffLocale();
   return <>
-    <section className="kpis"><article><span>{t("Tasks today")}</span><b>{orders.length}</b></article><article><span>{t("Check-ins")}</span><b>0</b></article><article><span>{t("Open SLA")}</span><b>{orders.filter(o=>o.status!=="done").length}</b></article><article><span>{t("Role")}</span><b>{t(String(role.replace(/_/g," ")))}</b></article></section>
+    <div className="staffWelcome"><div><small>{t("OPERATIONS QUEUE")}</small><h2>{t("Your shift at a glance")}</h2><p>{t("Requests visible to your role, with priority and next actions.")}</p></div><span className="roleLock">{t(String(role.replace(/_/g," ")))}</span></div>
+    <section className="kpis" data-testid="staff-task-kpis"><article><span>{t("Open Requests")}</span><b>{queueOrders(orders,"open").length}</b></article><article><span>{t("In Progress")}</span><b>{queueOrders(orders,"progress").length}</b></article><article><span>{t("Unassigned")}</span><b>{queueOrders(orders,"open").filter(o=>!o.assigneeUserId).length}</b></article><article><span>{t("Resolved")}</span><b>{queueOrders(orders,"resolved").length}</b></article></section>
     <div className="staffBoard">
-      <Panel title={t("Today's tasks")}><div className="compactRows">{orders.slice(0,5).map(o=><div key={o.id}><span>10:00</span><b>{o.title}</b><small>{o.unit?t("Apartment {unit}",{unit:o.unit}):t("Operational task")}</small><i className={"status "+o.status}>{t(String(o.status.replace(/_/g," ")))}</i></div>)}</div></Panel>
+      <Panel title={t("Today's tasks")}><div className="compactRows">{orders.slice(0,5).map(o=><button className="staffTaskPreview" key={o.id} onClick={()=>onOpen(o)}><span className={"orderPriority "+o.priority}>{t(o.priority)}</span><b>{o.title}</b><small>{o.unit?t("Apartment {unit}",{unit:o.unit}):t("Operational task")}</small><i className={"status "+o.status}>{t(String(o.status.replace(/_/g," ")))}</i></button>)}</div></Panel>
       <Panel title={t("Schedule / Calendar")}><div className="timelineBoard"><div className="timelineHeader"><span>{t("12 Oct")}</span><span>{t("13 Oct")}</span><span>{t("14 Oct")}</span><span>{t("15 Oct")}</span></div><div className="timelineRow"><b>U-Tower #235</b><i className="bar guest">{t("Guest stay")}</i></div><div className="timelineRow"><b>Nest One #12</b><i className="bar cleaning">{t("Cleaning")}</i></div><div className="timelineRow"><b>Gardens #14</b><i className="bar maintenance">{t("Maintenance")}</i></div></div></Panel>
     </div>
   </>;
@@ -206,21 +217,6 @@ function TeamPanel({orders}:{orders:ServiceOrder[]}){
   return <div className="teamWorkload"><section className="kpis"><article><span>{t("On shift")}</span><b>{staff.length}</b></article><article><span>{t("Active tasks")}</span><b>{orders.filter(o=>o.status!=="done").length}</b></article><article><span>{t("Unassigned")}</span><b>{orders.filter(o=>!o.assigneeUserId).length}</b></article><article><span>{t("Overdue SLA")}</span><b>0</b></article></section><Panel title={t("Staff Workload")}><div className="workloadGrid">{staff.map(([name,role,active,done])=><article key={String(name)}><div><b>{name}</b><small>{t(String(role))}</small></div><span>{t("Active")}{' '}<strong>{active}</strong></span><span>{t("Done")}{' '}<strong>{done}</strong></span><i className={Number(active)>=4?"busy":"available"}>{Number(active)>=4?t("busy"):t("available")}</i><button disabled title={t("Assignment requires a connected staff account.")}>{t("Reassign")}</button></article>)}</div></Panel></div>;
 }
 
-function UnifiedInbox({orders,act,onOpen}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;onOpen:(o:ServiceOrder)=>void}){
-  const {t,locale}=useLegacyStaffLocale();
-  const [view,setView]=useState<"open"|"progress"|"resolved">("open");
-  const open=orders.filter(o=>!["done","closed","cancelled"].includes(o.status));
-  const progress=open.filter(o=>["accepted","assigned","in_progress"].includes(o.status));
-  const resolved=orders.filter(o=>["done","closed"].includes(o.status));
-  return <div className="unifiedInbox"><div className="inboxTabs"><button className={view==="open"?"active":""} onClick={()=>setView("open")}>{t("Open Requests")}{' '}<b>{open.length}</b></button><button className={view==="progress"?"active":""} onClick={()=>setView("progress")}>{t("In Progress")}{' '}<b>{progress.length}</b></button><button className={view==="resolved"?"active":""} onClick={()=>setView("resolved")}>{t("Resolved")}{' '}<b>{resolved.length}</b></button></div><div className="inboxFilters"><button disabled title={t("Advanced filters are unavailable in this preview.")}>{t("Status")}</button><button disabled title={t("Advanced filters are unavailable in this preview.")}>{t("Category")}</button><button disabled title={t("Advanced filters are unavailable in this preview.")}>SLA</button><button disabled title={t("Advanced filters are unavailable in this preview.")}>{t("Apartment")}</button><button disabled title={t("Advanced filters are unavailable in this preview.")}>{t("Guest")}</button><button disabled title={t("Advanced filters are unavailable in this preview.")}>{t("Assignee")}</button><span>{t("Sort: Priority")}</span></div><Orders orders={[...(view==="open"?open:view==="progress"?progress:resolved)].sort((a,b)=>({urgent:0,high:1,normal:2,low:3}[a.priority]-{urgent:0,high:1,normal:2,low:3}[b.priority]))} act={act} onOpen={onOpen}/></div>;
-}
-
-function Orders({orders,act,onOpen}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;onOpen?:(o:ServiceOrder)=>void}){
-  const {t,locale}=useLegacyStaffLocale();
-  return <Panel title={t("Service Orders")}>{orders.length===0?<div className="emptyLine">{t("No requests in this queue.")}</div>:<div className="orderList">{orders.map(o=><article className="order" key={o.id}><div role={onOpen?"button":undefined} tabIndex={onOpen?0:undefined} onKeyDown={e=>{if(onOpen&&(e.key==="Enter"||e.key===" ")){e.preventDefault();onOpen(o);}}} onClick={()=>onOpen?.(o)}><b>{o.title}</b><span>{t("Apt")}{' '}{o.unit??"—"} · {t(String(o.category.replace(/_/g," ")))} · {o.guestName??t("No guest")}</span></div><span className={"status "+o.status}>{t(String(o.status.replace(/_/g," ")))}</span><div className="orderActions"><button onClick={()=>act(o.id,"accept")}>{t("Accept")}</button><button className="primary" onClick={()=>act(o.id,"start")}>{t("Start")}</button><button onClick={()=>act(o.id,"complete")}>{t("Complete")}</button></div></article>)}</div>}</Panel>;
-}
-
-
 function creatableCategories(role:HospitalityRole){
   if(role==="front_desk")return ["reservation_front_desk","concierge"] as const;
   if(role==="housekeeping_supervisor")return ["cleaning"] as const;
@@ -254,11 +250,11 @@ function MobileCreateTask({live,role,onCreated}:{live:boolean;role:HospitalityRo
     finally{setBusy(false)}
   }
 
-  return <div><h3>{t("Create task")}</h3>{categories.length===0?<div className="notice">{t("This role cannot create operational tasks.")}</div>:<div className="mobileCreate">
+  return <div><h3>{t("Create task")}</h3>{!live&&<p className="notice">{t("Task creation is available in live staging runtime.")}</p>}{categories.length===0?<div className="notice">{t("This role cannot create operational tasks.")}</div>:<div className="mobileCreate">
     <label>{t("Type")}<select value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(x=><option key={x} value={x}>{t(String(x.replace(/_/g," ")))}</option>)}</select></label>
     <label>{t("Description")}<textarea value={title} onChange={e=>setTitle(e.target.value)} placeholder={t("What needs to be done?")}/></label>
     <label>{t("Priority")}<select value={priority} onChange={e=>setPriority(e.target.value)}><option value="low">{t("Low")}</option><option value="normal">{t("Normal")}</option><option value="high">{t("High")}</option><option value="urgent">{t("Urgent")}</option></select></label>
-    <button className="primary" disabled={busy} onClick={submit}>{busy?t("Creating…"):t("Create")}</button>
+    <button className="primary" disabled={busy||!live} onClick={submit}>{busy?t("Creating…"):t("Create")}</button>
     {message&&<div className="notice">{message.startsWith("Created: ")?t("Created: {id}",{id:message.slice(9)}):t(message)}</div>}
   </div>}</div>;
 }
@@ -272,14 +268,16 @@ function StaffMobileDock({tab,setTab}:{tab:string;setTab:(t:any)=>void}){
   return <nav className="staffMobileDock" aria-label={t("Mobile staff sections")}>{items.map(([id,Icon])=><button key={id} className={tab===id?"active":""} aria-expanded={tab===id} onClick={()=>setTab(tab===id?"none":id)}><Icon size={17}/><span>{t(String(id))}</span></button>)}</nav>;
 }
 
-function StaffMobileSheet({tab,setTab,orders,selected,setSelected,act,proofBefore,proofAfter,setProofBefore,setProofAfter,live,role,onLiveCreated}:{tab:string;setTab:(t:any)=>void;orders:ServiceOrder[];selected:ServiceOrder|null;setSelected:(o:ServiceOrder|null)=>void;act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;proofBefore:boolean;proofAfter:boolean;setProofBefore:(v:boolean)=>void;setProofAfter:(v:boolean)=>void;live:boolean;role:HospitalityRole;onLiveCreated:()=>Promise<void>}){
+function StaffMobileSheet({error,tab,setTab,orders,selected,setSelected,act,proofBefore,proofAfter,setProofBefore,setProofAfter,live,role,onLiveCreated}:{error:string;tab:string;setTab:(t:any)=>void;orders:ServiceOrder[];selected:ServiceOrder|null;setSelected:(o:ServiceOrder|null)=>void;act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;proofBefore:boolean;proofAfter:boolean;setProofBefore:(v:boolean)=>void;setProofAfter:(v:boolean)=>void;live:boolean;role:HospitalityRole;onLiveCreated:()=>Promise<void>}){
   const {t,locale}=useLegacyStaffLocale();
   if(tab==="none")return null;
-  return <div className="staffMobileSheet"><button className="staffSheetClose" onClick={()=>setTab("none")} aria-label={t("Close")}>{t("Close")}</button>
-    {tab==="tasks"&&<div><h3>{t("My Tasks")}</h3>{orders.slice(0,4).map(o=><button className="mobileTask" key={o.id} onClick={()=>{setSelected(o);setTab("detail")}}><span>{o.title}</span><i className={"status "+o.status}>{t(String(o.status))}</i></button>)}</div>}
-    {tab==="detail"&&<div><h3>{t("Task detail")}</h3>{selected?<><div className="mobileDetail"><b>{selected.title}</b><span>{t("Apt")}{' '}{selected.unit??"—"}</span><span>{t(String(selected.category))}</span><span>SLA {selected.slaMinutes||"—"} {' '}{t("min")}</span></div><div className="orderActions"><button onClick={()=>act(selected.id,"accept")}>{t("Accept")}</button><button className="primary" onClick={()=>act(selected.id,"start")}>{t("Start")}</button><button onClick={()=>act(selected.id,"complete")}>{t("Complete")}</button></div></>:<p>{t("Select a task.")}</p>}</div>}
+  return <StaffDialog onClose={()=>setTab("none")}>
+    {error&&<div className="notice" role="alert">{t(String(error))}</div>}
+    {tab==="tasks"&&<div><h3>{t("My Tasks")}</h3>{orders.map(o=><button className="mobileTask" key={o.id} onClick={()=>{setSelected(o);setTab("detail")}}><span>{o.title}</span><i className={"status "+o.status}>{t(String(o.status))}</i></button>)}</div>}
+    {tab==="detail"&&<div data-testid="staff-order-detail"><small>{t("Service Orders")}</small><h3>{t("Task detail")}</h3>{selected?<><div className="mobileDetail"><span className={"status "+selected.status}>{t(selected.status.replace(/_/g," "))}</span><h2>{selected.title}</h2><dl className="staffOrderFacts"><div><dt>{t("Apartment")}</dt><dd>{selected.unit??"—"}</dd></div><div><dt>{t("Category")}</dt><dd>{t(selected.category.replace(/_/g," "))}</dd></div><div><dt>{t("Priority")}</dt><dd className={"orderPriority "+selected.priority}>{t(selected.priority)}</dd></div><div><dt>{t("Guest")}</dt><dd>{selected.guestName??t("No guest")}</dd></div><div><dt>{t("Assignee")}</dt><dd>{selected.assigneeUserId??t("Unassigned")}</dd></div><div><dt>SLA</dt><dd>{selected.slaMinutes?selected.slaMinutes+" "+t("min"):t("Not available")}</dd></div></dl></div><OrderActions order={selected} act={act}/><section className="staffOrderActivity"><h4>{t("Activity")}</h4>{selected.history.length?<ol>{selected.history.map((event,index)=><li key={index}>{t(event)}</li>)}</ol>:<p>{t("No activity history is available in this view.")}</p>}</section><p className="notice">{t("Comments, reassignment and photo uploads are not connected in this view.")}</p></>:<p>{t("Select a task.")}</p>}</div>}
+
     {tab==="proof"&&<div><h3>{t("Before / after proof")}</h3><p role="status">{t("Photo uploads are not connected in this preview.")}</p><div className="mobileProof"><button className={proofBefore?"done":""} disabled><Camera/><b>{t("Before")}</b><small>{proofBefore?t("Captured"):t("Capture photo")}</small></button><button className={proofAfter?"done":""} disabled><ImageIcon/><b>{t("After")}</b><small>{proofAfter?t("Captured"):t("Capture photo")}</small></button></div></div>}
     {tab==="create"&&<MobileCreateTask live={live} role={role} onCreated={onLiveCreated}/>}
-    {tab==="notifications"&&<div><h3>{t("Notifications")}</h3><div className="compactRows"><div><span>{t("Now")}</span><b>{t("New task assigned")}</b><small>{t("Apartment #235")}</small></div><div><span>{t("5 min")}</span><b>{t("Booking confirmed")}</b><small>{t("Guest arrival updated")}</small></div><div><span>{t("10 min")}</span><b>{t("Message")}</b><small>{t("Concierge request waiting")}</small></div></div></div>}
-  </div>;
+    {tab==="notifications"&&<div><h3>{t("Notifications")}</h3><p className="notice">{t("A live notification feed is not connected in this view.")}</p></div>}
+  </StaffDialog>;
 }

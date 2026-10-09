@@ -898,5 +898,157 @@
   "Local guest Core · test": {
     "ru": "Гостевой Core · тест",
     "uz": "Mehmon Core · sinov"
+  },
+  "Your next stay,": {
+    "ru": "Ваша следующая поездка,",
+    "uz": "Keyingi safaringiz,"
+  },
+  "beautifully considered.": {
+    "ru": "продуманная до мелочей.",
+    "uz": "har bir jihati o‘ylangan."
+  },
+  "Discover curated apartments. A quieter place to arrive, unwind and feel at home.": {
+    "ru": "Откройте для себя подобранные апартаменты. Место, где можно отдохнуть и почувствовать себя дома.",
+    "uz": "Saralangan apartamentlarni kashf eting. Dam olish va o‘zingizni uydagidek his qilish uchun sokin joy."
+  },
+  "Thoughtful spaces": {
+    "ru": "Продуманные пространства",
+    "uz": "Puxta o‘ylangan makonlar"
+  },
+  "Clear booking details": {
+    "ru": "Понятные условия брони",
+    "uz": "Tushunarli bron shartlari"
+  },
+  "A different view of the city.": {
+    "ru": "Другой взгляд на город.",
+    "uz": "Shaharga o‘zgacha nazar."
+  },
+  "Explore panoramic apartment": {
+    "ru": "Посмотреть панорамные апартаменты",
+    "uz": "Panoramali apartamentni ko‘rish"
+  },
+  "Samarkand": {
+    "ru": "Самарканд",
+    "uz": "Samarqand"
+  },
+  "Bukhara": {
+    "ru": "Бухара",
+    "uz": "Buxoro"
+  },
+  "Khiva": {
+    "ru": "Хива",
+    "uz": "Xiva"
+  },
+  "Amenities": {
+    "ru": "Удобства",
+    "uz": "Qulayliklar"
+  },
+  "Clear amenities": {
+    "ru": "Сбросить удобства",
+    "uz": "Qulayliklarni tozalash"
+  },
+  "Curated apartment": {
+    "ru": "Подобранные апартаменты",
+    "uz": "Saralangan apartament"
+  },
+  "Choose a stay": {
+    "ru": "Выберите жильё",
+    "uz": "Turar joyni tanlang"
+  },
+  "Select dates": {
+    "ru": "Выберите даты",
+    "uz": "Sanalarni tanlang"
+  },
+  "Add guests": {
+    "ru": "Добавьте гостей",
+    "uz": "Mehmonlarni qo‘shing"
+  },
+  "Review details": {
+    "ru": "Проверьте детали",
+    "uz": "Tafsilotlarni tekshiring"
+  },
+  "Confirmation": {
+    "ru": "Подтверждение",
+    "uz": "Tasdiqlash"
+  },
+  "Booking steps": {
+    "ru": "Этапы бронирования",
+    "uz": "Bronlash bosqichlari"
+  },
+  "SERVICE REQUEST": {
+    "ru": "ЗАЯВКА НА УСЛУГУ",
+    "uz": "XIZMAT SO‘ROVI"
+  },
+  "Quick help, right where you stay.": {
+    "ru": "Помощь рядом, где бы вы ни остановились.",
+    "uz": "Yashayotgan joyingizda tezkor yordam."
+  },
+  "Preview the request here. Sending and linking to an active booking require a connected guest account.": {
+    "ru": "Здесь можно проверить заявку. Отправка и привязка к действующей брони требуют подключённого гостевого аккаунта.",
+    "uz": "Bu yerda so‘rovni ko‘rib chiqing. Yuborish va faol bronga bog‘lash uchun ulangan mehmon hisobi kerak."
+  },
+  "Preferred date": {
+    "ru": "Желаемая дата",
+    "uz": "Istalgan sana"
+  },
+  "Preferred time": {
+    "ru": "Желаемое время",
+    "uz": "Istalgan vaqt"
+  },
+  "Preview request": {
+    "ru": "Проверить заявку",
+    "uz": "So‘rovni ko‘rib chiqish"
+  },
+  "Request preview — not sent": {
+    "ru": "Предпросмотр заявки — не отправлена",
+    "uz": "So‘rov ko‘rinishi — yuborilmagan"
+  },
+  "This draft stays on this screen only. No service order or message has been created.": {
+    "ru": "Черновик остаётся только на этом экране. Заказ услуги и сообщение не созданы.",
+    "uz": "Qoralama faqat shu ekranda qoladi. Xizmat buyurtmasi yoki xabar yaratilmagan."
+  },
+  "Up to {count} guests": {
+    "ru": "До {count} гостей",
+    "uz": "{count} tagacha mehmon"
+  },
+  "Bathrooms: {count}": {
+    "ru": "Ванных: {count}",
+    "uz": "Hammomlar: {count}"
+  },
+  "Plan your stay": {
+    "ru": "Спланируйте поездку",
+    "uz": "Safaringizni rejalang"
+  },
+  "Choose your dates to explore the booking steps. Live availability will be checked when connected.": {
+    "ru": "Выберите даты, чтобы посмотреть этапы бронирования. Реальная доступность будет проверяться после подключения.",
+    "uz": "Bronlash bosqichlarini ko‘rish uchun sanalarni tanlang. Ulangandan keyin haqiqiy mavjudlik tekshiriladi."
+  },
+  "Taxes and fees": {
+    "ru": "Налоги и сборы",
+    "uz": "Soliqlar va yig‘imlar"
+  },
+  "Requires live calculation": {
+    "ru": "Нужен расчёт сервера",
+    "uz": "Server hisobi kerak"
+  },
+  "Your dates are ready for the next preview step. No availability is reserved.": {
+    "ru": "Даты выбраны для следующего этапа предпросмотра. Жильё не резервируется.",
+    "uz": "Sanalar keyingi ko‘rish bosqichi uchun tanlandi. Turar joy band qilinmaydi."
+  },
+  "Choose a departure after arrival and a valid guest count to continue.": {
+    "ru": "Для продолжения выберите выезд после заезда и допустимое число гостей.",
+    "uz": "Davom etish uchun chiqish sanasini kirishdan keyin va ruxsat etilgan mehmonlar sonini tanlang."
+  },
+  "Illustrative map — locations are not live": {
+    "ru": "Условная карта — реальные координаты не подключены",
+    "uz": "Namunaviy xarita — haqiqiy joylashuvlar ulanmagan"
+  },
+  "View on preview map: {name}": {
+    "ru": "Открыть на условной карте: {name}",
+    "uz": "Namunaviy xaritada ko‘rish: {name}"
+  },
+  "No apartments match the selected filters.": {
+    "ru": "По выбранным фильтрам апартаменты не найдены.",
+    "uz": "Tanlangan filtrlarga mos apartamentlar topilmadi."
   }
 }

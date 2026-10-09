@@ -46,8 +46,8 @@ const target=process.env.VIEWS_LEGACY_PROOF_BUILD||'dist';assert.ok(['dist','dis
   checks.push('inbox_filters_change_visible_rows');
   const mobile=page.locator('.staffMobileDock');await mobile.getByRole('button',{name:'create',exact:true}).click();
   await page.locator('.mobileCreate textarea').fill('Keep user text: Maintenance');await page.locator('.mobileCreate select').first().selectOption('cleaning');
-  await page.locator('.staffLanguage select').selectOption('uz');assert.equal(await page.locator('.mobileCreate textarea').inputValue(),'Keep user text: Maintenance');assert.equal(await page.locator('.mobileCreate select').first().inputValue(),'cleaning');
-  await page.locator('.staffMobileSheet').getByRole('button',{name:tr('uz','Create'),exact:true}).click();await page.getByText(tr('uz','Task creation is available in live staging runtime.'),{exact:true}).waitFor();
+  await page.locator('.staffMobileSheet .staffLanguage select').selectOption('uz');assert.equal(await page.locator('.mobileCreate textarea').inputValue(),'Keep user text: Maintenance');assert.equal(await page.locator('.mobileCreate select').first().inputValue(),'cleaning');
+  assert.equal(await page.locator('.staffMobileSheet').getByRole('button',{name:tr('uz','Create'),exact:true}).isDisabled(),true);await page.getByText(tr('uz','Task creation is available in live staging runtime.'),{exact:true}).waitFor();
   await page.locator('.staffSheetClose').click();assert.equal(await page.locator('.staffMobileSheet').count(),0);
   await mobile.getByRole('button',{name:tr('uz','proof'),exact:true}).click();assert.equal(await page.locator('.mobileProof button:disabled').count(),2);await page.locator('.staffSheetClose').click();
   checks.push('mobile_form_preserved_demo_uploads_honest');
@@ -82,13 +82,13 @@ const target=process.env.VIEWS_LEGACY_PROOF_BUILD||'dist';assert.ok(['dist','dis
    for(const tab of tabs){await live.setViewportSize({width:1440,height:1000});await live.locator('.sidebar').getByRole('button',{name:tr(locale,tab),exact:true}).click();await live.waitForLoadState('networkidle');for(const width of [360,390,768,1440]){await live.setViewportSize({width,height:1000});await fits(live,'live '+locale+' '+tab+' '+width);}}
   }
   await live.locator('.sidebar').getByRole('button',{name:'Inbox',exact:true}).click();await live.locator('.staffLanguage select').selectOption('ru');
-  assert.equal(await live.locator('.unifiedInbox .order b').first().innerText(),'Maintenance');
+  assert.equal(await live.locator('.unifiedInbox .orderOpen').first().innerText(),'Maintenance');
   await live.locator('.unifiedInbox').getByRole('button',{name:tr('ru','Start'),exact:true}).click();await live.getByText(tr('ru','in progress'),{exact:true}).first().waitFor();
   assert.deepEqual(writes[0],{path:'/api/service-order-action',body:{id:'order-1',action:'start',version:3}});
   checks.push('all_live_screens_with_http_fixtures_preserve_protocol_and_user_text');
   await live.setViewportSize({width:390,height:1000});await live.locator('.staffMobileDock').getByRole('button',{name:tr('ru','create'),exact:true}).click();
   await live.locator('.mobileCreate textarea').fill('User-entered task');await live.locator('.mobileCreate select').first().selectOption('cleaning');
-  const before=writes.length;await live.locator('.staffLanguage select').selectOption('uz');assert.equal(writes.length,before);await live.locator('.mobileCreate').getByRole('button',{name:tr('uz','Create'),exact:true}).click();
+  const before=writes.length;await live.locator('.staffMobileSheet .staffLanguage select').selectOption('uz');assert.equal(writes.length,before);await live.locator('.mobileCreate').getByRole('button',{name:tr('uz','Create'),exact:true}).click();
   await live.getByText(tr('uz','Created: {id}').replace('{id}','created-fixture'),{exact:true}).waitFor();assert.deepEqual(writes.at(-1),{path:'/api/service-orders',body:{propertyId:'utower',category:'cleaning',title:'User-entered task',priority:'normal'}});
   checks.push('live_form_language_switch_never_writes_or_changes_api_enum');
   assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);console.log(JSON.stringify({stage:'7.49',result:'pass',target,checks,httpFixturesOnly:true,externalRequestsSent:0,androidDeviceTested:false}));
