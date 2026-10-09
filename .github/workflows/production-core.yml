@@ -82,7 +82,7 @@ jobs:
       - name: Verify V-Market schema and RLS gates
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
-          DO $
+          DO $market_rls$
           DECLARE t text; p boolean; f boolean; n integer;
           BEGIN
             FOREACH t IN ARRAY ARRAY[
@@ -99,7 +99,7 @@ jobs:
                 WHERE schemaname='public' AND tablename=t AND cmd IN ('INSERT','UPDATE','DELETE','ALL');
               IF n<>0 THEN RAISE EXCEPTION 'MARKET_WRITE_POLICY_UNEXPECTED: %',t; END IF;
             END LOOP;
-          END $;
+          END $market_rls$;
           SQL
       - name: Verify no-overbooking exclusion
         run: |
