@@ -4,6 +4,7 @@ import {Pool} from "pg";
 import {randomUUID} from "node:crypto";
 import {createMarketOrder,inTenantTransaction} from "../src/postgres.mjs";
 import {changeOrderStatus} from "../src/order-status.mjs";
+import {createPaymentIntent} from "../src/payment-ledger.mjs";
 
 const url=process.env.TEST_DATABASE_URL;
 if(!url)throw Error("TEST_DATABASE_URL required for PostgreSQL integration tests");
@@ -54,5 +55,27 @@ test("PostgreSQL cancellation releases stock and rejects repeat transition",asyn
  assert.equal(movement.count,1);
 });
 
+
+test("payment intent uses order snapshot, deduplicates reference and blocks duplicate pending attempt",async()=>{
+ const tenant=randomUUID(),unit=randomUUID(),staff="payment-test-staff";
+ await asTenant(tenant,async db=>{
+  await db.query("INSERT INTO market_catalog(organization_id,sku,name,price_uzs) VALUES($1,$2,$3,$4)",[tenant,"WATER-15","Вода 1,5 л",15000]);
+  await db.query("INSERT INTO service_property_access(organization_id,property_id,principal_id,permission) VALUES($1,$2,$3,'order:create')",[tenant,unit,staff]);
+  await db.query("INSERT INTO inventory_lots(organization_id,sku,on_hand,reserved) VALUES($1,'WATER-15',5,0)",[tenant]);
+ });
+ const order=await createMarketOrder(pool,{organizationId:tenant,propertyId:unit,principalId:staff,idempotencyKey:"order-"+randomUUID(),items:[{sku:"WATER-15",quantity:2}],asOf:"2026-10-09"});
+ const ref="payment-"+randomUUID();
+ const first=await createPaymentIntent(pool,{organizationId:tenant,orderId:order.id,merchantReference:ref});
+ assert.equal(first.amountUzs,45000);
+ assert.equal(first.status,"created");
+ const replay=await createPaymentIntent(pool,{organizationId:tenant,orderId:order.id,merchantReference:ref});
+ assert.equal(replay.id,first.id);
+ assert.equal(replay.replayed,true);
+ await assert.rejects(createPaymentIntent(pool,{organizationId:tenant,orderId:order.id,merchantReference:"payment-"+randomUUID()}),/already pending/);
+ const events=await asTenant(tenant,async db=>(await db.query("SELECT count(*)::integer AS n FROM service_outbox WHERE organization_id=$1 AND aggregate_id=$2 AND event_type='payment.intent.created'",[tenant,order.id])).rows[0]);
+ assert.equal(events.n,1);
+ const hidden=await asTenant(randomUUID(),async db=>(await db.query("SELECT id FROM service_payment_attempts WHERE id=$1",[first.id])).rows);
+ assert.equal(hidden.length,0);
+});
 
 test.after(async()=>{await pool.end()});
