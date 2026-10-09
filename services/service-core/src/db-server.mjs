@@ -22,8 +22,7 @@ export const server=createServer(async(req,res)=>{
    const key=req.headers["idempotency-key"];
    const body=await parse(req);
    if(!uuid.test(body.propertyId))return reply(res,422,{error:"Invalid property"});
-   // The caller's property/booking authorization must be implemented before production.
-   const order=await createMarketOrder(pool,{organizationId:context.organizationId,propertyId:body.propertyId,idempotencyKey:key,items:body.items,asOf:new Date().toISOString().slice(0,10)});
+   const order=await createMarketOrder(pool,{organizationId:context.organizationId,propertyId:body.propertyId,idempotencyKey:key,items:body.items,principalId:context.sub,asOf:new Date().toISOString().slice(0,10)});
    return reply(res,order.replayed?200:201,order);
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/service-orders"){
