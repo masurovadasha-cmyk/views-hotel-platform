@@ -104,6 +104,20 @@ try{
    await page.screenshot({path:resolve(screenshotDir,"finance.png"),fullPage:true});
   }finally{await context.close()}
  });
+ await run("responsive: no horizontal overflow on mobile, tablet and desktop",async()=>{
+  for(const route of ["/guest","/crm","/staff","/finance"]){
+   const {context,page,errors}=await pageFor(route,{});
+   try{
+    for(const width of [320,390,768,1280]){
+     await page.setViewportSize({width,height:900});
+     const dims=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:window.innerWidth}));
+     assert.ok(dims.scroll<=dims.viewport+1,route+" at "+width+"px overflows by "+(dims.scroll-dims.viewport)+"px");
+     if(width===1280)await page.screenshot({path:resolve(screenshotDir,route.slice(1)+"-desktop.png"),fullPage:true});
+    }
+    assert.deepEqual(errors,[]);
+   }finally{await context.close()}
+  }
+ });
 }finally{
  if(browser)await browser.close();
  await close();
