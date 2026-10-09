@@ -10,6 +10,7 @@ import {initializeCleaningChecklist,completeCleaningItem,finalizeCleaningTask,re
 import {accrueTaskCompensation,approveTaskCompensation} from "./task-compensation.mjs";
 import {getGuestOrderTimeline} from "./guest-order-timeline.mjs";
 import {listGuestNotifications,markGuestNotificationRead} from "./guest-notifications.mjs";
+import {requeueDeadLetterNotifications} from "./notification-admin.mjs";
 
 export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
 const oidcMode=process.env.VIEWS_AUTH_MODE==="oidc";
@@ -148,6 +149,12 @@ export const server=createServer(async(req,res)=>{
    requireRole(context,["guest","dispatcher","admin"]);
    const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT sku,name,price_uzs FROM market_catalog WHERE active=true ORDER BY name,sku LIMIT 200")).rows);
    return reply(res,200,products.map(p=>({sku:p.sku,name:p.name,priceUzs:Number(p.price_uzs)})));
+  }
+  if(req.method==="POST"&&url.pathname==="/api/v1/admin/notifications/dead-letters/requeue"){
+   requireRole(context,["admin"]);
+   const body=await parse(req);
+   const result=await requeueDeadLetterNotifications(pool,{organizationId:context.organizationId,jobIds:body?.jobIds,actorId:context.sub,reason:body?.reason});
+   return reply(res,200,result);
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/admin/notifications/health"){
    requireRole(context,["admin"]);

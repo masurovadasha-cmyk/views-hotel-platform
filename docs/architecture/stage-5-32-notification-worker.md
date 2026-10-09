@@ -17,7 +17,7 @@
 ## Important limitations
 - There is no external SMS, email, or push transport. This is an internal in-app projection only.
 - The event discovery query scans eligible outbox events and is bounded per pass; production-scale deployments will need throughput/load tests, indexes, monitoring and retention.
-- A dead job requires explicit operator investigation and a controlled requeue mechanism.
+- Stage 5.33 adds a tenant-scoped, audited administrator recovery endpoint with bounded batches and a rolling rate limit.
 - There is no production identity-provider login, permanent HTTPS hosting, real payment collection or completed Android hardware validation.
 - Do not expose development token entry pages publicly.
 
