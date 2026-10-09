@@ -2,12 +2,13 @@
 import {describe,it,expect} from 'vitest';
 import ts from 'typescript';
 import catalog from './guest-translations.json';
+import marketCatalog from './market-translations.json';
 import {parseGuestLocale,translateGuest} from './GuestLocale';
 import {apartments} from '../../data/demo';
 const fields=(text:string)=>[...text.matchAll(/\{([A-Za-z]+)\}/g)].map(match=>match[1]).sort();
 describe('guest localization',()=>{
  it('has Russian and Uzbek messages with identical interpolation fields',()=>{
-  for(const [source,translations]of Object.entries(catalog))for(const value of Object.values(translations)){
+  for(const [source,translations]of Object.entries({...catalog,...marketCatalog}))for(const value of Object.values(translations)){
    expect(value.trim(),source).not.toBe('');expect(fields(value),source).toEqual(fields(source));
    expect(value).not.toContain('{t(');
   }
@@ -18,7 +19,7 @@ describe('guest localization',()=>{
    const tree=ts.createSourceFile(file,content,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
    function visit(node:ts.Node){
     if(ts.isCallExpression(node)&&node.arguments[0]&&ts.isStringLiteral(node.arguments[0])&&node.expression.getText(tree)===(file.endsWith('/App.tsx')?'guestT':'t')){
-     const key=node.arguments[0].text;expect(Object.hasOwn(catalog,key),file+': '+key).toBe(true);
+     const key=node.arguments[0].text;expect(Object.hasOwn(file.endsWith('/GuestMarket.tsx')?marketCatalog:catalog,key),file+': '+key).toBe(true);
     }ts.forEachChild(node,visit);
    }visit(tree);
   }

@@ -2,6 +2,7 @@
 // Bundled demo UI proof: real files over loopback, no API or provider mocks.
 const http=require('node:http'),fs=require('node:fs/promises'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require('playwright');
+const market=require('../src/features/guest/market-translations.json');
 const guest=require('../src/features/guest/guest-translations.json'),staff=require('../src/features/staff/legacy-staff-translations.json'),access=require('../src/features/auth/access-translations.json');
 const tr=(catalog,locale,key)=>catalog[key]?.[locale]||key,root=path.resolve(__dirname,'../dist');
 const widths=[360,768,1440],locales=['ru','uz','en'],errors=[],unexpected=[],checks=[],screenshots=[],contrastBySurface={guest:0,staff:0};
@@ -80,8 +81,27 @@ async function shot(page,name){const file='/tmp/views-canva-review-'+name+'.png'
   await dialog.getByRole('button',{name:t('Continue'),exact:true}).click();assert.equal(await dialog.getByRole('button',{name:t('Continue to secure payment'),exact:true}).isDisabled(),true);await fits(page,phase+':payment',dialog);
   await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);await restored(page,trigger);
   await nav.getByRole('button',{name:t('Services'),exact:true}).click();const form=page.getByTestId('guest-service-preview-form');await form.getByLabel(t('Details'),{exact:true}).fill('Synthetic airport transfer, no dispatch');await form.getByRole('button',{name:t('Preview request'),exact:true}).click();await page.getByTestId('guest-service-preview').waitFor();await fits(page,phase+':service-preview');
+  await page.locator('.serviceGrid.large').getByRole('button',{name:/V Market/}).click();
+  const shop=page.getByTestId('guest-market'),mt=key=>tr(market,locale,key);await shop.waitFor();
+  await shop.getByRole('button',{name:mt('Clear list'),exact:true}).isDisabled().then(disabled=>disabled?undefined:shop.getByRole('button',{name:mt('Clear list'),exact:true}).click());
+  assert.equal(await shop.locator('[data-product]').count(),8);
+  await shop.getByRole('button',{name:mt('Drinks'),exact:true}).click();assert.equal(await shop.locator('[data-product]').count(),2);
+  await shop.getByLabel(mt('Find a product'),{exact:true}).fill(mt('Still water'));assert.equal(await shop.locator('[data-product]').count(),1);
+  await shop.getByRole('button',{name:mt('Add to list')+': '+mt('Still water'),exact:true}).click();
+  await shop.getByRole('button',{name:mt('Increase')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'2');
+  await shop.getByRole('button',{name:mt('Review list'),exact:true}).click();await page.getByTestId('market-review').waitFor();
+  await shop.getByRole('button',{name:mt('Decrease')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-review').count(),0);
+  await shop.getByLabel(mt('Find a product'),{exact:true}).fill('no-such-market-item');assert.equal(await shop.locator('[data-product]').count(),0);
+  await shop.getByLabel(mt('Find a product'),{exact:true}).fill('');await shop.getByRole('button',{name:mt('All'),exact:true}).click();
+  for(const dark of [true,false]){await theme(page,dark);for(const width of widths){await page.setViewportSize({width,height:1000});await fits(page,phase+':market:'+dark+':'+width);await contrast(page,phase+':market:'+dark+':'+width,'.marketProduct h3');}}
+  await nav.getByRole('button',{name:t('Profile'),exact:true}).click();await nav.getByRole('button',{name:t('Services'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'1');
+  await shop.getByRole('button',{name:mt('Review list'),exact:true}).click();await shop.getByTestId('market-review').waitFor();
+  if(locale==='en'){await page.setViewportSize({width:390,height:844});await shot(page,'v-market-light-390');}
+  await shop.getByRole('button',{name:mt('Remove')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'0');assert.equal(await shop.getByRole('button',{name:mt('Review list'),exact:true}).isDisabled(),true);
+  await page.locator('.serviceGrid.large').getByRole('button',{name:new RegExp(t('Concierge'))}).click();
   await nav.getByRole('button',{name:t('Messages'),exact:true}).click();assert.equal(await page.locator('.chatShell input').isDisabled(),true);assert.equal(await page.locator('.chatShell footer button').isDisabled(),true);
  }
+ checks.push('v_market_localized_search_categories_quantity_remove_review_invalidation_tab_retention_and_no_writes');
  checks.push('guest_five_tabs_search_map_detail_booking_preview_service_preview_modal_focus_and_no_provider_writes');
  await page.locator('.guestNav').getByRole('button',{name:'Explore',exact:true}).click();await page.setViewportSize({width:1440,height:1000});await theme(page,false);await shot(page,'guest-light-1440');await theme(page,true);await page.setViewportSize({width:360,height:900});await shot(page,'guest-dark-360');
  await context.setOffline(true);assert.equal(await page.evaluate(()=>navigator.onLine),false);await page.locator('.connectionNotice').waitFor();await page.locator('.guestNav').getByRole('button',{name:'Profile',exact:true}).click();await page.locator('.profileHero').waitFor();await fits(page,'guest:offline');await context.setOffline(false);await page.locator('.connectionNotice').waitFor({state:'detached'});checks.push('offline_notice_loaded_demo_navigation_and_no_automatic_requests');

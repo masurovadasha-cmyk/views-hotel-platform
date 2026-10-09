@@ -1,0 +1,174 @@
+{
+  "Everyday essentials, close to you.": {
+    "ru": "Всё нужное — рядом.",
+    "uz": "Kundalik ehtiyojlar yoningizda."
+  },
+  "Build your shopping list for your stay.": {
+    "ru": "Соберите список покупок на время проживания.",
+    "uz": "Yashash davringiz uchun xarid roʻyxatini tuzing."
+  },
+  "Demo assortment. Prices, stock and delivery are not connected. This list does not create an order or reserve goods.": {
+    "ru": "Демонстрационный ассортимент. Цены, остатки и доставка не подключены. Список не создаёт заказ и не резервирует товары.",
+    "uz": "Demo assortiment. Narxlar, qoldiqlar va yetkazib berish ulanmagan. Roʻyxat buyurtma yaratmaydi va tovarlarni band qilmaydi."
+  },
+  "Find a product": {
+    "ru": "Найти товар",
+    "uz": "Mahsulot qidirish"
+  },
+  "Product categories": {
+    "ru": "Категории товаров",
+    "uz": "Mahsulot toifalari"
+  },
+  "All": {
+    "ru": "Все",
+    "uz": "Barchasi"
+  },
+  "Drinks": {
+    "ru": "Напитки",
+    "uz": "Ichimliklar"
+  },
+  "Breakfast": {
+    "ru": "Завтрак",
+    "uz": "Nonushta"
+  },
+  "Snacks": {
+    "ru": "Перекус",
+    "uz": "Yengil yeguliklar"
+  },
+  "Essentials": {
+    "ru": "Необходимое",
+    "uz": "Zarur buyumlar"
+  },
+  "Still water": {
+    "ru": "Вода без газа",
+    "uz": "Gazsiz suv"
+  },
+  "Green tea": {
+    "ru": "Зелёный чай",
+    "uz": "Koʻk choy"
+  },
+  "Ground coffee": {
+    "ru": "Молотый кофе",
+    "uz": "Maydalangan qahva"
+  },
+  "Oat flakes": {
+    "ru": "Овсяные хлопья",
+    "uz": "Suli yormasi"
+  },
+  "Seasonal fruit": {
+    "ru": "Сезонные фрукты",
+    "uz": "Mavsumiy mevalar"
+  },
+  "Mixed nuts": {
+    "ru": "Смесь орехов",
+    "uz": "Yongʻoqlar aralashmasi"
+  },
+  "Toothbrush": {
+    "ru": "Зубная щётка",
+    "uz": "Tish choʻtkasi"
+  },
+  "Paper tissues": {
+    "ru": "Бумажные салфетки",
+    "uz": "Qogʻoz salfetkalar"
+  },
+  "1 L": {
+    "ru": "1 л",
+    "uz": "1 l"
+  },
+  "20 bags": {
+    "ru": "20 пакетиков",
+    "uz": "20 paket"
+  },
+  "250 g": {
+    "ru": "250 г",
+    "uz": "250 g"
+  },
+  "500 g": {
+    "ru": "500 г",
+    "uz": "500 g"
+  },
+  "1 kg": {
+    "ru": "1 кг",
+    "uz": "1 kg"
+  },
+  "200 g": {
+    "ru": "200 г",
+    "uz": "200 g"
+  },
+  "1 piece": {
+    "ru": "1 шт.",
+    "uz": "1 dona"
+  },
+  "1 pack": {
+    "ru": "1 упаковка",
+    "uz": "1 qadoq"
+  },
+  "No matching products. Change the search or category.": {
+    "ru": "Ничего не найдено. Измените запрос или категорию.",
+    "uz": "Mahsulot topilmadi. Qidiruv yoki toifani oʻzgartiring."
+  },
+  "Price not set": {
+    "ru": "Цена не установлена",
+    "uz": "Narx belgilanmagan"
+  },
+  "Add to list": {
+    "ru": "В список",
+    "uz": "Roʻyxatga qoʻshish"
+  },
+  "Your shopping list": {
+    "ru": "Ваш список покупок",
+    "uz": "Xarid roʻyxatingiz"
+  },
+  "Items": {
+    "ru": "Количество",
+    "uz": "Miqdor"
+  },
+  "Your list is empty. Add something from the catalogue.": {
+    "ru": "Список пуст. Добавьте товары из каталога.",
+    "uz": "Roʻyxat boʻsh. Katalogdan mahsulot qoʻshing."
+  },
+  "Decrease": {
+    "ru": "Уменьшить",
+    "uz": "Kamaytirish"
+  },
+  "Increase": {
+    "ru": "Увеличить",
+    "uz": "Koʻpaytirish"
+  },
+  "Quantity": {
+    "ru": "Количество",
+    "uz": "Miqdor"
+  },
+  "Remove": {
+    "ru": "Удалить",
+    "uz": "Oʻchirish"
+  },
+  "Total": {
+    "ru": "Итого",
+    "uz": "Jami"
+  },
+  "Awaiting prices": {
+    "ru": "Ожидает цен",
+    "uz": "Narxlar kutilmoqda"
+  },
+  "Up to 20 of each sample item. The list stays in this session; reloading clears it.": {
+    "ru": "До 20 единиц каждого демонстрационного товара. Список сохраняется при переходе между разделами, но очищается при перезагрузке.",
+    "uz": "Har bir demo mahsulotdan 20 tagacha. Boʻlimlar orasida roʻyxat saqlanadi, sahifa qayta yuklanganda oʻchadi."
+  },
+  "Review list": {
+    "ru": "Проверить список",
+    "uz": "Roʻyxatni tekshirish"
+  },
+  "Clear list": {
+    "ru": "Очистить список",
+    "uz": "Roʻyxatni tozalash"
+  },
+  "Shopping list — not sent": {
+    "ru": "Список покупок — не отправлен",
+    "uz": "Xarid roʻyxati — yuborilmadi"
+  },
+  "Checkout will be available after the property connects its product catalogue, prices and fulfilment. No payment or stock movement has occurred.": {
+    "ru": "Оформление станет доступно после подключения каталога объекта, цен и обработки заказов. Оплата и движение товаров не выполнялись.",
+    "uz": "Buyurtma berish obyekt katalogi, narxlar va buyurtmalarni bajarish ulangandan soʻng ochiladi. Toʻlov yoki ombor harakati amalga oshirilmadi."
+  }
+}

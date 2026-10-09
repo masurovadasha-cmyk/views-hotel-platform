@@ -1,0 +1,15 @@
+.guestShell.canvaGuest .guestMarket{margin-top:28px;color:var(--guest-ink)}
+.guestMarket .marketHero{display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--guest-soft);border:1px solid var(--guest-border);border-radius:20px;padding:28px}
+.guestMarket .marketHero small{letter-spacing:.12em}.guestMarket .marketHero h2{font:32px/1.2 Georgia,serif;margin:14px 0}.guestMarket .marketHero svg{flex-shrink:0}
+.guestMarket .marketSearch{display:grid;gap:8px;margin:20px 0}.guestMarket .marketSearch input{width:100%}
+.guestMarket .marketFilters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}.guestMarket .marketFilters button[aria-pressed=true]{background:var(--guest-soft);border-color:var(--guest-accent)}
+.guestMarket .marketLayout{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,.7fr);gap:20px;align-items:start}
+.guestMarket .marketProducts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.guestMarket .marketProduct,.guestMarket .marketBasket{background:var(--guest-surface);border:1px solid var(--guest-border);border-radius:16px;padding:18px;min-width:0;overflow-wrap:anywhere}
+.guestMarket .marketIllustration{display:grid;place-items:center;height:100px;background:var(--guest-soft);border-radius:12px;margin-bottom:16px}
+.guestMarket .marketProduct h3{font-size:17px;line-height:1.4;margin:12px 0}.guestMarket p{font-size:13px;line-height:1.65}.guestMarket small{font-size:12px}
+.guestShell.canvaGuest .guestMarket button{min-height:44px;padding:10px 12px;border:1px solid var(--guest-border);border-radius:10px;background:var(--guest-paper);color:var(--guest-ink);font-size:13px}
+.guestShell.canvaGuest .guestMarket .primary{background:var(--guest-soft);font-weight:700}.guestMarket button:disabled{opacity:.6;cursor:default}
+.guestMarket .marketBasket>button{width:100%;margin-top:8px}.guestMarket .marketBasket ul{list-style:none;padding:0}.guestMarket .marketBasket li{border-top:1px solid var(--guest-border);padding:16px 0}.guestMarket .marketBasket h3{margin:0 0 14px}
+.guestMarket .marketQuantity{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}.guestMarket .marketQuantity output{min-width:22px;text-align:center}.guestMarket .marketQuantity button{min-width:44px}.guestMarket .marketReview{margin-top:20px;border-top:1px solid var(--guest-border)}
+@media(max-width:700px){.guestMarket .marketLayout{grid-template-columns:1fr}.guestMarket .marketHero{padding:20px}.guestMarket .marketHero h2{font-size:26px}.guestMarket .marketHero>svg{display:none}.guestMarket .marketProduct{padding:14px}.guestMarket .marketProduct button{width:100%}}

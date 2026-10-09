@@ -50,6 +50,15 @@ function download(url){
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'ROLE_MOBILE_OVERFLOW_'+role);
   }
   checks.push('nine_public_role_entries_mobile_disconnected_email_no_api');
+  await page.goto(target.origin+prefix+'?api=demo',{waitUntil:'networkidle'});
+  await page.locator('.guestNav').getByRole('button',{name:'Services',exact:true}).click();
+  await page.locator('.serviceGrid.large').getByRole('button',{name:/V Market/}).click();
+  const market=page.getByTestId('guest-market');await market.waitFor();
+  await market.getByRole('button',{name:'Add to list: Still water',exact:true}).click();
+  await market.getByRole('button',{name:'Review list',exact:true}).click();await page.getByTestId('market-review').waitFor();
+  assert.equal(await page.getByTestId('market-count').innerText(),'1');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'MARKET_MOBILE_OVERFLOW');
+  checks.push('public_v_market_catalogue_and_unsent_shopping_list');
   assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
   console.log(JSON.stringify({result:'pass',proof:'public_release_assets_browser',url:target.origin+prefix,sourceCommit:expectedSource,version:expectedVersion,checks,downloadedResources:cache.size,tlsVerification:'curl_default_no_bypass',browserNetwork:'intercepted_to_verified_public_downloads',realEmailSent:false,publicCoreEnabled:false}));
  }finally{await browser.close();}

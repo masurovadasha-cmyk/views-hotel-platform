@@ -55,7 +55,14 @@ const assert=require('node:assert/strict');
   await page.getByRole('heading',{name:'Overview',exact:true}).waitFor();
   await page.getByRole('button',{name:'Guest App',exact:true}).click();
   await verifyPhotos();
+  await page.locator('.guestNav').getByRole('button',{name:'Services',exact:true}).click();
+  await page.locator('.serviceGrid.large').getByRole('button',{name:/V Market/}).click();
+  const market=page.getByTestId('guest-market');await market.waitFor();
+  await market.getByRole('button',{name:'Add to list: Still water',exact:true}).click();
+  await market.getByRole('button',{name:'Review list',exact:true}).click();await page.getByTestId('market-review').waitFor();
+  assert.equal(await page.getByTestId('market-count').innerText(),'1');
+  for(const width of [360,390,768,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'MARKET_OVERFLOW_'+width);}
   assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
-  console.log(JSON.stringify({result:'pass',bundledAndroidOrigin:true,explicitDemo:true,loadedListingPhotos:4,smsHonestAndKeyboardAccessible:true,legacyStringApiAbsent:true,staffNavigation:true,detailPhotoLoaded:true,reloadPhotosLoaded:true,viewports:[360,390,768,1440],blockedImageRequests:external.length,externalRequestsSent:0,pageErrors:0,androidDeviceTested:false}));
+  console.log(JSON.stringify({result:'pass',bundledAndroidOrigin:true,vMarketUnsentShoppingList:true,explicitDemo:true,loadedListingPhotos:4,smsHonestAndKeyboardAccessible:true,legacyStringApiAbsent:true,staffNavigation:true,detailPhotoLoaded:true,reloadPhotosLoaded:true,viewports:[360,390,768,1440],blockedImageRequests:external.length,externalRequestsSent:0,pageErrors:0,androidDeviceTested:false}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

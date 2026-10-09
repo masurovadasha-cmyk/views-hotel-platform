@@ -924,3 +924,22 @@ the new appearance-only views.theme key. Original0.10 prerelease retained; new
 HTTP/browser/PostgreSQL/loopback-SMTP harness exited0, including the previously
 failing offline/logout group, supply6 and folio4. Log /tmp/views-0101-core.log.
 No source gates/assertions were disabled; persistent data untouched.
+
+
+## 48. V Market / 9 October 2026 (Tashkent)
+
+Owner requests autonomous update everywhere with minimal resources. Extend
+existing minimart, no second app/service. New guest sample catalogue/search/cart
+and unsent review use current assets/tokens/locale; no prices or stock fabricated.
+Staff category label changes but API enum stays minimart. Supply workspace states
+retail integration is not connected. No schema/backend/persistent-data changes.
+
+Release0.11.0-preview/1100001 retains appId/key. See RELEASE_0_11_V_MARKET.md for
+scope, commands, limits and manual checks. Browser232layouts/126contrast samples
+(min5.15), no external/API calls, includes all3languages/2themes. Translation test
+now checks the market component against its actual separate message dictionary;
+it does not skip the component. Initial unfiltered staff-auth command selected
+an integration suite without DATABASE_URL;24unit assertions and Core build pass,
+full database evidence must come from hosted disposable CI. No blind liveDB run.
+Public deployment/APK verification are recorded after execution in release notes;
+no claim that public Core/email, actual retail orders or full B3–B11 are complete.

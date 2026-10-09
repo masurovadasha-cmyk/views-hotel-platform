@@ -363,5 +363,6 @@
   "ru": "Корректировка по пересчёту",
   "uz": "Sanash bo‘yicha tuzatish",
   "en": "Stock count adjustment"
- }
+ },
+  "V Market uses a separate demo shopping list. Warehouse quantities are not published to guests; retail orders, prices and stock reservations are not connected.": {"ru": "V Market использует отдельный демонстрационный список покупок. Остатки склада не публикуются гостям; розничные заказы, цены и резервирование товаров не подключены.", "uz": "V Market alohida demo xarid roʻyxatidan foydalanadi. Ombor qoldiqlari mehmonlarga koʻrsatilmaydi; chakana buyurtmalar, narxlar va tovarlarni band qilish ulanmagan."}
 }

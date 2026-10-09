@@ -1800,8 +1800,9 @@
     "uz": "Kirxona"
   },
   "minimart": {
-    "ru": "Мини-маркет",
-    "uz": "Minimarket"
+    "ru": "V Market",
+    "uz": "V Market",
+    "en": "V Market"
   },
   "restaurant": {
     "ru": "Ресторан",

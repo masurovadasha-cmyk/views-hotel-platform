@@ -42,6 +42,7 @@ export function SupplyWorkspace({staffCsrf,direction,permissions}:Props){
  if(!canRead)return <main className="localWorkspace"><p>{t('Supply access is not granted to this account.')}</p></main>;
  return <main className="localWorkspace supplyWorkspace" data-testid={'supply-'+direction} aria-busy={busy}>
   <h1>{t(isPurchase?'Procurement workspace':'Warehouse workspace')}</h1><p className="localWarning">{t('Local test workspace. Quantities only: supplier delivery, payments and inventory valuation are not connected.')}</p>
+  <details className="localPanel"><summary>V Market</summary><p>{t('V Market uses a separate demo shopping list. Warehouse quantities are not published to guests; retail orders, prices and stock reservations are not connected.')}</p></details>
   {!canWrite&&<p>{t('Read-only access. Changes require separate permission.')}</p>}{!online&&<p role="status">{t('Offline. Reconnect and retry manually. Nothing is sent automatically.')}</p>}
   {error&&<p className="localError" role="alert">{t(error)}</p>}{notice&&<p className="localSuccess" role="status">{t(notice)}</p>}
   {attempt&&<button data-testid="supply-retry" disabled={busy||!online} onClick={()=>void execute(attempt)}>{t('Retry the same operation')}</button>}
