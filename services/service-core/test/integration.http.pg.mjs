@@ -89,6 +89,16 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const projected=await processNotificationJobs(pool,{organizationId:org});
   assert.ok(projected.completed>=2);
   assert.equal(await enqueueNotificationEvents(pool,{organizationId:org}),0);
+  const adminHealth=await fetch(base+"/api/v1/admin/notifications/health",{headers:{Authorization:"Bearer "+sign(org,"test-admin",["admin"])}});
+  assert.equal(adminHealth.status,200);
+  const queueMetrics=await adminHealth.json();
+  assert.ok(queueMetrics.completed>=2);
+  assert.equal(queueMetrics.dead,0);
+  const staffHealth=await fetch(base+"/api/v1/admin/notifications/health",{headers:{Authorization:"Bearer "+staffToken}});
+  assert.equal(staffHealth.status,403);
+  const foreignHealth=await fetch(base+"/api/v1/admin/notifications/health",{headers:{Authorization:"Bearer "+sign(randomUUID(),"other-admin",["admin"])}});
+  assert.equal(foreignHealth.status,200);
+  assert.equal((await foreignHealth.json()).total,0);
   const notifications=await fetch(base+"/api/v1/me/notifications",{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(notifications.status,200);
   const inbox=await notifications.json();
