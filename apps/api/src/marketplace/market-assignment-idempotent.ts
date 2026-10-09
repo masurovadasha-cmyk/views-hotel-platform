@@ -1,6 +1,7 @@
 import type {PoolClient} from "pg";
 import {executeMarketIdempotentCommand} from "./market-command-idempotency";
-import {authorizedMarketAssignment,type MarketAssignmentCommand} from "./market-assignment-authorized";
+import {authorizedMarketAssignment} from "./market-assignment-authorized";
+import type {MarketAssignmentCommand} from "./market-assignment-transaction";
 
 /** Run inside DatabaseService.withActor, with the caller's trusted context. */
 export async function idempotentMarketAssignment(
