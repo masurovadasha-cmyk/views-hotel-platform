@@ -7,6 +7,7 @@ import {inTenantTransaction} from "../src/postgres.mjs";
 if(!process.env.TEST_DATABASE_URL)throw Error("TEST_DATABASE_URL required");
 if(!process.env.VIEWS_AUTH_SECRET||process.env.VIEWS_AUTH_SECRET.length<32)throw Error("VIEWS_AUTH_SECRET required");
 process.env.DATABASE_URL=process.env.TEST_DATABASE_URL;
+process.env.VIEWS_ALLOW_DEV_AUTH="1";
 const {server,pool}=await import("../src/db-server.mjs");
 const sign=(organizationId,sub,roles)=>{
  const body=Buffer.from(JSON.stringify({organizationId,sub,roles,exp:Math.floor(Date.now()/1000)+600})).toString("base64url");
