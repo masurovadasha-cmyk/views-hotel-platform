@@ -23,6 +23,13 @@ beforeEach(()=>{
  vi.mocked(createCoreServiceToken).mockResolvedValue("signed-token");
 });
 describe("same-origin Staff CRM gateway",()=>{
+ it("rejects demo-role headers on the signed Core gateway",async()=>{
+  const ctx=context();
+  const request=new Request(ctx.request.url,{headers:{"x-views-demo-role":"general_manager"}});
+  const response=await onRequestGet({...ctx,request});
+  expect(response.status).toBe(401);
+  expect(resolveSession).not.toHaveBeenCalled();
+ });
  it("rejects unauthenticated browser requests without calling Core",async()=>{
   vi.mocked(resolveSession).mockResolvedValue(null);
   const fetcher=vi.fn();vi.stubGlobal("fetch",fetcher);
