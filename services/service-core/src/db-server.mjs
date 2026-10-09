@@ -42,7 +42,7 @@ export const server=createServer(async(req,res)=>{
    const admin=context.roles.includes("admin");
    const summary=await inTenantTransaction(pool,context.organizationId,async db=>{
     const condition=admin?"":"AND EXISTS (SELECT 1 FROM service_property_access a WHERE a.organization_id=t.organization_id AND a.property_id=t.property_id AND a.principal_id=$1 AND a.permission='order:manage')";
-    const query="SELECT count(*)::integer AS total, count(*) FILTER (WHERE t.status IN ('assigned','in_progress') AND t.due_at<now())::integer AS overdue, count(*) FILTER (WHERE t.status='completed')::integer AS completed, count(*) FILTER (WHERE t.status IN ('unassigned','assigned','in_progress') AND (t.due_at IS NULL OR t.due_at>=now()))::integer AS open FROM service_dispatch_tasks t WHERE true "+condition;
+    const query="SELECT count(*)::integer AS total, count(*) FILTER (WHERE t.status IN ('unassigned','assigned','in_progress') AND t.due_at<now())::integer AS overdue, count(*) FILTER (WHERE t.status='completed')::integer AS completed, count(*) FILTER (WHERE t.status IN ('unassigned','assigned','in_progress') AND (t.due_at IS NULL OR t.due_at>=now()))::integer AS open FROM service_dispatch_tasks t WHERE true "+condition;
     return (await db.query(query,admin?[]:[context.sub])).rows[0];
    });
    return reply(res,200,summary);
