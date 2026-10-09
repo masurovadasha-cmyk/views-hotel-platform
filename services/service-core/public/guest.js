@@ -1,6 +1,7 @@
 import {createViewsClient} from "./views-client.js";
 const token=document.querySelector("#token"),booking=document.querySelector("#booking"),catalogEl=document.querySelector("#catalog"),totalEl=document.querySelector("#total"),message=document.querySelector("#message"),orderEl=document.querySelector("#order"),checkout=document.querySelector("#checkout"),refresh=document.querySelector("#refresh");
 const loadCatalogButton=document.querySelector("#load-catalog"),loadBookingsButton=document.querySelector("#load-bookings");
+const loadOrdersButton=document.querySelector("#load-orders"),historyEl=document.querySelector("#order-history");
 const client=createViewsClient({getToken:async()=>token.value.trim()});
 const money=n=>Number(n).toLocaleString("ru-RU")+" UZS";
 const cart=new Map();
@@ -27,6 +28,8 @@ function render(){
  checkout.disabled=!subtotal||!!orderId||inFlight;
  booking.disabled=!!pendingKey||!!orderId||inFlight;
  loadCatalogButton.disabled=loadBookingsButton.disabled=!!pendingKey||!!orderId||inFlight;
+ loadOrdersButton.disabled=!!pendingKey||inFlight;
+ token.disabled=!!pendingKey||!!orderId||inFlight;
 }
 function change(sku,delta){
  if(pendingKey||orderId||inFlight){message.textContent="Корзина заблокирована до завершения заказа";return}
@@ -68,6 +71,37 @@ async function updateOrder(){
  }catch(e){orderEl.textContent="Заказ создан. Статус временно недоступен: "+e.message}
 }
 refresh.onclick=updateOrder;
+async function loadGuestOrders(){
+ if(pendingKey||inFlight){message.textContent="Дождитесь результата предыдущего заказа";return}
+ loadOrdersButton.disabled=true;
+ try{
+  const orders=await client.listGuestOrders();
+  historyEl.replaceChildren();
+  if(!orders.length){historyEl.textContent="История заказов пока пуста";return}
+  for(const o of orders){
+   const button=document.createElement("button");
+   button.type="button";button.className="order";
+   button.textContent="Заказ "+o.id.slice(0,8)+" · "+o.fulfillment_status+" · "+(o.total_uzs==null?"Сумма неизвестна":money(o.total_uzs));
+   button.onclick=async()=>{
+    if(pendingKey||inFlight)return;
+    orderId=o.id;
+    refresh.disabled=false;
+    render();
+    await updateOrder();
+   };
+   historyEl.append(button);
+  }
+ }catch(e){message.textContent="Не удалось загрузить историю: "+e.message}
+ finally{render()}
+}
+loadOrdersButton.onclick=loadGuestOrders;
+token.addEventListener("input",()=>{
+ if(pendingKey||orderId||inFlight)return;
+ catalog=[];cart.clear();booking.replaceChildren();
+ const option=document.createElement("option");option.value="";option.textContent="Сначала загрузите бронирования";booking.append(option);
+ historyEl.replaceChildren();orderEl.textContent="Выберите товары и создайте заказ";render();
+});
+
 loadCatalogButton.onclick=async()=>{
  if(pendingKey||orderId||inFlight)return;
  try{
