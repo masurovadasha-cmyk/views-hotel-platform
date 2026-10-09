@@ -65,6 +65,18 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const guestOrderResponse=await fetch(base+"/api/v1/service-orders",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+guestToken,"Idempotency-Key":"guest-"+randomUUID()},body:JSON.stringify({bookingId,items:[{sku:"WATER-15",quantity:1}]})});
   assert.equal(guestOrderResponse.status,201);
   const guestOrder=await guestOrderResponse.json();
+  const guestHistory=await fetch(base+"/api/v1/me/orders",{headers:{Authorization:"Bearer "+guestToken}});
+  assert.equal(guestHistory.status,200);
+  const ownHistory=await guestHistory.json();
+  assert.ok(ownHistory.some(row=>row.id===guestOrder.id));
+  assert.ok(ownHistory.every(row=>row.id===guestOrder.id));
+  const foreignHistory=await fetch(base+"/api/v1/me/orders",{headers:{Authorization:"Bearer "+sign(org,"other-guest",["guest"])}});
+  assert.equal(foreignHistory.status,200);
+  assert.deepEqual(await foreignHistory.json(),[]);
+  const unauthHistory=await fetch(base+"/api/v1/me/orders");
+  assert.equal(unauthHistory.status,401);
+  const staffHistory=await fetch(base+"/api/v1/me/orders",{headers:{Authorization:"Bearer "+staffToken}});
+  assert.equal(staffHistory.status,403);
   const owned=await fetch(base+"/api/v1/service-orders/"+guestOrder.id,{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(owned.status,200);
   const foreignGuestToken=sign(org,"other-guest",["guest"]);
