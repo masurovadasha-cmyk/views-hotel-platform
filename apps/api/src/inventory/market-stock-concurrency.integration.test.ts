@@ -12,8 +12,10 @@ async function transaction<T>(work:(client:import("pg").PoolClient)=>Promise<T>)
  catch(error){await client.query("ROLLBACK");throw error}finally{client.release()}
 }
 const SKU="CI-CONCURRENT-MARKET";
+const adminEnabled=!!process.env.MARKET_TEST_ADMIN_DATABASE_URL;
 
 beforeAll(async()=>{
+ if(!adminEnabled)return;
  await transaction(async client=>{
   await client.query(`INSERT INTO market_stock_balances(organization_id,property_id,sku,on_hand,reserved)
     VALUES($1,$2,$3,1,0) ON CONFLICT(organization_id,property_id,sku)
@@ -25,7 +27,7 @@ beforeAll(async()=>{
  });
 });
 afterAll(async()=>{await pool.end()});
-describe.sequential("market stock PostgreSQL concurrency",()=>{
+(adminEnabled?describe.sequential:describe.skip)("market stock PostgreSQL concurrency",()=>{
  it("only one of two simultaneous reservations obtains the last unit",async()=>{
   const results=await Promise.allSettled([1,2].map(i=>transaction(client=>reserveMarketStock(client,{
    organizationId:ORG,propertyId:PROPERTY,orderId:`70000000-0000-4000-8000-00000000000${i}`,lines:[{sku:SKU,quantity:1}]
