@@ -3,6 +3,7 @@ import {canAccessProperty,isManagement} from "../../../../../_authorization";
 import {coreApiConfig,resolveCoreActor,resolveCoreProperty,CoreBridgeError} from "../../../../../_core-bridge";
 import {createCoreServiceToken} from "../../../../../_core-service-token";
 import {json,requestId,type Env} from "../../../../../_shared";
+import {validateCoreMarketDetail} from "../../../../../_market-response";
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const allowedRoles=new Set(["front_desk","concierge","reservation_manager","general_manager","super_admin"]);
@@ -56,8 +57,8 @@ export const onRequestGet=async({request,env,params}:Context)=>{
   if(raw.length>131072)return json({error:"CORE_RESPONSE_TOO_LARGE",requestId:requestId(request)},502);
   let data:unknown;
   try{data=JSON.parse(raw)}catch{return json({error:"CORE_INVALID_RESPONSE",requestId:requestId(request)},502)}
-  // The client adapter performs additional schema validation before rendering.
-  if(!data||typeof data!=="object"||Array.isArray(data))
+  // Validate at the server boundary before forwarding any Core data.
+  if(!validateCoreMarketDetail(data,coreProperty,orderId))
    return json({error:"CORE_INVALID_RESPONSE",requestId:requestId(request)},502);
   return json(data);
  }catch(error){
