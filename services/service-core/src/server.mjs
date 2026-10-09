@@ -1,3 +1,4 @@
+import {fileURLToPath} from "node:url";
 import {createServer} from "node:http";
 import {randomUUID} from "node:crypto";
 import {readFile} from "node:fs/promises";
@@ -40,5 +41,5 @@ const server=createServer(async(req,res)=>{
   return send(res,404,{error:"Not found"});
  }catch(e){return send(res,e instanceof SyntaxError?400:400,{error:"Invalid request"})}
 });
-if(process.env.NODE_ENV!=="test")server.listen(port,"127.0.0.1",()=>console.log("VIEWS local demo on http://127.0.0.1:"+port));
+if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1])server.listen(port,"127.0.0.1",()=>console.log("VIEWS local demo on http://127.0.0.1:"+port));
 export {server};
