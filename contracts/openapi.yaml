@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info:
+  title: VIEWS Service Core
+  version: 0.1.0
+  description: Draft API contract for service ordering and inventory.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /service-orders:
+    post:
+      operationId: createServiceOrder
+      summary: Create a service order
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 128 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [propertyId, serviceType, items]
+              properties:
+                propertyId: { type: string, format: uuid }
+                serviceType: { type: string, enum: [market, cleaning, laundry, concierge, transfer, rental_car, excursion, flight, rail] }
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [sku, quantity]
+                    properties:
+                      sku: { type: string }
+                      quantity: { type: integer, minimum: 1 }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOrder'
+        '409':
+          description: Conflict
+  /service-orders/{orderId}:
+    get:
+      operationId: getServiceOrder
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOrder'
+        '404':
+          description: Not found
+  /inventory/lots:
+    get:
+      operationId: listInventoryLots
+      parameters:
+        - in: query
+          name: sku
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Inventory lots scoped to the authorized organization
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryLot'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ServiceOrder:
+      type: object
+      required: [id, serviceType, fulfillmentStatus, paymentStatus]
+      properties:
+        id: { type: string, format: uuid }
+        serviceType: { type: string }
+        fulfillmentStatus: { type: string, enum: [draft, awaiting_payment, confirmed, assigned, in_progress, completed, cancelled] }
+        paymentStatus: { type: string, enum: [unpaid, pending, paid, partially_refunded, refunded, failed] }
+    InventoryLot:
+      type: object
+      required: [id, sku, onHand, reserved]
+      properties:
+        id: { type: string, format: uuid }
+        sku: { type: string }
+        expiresAt: { type: string, format: date }
+        onHand: { type: integer, minimum: 0 }
+        reserved: { type: integer, minimum: 0 }
