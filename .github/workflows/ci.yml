@@ -16,6 +16,8 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run typecheck
       - run: npm test
+      - name: Verify market order and stock integrity
+        run: node --test scripts/market-integrity.regression.cjs
       - name: Enforce Core network primitive boundary
         run: npm run security:core-network-primitives
       - name: Enforce production egress domain policy

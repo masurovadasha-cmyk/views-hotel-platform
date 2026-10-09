@@ -9,15 +9,56 @@ import "./market.css";
 type Screen="shop"|"cart"|"orders"|"staff";
 
 function freshState():MarketState{return {products:marketSeed.map(p=>({...p})),orders:[],ledger:[]}}
+function isSafeState(x:unknown):x is MarketState{
+  if(!x||typeof x!=="object")return false;
+  const v=x as MarketState;
+  if(!Array.isArray(v.products)||v.products.length!==marketSeed.length||!Array.isArray(v.orders)||!Array.isArray(v.ledger))return false;
+  const ids=new Set(marketSeed.map(p=>p.id));const seen=new Set<string>();const held=new Map<string,number>();
+  for(const p of v.products){
+    if(!p||typeof p.id!=="string"||!ids.has(p.id)||seen.has(p.id)||typeof p.nameRu!=="string"||typeof p.imageUrl!=="string"||!Number.isSafeInteger(p.stock)||!Number.isSafeInteger(p.reserved)||p.stock<0||p.reserved<0||p.reserved>p.stock||!Number.isSafeInteger(p.guestPriceUzs)||p.guestPriceUzs<0)return false;
+    seen.add(p.id);
+  }
+  const orderIds=new Set<string>();const keys=new Set<string>();
+  for(const o of v.orders){
+    if(!o||typeof o.id!=="string"||typeof o.idempotencyKey!=="string"||orderIds.has(o.id)||keys.has(o.idempotencyKey)||!["new","picking","packed","out_for_delivery","delivered","cancelled"].includes(o.status)||!Array.isArray(o.lines)||!o.lines.length)return false;
+    orderIds.add(o.id);keys.add(o.idempotencyKey);
+    for(const l of o.lines){
+      const p=v.products.find(p=>p.id===l.productId);
+      if(!p||p.sku!==l.sku||!Number.isSafeInteger(l.quantity)||l.quantity<1||!Number.isSafeInteger(l.lineTotalUzs)||l.lineTotalUzs<0)return false;
+      if(o.status!=="delivered"&&o.status!=="cancelled")held.set(p.id,(held.get(p.id)||0)+l.quantity);
+    }
+  }
+  return v.products.every(p=>p.reserved===(held.get(p.id)||0))&&v.ledger.every(e=>e&&typeof e.id==="string"&&typeof e.sku==="string"&&typeof e.type==="string"&&Number.isSafeInteger(e.quantity));
+}
 function loadState():MarketState{
   try{
-    const raw=localStorage.getItem(MARKET_STATE_KEY); if(!raw)return freshState();
-    const parsed=JSON.parse(raw) as MarketState;
-    if(!Array.isArray(parsed.products)||parsed.products.length<100)return freshState();
+    const raw=localStorage.getItem(MARKET_STATE_KEY);if(!raw)return freshState();
+    const parsed:unknown=JSON.parse(raw);
+    if(!isSafeState(parsed))throw Error("INVALID_MARKET_STORAGE");
     return parsed;
   }catch{return freshState()}
 }
-function loadCart():Cart{try{return JSON.parse(localStorage.getItem(MARKET_CART_KEY)||"{}") as Cart}catch{return {}}}
+function loadCart():Cart{
+  try{
+    const parsed:unknown=JSON.parse(localStorage.getItem(MARKET_CART_KEY)||"{}");
+    if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))return {};
+    const result:Cart={};
+    for(const [id,n] of Object.entries(parsed)){
+      if(!marketSeed.some(p=>p.id===id)||!Number.isSafeInteger(n)||typeof n!=="number"||n<1)return {};
+      result[id]=n;
+    }
+    return result;
+  }catch{return {}}
+}
+function readableMarketError(error:unknown){
+  const code=error instanceof Error?error.message:"CHECKOUT_FAILED";
+  if(code==="DEMO_PAYMENT_FAILED")return "Тестовый платёж отклонён. Заказ не создан.";
+  if(code==="IDEMPOTENCY_CONFLICT")return "Заказ уже оформлялся с другими параметрами. Обновите корзину.";
+  if(code==="INVENTORY_CONFLICT"||code.startsWith("OUT_OF_STOCK:"))return "Остатки изменились. Операция остановлена; обновите страницу.";
+  if(code==="STALE_MARKET")return "Другая вкладка изменила демоданные. Перезагрузите страницу.";
+  if(code==="INVALID_CART"||code==="INVALID_QUANTITY"||code.startsWith("UNKNOWN_PRODUCT:"))return "Проверьте количество и состав корзины.";
+  return "Операция отклонена. Проверьте данные и повторите.";
+}
 function nextLabel(status:string){
   if(status==="new")return "Start picking";
   if(status==="picking")return "Packed";
@@ -46,11 +87,61 @@ export function MarketDemo(){
   const [payment,setPayment]=useState<"demo_card"|"room_charge">("demo_card");
   const [paymentOutcome,setPaymentOutcome]=useState<"success"|"failure">("success");
   const [message,setMessage]=useState("");
+  const [stale,setStale]=useState(()=>{
+    try{
+      const raw=localStorage.getItem(MARKET_STATE_KEY);
+      if(raw!==null&&!isSafeState(JSON.parse(raw)))return true;
+      const cartRaw=localStorage.getItem(MARKET_CART_KEY);
+      if(cartRaw!==null){
+        const c:unknown=JSON.parse(cartRaw);
+        if(!c||typeof c!=="object"||Array.isArray(c))return true;
+        for(const [id,n] of Object.entries(c)){
+          if(!marketSeed.some(p=>p.id===id)||typeof n!=="number"||!Number.isSafeInteger(n)||n<1)return true;
+        }
+      }
+      return false;
+    }catch{return true}
+  });
+  const initialStateRaw=useRef<string|null>(null);
+  const initialCartRaw=useRef<string|null>(null);
+  const mounted=useRef(false);
   const [photoProductId,setPhotoProductId]=useState<string|null>(null);
   const checkoutKey=useRef("checkout-"+crypto.randomUUID());
 
-  useEffect(()=>{localStorage.setItem(MARKET_STATE_KEY,JSON.stringify(state))},[state]);
-  useEffect(()=>{localStorage.setItem(MARKET_CART_KEY,JSON.stringify(cart))},[cart]);
+  useEffect(()=>{
+    if(mounted.current)return;
+    mounted.current=true;
+    try{initialStateRaw.current=localStorage.getItem(MARKET_STATE_KEY);initialCartRaw.current=localStorage.getItem(MARKET_CART_KEY)}
+    catch{setStale(true);setMessage("Локальное хранилище недоступно.")}
+  },[]);
+  useEffect(()=>{
+    if(!mounted.current||stale)return;
+    try{
+      if(localStorage.getItem(MARKET_STATE_KEY)!==initialStateRaw.current){setStale(true);return}
+      const value=JSON.stringify(state);localStorage.setItem(MARKET_STATE_KEY,value);initialStateRaw.current=value;
+    }catch{setStale(true)}
+  },[state,stale]);
+  useEffect(()=>{
+    if(!mounted.current||stale)return;
+    try{
+      if(localStorage.getItem(MARKET_CART_KEY)!==initialCartRaw.current){setStale(true);return}
+      const value=JSON.stringify(cart);localStorage.setItem(MARKET_CART_KEY,value);initialCartRaw.current=value;
+    }catch{setStale(true)}
+  },[cart,stale]);
+  useEffect(()=>{
+    const handler=(event:StorageEvent)=>{
+      if(event.key===null||event.key===MARKET_STATE_KEY||event.key===MARKET_CART_KEY)setStale(true);
+    };
+    window.addEventListener("storage",handler);return ()=>window.removeEventListener("storage",handler);
+  },[]);
+  function assertFresh(){
+    if(stale||localStorage.getItem(MARKET_STATE_KEY)!==initialStateRaw.current||localStorage.getItem(MARKET_CART_KEY)!==initialCartRaw.current){
+      setStale(true);throw Error("STALE_MARKET");
+    }
+  }
+  function changeState(action:(s:MarketState)=>MarketState){
+    try{assertFresh();setState(action(state))}catch(error){setMessage(readableMarketError(error))}
+  }
 
   const categories=useMemo(()=>["Все",...Array.from(new Set(state.products.map(p=>p.category)))],[state.products]);
   const visible=useMemo(()=>state.products.filter(p=>{
@@ -63,13 +154,14 @@ export function MarketDemo(){
   const staffProducts=state.products.filter(p=>(p.nameRu+" "+p.sku+" "+p.category).toLowerCase().includes(staffQuery.toLowerCase())).slice(0,40);
 
   function mutateCart(productId:string,delta:number){
-    const product=state.products.find(p=>p.id===productId); if(!product)return;
-    setCart(current=>addCartLine(current,product,delta));
-    checkoutKey.current="checkout-"+crypto.randomUUID();
+    try{assertFresh();const product=state.products.find(p=>p.id===productId);if(!product)return;
+      setCart(current=>addCartLine(current,product,delta));checkoutKey.current="checkout-"+crypto.randomUUID();
+    }catch(error){setMessage(readableMarketError(error))}
   }
   function checkout(){
     setMessage("");
     try{
+      assertFresh();
       const result=placeDemoOrder(state,cart,{
         idempotencyKey:checkoutKey.current,apartment,deliverySlot,comment,payment,paymentOutcome,
         deliveryFeeUzs:10000
@@ -81,12 +173,15 @@ export function MarketDemo(){
       setScreen("orders");
       setMessage(result.duplicate?"Повторный запрос распознан — второй заказ не создан.":"Демо-заказ создан и появился в Staff CRM.");
     }catch(error){
-      const code=error instanceof Error?error.message:"CHECKOUT_FAILED";
-      setMessage(code==="DEMO_PAYMENT_FAILED"?"Тестовый платеж отклонён. Заказ не создан и остатки не зарезервированы.":code);
+      setMessage(readableMarketError(error));
     }
   }
   function resetDemo(){
-    const clean=freshState();setState(clean);setCart({});setScreen("shop");setMessage("Демо-данные рынка сброшены.");checkoutKey.current="checkout-"+crypto.randomUUID();
+    if(!window.confirm("Удалить все локальные демозаказы, корзину и движения склада?"))return;
+    try{localStorage.removeItem(MARKET_STATE_KEY);localStorage.removeItem(MARKET_CART_KEY);
+      initialStateRaw.current=null;initialCartRaw.current=null;setStale(false);
+      setState(freshState());setCart({});setScreen("shop");setMessage("Демо-данные рынка сброшены.");checkoutKey.current="checkout-"+crypto.randomUUID();
+    }catch{setStale(true);setMessage("Не удалось сбросить демоданные.")}
   }
 
   return <main className="marketShell">
@@ -102,7 +197,8 @@ export function MarketDemo(){
       <button className={screen==="staff"?"active":""} onClick={()=>setScreen("staff")}>Staff CRM</button>
     </nav>
 
-    {message&&<div className="marketNotice">{message}</div>}
+    {stale&&<div className="marketNotice" role="alert">Демоданные изменились в другой вкладке или недоступны. Новые операции заблокированы. <button onClick={()=>window.location.reload()}>Перезагрузить</button></div>}
+    {message&&<div className="marketNotice" role="status">{message}</div>}
 
     {screen==="shop"&&<section>
       <div className="marketToolbar">
@@ -143,7 +239,7 @@ export function MarketDemo(){
         {payment==="demo_card"&&<label>Тест результата<select value={paymentOutcome} onChange={e=>setPaymentOutcome(e.target.value as "success"|"failure")}><option value="success">Успешный тестовый платёж</option><option value="failure">Отклонённый тестовый платёж</option></select></label>}
         <div className="marketTotals"><span>Товары<b>{formatUzs(summary.subtotalUzs)}</b></span><span>Доставка<b>{formatUzs(summary.deliveryFeeUzs)}</b></span><strong>Итого <b>{formatUzs(summary.totalUzs)}</b></strong></div>
         <p className="demoWarning">DEMO ONLY. Настоящие реквизиты карты не вводятся и не сохраняются.</p>
-        <button className="marketPrimary big" disabled={!summary.lines.length||!apartment.trim()} onClick={checkout}>Заказать демо</button>
+        <button className="marketPrimary big" disabled={stale||!summary.lines.length||!apartment.trim()} onClick={checkout}>Заказать демо</button>
       </aside>
     </section>}
 
@@ -171,8 +267,8 @@ export function MarketDemo(){
             <span className={"marketStatus "+o.status}>{o.status.replaceAll("_"," ")}</span>
             <div className="staffOrderThumbs">{o.lines.slice(0,4).map(l=>{const p=state.products.find(x=>x.sku===l.sku);return p?<ProductPhoto key={l.sku} className="micro" src={p.imageUrl} alt={l.name} emoji={p.emoji}/>:null})}</div>
             <div className="staffActions">
-              {nextLabel(o.status)&&<button className="marketPrimary" onClick={()=>setState(s=>advanceMarketOrder(s,o.id))}>{nextLabel(o.status)}</button>}
-              {!["delivered","cancelled"].includes(o.status)&&<button onClick={()=>setState(s=>cancelMarketOrder(s,o.id))}>Cancel + release</button>}
+              {nextLabel(o.status)&&<button className="marketPrimary" onClick={()=>changeState(s=>advanceMarketOrder(s,o.id))}>{nextLabel(o.status)}</button>}
+              {!["delivered","cancelled"].includes(o.status)&&<button onClick={()=>changeState(s=>cancelMarketOrder(s,o.id))}>Cancel + release</button>}
             </div>
           </article>)}</div>
         </div>
@@ -181,7 +277,7 @@ export function MarketDemo(){
           <div className="inventoryRows">{staffProducts.map(p=><article key={p.id}>
             <div className="inventoryProductCell"><ProductPhoto className="micro" src={p.imageUrl} alt={p.imageAlt} emoji={p.emoji}/><div><b>{p.nameRu}</b><small>{p.sku} · {p.category}</small></div></div>
             <span>stock <b>{p.stock}</b></span><span>reserved <b>{p.reserved}</b></span><span className={availableStock(p)<=p.reorderPoint?"low":""}>available <b>{availableStock(p)}</b></span>
-            <div><button onClick={()=>setState(s=>receiveMarketStock(s,p.id,5))}>Receive +5</button><button onClick={()=>setState(s=>adjustMarketStock(s,p.id,-1,"demo cycle-count adjustment"))}>Adjust −1</button></div>
+            <div><button onClick={()=>changeState(s=>receiveMarketStock(s,p.id,5))}>Receive +5</button><button onClick={()=>changeState(s=>adjustMarketStock(s,p.id,-1,"demo cycle-count adjustment"))}>Adjust −1</button></div>
           </article>)}</div>
         </div>
       </div>
