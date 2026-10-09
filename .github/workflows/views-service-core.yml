@@ -197,3 +197,11 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run real Chromium interface smoke checks
         run: node test/browser-smoke.mjs
+      - name: Upload Chromium screen captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: views-browser-screenshots
+          path: services/service-core/browser-screenshots/
+          if-no-files-found: warn
+          retention-days: 14
