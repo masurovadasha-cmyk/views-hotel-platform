@@ -91,6 +91,16 @@ export const server=createServer(async(req,res)=>{
    });
    return reply(res,200,summary);
   }
+  const checklistMatch=url.pathname.match(/^\/api\/v1\/staff\/tasks\/([0-9a-f-]+)\/checklist$/i);
+  if(req.method==="GET"&&checklistMatch&&uuid.test(checklistMatch[1])){
+   requireRole(context,["staff","dispatcher","admin"]);
+   const items=await inTenantTransaction(pool,context.organizationId,async db=>{
+    const eligible=await db.query("SELECT 1 FROM service_dispatch_tasks WHERE organization_id=$1 AND id=$2 AND task_kind='cleaning' AND assigned_principal_id=$3",[context.organizationId,checklistMatch[1],context.sub]);
+    if(!eligible.rowCount)throw Error("Forbidden");
+    return (await db.query("SELECT item_code,label,completed_at,completed_by FROM service_cleaning_checklist_items WHERE organization_id=$1 AND task_id=$2 ORDER BY item_code",[context.organizationId,checklistMatch[1]])).rows;
+   });
+   return reply(res,200,items);
+  }
   if(req.method==="GET"&&url.pathname==="/api/v1/staff/tasks"){
    requireRole(context,["staff","dispatcher","admin"]);
    const tasks=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query("SELECT id,order_id,property_id,task_kind,status,due_at FROM service_dispatch_tasks WHERE assigned_principal_id=$1 ORDER BY due_at NULLS LAST,created_at LIMIT 100",[context.sub])).rows);
