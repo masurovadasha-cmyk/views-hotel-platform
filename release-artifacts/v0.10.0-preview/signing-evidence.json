@@ -1,0 +1,10 @@
+{
+  "result": "pass",
+  "sourceCommit": "1d86bcffe119465e377ac6c01c15c9adcf4647bc",
+  "apkSha256": "5bd6dd5de0279159cef68615ee07187bf1fec7515046fa33ab5a4baeebd99d3b",
+  "certificateSha256": "3a973f0de0333ced89769ddfdae476fe826da605910c952212bbfd1c8179e052",
+  "signatureVerified": true,
+  "productionEnabled": false,
+  "physicalDeviceTested": false,
+  "upgradeCompatibilityTested": false
+}
