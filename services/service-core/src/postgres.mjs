@@ -57,8 +57,8 @@ export async function createMarketOrder(pool,{organizationId,propertyId,idempote
    if(existing.rows[0].property_id!==propertyId||existing.rows[0].service_type!=="market"||existing.rows[0].request_fingerprint!==fingerprint)throw Error("Idempotency conflict");
    return {id:existing.rows[0].id,replayed:true};
   }
-  const created=await client.query(`INSERT INTO service_orders(organization_id,property_id,service_type,fulfillment_status,idempotency_key,request_fingerprint)
-   VALUES ($1,$2,'market','draft',$3,$4) RETURNING id`,[organizationId,propertyId,idempotencyKey,fingerprint]);
+  const created=await client.query(`INSERT INTO service_orders(organization_id,property_id,service_type,fulfillment_status,idempotency_key,request_fingerprint,created_by)
+   VALUES ($1,$2,'market','draft',$3,$4,$5) RETURNING id`,[organizationId,propertyId,idempotencyKey,fingerprint,principalId]);
   const id=created.rows[0].id;
   for(const item of normalized){
    await client.query("INSERT INTO service_order_items(organization_id,order_id,sku,quantity) VALUES($1,$2,$3,$4)",[organizationId,id,item.sku,item.quantity]);
