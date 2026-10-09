@@ -12,6 +12,7 @@ test("cleaning checklist is immutable and must be completed by assignee",async()
  await inTenantTransaction(pool,org,async db=>{
   await db.query("INSERT INTO service_orders(id,organization_id,property_id,service_type,idempotency_key,fulfillment_status) VALUES($1,$2,$3,'cleaning',$4,'confirmed')",[orderId,org,property,"clean-"+randomUUID()]);
   await db.query("INSERT INTO service_property_access(organization_id,property_id,principal_id,permission) VALUES($1,$2,'manager','order:manage')",[org,property]);
+  await db.query("INSERT INTO service_task_assignees(organization_id,property_id,principal_id) VALUES($1,$2,$3)",[org,property,"cleaner"]);
   await db.query("INSERT INTO service_dispatch_tasks(id,organization_id,order_id,property_id,task_kind,assigned_principal_id,status) VALUES($1,$2,$3,$4,'cleaning','cleaner','in_progress')",[taskId,org,orderId,property]);
  });
  const context={organizationId:org,taskId};
