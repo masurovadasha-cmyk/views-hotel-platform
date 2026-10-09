@@ -41,6 +41,7 @@ export const server=createServer(async(req,res)=>{
   if(!bearer)return reply(res,401,{error:"Unauthorized"});
   let context;try{context=oidcMode?await verifyOidc(bearer[1]):verifySignedContext(bearer[1],secret)}catch{return reply(res,401,{error:"Unauthorized"})}
   if(!uuid.test(context.organizationId))return reply(res,401,{error:"Unauthorized"});
+  if(req.method==="GET"&&url.pathname==="/api/v1/me")return reply(res,200,{sub:context.sub,organizationId:context.organizationId,roles:context.roles,authMode:oidcMode?"oidc":"dev"});
   if(req.method==="GET"&&url.pathname==="/api/v1/finance/payments"){
    requireRole(context,["admin","finance"]);
    const rows=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query("SELECT id,order_id,provider,amount_uzs,status,created_at FROM service_payment_intents ORDER BY created_at DESC LIMIT 100")).rows);
