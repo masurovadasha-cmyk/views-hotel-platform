@@ -39,6 +39,14 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const created=await fetch(base+"/api/v1/service-orders",request);
   assert.equal(created.status,201);
   const order=await created.json();
+  const guestRead=await fetch(base+"/api/v1/service-orders/"+order.id,{headers:{Authorization:"Bearer "+guestToken}});
+  assert.equal(guestRead.status,404);
+  const staffRead=await fetch(base+"/api/v1/service-orders/"+order.id,{headers:{Authorization:"Bearer "+staffToken}});
+  assert.equal(staffRead.status,200);
+  const guestPage=await fetch(base+"/guest");
+  assert.equal(guestPage.status,200);
+  const guestJs=await fetch(base+"/guest.js");
+  assert.equal(guestJs.status,200);
   const replay=await fetch(base+"/api/v1/service-orders",request);
   assert.equal(replay.status,200);
   assert.equal((await replay.json()).id,order.id);
