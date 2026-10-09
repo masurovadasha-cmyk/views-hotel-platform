@@ -19,7 +19,7 @@ export const onRequestGet=async({request,env,params}:Context)=>{
  const rid=crypto.randomUUID();
  // Signed Core requests must not accept staging demo identities.
  if(request.headers.has("x-views-demo-role"))return json({error:"STAFF_AUTH_REQUIRED",requestId:requestId(request)},401);
- const session=await resolveSession(request,env);
+ const session=await resolveSession(request,env,{allowDemoHeaders:false});
  if(!session||session.mode!=="staff")return json({error:"STAFF_AUTH_REQUIRED",requestId:requestId(request)},401);
  if(!allowedRoles.has(session.role))return json({error:"STAFF_ROLE_FORBIDDEN",requestId:requestId(request)},403);
  const localProperty=params.propertyId||"";
