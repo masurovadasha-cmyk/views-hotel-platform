@@ -1,4 +1,4 @@
-import {Controller,Get,Headers,Param,Query,BadRequestException,ForbiddenException,UnauthorizedException} from "@nestjs/common";
+import {Controller,Get,Headers,Param,Query,BadRequestException,ForbiddenException,NotFoundException,UnauthorizedException} from "@nestjs/common";
 import {randomUUID} from "node:crypto";
 import {requireUuid} from "../identity/actor-context";
 import {MarketStaffReadService} from "./market-staff-read.service";
@@ -27,7 +27,7 @@ export class MarketStaffReadController{
   try{return await this.service.orderDetail(actor,property,order)}
   catch(error){
    if(error instanceof Error&&["MARKET_PROPERTY_FORBIDDEN","MARKET_ROLE_FORBIDDEN"].includes(error.message))throw new ForbiddenException("property access denied");
-   if(error instanceof Error&&error.message==="MARKET_ORDER_NOT_FOUND")throw new BadRequestException("order not found");
+   if(error instanceof Error&&error.message==="MARKET_ORDER_NOT_FOUND")throw new NotFoundException("order not found");
    throw error;
   }
  }
