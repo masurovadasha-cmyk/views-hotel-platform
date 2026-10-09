@@ -57,11 +57,27 @@ export async function createMarketOrder(pool,{organizationId,propertyId,idempote
    if(existing.rows[0].property_id!==propertyId||existing.rows[0].service_type!=="market"||existing.rows[0].request_fingerprint!==fingerprint)throw Error("Idempotency conflict");
    return {id:existing.rows[0].id,replayed:true};
   }
-  const created=await client.query(`INSERT INTO service_orders(organization_id,property_id,service_type,fulfillment_status,idempotency_key,request_fingerprint,created_by)
-   VALUES ($1,$2,'market','draft',$3,$4,$5) RETURNING id`,[organizationId,propertyId,idempotencyKey,fingerprint,principalId]);
-  const id=created.rows[0].id;
+  // Prices are selected from the server-owned catalog and snapshotted in the same transaction.
+  const priced=[];
+  let subtotal=0;
   for(const item of normalized){
-   await client.query("INSERT INTO service_order_items(organization_id,order_id,sku,quantity) VALUES($1,$2,$3,$4)",[organizationId,id,item.sku,item.quantity]);
+   const lookup=await client.query("SELECT price_uzs FROM market_catalog WHERE organization_id=$1 AND sku=$2 AND active=true",[organizationId,item.sku]);
+   if(lookup.rowCount!==1)throw Error("Unavailable SKU");
+   const price=Number(lookup.rows[0].price_uzs);
+   if(!Number.isSafeInteger(price)||price<0)throw Error("Invalid catalog price");
+   const line=price*item.quantity;
+   if(!Number.isSafeInteger(line)||!Number.isSafeInteger(subtotal+line))throw Error("Price overflow");
+   subtotal+=line;
+   priced.push({...item,price});
+  }
+  const deliveryFee=15000; // Development-only configured fee, not a real commercial tariff.
+  const total=subtotal+deliveryFee;
+  if(!Number.isSafeInteger(total))throw Error("Price overflow");
+  const created=await client.query(`INSERT INTO service_orders(organization_id,property_id,service_type,fulfillment_status,idempotency_key,request_fingerprint,created_by,delivery_fee_uzs,total_uzs)
+   VALUES ($1,$2,'market','draft',$3,$4,$5,$6,$7) RETURNING id`,[organizationId,propertyId,idempotencyKey,fingerprint,principalId,deliveryFee,total]);
+  const id=created.rows[0].id;
+  for(const item of priced){
+   await client.query("INSERT INTO service_order_items(organization_id,order_id,sku,quantity,unit_price_uzs) VALUES($1,$2,$3,$4,$5)",[organizationId,id,item.sku,item.quantity,item.price]);
    await reserveFefo(client,{organizationId,orderId:id,sku:item.sku,quantity:item.quantity,asOf});
   }
   await client.query(`INSERT INTO service_outbox(organization_id,aggregate_id,event_type,payload)
