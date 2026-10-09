@@ -52,4 +52,5 @@ test("PostgreSQL cancellation releases stock and rejects repeat transition",asyn
  assert.equal(movement.count,1);
 });
 
-process.on('beforeExit',()=>pool.end());
+
+test.after(async()=>{await pool.end()});
