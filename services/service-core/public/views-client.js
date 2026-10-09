@@ -17,6 +17,7 @@ export function createViewsClient({baseUrl="",getToken}){
   return payload;
  }
  return {
+  getSession:()=>request("/api/v1/me"),
   listCatalog:()=>request("/api/v1/market/catalog"),
   listPayments:()=>request("/api/v1/finance/payments"),
   listRefunds:()=>request("/api/v1/finance/refunds"),
