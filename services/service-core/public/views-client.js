@@ -18,6 +18,8 @@ export function createViewsClient({baseUrl="",getToken}){
  }
  return {
   listCatalog:()=>request("/api/v1/market/catalog"),
+  listPayments:()=>request("/api/v1/finance/payments"),
+  listRefunds:()=>request("/api/v1/finance/refunds"),
   listBookings:()=>request("/api/v1/me/bookings"),
   createGuestOrder:(bookingId,items,key)=>request("/api/v1/service-orders",{method:"POST",body:{bookingId,items},idempotencyKey:key}),
   listOrders:()=>request("/api/v1/service-orders"),
