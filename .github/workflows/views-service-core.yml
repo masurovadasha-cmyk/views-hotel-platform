@@ -179,3 +179,21 @@ jobs:
       - name: Stop staging
         if: always()
         run: docker compose -f deploy/staging/compose.yaml down -v
+
+  browser-smoke:
+    needs: [node-tests, postgres-migrations]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/service-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium browser test dependencies
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Run real Chromium interface smoke checks
+        run: node test/browser-smoke.mjs
