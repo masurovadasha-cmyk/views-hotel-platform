@@ -14,7 +14,7 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const server=createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,"http://localhost");
-  const staticFiles={"/guest":{file:"guest.html",type:"text/html; charset=utf-8"},"/guest.js":{file:"guest.js",type:"text/javascript; charset=utf-8"},"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.css":{file:"crm.css",type:"text/css; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
+  const staticFiles={"/finance":{file:"finance.html",type:"text/html; charset=utf-8"},"/finance.js":{file:"finance.js",type:"text/javascript; charset=utf-8"},"/guest":{file:"guest.html",type:"text/html; charset=utf-8"},"/guest.js":{file:"guest.js",type:"text/javascript; charset=utf-8"},"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.css":{file:"crm.css",type:"text/css; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
   if(req.method==="GET"&&staticFiles[url.pathname]){
    const entry=staticFiles[url.pathname];
    const data=await readFile(new URL("../public/"+entry.file,import.meta.url));
