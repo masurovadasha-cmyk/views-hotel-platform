@@ -7,7 +7,7 @@ export type LedgerType="RESERVE"|"RELEASE"|"SALE"|"RECEIVE"|"ADJUSTMENT"|"WRITE_
 export interface MarketProduct{
   id:string; sku:string; nameRu:string; nameUz:string; nameEn:string; brand:string; category:string; unit:string;
   referenceCostUzs:number; markupPercent:number; guestPriceUzs:number; priceStatus:PriceStatus; sourceLabel:string; sourceDate:string;
-  storage:StorageType; stock:number; reserved:number; reorderPoint:number; emoji:string;
+  storage:StorageType; stock:number; reserved:number; reorderPoint:number; emoji:string; imageUrl:string; imageAlt:string;
 }
 export interface MarketOrderLine{productId:string;sku:string;name:string;quantity:number;unitPriceUzs:number;lineTotalUzs:number}
 export interface MarketOrder{
@@ -71,6 +71,28 @@ const blueprint:Blueprint[]=[
 ["Gillette Blue II","Gillette","5 шт",39900,false],["Gillette Fusion кассета","Gillette","2 шт",99900,false],["Always Ultra Normal","Always","10 шт",29900,false],["Kotex Ultra","Kotex","8 шт",26900,false],["Ватные диски","Bella","100 шт",15900,false],["Travel kit toothbrush + paste","V-Market","1 набор",24900,false]]}
 ];
 
+function marketImageFor(category:string){
+  const beverage="https://egjq873micunx4fu.public.blob.vercel-storage.com/uploads/1768807571040-fmcg-beverages.png";
+  const dairy="https://uznews.uz/storage/uploads/68/0f/7d/file_680f7d444dbe8_orig.jpg";
+  const snacks="https://www.gg-distributors.com/img/sn.png";
+  const hygiene="https://farmaximalouveira.com/assets/category-higiene-BDRYijoz.jpg";
+  const household="https://cdn.prod.website-files.com/6556a292d56eb873329f5c20/6556a292d56eb873329f5ca3_Santax-Household.jpg";
+  const fresh="https://cdn.portfolio.hu/articles/images-md/k/o/r/kormany-birsag-kiskereskedelem-szabalyozas-elelmiszer-arresstop-740623.jpg";
+  const pantry="https://images.ctfassets.net/prxuf37q3ta2/4xbggdu6sq4ghn1hZTu7n/ad9eaabc31e63e0704e47d048f97f074/Hacks-hero.jpg?fm=webp&w=1600";
+  const coffee="https://images.squarespace-cdn.com/content/v1/638792a761fca6282c29c020/4cc4ee31-30d5-47da-bcf4-d111869e1e4b/2022-0809_pantry-launch_full-family_1x1_james-ransom_191%2Bcopy.jpg";
+  const bakery="https://d3gykfqzdbmcsi.cloudfront.net/fileadmin/nova-gorica/store_photos/interspar.jpg";
+  if(["Вода","Напитки","Соки и энергетики"].includes(category))return beverage;
+  if(["Молочная продукция","Сыры и гастрономия"].includes(category))return dairy;
+  if(["Снеки","Шоколад и сладости"].includes(category))return snacks;
+  if(["Мясо и птица","Заморозка"].includes(category))return fresh;
+  if(category==="Хлеб и яйца")return bakery;
+  if(["Бакалея","Соусы и специи","Масло и консервы"].includes(category))return pantry;
+  if(category==="Кофе и чай")return coffee;
+  if(["Стирка","Уборка","Бумага и салфетки"].includes(category))return household;
+  if(["Зубная и базовая гигиена","Волосы и тело","Travel essentials"].includes(category))return hygiene;
+  return pantry;
+}
+
 export function buildMarketSeed():MarketProduct[]{
   let i=0;
   return blueprint.flatMap(group=>group.items.map(([name,brand,unit,cost,verified])=>{
@@ -83,7 +105,7 @@ export function buildMarketSeed():MarketProduct[]{
       priceStatus:verified?"verified_reference":"demo_reference",
       sourceLabel:verified?"Korzinka public catalogue reference":"Demo baseline — verify supplier cost",
       sourceDate:"2026-10-09",storage:group.storage,
-      stock:10+((i*7)%21),reserved:0,reorderPoint:5+(i%4),emoji:group.emoji
+      stock:10+((i*7)%21),reserved:0,reorderPoint:5+(i%4),emoji:group.emoji,imageUrl:marketImageFor(group.category),imageAlt:name+" — product photo"
     } satisfies MarketProduct;
   }));
 }
