@@ -2,6 +2,7 @@ import {readFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import {Pool} from "pg";
 import {verifySignedContext,requireRole} from "./auth.mjs";
+import {createOidcVerifier} from "./auth-oidc.mjs";
 import {createMarketOrder,inTenantTransaction} from "./postgres.mjs";
 import {changeOrderStatus} from "./order-status.mjs";
 import {assignMarketTask,updateAssignedTask} from "./dispatch.mjs";
@@ -9,10 +10,19 @@ import {initializeCleaningChecklist,completeCleaningItem,finalizeCleaningTask,re
 import {accrueTaskCompensation,approveTaskCompensation} from "./task-compensation.mjs";
 
 export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
-// This service accepts development-only HMAC context tokens, not production OIDC.
-if(process.env.VIEWS_ALLOW_DEV_AUTH!=="1")throw Error("Development authentication is disabled; set VIEWS_ALLOW_DEV_AUTH=1 only in isolated test environments");
+const oidcMode=process.env.VIEWS_AUTH_MODE==="oidc";
+const devMode=process.env.VIEWS_AUTH_MODE===undefined||process.env.VIEWS_AUTH_MODE==="dev";
+if(!oidcMode&&!devMode)throw Error("Unsupported authentication mode");
+if(devMode&&process.env.VIEWS_ALLOW_DEV_AUTH!=="1")throw Error("Development authentication is disabled; set VIEWS_ALLOW_DEV_AUTH=1 only in isolated test environments");
+if(oidcMode&&process.env.VIEWS_ALLOW_DEV_AUTH==="1")throw Error("OIDC mode cannot enable development authentication");
 const secret=process.env.VIEWS_AUTH_SECRET;
-if(!process.env.DATABASE_URL||!secret||secret.length<32)throw Error("DATABASE_URL and VIEWS_AUTH_SECRET (32+ chars) required");
+if(!process.env.DATABASE_URL)throw Error("DATABASE_URL required");
+if(devMode&&(!secret||secret.length<32))throw Error("VIEWS_AUTH_SECRET (32+ chars) required for development");
+const verifyOidc=oidcMode?createOidcVerifier({
+ issuer:process.env.VIEWS_OIDC_ISSUER,
+ audience:process.env.VIEWS_OIDC_AUDIENCE,
+ jwksUrl:process.env.VIEWS_OIDC_JWKS_URL
+}):null;
 const reply=(res,status,data)=>{res.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});res.end(JSON.stringify(data))};
 async function parse(req){let text="";for await(const chunk of req){text+=chunk;if(text.length>32768)throw Object.assign(Error("Payload too large"),{status:413})}try{return JSON.parse(text)}catch{throw Object.assign(Error("Invalid JSON"),{status:400})}}
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,7 +30,7 @@ export const server=createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,"http://localhost");
   const staticFiles={"/staff":{file:"staff.html",type:"text/html; charset=utf-8"},"/staff.js":{file:"staff.js",type:"text/javascript; charset=utf-8"},"/staff.css":{file:"staff.css",type:"text/css; charset=utf-8"},"/finance":{file:"finance.html",type:"text/html; charset=utf-8"},"/finance.js":{file:"finance.js",type:"text/javascript; charset=utf-8"},"/guest":{file:"guest.html",type:"text/html; charset=utf-8"},"/guest.js":{file:"guest.js",type:"text/javascript; charset=utf-8"},"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.css":{file:"crm.css",type:"text/css; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
-  if(req.method==="GET"&&staticFiles[url.pathname]){
+  if(req.method==="GET"&&staticFiles[url.pathname]&&devMode){
    const entry=staticFiles[url.pathname];
    const data=await readFile(new URL("../public/"+entry.file,import.meta.url));
    res.writeHead(200,{"content-type":entry.type,"cache-control":"no-store","content-security-policy":"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'"});
@@ -29,7 +39,7 @@ export const server=createServer(async(req,res)=>{
   if(req.method==="GET"&&url.pathname==="/health"){await pool.query("SELECT 1");return reply(res,200,{status:"ok",mode:"postgres"})}
   const bearer=/^Bearer (.+)$/.exec(req.headers.authorization||"");
   if(!bearer)return reply(res,401,{error:"Unauthorized"});
-  let context;try{context=verifySignedContext(bearer[1],secret)}catch{return reply(res,401,{error:"Unauthorized"})}
+  let context;try{context=oidcMode?await verifyOidc(bearer[1]):verifySignedContext(bearer[1],secret)}catch{return reply(res,401,{error:"Unauthorized"})}
   if(!uuid.test(context.organizationId))return reply(res,401,{error:"Unauthorized"});
   if(req.method==="GET"&&url.pathname==="/api/v1/finance/payments"){
    requireRole(context,["admin","finance"]);
