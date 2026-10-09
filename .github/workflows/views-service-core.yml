@@ -85,6 +85,7 @@ jobs:
           export VIEWS_AUTH_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
           node --test test/integration.pg.mjs test/integration.http.pg.mjs test/integration.stays.pg.mjs test/integration.bookings.pg.mjs test/integration.pms.pg.mjs test/integration.payments.pg.mjs test/integration.payment-events.pg.mjs test/integration.refunds.pg.mjs test/integration.cleaning-laundry.pg.mjs
   web-snapshot:
+    needs: [node-tests, postgres-migrations]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
