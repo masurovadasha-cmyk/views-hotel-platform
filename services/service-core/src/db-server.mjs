@@ -1,3 +1,4 @@
+import {readFile} from "node:fs/promises";
 import {createServer} from "node:http";
 import {Pool} from "pg";
 import {verifySignedContext,requireRole} from "./auth.mjs";
@@ -13,6 +14,13 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const server=createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,"http://localhost");
+  const staticFiles={"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
+  if(req.method==="GET"&&staticFiles[url.pathname]){
+   const entry=staticFiles[url.pathname];
+   const data=await readFile(new URL("../public/"+entry.file,import.meta.url));
+   res.writeHead(200,{"content-type":entry.type,"cache-control":"no-store","content-security-policy":"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'"});
+   return res.end(data);
+  }
   if(req.method==="GET"&&url.pathname==="/health"){await pool.query("SELECT 1");return reply(res,200,{status:"ok",mode:"postgres"})}
   const bearer=/^Bearer (.+)$/.exec(req.headers.authorization||"");
   if(!bearer)return reply(res,401,{error:"Unauthorized"});
