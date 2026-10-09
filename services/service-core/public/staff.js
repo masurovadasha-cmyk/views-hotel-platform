@@ -5,6 +5,51 @@ const message=document.querySelector("#message");
 const client=createViewsClient({getToken:async()=>token.value.trim()});
 const kinds={market_pick:"Собрать товары",market_deliver:"Доставить заказ",cleaning:"Уборка",laundry_pickup:"Забор белья",laundry_process:"Прачечная",laundry_return:"Возврат белья",concierge:"Консьерж"};
 const labels={unassigned:"Не назначено",assigned:"Назначено",in_progress:"В работе",completed:"Завершено",cancelled:"Отменено"};
+const openChecklists=new Set();
+async function showChecklist(card,item){
+ const checklist=await client.getCleaningChecklist(item.id);
+ openChecklists.add(item.id);
+ card.querySelector(".task-checklist")?.remove();
+ const section=document.createElement("section");
+ section.className="task-checklist";
+ for(const line of checklist){
+  const row=document.createElement("div");row.className="item";
+  const label=document.createElement("span");
+  label.textContent=(line.completed_at?"✓ ":"○ ")+line.label;
+  row.append(label);
+  if(!line.completed_at){
+   const button=document.createElement("button");
+   button.type="button";
+   button.textContent="Выполнено";
+   button.setAttribute("aria-label","Выполнено: "+line.label);
+   button.onclick=async()=>{
+    button.disabled=true;
+    try{
+     await client.completeCleaningItem(item.id,line.item_code);
+     message.textContent="Пункт подтверждён";
+     await showChecklist(card,item);
+    }catch(e){message.textContent="Ошибка: "+e.message;button.disabled=false}
+   };
+   row.append(button);
+  }
+  section.append(row);
+ }
+ if(checklist.length&&checklist.every(line=>line.completed_at)){
+  const finish=document.createElement("button");
+  finish.type="button";
+  finish.textContent="Завершить уборку";
+  finish.onclick=async()=>{
+   finish.disabled=true;
+   try{
+    await client.finalizeCleaning(item.id);
+    openChecklists.delete(item.id);
+    await refresh();
+   }catch(e){message.textContent="Ошибка: "+e.message;finish.disabled=false}
+  };
+  section.append(finish);
+ }
+ card.append(section);
+}
 let loading=false;
 async function refresh(){
  if(loading)return;
@@ -47,32 +92,9 @@ async function refresh(){
     act("Начать",async()=>{await client.updateMyTask(item.id,"in_progress");await refresh()});
    }else if(item.status==="in_progress"&&item.task_kind==="cleaning"){
     act("Открыть чек-лист",async()=>{
-     const checklist=await client.getCleaningChecklist(item.id);
-     const section=document.createElement("section");
-     section.className="task-checklist";
-     section.replaceChildren();
-     for(const line of checklist){
-      const row=document.createElement("div");
-      row.className="item";
-      const label=document.createElement("span");
-      label.textContent=(line.completed_at?"✓ ":"○ ")+line.label;
-      row.append(label);
-      if(!line.completed_at){
-       const button=document.createElement("button");
-       button.textContent="Выполнено";
-       button.onclick=async()=>{button.disabled=true;try{await client.completeCleaningItem(item.id,line.item_code);message.textContent="Пункт подтверждён";await refresh()}catch(e){message.textContent=e.message;button.disabled=false}};
-       row.append(button);
-      }
-      section.append(row);
-     }
-     if(checklist.length&&checklist.every(line=>line.completed_at)){
-      const finish=document.createElement("button");
-      finish.textContent="Завершить уборку";
-      finish.onclick=async()=>{finish.disabled=true;try{await client.finalizeCleaning(item.id);await refresh()}catch(e){message.textContent=e.message;finish.disabled=false}};
-      section.append(finish);
-     }
-     card.append(section);
+     await showChecklist(card,item);
     });
+    if(openChecklists.has(item.id))await showChecklist(card,item);
    }else if(item.status==="in_progress"&&!item.task_kind.startsWith("laundry_")){
     act("Завершить",async()=>{await client.updateMyTask(item.id,"completed");await refresh()});
    }
