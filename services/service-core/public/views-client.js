@@ -18,6 +18,8 @@ export function createViewsClient({baseUrl="",getToken}){
  }
  return {
   listCatalog:()=>request("/api/v1/market/catalog"),
+  listBookings:()=>request("/api/v1/me/bookings"),
+  createGuestOrder:(bookingId,items,key)=>request("/api/v1/service-orders",{method:"POST",body:{bookingId,items},idempotencyKey:key}),
   listOrders:()=>request("/api/v1/service-orders"),
   getOrder:id=>request("/api/v1/service-orders/"+encodeURIComponent(id)),
   changeStatus:(id,fulfillmentStatus)=>request("/api/v1/service-orders/"+encodeURIComponent(id),{method:"PATCH",body:{fulfillmentStatus}}),
