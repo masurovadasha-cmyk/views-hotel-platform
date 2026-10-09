@@ -18,6 +18,19 @@ describe("VIEWS staff gateway adapter",()=>{
   expect(opts.credentials).toBe("same-origin");
   expect(opts.headers).toEqual({Accept:"application/json"});
  });
+ it("uses local property IDs that the BFF resolves to scoped Core UUIDs",async()=>{
+  const fetcher=vi.fn(async()=>({ok:true,json:async()=>detail}));
+  const result=await fetchStaffOrderDetail("utower",O,{gatewayEnabled:true,fetcher:fetcher as never});
+  expect(result.order.property_id).toBe(P);
+  expect((fetcher.mock.calls as unknown as [string,unknown][])[0][0]).toBe("/api/staff/market/properties/utower/orders/"+O);
+ });
+ it("rejects unsafe local property paths",async()=>{
+  const fetcher=vi.fn();
+  for(const property of ["../internal","nest/one","a?b","", "x".repeat(81)]){
+   await expect(fetchStaffOrderDetail(property,O,{gatewayEnabled:true,fetcher:fetcher as never})).rejects.toMatchObject({status:400});
+  }
+  expect(fetcher).not.toHaveBeenCalled();
+ });
  it("rejects malformed ids before any request",async()=>{
   const fetcher=vi.fn();
   await expect(fetchStaffOrderDetail("../internal",O,{gatewayEnabled:true,fetcher:fetcher as never})).rejects.toMatchObject({status:400});
