@@ -8,6 +8,7 @@ import {changeOrderStatus} from "./order-status.mjs";
 import {assignMarketTask,updateAssignedTask} from "./dispatch.mjs";
 import {initializeCleaningChecklist,completeCleaningItem,finalizeCleaningTask,registerLaundryBag,transitionLaundryBag} from "./cleaning-laundry.mjs";
 import {accrueTaskCompensation,approveTaskCompensation} from "./task-compensation.mjs";
+import {getGuestOrderTimeline} from "./guest-order-timeline.mjs";
 
 export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
 const oidcMode=process.env.VIEWS_AUTH_MODE==="oidc";
@@ -179,6 +180,12 @@ export const server=createServer(async(req,res)=>{
     ?"SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,delivery_fee_uzs,created_at FROM service_orders ORDER BY created_at DESC LIMIT 100"
     :"SELECT o.id,o.property_id,o.service_type,o.fulfillment_status,o.payment_status,o.total_uzs,o.delivery_fee_uzs,o.created_at FROM service_orders o WHERE EXISTS (SELECT 1 FROM service_property_access a WHERE a.organization_id=o.organization_id AND a.property_id=o.property_id AND a.principal_id=$1 AND a.permission='order:manage') ORDER BY o.created_at DESC LIMIT 100",admin?[]:[context.sub])).rows);
    return reply(res,200,orders);
+  }
+  const timelineMatch=url.pathname.match(/^\\/api\\/v1\\/me\\/orders\\/([0-9a-f-]+)\\/timeline$/i);
+  if(req.method==="GET"&&timelineMatch&&uuid.test(timelineMatch[1])){
+   requireRole(context,["guest"]);
+   const events=await getGuestOrderTimeline(pool,{organizationId:context.organizationId,orderId:timelineMatch[1],principalId:context.sub});
+   return reply(res,200,events);
   }
   const match=url.pathname.match(/^\/api\/v1\/service-orders\/([0-9a-f-]+)$/i);
   if(req.method==="PATCH"&&match&&uuid.test(match[1])){
