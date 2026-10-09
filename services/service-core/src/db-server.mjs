@@ -4,6 +4,7 @@ import {Pool} from "pg";
 import {verifySignedContext,requireRole} from "./auth.mjs";
 import {createMarketOrder,inTenantTransaction} from "./postgres.mjs";
 import {changeOrderStatus} from "./order-status.mjs";
+import {assignMarketTask} from "./dispatch.mjs";
 
 export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
 const secret=process.env.VIEWS_AUTH_SECRET;
@@ -35,6 +36,21 @@ export const server=createServer(async(req,res)=>{
    requireRole(context,["admin","finance"]);
    const rows=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query("SELECT id,intent_id,amount_uzs,status,reason,created_at FROM service_refund_requests ORDER BY created_at DESC LIMIT 100")).rows);
    return reply(res,200,rows);
+  }
+  if(req.method==="GET"&&url.pathname==="/api/v1/dispatch/tasks"){
+   requireRole(context,["dispatcher","admin"]);
+   const admin=context.roles.includes("admin");
+   const tasks=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query(admin
+    ?"SELECT id,order_id,property_id,task_kind,assigned_principal_id,status,due_at FROM service_dispatch_tasks ORDER BY created_at DESC LIMIT 100"
+    :"SELECT t.id,t.order_id,t.property_id,t.task_kind,t.assigned_principal_id,t.status,t.due_at FROM service_dispatch_tasks t WHERE EXISTS (SELECT 1 FROM service_property_access a WHERE a.organization_id=t.organization_id AND a.property_id=t.property_id AND a.principal_id=$1 AND a.permission='order:manage') ORDER BY t.created_at DESC LIMIT 100",admin?[]:[context.sub])).rows);
+   return reply(res,200,tasks);
+  }
+  if(req.method==="POST"&&url.pathname==="/api/v1/dispatch/assign"){
+   requireRole(context,["dispatcher","admin"]);
+   const body=await parse(req);
+   if(!body||!uuid.test(body.orderId)||typeof body.assigneeId!=="string")return reply(res,422,{error:"Invalid task assignment"});
+   const assigned=await assignMarketTask(pool,{organizationId:context.organizationId,orderId:body.orderId,actorId:context.sub,assigneeId:body.assigneeId,kind:body.kind||"market_pick",dueAt:body.dueAt||null});
+   return reply(res,201,assigned);
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/market/catalog"){
    requireRole(context,["guest","dispatcher","admin"]);
@@ -89,7 +105,7 @@ export const server=createServer(async(req,res)=>{
   }
   return reply(res,404,{error:"Not found"});
  }catch(error){
-  const status=error.message==="Forbidden"?403:error.message==="Booking access denied"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Unavailable SKU"?422:error.message==="Invalid catalog price"?422:error.message==="Price overflow"?422:error.message==="Invalid idempotency key"?400:error.status||500;
+  const status=error.message==="Forbidden"?403:error.message==="Assignee unavailable"?409:error.message==="Order not assignable"?409:error.message==="Task already closed"?409:error.message==="Task already in progress"?409:error.message==="Unsupported task kind"?422:error.message==="Invalid due date"?422:error.message==="Booking access denied"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Unavailable SKU"?422:error.message==="Invalid catalog price"?422:error.message==="Price overflow"?422:error.message==="Invalid idempotency key"?400:error.status||500;
   if(status===500)console.error("VIEWS db-server error",error);
   return reply(res,status,{error:status===500?"Internal server error":error.message});
  }
