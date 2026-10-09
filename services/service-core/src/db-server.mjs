@@ -46,7 +46,7 @@ export const server=createServer(async(req,res)=>{
    const guestOnly=context.roles.includes("guest")&&!context.roles.some(role=>["dispatcher","admin"].includes(role));
    if(guestOnly&&!uuid.test(body.bookingId))return reply(res,422,{error:"Valid booking required"});
    if(!guestOnly&&!uuid.test(body.propertyId))return reply(res,422,{error:"Invalid property"});
-   const order=await createMarketOrder(pool,{organizationId:context.organizationId,propertyId:guestOnly?null:body.propertyId,bookingId:guestOnly?body.bookingId:null,idempotencyKey:key,items:body.items,principalId:context.sub,asOf:new Date().toISOString().slice(0,10)});
+   const order=await createMarketOrder(pool,{organizationId:context.organizationId,propertyId:guestOnly?null:body.propertyId,bookingId:guestOnly?body.bookingId:null,idempotencyKey:key,items:body.items,principalId:context.sub,isGuest:context.roles.includes('guest')&&!context.roles.some(r=>['dispatcher','admin'].includes(r)),asOf:new Date().toISOString().slice(0,10)});
    return reply(res,order.replayed?200:201,order);
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/service-orders"){
