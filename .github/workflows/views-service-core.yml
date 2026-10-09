@@ -27,6 +27,8 @@ jobs:
       - run: node --check src/auth.mjs
       - run: node --check src/db-server.mjs
       - run: node --check src/order-status.mjs
+      - run: node --check src/payment-ledger.mjs
+      - run: node --check src/payment-domain.mjs
       - run: node --check src/pms-sync.mjs
       - run: node --check src/payment-intents.mjs
       - run: node --check src/payment-events.mjs
