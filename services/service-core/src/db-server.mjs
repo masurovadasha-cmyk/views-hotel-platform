@@ -26,6 +26,11 @@ export const server=createServer(async(req,res)=>{
   if(!bearer)return reply(res,401,{error:"Unauthorized"});
   let context;try{context=verifySignedContext(bearer[1],secret)}catch{return reply(res,401,{error:"Unauthorized"})}
   if(!uuid.test(context.organizationId))return reply(res,401,{error:"Unauthorized"});
+  if(req.method==="GET"&&url.pathname==="/api/v1/market/catalog"){
+   requireRole(context,["guest","dispatcher","admin"]);
+   const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT sku,name,price_uzs FROM market_catalog WHERE active=true ORDER BY name,sku LIMIT 200")).rows);
+   return reply(res,200,products.map(p=>({sku:p.sku,name:p.name,priceUzs:Number(p.price_uzs)})));
+  }
   if(req.method==="POST"&&url.pathname==="/api/v1/service-orders"){
    requireRole(context,["guest","dispatcher","admin"]);
    const key=req.headers["idempotency-key"];
@@ -37,7 +42,7 @@ export const server=createServer(async(req,res)=>{
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/service-orders"){
    requireRole(context,["dispatcher","admin"]);
-   const orders=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT id,property_id,service_type,fulfillment_status,payment_status,created_at FROM service_orders ORDER BY created_at DESC LIMIT 100")).rows);
+   const orders=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,delivery_fee_uzs,created_at FROM service_orders ORDER BY created_at DESC LIMIT 100")).rows);
    return reply(res,200,orders);
   }
   const match=url.pathname.match(/^\/api\/v1\/service-orders\/([0-9a-f-]+)$/i);
@@ -52,13 +57,13 @@ export const server=createServer(async(req,res)=>{
    requireRole(context,["guest","dispatcher","admin"]);
    const isStaff=context.roles.some(role=>["dispatcher","admin"].includes(role));
    const rows=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(isStaff
-    ?"SELECT id,property_id,service_type,fulfillment_status,payment_status,created_at FROM service_orders WHERE id=$1"
-    :"SELECT id,property_id,service_type,fulfillment_status,payment_status,created_at FROM service_orders WHERE id=$1 AND created_by=$2",isStaff?[match[1]]:[match[1],context.sub])).rows);
+    ?"SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,delivery_fee_uzs,created_at FROM service_orders WHERE id=$1"
+    :"SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,delivery_fee_uzs,created_at FROM service_orders WHERE id=$1 AND created_by=$2",isStaff?[match[1]]:[match[1],context.sub])).rows);
    return rows.length?reply(res,200,rows[0]):reply(res,404,{error:"Not found"});
   }
   return reply(res,404,{error:"Not found"});
  }catch(error){
-  const status=error.message==="Forbidden"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Invalid idempotency key"?400:error.status||500;
+  const status=error.message==="Forbidden"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Unavailable SKU"?422:error.message==="Invalid catalog price"?422:error.message==="Price overflow"?422:error.message==="Invalid idempotency key"?400:error.status||500;
   if(status===500)console.error("VIEWS db-server error",error);
   return reply(res,status,{error:status===500?"Internal server error":error.message});
  }
