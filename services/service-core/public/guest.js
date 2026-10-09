@@ -2,6 +2,8 @@ import {createViewsClient} from "./views-client.js";
 const token=document.querySelector("#token"),booking=document.querySelector("#booking"),catalogEl=document.querySelector("#catalog"),totalEl=document.querySelector("#total"),message=document.querySelector("#message"),orderEl=document.querySelector("#order"),checkout=document.querySelector("#checkout"),refresh=document.querySelector("#refresh");
 const loadCatalogButton=document.querySelector("#load-catalog"),loadBookingsButton=document.querySelector("#load-bookings");
 const loadOrdersButton=document.querySelector("#load-orders"),historyEl=document.querySelector("#order-history");
+const timelineEl=document.querySelector("#order-timeline");
+const eventLabels={"market.order.created":"Заказ оформлен","service.order.changed":"Статус заказа","service.task.assigned":"Назначен исполнитель","service.task.status_changed":"Выполнение задания","cleaning.task.completed":"Уборка завершена","laundry.bag.changed":"Прачечная"};
 const client=createViewsClient({getToken:async()=>token.value.trim()});
 const money=n=>Number(n).toLocaleString("ru-RU")+" UZS";
 const cart=new Map();
@@ -69,6 +71,17 @@ async function updateOrder(){
    const p=document.createElement("p");p.textContent=key+": "+value;orderEl.append(p);
   }
  }catch(e){orderEl.textContent="Заказ создан. Статус временно недоступен: "+e.message}
+ timelineEl.replaceChildren();
+ try{
+  const events=await client.getGuestOrderTimeline(orderId);
+  if(!events.length){const li=document.createElement("li");li.textContent="Событий пока нет";timelineEl.append(li)}
+  for(const event of events){
+   const li=document.createElement("li");
+   const detail=event.status||event.taskStatus||event.laundryStatus||event.taskKind||"";
+   li.textContent=(eventLabels[event.type]||"Обновление")+(detail?" · "+detail:"")+" · "+new Date(event.at).toLocaleString("ru-RU");
+   timelineEl.append(li);
+  }
+ }catch(e){const li=document.createElement("li");li.textContent="История выполнения временно недоступна";timelineEl.append(li)}
 }
 refresh.onclick=updateOrder;
 async function loadGuestOrders(){
@@ -85,6 +98,7 @@ async function loadGuestOrders(){
    button.onclick=async()=>{
     if(pendingKey||inFlight)return;
     orderId=o.id;
+    timelineEl.replaceChildren();
     refresh.disabled=false;
     render();
     await updateOrder();
@@ -99,7 +113,7 @@ token.addEventListener("input",()=>{
  if(pendingKey||orderId||inFlight)return;
  catalog=[];cart.clear();booking.replaceChildren();
  const option=document.createElement("option");option.value="";option.textContent="Сначала загрузите бронирования";booking.append(option);
- historyEl.replaceChildren();orderEl.textContent="Выберите товары и создайте заказ";render();
+ historyEl.replaceChildren();timelineEl.replaceChildren();orderEl.textContent="Выберите товары и создайте заказ";render();
 });
 
 loadCatalogButton.onclick=async()=>{
