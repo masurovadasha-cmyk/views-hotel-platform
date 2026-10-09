@@ -86,6 +86,7 @@ export function MarketDemo(){
   const [assignee,setAssignee]=useState("Диспетчер VIEWS");
   const [priority,setPriority]=useState<MarketPriority>("normal");
   const [tasks,setTasks]=useState<MarketTaskMap>({});
+  const taskSnapshot=useRef<string|null>(null);
   const [taskWarning,setTaskWarning]=useState("");
   const [apartment,setApartment]=useState("#235");
   const [deliverySlot,setDeliverySlot]=useState("Сейчас · 20–35 мин");
@@ -136,7 +137,7 @@ export function MarketDemo(){
   },[cart,stale]);
   useEffect(()=>{
     const handler=(event:StorageEvent)=>{
-      if(event.key===null||event.key===MARKET_STATE_KEY||event.key===MARKET_CART_KEY)setStale(true);
+      if(event.key===null||event.key===MARKET_STATE_KEY||event.key===MARKET_CART_KEY||event.key==="views-market-tasks-v1")setStale(true);
     };
     window.addEventListener("storage",handler);return ()=>window.removeEventListener("storage",handler);
   },[]);
@@ -152,6 +153,7 @@ export function MarketDemo(){
   useEffect(()=>{
     try{
       const raw=localStorage.getItem("views-market-tasks-v1");
+      taskSnapshot.current=raw;
       if(!raw)return;
       const parsed:unknown=JSON.parse(raw);
       if(validMarketTasks(parsed,state))setTasks(parsed);
@@ -160,24 +162,34 @@ export function MarketDemo(){
   // Only load demo assignments once; live server synchronization is not claimed.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
+  function assertTaskFresh(){
+    if(localStorage.getItem("views-market-tasks-v1")!==taskSnapshot.current){setStale(true);throw Error("STALE_MARKET")}
+  }
+  function saveTasks(next:MarketTaskMap){
+    assertTaskFresh();
+    const serialized=JSON.stringify(next);
+    localStorage.setItem("views-market-tasks-v1",serialized);
+    taskSnapshot.current=serialized;
+    setTasks(next);
+  }
   function assignOrder(id:string){
     try{
-      assertFresh();
+      assertFresh();assertTaskFresh();
       const order=state.orders.find(o=>o.id===id);
       if(!order)throw Error("ORDER_NOT_FOUND");
       const next=assignMarketTask(tasks,order,assignee,priority,new Date(Date.now()+3600000).toISOString(),new Date().toISOString());
-      localStorage.setItem("views-market-tasks-v1",JSON.stringify(next));setTasks(next);
+      saveTasks(next);
       setMessage("Демо-исполнитель назначен. SLA: 60 минут.");
     }catch{setMessage("Не удалось назначить сотрудника. Проверьте имя, статус заказа и данные другой вкладки.")}
   }
   function moveOrder(id:string,cancel=false){
     try{
-      assertFresh();
+      assertFresh();assertTaskFresh();
       const next=cancel?cancelMarketOrder(state,id):advanceMarketOrder(state,id);
       const task=tasks[id];
       if(task&&next!==state){
         const updated=appendMarketTaskEvent(tasks,id,cancel?"Отмена":"Обновление статуса",new Date().toISOString());
-        localStorage.setItem("views-market-tasks-v1",JSON.stringify(updated));setTasks(updated);
+        saveTasks(updated);
       }
       setState(next);
     }catch(error){setMessage(readableMarketError(error))}
@@ -217,7 +229,8 @@ export function MarketDemo(){
   }
   function resetDemo(){
     if(!window.confirm("Удалить все локальные демозаказы, корзину и движения склада?"))return;
-    try{localStorage.removeItem(MARKET_STATE_KEY);localStorage.removeItem(MARKET_CART_KEY);
+    try{localStorage.removeItem(MARKET_STATE_KEY);localStorage.removeItem(MARKET_CART_KEY);localStorage.removeItem("views-market-tasks-v1");
+      taskSnapshot.current=null;setTasks({});setTaskWarning("");
       initialStateRaw.current=null;initialCartRaw.current=null;setStale(false);
       setState(freshState());setCart({});setScreen("shop");setMessage("Демо-данные рынка сброшены.");checkoutKey.current="checkout-"+crypto.randomUUID();
     }catch{setStale(true);setMessage("Не удалось сбросить демоданные.")}
