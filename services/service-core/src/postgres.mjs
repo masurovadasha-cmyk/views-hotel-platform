@@ -40,13 +40,16 @@ export async function reserveFefo(client,{organizationId,orderId,sku,quantity,as
  if(remaining)throw Error("Insufficient inventory"); // caller rolls back all allocations
  return allocations;
 }
-export async function createMarketOrder(pool,{organizationId,propertyId,idempotencyKey,items,asOf}){
+export async function createMarketOrder(pool,{organizationId,propertyId,idempotencyKey,items,asOf,principalId}){
+ if(typeof principalId!=="string"||!principalId||principalId.length>256)throw Error("Forbidden");
  if(!Array.isArray(items)||items.length<1||items.some(x=>!/^[-\w.]{1,128}$/.test(x.sku)||!Number.isSafeInteger(x.quantity)||x.quantity<1))throw Error("Invalid items");
  if(typeof idempotencyKey!=="string"||idempotencyKey.length<8||idempotencyKey.length>128)throw Error("Invalid idempotency key");
  const normalized=[...items].sort((a,b)=>a.sku.localeCompare(b.sku));
  const fingerprint=createHash("sha256").update(JSON.stringify({propertyId,items:normalized})).digest("hex");
  if(new Set(normalized.map(x=>x.sku)).size!==normalized.length)throw Error("Duplicate SKU");
  return inTenantTransaction(pool,organizationId,async client=>{
+  const permission=await client.query("SELECT 1 FROM service_property_access WHERE organization_id=$1 AND property_id=$2 AND principal_id=$3 AND permission=$4 LIMIT 1",[organizationId,propertyId,principalId,"order:create"]);
+  if(!permission.rowCount)throw Error("Forbidden");
   // Lock per tenant/key so a concurrent retry cannot double reserve.
   await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))",[organizationId+":"+idempotencyKey]);
   const existing=await client.query("SELECT id,property_id,service_type,request_fingerprint FROM service_orders WHERE organization_id=$1 AND idempotency_key=$2",[organizationId,idempotencyKey]);
