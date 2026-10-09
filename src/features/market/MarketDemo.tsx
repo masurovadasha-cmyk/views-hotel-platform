@@ -4,6 +4,7 @@ import {
   cancelMarketOrder,cartSummary,formatUzs,marketAnalytics,marketSeed,placeDemoOrder,receiveMarketStock,
   type Cart,type MarketState
 } from "../../domain/marketModel";
+import {assignMarketTask,appendMarketTaskEvent,validMarketTasks,type MarketTaskMap,type MarketPriority} from "../../domain/marketTasks";
 import "./market.css";
 
 type Screen="shop"|"cart"|"orders"|"staff";
@@ -81,6 +82,12 @@ export function MarketDemo(){
   const [query,setQuery]=useState("");
   const [category,setCategory]=useState("Все");
   const [staffQuery,setStaffQuery]=useState("");
+  const [detailId,setDetailId]=useState<string|null>(null);
+  const [assignee,setAssignee]=useState("Диспетчер VIEWS");
+  const [priority,setPriority]=useState<MarketPriority>("normal");
+  const [tasks,setTasks]=useState<MarketTaskMap>({});
+  const taskSnapshot=useRef<string|null>(null);
+  const [taskWarning,setTaskWarning]=useState("");
   const [apartment,setApartment]=useState("#235");
   const [deliverySlot,setDeliverySlot]=useState("Сейчас · 20–35 мин");
   const [comment,setComment]=useState("");
@@ -130,7 +137,7 @@ export function MarketDemo(){
   },[cart,stale]);
   useEffect(()=>{
     const handler=(event:StorageEvent)=>{
-      if(event.key===null||event.key===MARKET_STATE_KEY||event.key===MARKET_CART_KEY)setStale(true);
+      if(event.key===null||event.key===MARKET_STATE_KEY||event.key===MARKET_CART_KEY||event.key==="views-market-tasks-v1")setStale(true);
     };
     window.addEventListener("storage",handler);return ()=>window.removeEventListener("storage",handler);
   },[]);
@@ -143,6 +150,50 @@ export function MarketDemo(){
     try{assertFresh();setState(action(state))}catch(error){setMessage(readableMarketError(error))}
   }
 
+  useEffect(()=>{
+    try{
+      const raw=localStorage.getItem("views-market-tasks-v1");
+      taskSnapshot.current=raw;
+      if(!raw)return;
+      const parsed:unknown=JSON.parse(raw);
+      if(validMarketTasks(parsed,state))setTasks(parsed);
+      else setTaskWarning("Сохранённые назначения некорректны; требуется проверка.");
+    }catch{setTaskWarning("Не удалось прочитать назначения сотрудников.")}
+  // Only load demo assignments once; live server synchronization is not claimed.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  function assertTaskFresh(){
+    if(localStorage.getItem("views-market-tasks-v1")!==taskSnapshot.current){setStale(true);throw Error("STALE_MARKET")}
+  }
+  function saveTasks(next:MarketTaskMap){
+    assertTaskFresh();
+    const serialized=JSON.stringify(next);
+    localStorage.setItem("views-market-tasks-v1",serialized);
+    taskSnapshot.current=serialized;
+    setTasks(next);
+  }
+  function assignOrder(id:string){
+    try{
+      assertFresh();assertTaskFresh();
+      const order=state.orders.find(o=>o.id===id);
+      if(!order)throw Error("ORDER_NOT_FOUND");
+      const next=assignMarketTask(tasks,order,assignee,priority,new Date(Date.now()+3600000).toISOString(),new Date().toISOString());
+      saveTasks(next);
+      setMessage("Демо-исполнитель назначен. SLA: 60 минут.");
+    }catch{setMessage("Не удалось назначить сотрудника. Проверьте имя, статус заказа и данные другой вкладки.")}
+  }
+  function moveOrder(id:string,cancel=false){
+    try{
+      assertFresh();assertTaskFresh();
+      const next=cancel?cancelMarketOrder(state,id):advanceMarketOrder(state,id);
+      const task=tasks[id];
+      if(task&&next!==state){
+        const updated=appendMarketTaskEvent(tasks,id,cancel?"Отмена":"Обновление статуса",new Date().toISOString());
+        saveTasks(updated);
+      }
+      setState(next);
+    }catch(error){setMessage(readableMarketError(error))}
+  }
   const categories=useMemo(()=>["Все",...Array.from(new Set(state.products.map(p=>p.category)))],[state.products]);
   const visible=useMemo(()=>state.products.filter(p=>{
     const q=query.trim().toLowerCase();
@@ -178,7 +229,8 @@ export function MarketDemo(){
   }
   function resetDemo(){
     if(!window.confirm("Удалить все локальные демозаказы, корзину и движения склада?"))return;
-    try{localStorage.removeItem(MARKET_STATE_KEY);localStorage.removeItem(MARKET_CART_KEY);
+    try{localStorage.removeItem(MARKET_STATE_KEY);localStorage.removeItem(MARKET_CART_KEY);localStorage.removeItem("views-market-tasks-v1");
+      taskSnapshot.current=null;setTasks({});setTaskWarning("");
       initialStateRaw.current=null;initialCartRaw.current=null;setStale(false);
       setState(freshState());setCart({});setScreen("shop");setMessage("Демо-данные рынка сброшены.");checkoutKey.current="checkout-"+crypto.randomUUID();
     }catch{setStale(true);setMessage("Не удалось сбросить демоданные.")}
@@ -199,6 +251,7 @@ export function MarketDemo(){
 
     {stale&&<div className="marketNotice" role="alert">Демоданные изменились в другой вкладке или недоступны. Новые операции заблокированы. <button onClick={()=>window.location.reload()}>Перезагрузить</button></div>}
     {message&&<div className="marketNotice" role="status">{message}</div>}
+    {taskWarning&&<div className="marketNotice" role="alert">{taskWarning}</div>}
 
     {screen==="shop"&&<section>
       <div className="marketToolbar">
@@ -267,9 +320,25 @@ export function MarketDemo(){
             <span className={"marketStatus "+o.status}>{o.status.replaceAll("_"," ")}</span>
             <div className="staffOrderThumbs">{o.lines.slice(0,4).map(l=>{const p=state.products.find(x=>x.sku===l.sku);return p?<ProductPhoto key={l.sku} className="micro" src={p.imageUrl} alt={l.name} emoji={p.emoji}/>:null})}</div>
             <div className="staffActions">
-              {nextLabel(o.status)&&<button className="marketPrimary" onClick={()=>changeState(s=>advanceMarketOrder(s,o.id))}>{nextLabel(o.status)}</button>}
-              {!["delivered","cancelled"].includes(o.status)&&<button onClick={()=>changeState(s=>cancelMarketOrder(s,o.id))}>Cancel + release</button>}
+              <button aria-expanded={detailId===o.id} onClick={()=>setDetailId(detailId===o.id?null:o.id)}>Карточка заказа</button>
+              {nextLabel(o.status)&&<button className="marketPrimary" onClick={()=>moveOrder(o.id)}>{nextLabel(o.status)}</button>}
+              {!["delivered","cancelled"].includes(o.status)&&<button onClick={()=>moveOrder(o.id,true)}>Cancel + release</button>}
             </div>
+            {detailId===o.id&&<section className="marketTaskDetail" aria-label={"Заказ "+o.id}>
+              <h3>Заказ {o.id}</h3>
+              <p>{o.apartment} · {o.deliverySlot} · {formatUzs(o.totalUzs)}</p>
+              <p>Оплата: {o.paymentStatus==="room_charge"?"На номер (демо)":"Тестовая карта"} · {o.comment||"Без комментария"}</p>
+              <p>Исполнитель: {tasks[o.id]?.assignee||"Не назначен"}</p>
+              {tasks[o.id]&&<p>Приоритет: {tasks[o.id].priority} · Срок: {new Date(tasks[o.id].dueAt).toLocaleString("ru-RU")}</p>}
+              {!["delivered","cancelled"].includes(o.status)&&<div className="marketTaskFields">
+                <label>Исполнитель<input value={assignee} onChange={e=>setAssignee(e.target.value)} maxLength={80}/></label>
+                <label>Приоритет<select value={priority} onChange={e=>setPriority(e.target.value as MarketPriority)}><option value="normal">Обычный</option><option value="high">Высокий</option><option value="urgent">Срочный</option></select></label>
+                <button disabled={stale} onClick={()=>assignOrder(o.id)}>Назначить · SLA 60 мин</button>
+              </div>}
+              <h4>История</h4>
+              <ol>{tasks[o.id]?.events.map((e,i)=><li key={i}>{e.action} · {new Date(e.at).toLocaleString("ru-RU")} — {e.actor}</li>)||<li>Создан {new Date(o.createdAt).toLocaleString("ru-RU")}</li>}</ol>
+              <small>Локальный демонстрационный журнал, не серверный аудит.</small>
+            </section>}
           </article>)}</div>
         </div>
         <div className="marketPanel"><header><small>INVENTORY</small><h2>Stock control</h2></header>
