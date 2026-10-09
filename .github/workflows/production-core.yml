@@ -80,6 +80,7 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0036_market_service_order_scope_hardening.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0037_market_stock_foundation.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0038_market_catalog_prices.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0039_market_command_idempotency.sql
       - name: Verify V-Market schema and RLS gates
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
