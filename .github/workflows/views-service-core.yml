@@ -58,8 +58,14 @@ jobs:
       - name: Install dependencies
         working-directory: services/service-core
         run: npm install --no-audit --no-fund
+      - name: Create restricted application role
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -c "CREATE ROLE views_test_app LOGIN PASSWORD 'views_test_app_password' NOBYPASSRLS;"
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -c "GRANT USAGE ON SCHEMA public TO views_test_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO views_test_app;"
       - name: PostgreSQL integration test
         working-directory: services/service-core
         env:
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/views_test
+          TEST_DATABASE_URL: postgresql://views_test_app:views_test_app_password@localhost:5432/views_test
         run: node --test test/integration.pg.mjs
