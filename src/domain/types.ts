@@ -17,7 +17,7 @@ export type Priority = "low" | "normal" | "high" | "urgent";
 export type Apartment = {
   id:string; title:string; property:string; city:string; capacity:number;
   bedrooms:number; bathrooms:number; nightlyRate:number|null; currency:string;
-  image:string; amenities:string[];
+  image:string; gallery:string[]; gallerySource?:string; amenities:string[];
 };
 
 export type ServiceOrder = {
