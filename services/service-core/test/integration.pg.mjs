@@ -17,16 +17,15 @@ test("PostgreSQL inventory lifecycle and tenant isolation",async t=>{
    await db.query("INSERT INTO inventory_lots(organization_id,sku,on_hand,reserved) VALUES($1,'WATER-15',3,0)",[org]);
   });
   const request={organizationId:org,propertyId:property,principalId:principal,idempotencyKey:"test-"+randomUUID(),items:[{sku:"WATER-15",quantity:2}],asOf:"2026-10-09"};
+  const secondKey="test-"+randomUUID();
   const [first,second]=await Promise.allSettled([
    createMarketOrder(pool,request),
-   createMarketOrder(pool,{...request,idempotencyKey:"test-"+randomUUID()})
+   createMarketOrder(pool,{...request,idempotencyKey:secondKey})
   ]);
   assert.equal([first,second].filter(x=>x.status==="fulfilled").length,1);
   const id=[first,second].find(x=>x.status==="fulfilled").value.id;
-  const replay=await createMarketOrder(pool,{...request,idempotencyKey:first.status==="fulfilled"?request.idempotencyKey:"unused"});
-  // If first request won, replay is the same order. Otherwise the replay attempt
-  // may fail because the remaining quantity is insufficient.
-  if(first.status==="fulfilled")assert.equal(replay.id,id);
+  const replay=await createMarketOrder(pool,{...request,idempotencyKey:first.status==="fulfilled"?request.idempotencyKey:secondKey});
+  assert.equal(replay.id,id);
   const hidden=await asTenant(other,async db=>(await db.query("SELECT id FROM service_orders WHERE id=$1",[id])).rows);
   assert.equal(hidden.length,0);
   for(const nextStatus of ["awaiting_payment","confirmed","assigned","in_progress","completed"]){
