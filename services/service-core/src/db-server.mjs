@@ -5,6 +5,7 @@ import {verifySignedContext,requireRole} from "./auth.mjs";
 import {createMarketOrder,inTenantTransaction} from "./postgres.mjs";
 import {changeOrderStatus} from "./order-status.mjs";
 import {assignMarketTask,updateAssignedTask} from "./dispatch.mjs";
+import {initializeCleaningChecklist,completeCleaningItem,finalizeCleaningTask,registerLaundryBag,transitionLaundryBag} from "./cleaning-laundry.mjs";
 
 export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
 const secret=process.env.VIEWS_AUTH_SECRET;
@@ -36,6 +37,37 @@ export const server=createServer(async(req,res)=>{
    requireRole(context,["admin","finance"]);
    const rows=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query("SELECT id,intent_id,amount_uzs,status,reason,created_at FROM service_refund_requests ORDER BY created_at DESC LIMIT 100")).rows);
    return reply(res,200,rows);
+  }
+  if(req.method==="POST"&&url.pathname==="/api/v1/cleaning/checklists"){
+   requireRole(context,["dispatcher","admin"]);
+   const body=await parse(req);
+   if(!body||!uuid.test(body.taskId))return reply(res,422,{error:"Invalid cleaning task"});
+   return reply(res,201,await initializeCleaningChecklist(pool,{organizationId:context.organizationId,taskId:body.taskId,actorId:context.sub,items:body.items}));
+  }
+  if(req.method==="POST"&&url.pathname==="/api/v1/cleaning/items/complete"){
+   requireRole(context,["staff","dispatcher","admin"]);
+   const body=await parse(req);
+   if(!body||!uuid.test(body.taskId))return reply(res,422,{error:"Invalid cleaning task"});
+   return reply(res,200,await completeCleaningItem(pool,{organizationId:context.organizationId,taskId:body.taskId,actorId:context.sub,itemCode:body.itemCode}));
+  }
+  if(req.method==="POST"&&url.pathname==="/api/v1/cleaning/finalize"){
+   requireRole(context,["staff","dispatcher","admin"]);
+   const body=await parse(req);
+   if(!body||!uuid.test(body.taskId))return reply(res,422,{error:"Invalid cleaning task"});
+   return reply(res,200,await finalizeCleaningTask(pool,{organizationId:context.organizationId,taskId:body.taskId,actorId:context.sub}));
+  }
+  if(req.method==="POST"&&url.pathname==="/api/v1/laundry/bags"){
+   requireRole(context,["dispatcher","admin"]);
+   const body=await parse(req);
+   if(!body||!uuid.test(body.orderId))return reply(res,422,{error:"Invalid laundry order"});
+   return reply(res,201,await registerLaundryBag(pool,{organizationId:context.organizationId,orderId:body.orderId,actorId:context.sub,bagCode:body.bagCode,itemCount:body.itemCount,conditionNotes:body.conditionNotes||""}));
+  }
+  const bagMatch=url.pathname.match(/^\/api\/v1\/laundry\/bags\/([0-9a-f-]+)\/status$/i);
+  if(req.method==="PATCH"&&bagMatch&&uuid.test(bagMatch[1])){
+   requireRole(context,["staff","dispatcher","admin"]);
+   const body=await parse(req);
+   if(!body||typeof body.status!=="string")return reply(res,422,{error:"Invalid laundry status"});
+   return reply(res,200,await transitionLaundryBag(pool,{organizationId:context.organizationId,bagId:bagMatch[1],actorId:context.sub,nextStatus:body.status}));
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/dispatch/sla"){
    requireRole(context,["dispatcher","admin"]);
@@ -128,7 +160,7 @@ export const server=createServer(async(req,res)=>{
   }
   return reply(res,404,{error:"Not found"});
  }catch(error){
-  const status=error.message==="Forbidden"?403:error.message==="Assignee unavailable"?409:error.message==="Order not assignable"?409:error.message==="Task already closed"?409:error.message==="Task already in progress"?409:error.message==="Unsupported task kind"?422:error.message==="Invalid task transition"?409:error.message==="Invalid due date"?422:error.message==="Booking access denied"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Unavailable SKU"?422:error.message==="Invalid catalog price"?422:error.message==="Price overflow"?422:error.message==="Invalid idempotency key"?400:error.status||500;
+  const status=error.message==="Forbidden"?403:error.message==="Assignee unavailable"?409:error.message==="Order not assignable"?409:error.message==="Task already closed"?409:error.message==="Task already in progress"?409:error.message==="Unsupported task kind"?422:error.message==="Invalid task transition"?409:error.message==="Invalid laundry transition"?409:error.message==="Checklist incomplete"?409:error.message==="Checklist already initialized"?409:error.message==="Checklist item not available"?409:error.message==="Checklist not editable"?409:error.message==="Order not eligible"?409:error.message==="Invalid laundry bag"?422:error.message==="Invalid checklist"?422:error.message==="Invalid checklist item"?422:error.message==="Duplicate checklist item"?422:error.message==="Invalid due date"?422:error.message==="Booking access denied"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Unavailable SKU"?422:error.message==="Invalid catalog price"?422:error.message==="Price overflow"?422:error.message==="Invalid idempotency key"?400:error.status||500;
   if(status===500)console.error("VIEWS db-server error",error);
   return reply(res,status,{error:status===500?"Internal server error":error.message});
  }
