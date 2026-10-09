@@ -1,7 +1,7 @@
 import {inTenantTransaction} from "./postgres.mjs";
 import {publicOrderEvent} from "./guest-order-timeline.mjs";
 
-const allowedTypes=[
+export const notificationEventTypes=[
  "market.order.created","service.order.changed","service.task.assigned",
  "service.task.status_changed","cleaning.task.completed","laundry.bag.changed"
 ];
@@ -23,30 +23,10 @@ export function notificationMessage(row){
  }
 }
 
-/**
- * Project eligible outbox events on inbox read. Unique source event ID makes
- * retries safe. This is not a push worker or an external delivery queue.
- */
+/** Read-only inbox. Projection runs in the separate worker. */
 export async function listGuestNotifications(pool,{organizationId,principalId}){
  if(typeof principalId!=="string"||!principalId)throw Error("Forbidden");
  return inTenantTransaction(pool,organizationId,async db=>{
-  const source=await db.query(
-   `SELECT e.id,e.aggregate_id,e.event_type,e.payload,e.created_at
-      FROM service_outbox e
-      JOIN service_orders o ON o.id=e.aggregate_id AND o.organization_id=e.organization_id
-      WHERE e.organization_id=$1 AND o.created_by=$2 AND e.event_type=ANY($3::text[])
-      ORDER BY e.created_at DESC,e.id DESC LIMIT 200`,
-   [organizationId,principalId,allowedTypes]);
-  for(const event of source.rows){
-   const message=notificationMessage(event);
-   if(!message)continue;
-   await db.query(
-    `INSERT INTO service_guest_notifications
-       (organization_id,guest_principal_id,order_id,source_event_id,event_type,message,occurred_at)
-       VALUES($1,$2,$3,$4,$5,$6,$7)
-       ON CONFLICT(organization_id,guest_principal_id,source_event_id) DO NOTHING`,
-    [organizationId,principalId,event.aggregate_id,event.id,event.event_type,message,event.created_at]);
-  }
   const rows=await db.query(
    `SELECT id,order_id,event_type,message,occurred_at,read_at
       FROM service_guest_notifications
