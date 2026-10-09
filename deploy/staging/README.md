@@ -13,3 +13,5 @@ Requirements: Docker Compose, private local machine, test data only.
 **Not a public HTTPS deployment.** The Android WebView shell requires a private HTTPS server with production-grade authentication; it cannot use this localhost HTTP address directly.
 
 Do not reuse this stack as production. It lacks OIDC, rate limits, backups, deployment hardening and external ingress.
+
+Networking: PostgreSQL is attached only to the internal bridge. The API also joins a local edge bridge so the host's loopback mapping can reach it; the host port remains bound to `127.0.0.1` only. Never change the published host bind to `0.0.0.0` while using development tokens.
