@@ -23,7 +23,7 @@ test("completion consumes inventory, writes audit and outbox",async()=>{
  assert.ok(s.calls.some(x=>x.sql.includes("on_hand=on_hand-$1")));
  assert.ok(s.calls.some(x=>x.sql.includes("INSERT INTO service_order_audit")));
  assert.ok(s.calls.some(x=>x.sql.includes("INSERT INTO service_outbox")));
- assert.equal(s.calls.at(-2).sql,"COMMIT");
+ assert.equal(s.calls.at(-1).sql,"COMMIT");
 });
 test("cancellation releases reserve without consuming stock",async()=>{
  const s=setup("confirmed");
@@ -34,10 +34,10 @@ test("cancellation releases reserve without consuming stock",async()=>{
 test("unauthorized actor rolls back without stock movement",async()=>{
  const s=setup("confirmed",false);
  await assert.rejects(changeOrderStatus(s.pool,{organizationId:org,orderId:"order-3",actorId:"guest-1",nextStatus:"cancelled"}),/Forbidden/);
- assert.ok(!s.released);assert.equal(s.calls.at(-2).sql,"ROLLBACK");
+ assert.ok(!s.released);assert.equal(s.calls.at(-1).sql,"ROLLBACK");
 });
 test("invalid state transition rolls back",async()=>{
  const s=setup("completed");
  await assert.rejects(changeOrderStatus(s.pool,{organizationId:org,orderId:"order-4",actorId:"staff-1",nextStatus:"draft"}),/Invalid transition/);
- assert.equal(s.calls.at(-2).sql,"ROLLBACK");
+ assert.equal(s.calls.at(-1).sql,"ROLLBACK");
 });
