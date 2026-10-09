@@ -20,3 +20,5 @@ API endpoints (developer only):
 Not production-ready: creation of paid cleaning/laundry service orders, verified guest consent, photo proof, quality review, linen inventory, payroll calculation, staff task-kind-specific custody verification, SLA escalation and refunds are not yet integrated. Do not expose these development routes publicly.
 
 CI integration tests require PostgreSQL 16, tenant RLS and migration 0015.
+
+Staff UI: `/staff` now opens the assigned cleaning task checklist, lets the worker confirm individual items, and offers completion only after all items are recorded. The server rechecks all items and assignee identity transactionally. The laundry workflow is API-only; no dedicated laundry custody screen is implemented yet.
