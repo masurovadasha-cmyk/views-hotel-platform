@@ -1,0 +1,55 @@
+# Local-only isolated staging. Do not expose this stack to the public internet.
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: views_staging
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${VIEWS_DB_ADMIN_PASSWORD:?Set VIEWS_DB_ADMIN_PASSWORD}
+    volumes:
+      - views_staging_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U postgres -d views_staging"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    networks: [views_private]
+  migrate:
+    image: postgres:16
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: ${VIEWS_DB_ADMIN_PASSWORD:?Set VIEWS_DB_ADMIN_PASSWORD}
+      PGDATABASE: views_staging
+      VIEWS_APP_DB_PASSWORD: ${VIEWS_APP_DB_PASSWORD:?Set VIEWS_APP_DB_PASSWORD}
+    volumes:
+      - ../../db/migrations:/migrations:ro
+      - ./migrate.sh:/migrate.sh:ro
+    entrypoint: ["/bin/bash","/migrate.sh"]
+    networks: [views_private]
+  api:
+    build:
+      context: ../../services/service-core
+      dockerfile: Dockerfile.staging
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${VIEWS_STAGING_DATABASE_URL:?Set VIEWS_STAGING_DATABASE_URL}
+      VIEWS_AUTH_SECRET: ${VIEWS_AUTH_SECRET:?Set VIEWS_AUTH_SECRET}
+      VIEWS_ALLOW_DEV_AUTH: "1"
+      PORT: "3200"
+    ports:
+      - "127.0.0.1:3200:3200"
+    networks: [views_private]
+networks:
+  views_private:
+    internal: true
+volumes:
+  views_staging_pg:
