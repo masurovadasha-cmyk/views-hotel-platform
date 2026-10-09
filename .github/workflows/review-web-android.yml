@@ -1,7 +1,7 @@
 name: VIEWS Web and Android Review
 on:
   push:
-    branches: ['review/web-apk-20261006']
+    branches: ['review/web-apk-20261009']
   workflow_dispatch:
 permissions:
   contents: read
@@ -60,8 +60,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          TAG="views-review-20261006-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title 'VIEWS Web + Android — review 2026-10-06' --notes 'Review-only VIEWS frontend. Guest and staff demo interfaces. No production authentication, payments or Core backend. APK minimum Android 8.0; signed with an ephemeral test key. See build-evidence.json and ui-smoke.json for checks. No physical-device run claimed.' review-output/VIEWS-Review.apk review-output/VIEWS-Web-Review.zip review-output/build-evidence.json review-output/ui-smoke.json review-output/SHA256SUMS.txt review-output/apk-verification.txt review-output/apk-manifest.txt review-output/*.png
+          TAG="views-review-20261009-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title 'VIEWS Web + Android — review 2026-10-09' --notes 'Review-only VIEWS frontend. Guest and staff demo interfaces. No production authentication, payments or Core backend. APK minimum Android 8.0; signed with an ephemeral test key. See build-evidence.json and ui-smoke.json for checks. No physical-device run claimed.' review-output/VIEWS-Review.apk review-output/VIEWS-Web-Review.zip review-output/build-evidence.json review-output/ui-smoke.json review-output/SHA256SUMS.txt review-output/apk-verification.txt review-output/apk-manifest.txt review-output/*.png
           echo "release_url=$(gh release view "$TAG" --json url --jq .url)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         if: always()
