@@ -57,6 +57,15 @@ describe("resolveSession",()=>{
     await expect(resolveSession(request,{VIEWS_ENV:"production",VIEWS_ALLOW_DEMO_HEADERS:"true"})).resolves.toBeNull();
   });
 
+  it("explicitly disables demo-header fallback for sensitive Core routes",async()=>{
+    const request=new Request("https://staging.example/api/staff/market",{
+      headers:{"x-views-demo-role":"general_manager"}
+    });
+    const env:Env={VIEWS_ENV:"staging",VIEWS_ALLOW_DEMO_HEADERS:"true"};
+    await expect(resolveSession(request,env,{allowDemoHeaders:false})).resolves.toBeNull();
+    await expect(resolveSession(request,env)).resolves.toMatchObject({mode:"staff",role:"general_manager"});
+  });
+
   it("permits demo headers only behind the explicit staging switch",async()=>{
     const request=new Request("https://staging.example/api/session",{headers:{
       "x-views-demo-role":"front_desk",

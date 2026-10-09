@@ -30,6 +30,16 @@ describe("same-origin Staff CRM gateway",()=>{
   expect(response.status).toBe(401);
   expect(resolveSession).not.toHaveBeenCalled();
  });
+ it("requires cookie-backed session resolution without demo-header fallback",async()=>{
+  vi.mocked(resolveSession).mockResolvedValue(null);
+  const fetcher=vi.fn();vi.stubGlobal("fetch",fetcher);
+  try{
+   const response=await onRequestGet(context());
+   expect(response.status).toBe(401);
+   expect(resolveSession).toHaveBeenCalledWith(expect.any(Request),env,{allowDemoHeaders:false});
+   expect(fetcher).not.toHaveBeenCalled();
+  }finally{vi.unstubAllGlobals()}
+ });
  it("rejects unauthenticated browser requests without calling Core",async()=>{
   vi.mocked(resolveSession).mockResolvedValue(null);
   const fetcher=vi.fn();vi.stubGlobal("fetch",fetcher);

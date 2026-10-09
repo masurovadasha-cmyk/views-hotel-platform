@@ -4,7 +4,7 @@ export type LiveSession=
  | {mode:"guest";userId:string;guestId:string;organizationId:string}
  | {mode:"staff";userId:string;role:string;organizationId:string;propertyIds:string[]};
 
-export async function resolveSession(request:Request,env:Env):Promise<LiveSession|null>{
+export async function resolveSession(request:Request,env:Env,options:{allowDemoHeaders?:boolean}={}):Promise<LiveSession|null>{
   const sessionId=getCookie(request,"views_session");
   if(sessionId&&env.DB){
     const row=await env.DB.prepare("SELECT id,user_id,guest_id,role,organization_id,property_ids,expires_at FROM app_sessions WHERE id=? AND revoked_at IS NULL AND datetime(expires_at)>CURRENT_TIMESTAMP LIMIT 1")
@@ -23,7 +23,7 @@ export async function resolveSession(request:Request,env:Env):Promise<LiveSessio
       };
     }
   }
-  if(env.VIEWS_ENV==="staging"&&env.VIEWS_ALLOW_DEMO_HEADERS==="true"){
+  if(options.allowDemoHeaders!==false&&env.VIEWS_ENV==="staging"&&env.VIEWS_ALLOW_DEMO_HEADERS==="true"){
     const role=request.headers.get("x-views-demo-role");
     if(role==="guest")return {mode:"guest",userId:"guest-demo",guestId:"guest-demo",organizationId:"views"};
     if(role)return {mode:"staff",userId:request.headers.get("x-views-user-id")||"staff-demo",role,organizationId:"views",propertyIds:["utower"]};
