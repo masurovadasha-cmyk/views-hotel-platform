@@ -57,7 +57,11 @@ export async function createMarketOrder(pool,{organizationId,propertyId,idempote
    authorizedPropertyId=booking.rows[0].property_id;
   }else{
    const permission=await client.query("SELECT 1 FROM service_property_access WHERE organization_id=$1 AND property_id=$2 AND principal_id=$3 AND permission=$4 LIMIT 1",[organizationId,propertyId,principalId,"order:create"]);
-   if(!permission.rowCount)throw Error("Forbidden");
+   if(!permission.rowCount){
+   if(!isGuest)throw Error("Forbidden");
+   const stay=await client.query("SELECT 1 FROM service_guest_stays WHERE organization_id=$1 AND property_id=$2 AND principal_id=$3 AND state IN ('confirmed','checked_in') AND starts_at <= now() AND ends_at > now() LIMIT 1",[organizationId,propertyId,principalId]);
+   if(!stay.rowCount)throw Error("Forbidden");
+  }
   }
   const fingerprint=createHash("sha256").update(JSON.stringify({propertyId:authorizedPropertyId,bookingId,principalId,items:normalized})).digest("hex");
   // Lock per tenant/key so a concurrent retry cannot double reserve.
