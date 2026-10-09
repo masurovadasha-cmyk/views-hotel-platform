@@ -40,6 +40,12 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const stylesheet=await fetch(base+"/crm.css");
   assert.equal(stylesheet.status,200);
   assert.match(stylesheet.headers.get("content-type"),/text\/css/);
+  const session=await fetch(base+"/api/v1/me",{headers:{Authorization:"Bearer "+staffToken}});
+  assert.equal(session.status,200);
+  const identity=await session.json();
+  assert.deepEqual(identity,{sub:staff,organizationId:org,roles:["dispatcher"],authMode:"dev"});
+  const noSession=await fetch(base+"/api/v1/me");
+  assert.equal(noSession.status,401);
   const unauthorized=await fetch(base+"/api/v1/service-orders");
   assert.equal(unauthorized.status,401);
   const forbidden=await fetch(base+"/api/v1/service-orders",{headers:{Authorization:"Bearer "+guestToken}});
