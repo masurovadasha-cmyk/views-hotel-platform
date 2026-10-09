@@ -181,7 +181,7 @@ export const server=createServer(async(req,res)=>{
     :"SELECT o.id,o.property_id,o.service_type,o.fulfillment_status,o.payment_status,o.total_uzs,o.delivery_fee_uzs,o.created_at FROM service_orders o WHERE EXISTS (SELECT 1 FROM service_property_access a WHERE a.organization_id=o.organization_id AND a.property_id=o.property_id AND a.principal_id=$1 AND a.permission='order:manage') ORDER BY o.created_at DESC LIMIT 100",admin?[]:[context.sub])).rows);
    return reply(res,200,orders);
   }
-  const timelineMatch=url.pathname.match(/^\\/api\\/v1\\/me\\/orders\\/([0-9a-f-]+)\\/timeline$/i);
+  const timelineMatch=url.pathname.match(new RegExp("^/api/v1/me/orders/([0-9a-f-]+)/timeline$","i"));
   if(req.method==="GET"&&timelineMatch&&uuid.test(timelineMatch[1])){
    requireRole(context,["guest"]);
    const events=await getGuestOrderTimeline(pool,{organizationId:context.organizationId,orderId:timelineMatch[1],principalId:context.sub});
