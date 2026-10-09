@@ -76,6 +76,31 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0032_signed_only_auth_mode.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0033_internal_ingress_boundary.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0034_internal_service_posture_type_fix.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0035_market_service_order_foundation.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0036_market_service_order_scope_hardening.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0037_market_stock_foundation.sql
+      - name: Verify V-Market schema and RLS gates
+        run: |
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+          DO $
+          DECLARE t text; p boolean; f boolean; n integer;
+          BEGIN
+            FOREACH t IN ARRAY ARRAY[
+              'market_service_orders','market_service_order_lines',
+              'market_service_assignments','market_service_events',
+              'market_stock_balances','market_stock_movements'
+            ] LOOP
+              SELECT c.relrowsecurity,c.relforcerowsecurity INTO p,f
+                FROM pg_class c WHERE c.oid=to_regclass('public.'||t);
+              IF NOT FOUND OR p IS DISTINCT FROM true OR f IS DISTINCT FROM true THEN
+                RAISE EXCEPTION 'MARKET_RLS_GATE_FAILED: %',t;
+              END IF;
+              SELECT count(*) INTO n FROM pg_policies
+                WHERE schemaname='public' AND tablename=t AND cmd IN ('INSERT','UPDATE','DELETE','ALL');
+              IF n<>0 THEN RAISE EXCEPTION 'MARKET_WRITE_POLICY_UNEXPECTED: %',t; END IF;
+            END LOOP;
+          END $;
+          SQL
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
