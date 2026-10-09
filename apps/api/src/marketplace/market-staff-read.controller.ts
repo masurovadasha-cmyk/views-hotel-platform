@@ -7,6 +7,30 @@ import {MarketStaffReadService} from "./market-staff-read.service";
 @Controller("v1/internal/market")
 export class MarketStaffReadController{
  constructor(private readonly service:MarketStaffReadService){}
+ @Get("properties/:propertyId/orders/:orderId")
+ async detail(
+  @Param("propertyId") propertyId:string,
+  @Param("orderId") orderId:string,
+  @Headers("x-organization-id") organizationId:string|undefined,
+  @Headers("x-user-id") userId:string|undefined,
+  @Headers("x-membership-id") membershipId:string|undefined,
+  @Headers("x-request-id") requestId:string|undefined
+ ){
+  let actor;
+  let property;
+  let order;
+  try{
+   actor={organizationId:requireUuid(organizationId,"organization_id"),userId:requireUuid(userId,"user_id"),membershipId:requireUuid(membershipId,"membership_id"),requestId:requestId||randomUUID()};
+   property=requireUuid(propertyId,"property_id");
+   order=requireUuid(orderId,"order_id");
+  }catch{throw new UnauthorizedException("trusted actor context and valid IDs required")}
+  try{return await this.service.orderDetail(actor,property,order)}
+  catch(error){
+   if(error instanceof Error&&["MARKET_PROPERTY_FORBIDDEN","MARKET_ROLE_FORBIDDEN"].includes(error.message))throw new ForbiddenException("property access denied");
+   if(error instanceof Error&&error.message==="MARKET_ORDER_NOT_FOUND")throw new BadRequestException("order not found");
+   throw error;
+  }
+ }
  @Get("properties/:propertyId/orders")
  async list(
   @Param("propertyId") propertyId:string,
