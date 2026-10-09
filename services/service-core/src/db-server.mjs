@@ -147,6 +147,13 @@ export const server=createServer(async(req,res)=>{
    const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT sku,name,price_uzs FROM market_catalog WHERE active=true ORDER BY name,sku LIMIT 200")).rows);
    return reply(res,200,products.map(p=>({sku:p.sku,name:p.name,priceUzs:Number(p.price_uzs)})));
   }
+  if(req.method==="GET"&&url.pathname==="/api/v1/me/orders"){
+   requireRole(context,["guest"]);
+   const orders=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query(
+    "SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,created_at FROM service_orders WHERE organization_id=$1 AND created_by=$2 ORDER BY created_at DESC,id DESC LIMIT 20",
+    [context.organizationId,context.sub])).rows);
+   return reply(res,200,orders);
+  }
   if(req.method==="GET"&&url.pathname==="/api/v1/me/bookings"){
    requireRole(context,["guest"]);
    const bookings=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(
