@@ -48,6 +48,9 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   assert.equal(Number(storedPrice.delivery_fee_uzs),15000);
   const snapshot=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT unit_price_uzs FROM service_order_items WHERE order_id=$1",[order.id])).rows[0]);
   assert.equal(Number(snapshot.unit_price_uzs),15000);
+  await inTenantTransaction(pool,org,async db=>db.query("UPDATE market_catalog SET price_uzs=$1 WHERE organization_id=$2 AND sku=$3",[19000,org,"WATER-15"]));
+  const originalSnapshot=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT unit_price_uzs FROM service_order_items WHERE order_id=$1",[order.id])).rows[0]);
+  assert.equal(Number(originalSnapshot.unit_price_uzs),15000);
   const guestRead=await fetch(base+"/api/v1/service-orders/"+order.id,{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(guestRead.status,404);
   const staffRead=await fetch(base+"/api/v1/service-orders/"+order.id,{headers:{Authorization:"Bearer "+staffToken}});
