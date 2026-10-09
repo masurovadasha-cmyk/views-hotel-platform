@@ -36,16 +36,6 @@ export const server=createServer(async(req,res)=>{
    const rows=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query("SELECT id,intent_id,amount_uzs,status,reason,created_at FROM service_refund_requests ORDER BY created_at DESC LIMIT 100")).rows);
    return reply(res,200,rows);
   }
-  if(req.method==="GET"&&url.pathname==="/api/v1/finance/payments"){
-   requireRole(context,["finance","admin"]);
-   const payments=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT id,order_id,provider,amount_uzs,status,created_at FROM service_payment_intents ORDER BY created_at DESC LIMIT 100")).rows);
-   return reply(res,200,payments);
-  }
-  if(req.method==="GET"&&url.pathname==="/api/v1/finance/refunds"){
-   requireRole(context,["finance","admin"]);
-   const refunds=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT id,intent_id,amount_uzs,status,reason,created_at FROM service_refund_requests ORDER BY created_at DESC LIMIT 100")).rows);
-   return reply(res,200,refunds);
-  }
   if(req.method==="GET"&&url.pathname==="/api/v1/market/catalog"){
    requireRole(context,["guest","dispatcher","admin"]);
    const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT sku,name,price_uzs FROM market_catalog WHERE active=true ORDER BY name,sku LIMIT 200")).rows);
@@ -71,7 +61,10 @@ export const server=createServer(async(req,res)=>{
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/service-orders"){
    requireRole(context,["dispatcher","admin"]);
-   const orders=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,delivery_fee_uzs,created_at FROM service_orders ORDER BY created_at DESC LIMIT 100")).rows);
+   const admin=context.roles.includes("admin");
+   const orders=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(admin
+    ?"SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,delivery_fee_uzs,created_at FROM service_orders ORDER BY created_at DESC LIMIT 100"
+    :"SELECT o.id,o.property_id,o.service_type,o.fulfillment_status,o.payment_status,o.total_uzs,o.delivery_fee_uzs,o.created_at FROM service_orders o WHERE EXISTS (SELECT 1 FROM service_property_access a WHERE a.organization_id=o.organization_id AND a.property_id=o.property_id AND a.principal_id=$1 AND a.permission='order:manage') ORDER BY o.created_at DESC LIMIT 100",admin?[]:[context.sub])).rows);
    return reply(res,200,orders);
   }
   const match=url.pathname.match(/^\/api\/v1\/service-orders\/([0-9a-f-]+)$/i);
@@ -84,10 +77,14 @@ export const server=createServer(async(req,res)=>{
   }
   if(req.method==="GET"&&match&&uuid.test(match[1])){
    requireRole(context,["guest","dispatcher","admin"]);
-   const isStaff=context.roles.some(role=>["dispatcher","admin"].includes(role));
-   const rows=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(isStaff
+   const isAdmin=context.roles.includes("admin");
+   const isDispatcher=context.roles.includes("dispatcher");
+   const sql=isAdmin
     ?"SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,delivery_fee_uzs,created_at FROM service_orders WHERE id=$1"
-    :"SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,delivery_fee_uzs,created_at FROM service_orders WHERE id=$1 AND created_by=$2",isStaff?[match[1]]:[match[1],context.sub])).rows);
+    :isDispatcher
+     ?"SELECT o.id,o.property_id,o.service_type,o.fulfillment_status,o.payment_status,o.total_uzs,o.delivery_fee_uzs,o.created_at FROM service_orders o WHERE o.id=$1 AND EXISTS (SELECT 1 FROM service_property_access a WHERE a.organization_id=o.organization_id AND a.property_id=o.property_id AND a.principal_id=$2 AND a.permission='order:manage')"
+     :"SELECT id,property_id,service_type,fulfillment_status,payment_status,total_uzs,delivery_fee_uzs,created_at FROM service_orders WHERE id=$1 AND created_by=$2";
+   const rows=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(sql,isAdmin?[match[1]]:[match[1],context.sub])).rows);
    return rows.length?reply(res,200,rows[0]):reply(res,404,{error:"Not found"});
   }
   return reply(res,404,{error:"Not found"});
