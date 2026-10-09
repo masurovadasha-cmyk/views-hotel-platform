@@ -3,6 +3,7 @@ const token=document.querySelector("#token"),booking=document.querySelector("#bo
 const loadCatalogButton=document.querySelector("#load-catalog"),loadBookingsButton=document.querySelector("#load-bookings");
 const loadOrdersButton=document.querySelector("#load-orders"),historyEl=document.querySelector("#order-history");
 const timelineEl=document.querySelector("#order-timeline");
+const notificationsEl=document.querySelector("#notifications"),notificationsButton=document.querySelector("#load-notifications");
 const eventLabels={"market.order.created":"Заказ оформлен","service.order.changed":"Статус заказа","service.task.assigned":"Назначен исполнитель","service.task.status_changed":"Выполнение задания","cleaning.task.completed":"Уборка завершена","laundry.bag.changed":"Прачечная"};
 const client=createViewsClient({getToken:async()=>token.value.trim()});
 const money=n=>Number(n).toLocaleString("ru-RU")+" UZS";
@@ -109,11 +110,38 @@ async function loadGuestOrders(){
  finally{render()}
 }
 loadOrdersButton.onclick=loadGuestOrders;
+async function loadNotifications(){
+ notificationsButton.disabled=true;
+ try{
+  const items=await client.listGuestNotifications();
+  notificationsEl.replaceChildren();
+  if(!items.length){notificationsEl.textContent="Новых уведомлений нет";return}
+  for(const item of items){
+   const row=document.createElement("div");row.className="item";
+   const description=document.createElement("span");
+   description.textContent=item.message+" · "+new Date(item.occurred_at).toLocaleString("ru-RU")+(item.read_at?" · Прочитано":" · Новое");
+   row.append(description);
+   if(!item.read_at){
+    const button=document.createElement("button");button.type="button";button.textContent="Прочитано";
+    button.onclick=async()=>{
+     button.disabled=true;
+     try{await client.markGuestNotificationRead(item.id);await loadNotifications()}
+     catch(e){message.textContent="Ошибка уведомления: "+e.message;button.disabled=false}
+    };
+    row.append(button);
+   }
+   notificationsEl.append(row);
+  }
+ }catch(e){message.textContent="Не удалось загрузить уведомления: "+e.message}
+ finally{notificationsButton.disabled=false}
+}
+notificationsButton.onclick=loadNotifications;
+
 token.addEventListener("input",()=>{
  if(pendingKey||orderId||inFlight)return;
  catalog=[];cart.clear();booking.replaceChildren();
  const option=document.createElement("option");option.value="";option.textContent="Сначала загрузите бронирования";booking.append(option);
- historyEl.replaceChildren();timelineEl.replaceChildren();orderEl.textContent="Выберите товары и создайте заказ";render();
+ historyEl.replaceChildren();timelineEl.replaceChildren();notificationsEl.replaceChildren();orderEl.textContent="Выберите товары и создайте заказ";render();
 });
 
 loadCatalogButton.onclick=async()=>{
