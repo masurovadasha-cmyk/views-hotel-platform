@@ -41,7 +41,7 @@ describe("same-origin Staff CRM gateway",()=>{
  it("signs server-side Core request and does not expose token in response",async()=>{
   const fetcher=vi.fn(async(_url:string,init:RequestInit)=>{
    expect(init.headers).toMatchObject({"x-views-service-token":"signed-token","x-views-service-id":"pages-bff"});
-   return new Response(JSON.stringify({order:{id:O},lines:[],assignment:null,events:[]}),{status:200,headers:{"content-type":"application/json"}});
+   return new Response(JSON.stringify({order:{id:O,property_id:P,unit_id:null,status:"new",payment_status:"unpaid",total_minor:"0",subtotal_minor:"0",delivery_minor:"0",delivery_slot:"now",guest_comment:"",version:1,created_at:"2026-10-09T10:00:00Z",updated_at:"2026-10-09T10:00:00Z"},lines:[],assignment:null,events:[]}),{status:200,headers:{"content-type":"application/json"}});
   });
   vi.stubGlobal("fetch",fetcher);
   const response=await onRequestGet(context());
@@ -50,6 +50,15 @@ describe("same-origin Staff CRM gateway",()=>{
   expect(fetcher.mock.calls[0][0]).toBe("https://core.views.example/v1/internal/market/properties/"+P+"/orders/"+O);
   expect(await response.text()).not.toContain("signed-token");
   vi.unstubAllGlobals();
+ });
+ it("rejects a mismatched Core order without exposing its contents",async()=>{
+  const fetcher=vi.fn(async()=>new Response(JSON.stringify({order:{id:"different-order"},lines:[],assignment:null,events:[]}),{status:200,headers:{"content-type":"application/json"}}));
+  vi.stubGlobal("fetch",fetcher);
+  try{
+   const response=await onRequestGet(context());
+   expect(response.status).toBe(502);
+   expect(await response.text()).not.toContain("different-order");
+  }finally{vi.unstubAllGlobals()}
  });
  it("fails closed when signing credentials are missing",async()=>{
   vi.mocked(coreApiConfig).mockReturnValue({baseUrl:"https://core.views.example",internalKey:"legacy",signingPrivateKey:null,signingKid:null});
