@@ -30,3 +30,19 @@ export async function assignMarketTask(pool,{organizationId,orderId,actorId,assi
   return {id:taskId,orderId,kind,assigneeId,status:"assigned"};
  });
 }
+
+export async function updateAssignedTask(pool,{organizationId,taskId,actorId,nextStatus}){
+ if(typeof actorId!=="string"||!actorId||!["in_progress","completed"].includes(nextStatus))throw Error("Invalid task transition");
+ return inTenantTransaction(pool,organizationId,async db=>{
+  const found=await db.query("SELECT id,order_id,property_id,assigned_principal_id,status FROM service_dispatch_tasks WHERE organization_id=$1 AND id=$2 FOR UPDATE",[organizationId,taskId]);
+  if(!found.rowCount)throw Error("Not found");
+  const task=found.rows[0];
+  if(task.assigned_principal_id!==actorId)throw Error("Forbidden");
+  const active=await db.query("SELECT 1 FROM service_task_assignees WHERE organization_id=$1 AND property_id=$2 AND principal_id=$3 AND active=true",[organizationId,task.property_id,actorId]);
+  if(!active.rowCount)throw Error("Forbidden");
+  if(!((task.status==="assigned"&&nextStatus==="in_progress")||(task.status==="in_progress"&&nextStatus==="completed")))throw Error("Invalid task transition");
+  await db.query("UPDATE service_dispatch_tasks SET status=$1,updated_at=now() WHERE organization_id=$2 AND id=$3",[nextStatus,organizationId,taskId]);
+  await db.query("INSERT INTO service_outbox(organization_id,aggregate_id,event_type,payload) VALUES($1,$2,'service.task.status_changed',$3::jsonb)",[organizationId,task.order_id,JSON.stringify({taskId,orderId:task.order_id,from:task.status,to:nextStatus,actorId})]);
+  return {id:taskId,status:nextStatus};
+ });
+}
