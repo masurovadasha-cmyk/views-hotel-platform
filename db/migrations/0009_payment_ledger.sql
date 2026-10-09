@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS service_payment_attempts (
 );
 CREATE INDEX IF NOT EXISTS service_payment_attempts_order_idx
  ON service_payment_attempts(organization_id,order_id,created_at);
-CREATE TABLE IF NOT EXISTS service_payment_events (
+CREATE TABLE IF NOT EXISTS service_payment_attempt_events (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  organization_id uuid NOT NULL,
  attempt_id uuid NOT NULL REFERENCES service_payment_attempts(id),
@@ -40,12 +40,12 @@ CREATE TABLE IF NOT EXISTS service_payment_refunds (
  UNIQUE(organization_id,refund_reference)
 );
 ALTER TABLE service_payment_attempts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE service_payment_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE service_payment_attempt_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE service_payment_refunds ENABLE ROW LEVEL SECURITY;
 CREATE POLICY payment_attempts_tenant ON service_payment_attempts
  USING (organization_id=NULLIF(current_setting('app.organization_id',true),'')::uuid)
  WITH CHECK (organization_id=NULLIF(current_setting('app.organization_id',true),'')::uuid);
-CREATE POLICY payment_events_tenant ON service_payment_events
+CREATE POLICY payment_attempt_events_tenant ON service_payment_attempt_events
  USING (organization_id=NULLIF(current_setting('app.organization_id',true),'')::uuid)
  WITH CHECK (organization_id=NULLIF(current_setting('app.organization_id',true),'')::uuid);
 CREATE POLICY payment_refunds_tenant ON service_payment_refunds
