@@ -100,6 +100,9 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const repeated=await fetch(base+"/api/v1/staff/tasks/"+assignedTask.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+pickerToken},body:JSON.stringify({status:"completed"})});
   assert.equal(repeated.status,409);
 
+  const deliveryAssignment=await fetch(base+"/api/v1/dispatch/assign",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({orderId:order.id,assigneeId:"picker-1",kind:"market_deliver"})});
+  assert.equal(deliveryAssignment.status,201);
+  const deliveryTask=await deliveryAssignment.json();
   const staffTasks=await fetch(base+"/api/v1/dispatch/tasks",{headers:{Authorization:"Bearer "+staffToken}});
   assert.ok((await staffTasks.json()).some(t=>t.id===assignedTask.id));
   const unauthorizedTasks=await fetch(base+"/api/v1/dispatch/tasks",{headers:{Authorization:"Bearer "+unrelatedDispatcher}});
@@ -125,6 +128,8 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   assert.equal((await cancelled.json()).fulfillmentStatus,"cancelled");
   const cancelledTask=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT status FROM service_dispatch_tasks WHERE id=$1",[assignedTask.id])).rows[0]);
   assert.equal(cancelledTask.status,"completed");
+  const cancelledDelivery=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT status FROM service_dispatch_tasks WHERE id=$1",[deliveryTask.id])).rows[0]);
+  assert.equal(cancelledDelivery.status,"cancelled");
   const cancelGuest=await fetch(base+"/api/v1/service-orders/"+guestOrder.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({fulfillmentStatus:"cancelled"})});
   assert.equal(cancelGuest.status,200);
   const inventory=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT on_hand,reserved FROM inventory_lots WHERE organization_id=$1 AND sku='WATER-15'",[org])).rows[0]);
