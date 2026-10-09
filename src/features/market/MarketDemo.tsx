@@ -26,6 +26,13 @@ function nextLabel(status:string){
   return "";
 }
 
+function ProductPhoto({src,alt,emoji,className=""}:{src:string;alt:string;emoji:string;className?:string}){
+  const [failed,setFailed]=useState(false);
+  return <span className={"productPhoto "+className}>
+    {failed?<span className="productPhotoFallback" aria-label={alt}>{emoji}</span>:<img src={src} alt={alt} loading="lazy" onError={()=>setFailed(true)}/>}
+  </span>;
+}
+
 export function MarketDemo(){
   const [state,setState]=useState<MarketState>(loadState);
   const [cart,setCart]=useState<Cart>(loadCart);
@@ -39,6 +46,7 @@ export function MarketDemo(){
   const [payment,setPayment]=useState<"demo_card"|"room_charge">("demo_card");
   const [paymentOutcome,setPaymentOutcome]=useState<"success"|"failure">("success");
   const [message,setMessage]=useState("");
+  const [photoProductId,setPhotoProductId]=useState<string|null>(null);
   const checkoutKey=useRef("checkout-"+crypto.randomUUID());
 
   useEffect(()=>{localStorage.setItem(MARKET_STATE_KEY,JSON.stringify(state))},[state]);
@@ -106,7 +114,7 @@ export function MarketDemo(){
       <div className="marketGrid">{visible.map(p=>{
         const available=availableStock(p);const q=cart[p.id]||0;
         return <article className="marketCard" key={p.id}>
-          <div className="marketEmoji">{p.emoji}</div>
+          <button className="marketPhotoButton" aria-label={"Открыть фото: "+p.nameRu} onClick={()=>setPhotoProductId(p.id)}><ProductPhoto src={p.imageUrl} alt={p.imageAlt} emoji={p.emoji}/></button>
           <div className="marketCardTop"><span>{p.category}</span><i className={p.storage}>{p.storage}</i></div>
           <h3>{p.nameRu}</h3><p>{p.brand} · {p.unit}</p>
           <div className="marketPrice"><strong>{formatUzs(p.guestPriceUzs)}</strong><small>{p.priceStatus==="verified_reference"?"public reference 2026":"demo reference"} · +25%</small></div>
@@ -121,7 +129,7 @@ export function MarketDemo(){
       <div className="marketPanel"><header><small>GUEST CHECKOUT</small><h2>Корзина</h2></header>
         {!summary.lines.length?<div className="marketEmpty"><b>Корзина пуста</b><p>Добавьте товары из каталога.</p><button onClick={()=>setScreen("shop")}>Открыть магазин</button></div>:
         <div className="cartLines">{summary.lines.map(line=><article key={line.productId}>
-          <div><b>{line.name}</b><small>{line.sku} · {formatUzs(line.unitPriceUzs)}</small></div>
+          <div className="cartProductInfo">{state.products.find(p=>p.id===line.productId)&&<ProductPhoto className="thumb" src={state.products.find(p=>p.id===line.productId)!.imageUrl} alt={line.name} emoji={state.products.find(p=>p.id===line.productId)!.emoji}/>}<div><b>{line.name}</b><small>{line.sku} · {formatUzs(line.unitPriceUzs)}</small></div></div>
           <div className="qtyControl"><button onClick={()=>mutateCart(line.productId,-1)}>−</button><b>{line.quantity}</b><button onClick={()=>mutateCart(line.productId,1)}>+</button></div>
           <strong>{formatUzs(line.lineTotalUzs)}</strong>
         </article>)}</div>}
@@ -144,7 +152,7 @@ export function MarketDemo(){
       <div className="orderCards">{state.orders.map(o=><article key={o.id}>
         <header><div><small>{new Date(o.createdAt).toLocaleString("ru-RU")}</small><h3>{o.id}</h3></div><span className={"marketStatus "+o.status}>{o.status.replaceAll("_"," ")}</span></header>
         <p>{o.apartment} · {o.deliverySlot} · {o.paymentStatus.replaceAll("_"," ")}</p>
-        <div className="orderMiniLines">{o.lines.map(l=><span key={l.sku}>{l.name} × {l.quantity}<b>{formatUzs(l.lineTotalUzs)}</b></span>)}</div>
+        <div className="orderMiniLines">{o.lines.map(l=>{const p=state.products.find(x=>x.sku===l.sku);return <span key={l.sku}>{p&&<ProductPhoto className="micro" src={p.imageUrl} alt={l.name} emoji={p.emoji}/>}<i>{l.name} × {l.quantity}</i><b>{formatUzs(l.lineTotalUzs)}</b></span>})}</div>
         <strong className="orderTotal">{formatUzs(o.totalUzs)}</strong>
       </article>)}</div>}
     </section>}
@@ -161,6 +169,7 @@ export function MarketDemo(){
           <div className="staffOrders">{state.orders.length===0?<div className="marketEmpty">Нет заказов</div>:state.orders.map(o=><article key={o.id}>
             <div><b>{o.id}</b><small>{o.apartment} · {o.lines.reduce((s,l)=>s+l.quantity,0)} items · {formatUzs(o.totalUzs)}</small></div>
             <span className={"marketStatus "+o.status}>{o.status.replaceAll("_"," ")}</span>
+            <div className="staffOrderThumbs">{o.lines.slice(0,4).map(l=>{const p=state.products.find(x=>x.sku===l.sku);return p?<ProductPhoto key={l.sku} className="micro" src={p.imageUrl} alt={l.name} emoji={p.emoji}/>:null})}</div>
             <div className="staffActions">
               {nextLabel(o.status)&&<button className="marketPrimary" onClick={()=>setState(s=>advanceMarketOrder(s,o.id))}>{nextLabel(o.status)}</button>}
               {!["delivered","cancelled"].includes(o.status)&&<button onClick={()=>setState(s=>cancelMarketOrder(s,o.id))}>Cancel + release</button>}
@@ -170,7 +179,7 @@ export function MarketDemo(){
         <div className="marketPanel"><header><small>INVENTORY</small><h2>Stock control</h2></header>
           <input className="staffSearch" value={staffQuery} onChange={e=>setStaffQuery(e.target.value)} placeholder="SKU / товар / категория"/>
           <div className="inventoryRows">{staffProducts.map(p=><article key={p.id}>
-            <div><b>{p.nameRu}</b><small>{p.sku} · {p.category}</small></div>
+            <div className="inventoryProductCell"><ProductPhoto className="micro" src={p.imageUrl} alt={p.imageAlt} emoji={p.emoji}/><div><b>{p.nameRu}</b><small>{p.sku} · {p.category}</small></div></div>
             <span>stock <b>{p.stock}</b></span><span>reserved <b>{p.reserved}</b></span><span className={availableStock(p)<=p.reorderPoint?"low":""}>available <b>{availableStock(p)}</b></span>
             <div><button onClick={()=>setState(s=>receiveMarketStock(s,p.id,5))}>Receive +5</button><button onClick={()=>setState(s=>adjustMarketStock(s,p.id,-1,"demo cycle-count adjustment"))}>Adjust −1</button></div>
           </article>)}</div>
@@ -181,5 +190,16 @@ export function MarketDemo(){
       </div>
       <button className="resetDemo" onClick={resetDemo}>Сбросить V-Market demo data</button>
     </section>}
+    {photoProductId&&(()=>{
+      const p=state.products.find(x=>x.id===photoProductId);
+      return p?<div className="marketPhotoModal" onMouseDown={e=>{if(e.target===e.currentTarget)setPhotoProductId(null)}}>
+        <div className="marketPhotoModalCard">
+          <button className="marketPhotoClose" onClick={()=>setPhotoProductId(null)}>Close</button>
+          <ProductPhoto className="large" src={p.imageUrl} alt={p.imageAlt} emoji={p.emoji}/>
+          <small>{p.category} · {p.sku}</small><h2>{p.nameRu}</h2><p>{p.brand} · {p.unit}</p>
+          <strong>{formatUzs(p.guestPriceUzs)}</strong>
+        </div>
+      </div>:null
+    })()}
   </main>;
 }

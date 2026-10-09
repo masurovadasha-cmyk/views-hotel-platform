@@ -57,12 +57,22 @@ try{
   await page.goto(origin+prefix,{waitUntil:'networkidle'});
   await page.getByText('VIEWS',{exact:true}).first().waitFor();
   await page.getByText('Static staging demo',{exact:true}).waitFor();
+  await page.locator('.apartmentCard').first().getByRole('button',{name:'View',exact:true}).click();
+  await page.locator('.apartmentGallery').waitFor();
+  assert.ok((await page.locator('.galleryThumbs button').count())>=5,'Apartment gallery must expose at least 5 real listing photos');
+  await page.locator('.galleryThumbs button').nth(1).click();
+  assert.equal(await page.locator('.galleryCounter').innerText(),'2 / 5','Apartment thumbnail navigation must update the gallery');
+  await page.getByRole('button',{name:'Close',exact:true}).click();
   await checkWidth('guest-desktop-1440');
   await capture('guest-desktop.png');
 
   await page.getByRole('button',{name:'V-Market',exact:true}).click();
   await page.getByRole('heading',{name:'Мини-маркет в номер',exact:true}).waitFor();
   assert.equal(await page.locator('.marketCard').count()>=100,true,'Market must render at least 100 SKU cards');
+  assert.equal(await page.locator('.marketCard .productPhoto img').count()>=100,true,'Every visible market SKU must render a product photo element');
+  await page.locator('.marketPhotoButton').first().click();
+  await page.locator('.marketPhotoModal').waitFor();
+  await page.getByRole('button',{name:'Close',exact:true}).click();
   await page.getByRole('button',{name:'Добавить',exact:true}).first().click();
   await page.getByRole('button',{name:/Корзина/}).click();
   assert.equal(await page.locator('.cartLines article').count(),1,'Cart should contain added SKU');
