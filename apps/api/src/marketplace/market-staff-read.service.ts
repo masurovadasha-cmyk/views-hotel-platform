@@ -20,6 +20,19 @@ export class MarketStaffReadService{
     "SELECT app.can_access_property($1::uuid) AS allowed",[propertyId]
    );
    if(!access.rows[0]?.allowed)throw Error("MARKET_PROPERTY_FORBIDDEN");
+   // Property scope alone does not authorize staff CRM access: require an
+   // active membership and an approved operational role inside the transaction.
+   const role=await client.query<{allowed:boolean}>(
+    `SELECT EXISTS(
+       SELECT 1 FROM organization_memberships m
+       JOIN roles r ON r.id=m.role_id
+       WHERE m.id=$1 AND m.user_id=$2 AND m.organization_id=$3
+         AND m.status='active'
+         AND r.code IN ('owner','manager','front_desk','concierge','platform_admin')
+     ) AS allowed`,
+    [actor.membershipId,actor.userId,actor.organizationId]
+   );
+   if(!role.rows[0]?.allowed)throw Error("MARKET_ROLE_FORBIDDEN");
    const orders=await client.query<MarketOrderListItem>(
     `SELECT id,property_id,unit_id,status,payment_status,total_minor::text,
             delivery_slot,version,created_at

@@ -26,6 +26,11 @@ describe("internal V-Market Staff CRM read controller",()=>{
   await expect(controller.list(PROPERTY,ORG,USER,MEMBER,"request","1.5")).rejects.toThrow();
   expect(listOrders).not.toHaveBeenCalled();
  });
+ it("maps staff role denial to forbidden response",async()=>{
+  const listOrders=vi.fn(async()=>{throw Error("MARKET_ROLE_FORBIDDEN")});
+  const controller=new MarketStaffReadController({listOrders} as never);
+  await expect(controller.list(PROPERTY,ORG,USER,MEMBER,"request","10")).rejects.toMatchObject({status:403});
+ });
  it("maps property access denial to forbidden response",async()=>{
   const listOrders=vi.fn(async()=>{throw Error("MARKET_PROPERTY_FORBIDDEN")});
   const controller=new MarketStaffReadController({listOrders} as never);
