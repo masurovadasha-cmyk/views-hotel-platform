@@ -8,6 +8,7 @@ function fakePool(){
  const client={
   async query(sql,args=[]){
    calls.push({sql,args});
+   if(sql.startsWith("SELECT 1 FROM service_property_access"))return {rowCount:1,rows:[{one:1}]};
    if(sql.startsWith("SELECT id,property_id"))return {rowCount:stored?1:0,rows:stored?[stored]:[]};
    if(sql.startsWith("INSERT INTO service_orders")){stored={id:"order-1",property_id:args[1],service_type:"market",request_fingerprint:args[3]};return {rows:[{id:stored.id}]};}
    if(sql.startsWith("SELECT id,on_hand"))return {rows:[{id:"lot-1",on_hand:stock,reserved:0}]};
@@ -19,19 +20,19 @@ function fakePool(){
 }
 test("persists line item and outbox event",async()=>{
  const {pool,calls}=fakePool();
- const result=await createMarketOrder(pool,{organizationId:ORG,propertyId:PROPERTY,idempotencyKey:"key-123456",items:[{sku:"WATER-15",quantity:2}],asOf:"2026-10-09"});
+ const result=await createMarketOrder(pool,{organizationId:ORG,propertyId:PROPERTY,principalId:"test-user",idempotencyKey:"key-123456",items:[{sku:"WATER-15",quantity:2}],asOf:"2026-10-09"});
  assert.equal(result.replayed,false);
  assert.ok(calls.some(x=>x.sql.startsWith("INSERT INTO service_order_items")));
  assert.ok(calls.some(x=>x.sql.includes("INSERT INTO service_outbox")));
 });
 test("retry with same payload does not reserve again",async()=>{
- const {pool,calls}=fakePool();const request={organizationId:ORG,propertyId:PROPERTY,idempotencyKey:"key-123456",items:[{sku:"WATER-15",quantity:2}],asOf:"2026-10-09"};
+ const {pool,calls}=fakePool();const request={organizationId:ORG,propertyId:PROPERTY,principalId:"test-user",idempotencyKey:"key-123456",items:[{sku:"WATER-15",quantity:2}],asOf:"2026-10-09"};
  await createMarketOrder(pool,request);const second=await createMarketOrder(pool,request);
  assert.equal(second.replayed,true);
  assert.equal(calls.filter(x=>x.sql.startsWith("UPDATE inventory_lots")).length,1);
 });
 test("same key different quantity rejected",async()=>{
- const {pool}=fakePool();const request={organizationId:ORG,propertyId:PROPERTY,idempotencyKey:"key-123456",items:[{sku:"WATER-15",quantity:2}],asOf:"2026-10-09"};
+ const {pool}=fakePool();const request={organizationId:ORG,propertyId:PROPERTY,principalId:"test-user",idempotencyKey:"key-123456",items:[{sku:"WATER-15",quantity:2}],asOf:"2026-10-09"};
  await createMarketOrder(pool,request);
  await assert.rejects(createMarketOrder(pool,{...request,items:[{sku:"WATER-15",quantity:3}]}),/Idempotency conflict/);
 });
