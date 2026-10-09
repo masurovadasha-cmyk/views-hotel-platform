@@ -36,6 +36,16 @@ export const server=createServer(async(req,res)=>{
    const rows=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query("SELECT id,intent_id,amount_uzs,status,reason,created_at FROM service_refund_requests ORDER BY created_at DESC LIMIT 100")).rows);
    return reply(res,200,rows);
   }
+  if(req.method==="GET"&&url.pathname==="/api/v1/finance/payments"){
+   requireRole(context,["finance","admin"]);
+   const payments=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT id,order_id,provider,amount_uzs,status,created_at FROM service_payment_intents ORDER BY created_at DESC LIMIT 100")).rows);
+   return reply(res,200,payments);
+  }
+  if(req.method==="GET"&&url.pathname==="/api/v1/finance/refunds"){
+   requireRole(context,["finance","admin"]);
+   const refunds=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT id,intent_id,amount_uzs,status,reason,created_at FROM service_refund_requests ORDER BY created_at DESC LIMIT 100")).rows);
+   return reply(res,200,refunds);
+  }
   if(req.method==="GET"&&url.pathname==="/api/v1/market/catalog"){
    requireRole(context,["guest","dispatcher","admin"]);
    const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT sku,name,price_uzs FROM market_catalog WHERE active=true ORDER BY name,sku LIMIT 200")).rows);
