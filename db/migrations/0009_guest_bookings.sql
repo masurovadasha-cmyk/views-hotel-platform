@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS service_guest_bookings (
  UNIQUE (organization_id,booking_reference)
 );
 ALTER TABLE service_guest_bookings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS service_guest_bookings_tenant ON service_guest_bookings;
 CREATE POLICY service_guest_bookings_tenant ON service_guest_bookings
  USING (organization_id = NULLIF(current_setting('app.organization_id',true),'')::uuid)
  WITH CHECK (organization_id = NULLIF(current_setting('app.organization_id',true),'')::uuid);
