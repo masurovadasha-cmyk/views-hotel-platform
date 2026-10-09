@@ -35,6 +35,7 @@ jobs:
       - run: node --check src/payment-provider-contract.mjs
       - run: node --check src/refunds.mjs
       - run: node --check src/dispatch.mjs
+      - run: node --check src/task-compensation.mjs
       - run: node --check src/cleaning-laundry.mjs
   postgres-migrations:
     runs-on: ubuntu-latest
@@ -58,7 +59,7 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          for file in db/migrations/0001_service_core.sql db/migrations/0002_inventory_reservations.sql db/migrations/0003_order_items.sql db/migrations/0004_property_access.sql db/migrations/0005_order_audit.sql db/migrations/0006_order_ownership.sql db/migrations/0007_market_pricing.sql db/migrations/0008_guest_booking_access.sql db/migrations/0009_payment_ledger.sql db/migrations/0008_guest_stays.sql db/migrations/0009_guest_bookings.sql db/migrations/0010_booking_schema_compat.sql db/migrations/0011_pms_event_inbox.sql db/migrations/0012_payment_intents.sql db/migrations/0013_payment_ledger_refunds.sql db/migrations/0014_dispatch_tasks.sql db/migrations/0015_cleaning_laundry.sql; do
+          for file in db/migrations/0001_service_core.sql db/migrations/0002_inventory_reservations.sql db/migrations/0003_order_items.sql db/migrations/0004_property_access.sql db/migrations/0005_order_audit.sql db/migrations/0006_order_ownership.sql db/migrations/0007_market_pricing.sql db/migrations/0008_guest_booking_access.sql db/migrations/0009_payment_ledger.sql db/migrations/0008_guest_stays.sql db/migrations/0009_guest_bookings.sql db/migrations/0010_booking_schema_compat.sql db/migrations/0011_pms_event_inbox.sql db/migrations/0012_payment_intents.sql db/migrations/0013_payment_ledger_refunds.sql db/migrations/0014_dispatch_tasks.sql db/migrations/0015_cleaning_laundry.sql db/migrations/0016_task_compensation.sql; do
             psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -f "$file"
           done
       - uses: actions/setup-node@v4
