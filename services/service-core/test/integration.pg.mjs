@@ -76,6 +76,8 @@ test("payment intent uses order snapshot, deduplicates reference and blocks dupl
  assert.equal(events.n,1);
  const hidden=await asTenant(randomUUID(),async db=>(await db.query("SELECT id FROM service_payment_attempts WHERE id=$1",[first.id])).rows);
  assert.equal(hidden.length,0);
+ await asTenant(tenant,async db=>db.query("UPDATE service_orders SET fulfillment_status='cancelled' WHERE id=$1",[order.id]));
+ await assert.rejects(createPaymentIntent(pool,{organizationId:tenant,orderId:order.id,merchantReference:"payment-"+randomUUID()}),/Cancelled order/);
 });
 
 test.after(async()=>{await pool.end()});
