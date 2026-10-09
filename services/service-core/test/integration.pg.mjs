@@ -13,6 +13,7 @@ async function asTenant(tenant,fn){return inTenantTransaction(pool,tenant,fn)}
 test("PostgreSQL inventory lifecycle and tenant isolation",async t=>{
  try{
   await asTenant(org,async db=>{
+   await db.query("INSERT INTO market_catalog(organization_id,sku,name,price_uzs) VALUES($1,$2,$3,$4)",[org,"WATER-15","Вода 1,5 л",15000]);
    await db.query("INSERT INTO service_property_access(organization_id,property_id,principal_id,permission) VALUES($1,$2,$3,'order:create'),($1,$2,$3,'order:manage')",[org,property,principal]);
    await db.query("INSERT INTO inventory_lots(organization_id,sku,on_hand,reserved) VALUES($1,'WATER-15',3,0)",[org]);
   });
@@ -39,6 +40,7 @@ test("PostgreSQL inventory lifecycle and tenant isolation",async t=>{
 test("PostgreSQL cancellation releases stock and rejects repeat transition",async()=>{
  const tenant=randomUUID(),unit=randomUUID(),staff="cancel-test-staff",key="cancel-"+randomUUID();
  await asTenant(tenant,async db=>{
+  await db.query("INSERT INTO market_catalog(organization_id,sku,name,price_uzs) VALUES($1,$2,$3,$4)",[tenant,"MILK-1","Молоко 1 л",32000]);
   await db.query("INSERT INTO service_property_access(organization_id,property_id,principal_id,permission) VALUES($1,$2,$3,'order:create'),($1,$2,$3,'order:manage')",[tenant,unit,staff]);
   await db.query("INSERT INTO inventory_lots(organization_id,sku,on_hand,reserved) VALUES($1,'MILK-1',4,0)",[tenant]);
  });
