@@ -149,3 +149,30 @@ jobs:
           path: dist/views-staging/
           if-no-files-found: error
           retention-days: 14
+
+  local-staging-smoke:
+    needs: [node-tests, postgres-migrations]
+    runs-on: ubuntu-latest
+    env:
+      VIEWS_DB_ADMIN_PASSWORD: ci-staging-admin-password
+      VIEWS_APP_DB_PASSWORD: ci-staging-app-password
+      VIEWS_STAGING_DATABASE_URL: postgresql://views_staging_app:ci-staging-app-password@db:5432/views_staging
+      VIEWS_AUTH_SECRET: ci-staging-auth-secret-32-characters-minimum
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check local staging configuration
+        run: |
+          bash -n deploy/staging/migrate.sh
+          docker compose -f deploy/staging/compose.yaml config -q
+      - name: Boot isolated staging stack
+        run: docker compose -f deploy/staging/compose.yaml up -d --build --wait
+      - name: Verify local API and browser entrypoints
+        run: |
+          curl --fail --silent http://127.0.0.1:3200/health
+          for path in guest crm staff finance; do
+            curl --fail --silent --output /dev/null "http://127.0.0.1:3200/$path"
+          done
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3200/api/v1/service-orders)" = "401"
+      - name: Stop staging
+        if: always()
+        run: docker compose -f deploy/staging/compose.yaml down -v
