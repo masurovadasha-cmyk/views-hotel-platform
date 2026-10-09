@@ -43,29 +43,17 @@ export async function processNotificationJobs(pool,{organizationId,limit=25,proj
     [organizationId]);
    if(!found.rowCount)return null;
    const job=found.rows[0];
-   try{
-    const result=await db.query(
-     `SELECT e.id,e.aggregate_id,e.event_type,e.payload,e.created_at,o.created_by
-        FROM service_outbox e JOIN service_orders o
-          ON o.organization_id=e.organization_id AND o.id=e.aggregate_id
-        WHERE e.organization_id=$1 AND e.id=$2`,
-     [organizationId,job.source_event_id]);
-    if(!result.rowCount)throw Error("Source event missing");
-    const event=result.rows[0];
-    const message=project(event);
-    if(message){
-     await db.query(
-      `INSERT INTO service_guest_notifications
-       (organization_id,guest_principal_id,order_id,source_event_id,event_type,message,occurred_at)
-       VALUES($1,$2,$3,$4,$5,$6,$7)
-       ON CONFLICT(organization_id,guest_principal_id,source_event_id) DO NOTHING`,
-      [organizationId,event.created_by,event.aggregate_id,event.id,event.event_type,message,event.created_at]);
-    }
-    await db.query(
-     "UPDATE service_notification_jobs SET status='completed',attempts=attempts+1,completed_at=now(),last_error=NULL WHERE organization_id=$1 AND id=$2",
-     [organizationId,job.id]);
-    return "completed";
-   }catch{
+   const result=await db.query(
+    `SELECT e.id,e.aggregate_id,e.event_type,e.payload,e.created_at,o.created_by
+       FROM service_outbox e JOIN service_orders o
+         ON o.organization_id=e.organization_id AND o.id=e.aggregate_id
+       WHERE e.organization_id=$1 AND e.id=$2`,
+    [organizationId,job.source_event_id]);
+   if(!result.rowCount)throw Error("Source event missing");
+   const event=result.rows[0];
+   let message;
+   try{message=project(event)}
+   catch{
     const attempts=job.attempts+1;
     const dead=attempts>=MAX_NOTIFICATION_ATTEMPTS;
     await db.query(
@@ -75,6 +63,18 @@ export async function processNotificationJobs(pool,{organizationId,limit=25,proj
      [dead?"dead":"pending",attempts,Math.min(3600,2**attempts*15),organizationId,job.id]);
     return dead?"dead":"retried";
    }
+   if(message){
+    await db.query(
+     `INSERT INTO service_guest_notifications
+      (organization_id,guest_principal_id,order_id,source_event_id,event_type,message,occurred_at)
+      VALUES($1,$2,$3,$4,$5,$6,$7)
+      ON CONFLICT(organization_id,guest_principal_id,source_event_id) DO NOTHING`,
+     [organizationId,event.created_by,event.aggregate_id,event.id,event.event_type,message,event.created_at]);
+   }
+   await db.query(
+    "UPDATE service_notification_jobs SET status='completed',attempts=attempts+1,completed_at=now(),last_error=NULL WHERE organization_id=$1 AND id=$2",
+    [organizationId,job.id]);
+   return "completed";
   });
   if(outcome===null)break;
   summary[outcome]++;
