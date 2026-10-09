@@ -94,7 +94,17 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   assert.equal(assigned.status,201);
   const assignedTask=await assigned.json();
   assert.equal(assignedTask.assigneeId,"picker-1");
+  const cleaningTaskId=randomUUID();
+  await inTenantTransaction(pool,org,async db=>{
+   await db.query("INSERT INTO service_dispatch_tasks(id,organization_id,order_id,property_id,task_kind,assigned_principal_id,status) VALUES($1,$2,$3,$4,'cleaning','picker-1','in_progress')",[cleaningTaskId,org,order.id,property]);
+   await db.query("INSERT INTO service_cleaning_checklist_items(organization_id,task_id,item_code,label) VALUES($1,$2,'bathroom','Ванная')",[org,cleaningTaskId]);
+  });
   const pickerToken=sign(org,"picker-1",["staff"]);
+  const checklist=await fetch(base+"/api/v1/staff/tasks/"+cleaningTaskId+"/checklist",{headers:{Authorization:"Bearer "+pickerToken}});
+  assert.equal(checklist.status,200);
+  assert.equal((await checklist.json())[0].item_code,"bathroom");
+  const foreignChecklist=await fetch(base+"/api/v1/staff/tasks/"+cleaningTaskId+"/checklist",{headers:{Authorization:"Bearer "+sign(org,"another-worker",["staff"])}});
+  assert.equal(foreignChecklist.status,403);
   const myTasks=await fetch(base+"/api/v1/staff/tasks",{headers:{Authorization:"Bearer "+pickerToken}});
   assert.equal(myTasks.status,200);
   assert.ok((await myTasks.json()).some(t=>t.id===assignedTask.id));
