@@ -4,7 +4,7 @@ import {Pool} from "pg";
 import {verifySignedContext,requireRole} from "./auth.mjs";
 import {createMarketOrder,inTenantTransaction} from "./postgres.mjs";
 import {changeOrderStatus} from "./order-status.mjs";
-import {assignMarketTask} from "./dispatch.mjs";
+import {assignMarketTask,updateAssignedTask} from "./dispatch.mjs";
 
 export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
 const secret=process.env.VIEWS_AUTH_SECRET;
@@ -36,6 +36,19 @@ export const server=createServer(async(req,res)=>{
    requireRole(context,["admin","finance"]);
    const rows=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query("SELECT id,intent_id,amount_uzs,status,reason,created_at FROM service_refund_requests ORDER BY created_at DESC LIMIT 100")).rows);
    return reply(res,200,rows);
+  }
+  if(req.method==="GET"&&url.pathname==="/api/v1/staff/tasks"){
+   requireRole(context,["staff","dispatcher","admin"]);
+   const tasks=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query("SELECT id,order_id,property_id,task_kind,status,due_at FROM service_dispatch_tasks WHERE assigned_principal_id=$1 ORDER BY due_at NULLS LAST,created_at LIMIT 100",[context.sub])).rows);
+   return reply(res,200,tasks);
+  }
+  const taskMatch=url.pathname.match(/^\/api\/v1\/staff\/tasks\/([0-9a-f-]+)$/i);
+  if(req.method==="PATCH"&&taskMatch&&uuid.test(taskMatch[1])){
+   requireRole(context,["staff","dispatcher","admin"]);
+   const body=await parse(req);
+   if(!body||typeof body.status!=="string")return reply(res,422,{error:"Invalid task status"});
+   const updated=await updateAssignedTask(pool,{organizationId:context.organizationId,taskId:taskMatch[1],actorId:context.sub,nextStatus:body.status});
+   return reply(res,200,updated);
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/dispatch/tasks"){
    requireRole(context,["dispatcher","admin"]);
@@ -105,7 +118,7 @@ export const server=createServer(async(req,res)=>{
   }
   return reply(res,404,{error:"Not found"});
  }catch(error){
-  const status=error.message==="Forbidden"?403:error.message==="Assignee unavailable"?409:error.message==="Order not assignable"?409:error.message==="Task already closed"?409:error.message==="Task already in progress"?409:error.message==="Unsupported task kind"?422:error.message==="Invalid due date"?422:error.message==="Booking access denied"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Unavailable SKU"?422:error.message==="Invalid catalog price"?422:error.message==="Price overflow"?422:error.message==="Invalid idempotency key"?400:error.status||500;
+  const status=error.message==="Forbidden"?403:error.message==="Assignee unavailable"?409:error.message==="Order not assignable"?409:error.message==="Task already closed"?409:error.message==="Task already in progress"?409:error.message==="Unsupported task kind"?422:error.message==="Invalid task transition"?409:error.message==="Invalid due date"?422:error.message==="Booking access denied"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Unavailable SKU"?422:error.message==="Invalid catalog price"?422:error.message==="Price overflow"?422:error.message==="Invalid idempotency key"?400:error.status||500;
   if(status===500)console.error("VIEWS db-server error",error);
   return reply(res,status,{error:status===500?"Internal server error":error.message});
  }
