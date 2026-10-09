@@ -149,6 +149,21 @@ export const server=createServer(async(req,res)=>{
    const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT sku,name,price_uzs FROM market_catalog WHERE active=true ORDER BY name,sku LIMIT 200")).rows);
    return reply(res,200,products.map(p=>({sku:p.sku,name:p.name,priceUzs:Number(p.price_uzs)})));
   }
+  if(req.method==="GET"&&url.pathname==="/api/v1/admin/notifications/health"){
+   requireRole(context,["admin"]);
+   const metrics=await inTenantTransaction(pool,context.organizationId,async db=>{
+    const result=await db.query(
+     `SELECT count(*)::integer AS total,
+       count(*) FILTER(WHERE status='pending')::integer AS pending,
+       count(*) FILTER(WHERE status='dead')::integer AS dead,
+       count(*) FILTER(WHERE status='completed')::integer AS completed,
+       count(*) FILTER(WHERE status='pending' AND next_attempt_at<=now())::integer AS ready
+       FROM service_notification_jobs WHERE organization_id=$1`,
+     [context.organizationId]);
+    return result.rows[0];
+   });
+   return reply(res,200,metrics);
+  }
   if(req.method==="GET"&&url.pathname==="/api/v1/me/notifications"){
    requireRole(context,["guest"]);
    return reply(res,200,await listGuestNotifications(pool,{organizationId:context.organizationId,principalId:context.sub}));
