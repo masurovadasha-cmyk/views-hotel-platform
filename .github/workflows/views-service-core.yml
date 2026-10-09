@@ -73,4 +73,4 @@ jobs:
           TEST_DATABASE_URL: postgresql://views_test_app:views_test_app_password@localhost:5432/views_test
         run: |
           export VIEWS_AUTH_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
-          node --test test/integration.pg.mjs test/integration.http.pg.mjs test/integration.stays.pg.mjs test/integration.bookings.pg.mjs test/integration.pms.pg.mjs test/integration.payments.pg.mjs
+          node --test test/integration.pg.mjs test/integration.http.pg.mjs test/integration.stays.pg.mjs test/integration.bookings.pg.mjs test/integration.pms.pg.mjs test/integration.payments.pg.mjs test/integration.payment-events.pg.mjs
