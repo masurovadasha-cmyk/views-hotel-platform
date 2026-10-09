@@ -113,6 +113,22 @@ try{
    await page.screenshot({path:resolve(screenshotDir,"staff.png"),fullPage:true});
   }finally{await context.close()}
  });
+ await run("staff: cleaning checklist remains open after confirming an item",async()=>{
+  const {context,page,errors}=await pageFor("/staff",{
+   "GET /api/v1/staff/tasks":{json:[{id:taskId,order_id:orderId,property_id:propertyId,task_kind:"cleaning",status:"in_progress"}]}
+  });
+  let completed=false;
+  try{
+   await page.route("**/api/v1/staff/tasks/"+taskId+"/checklist",route=>route.fulfill({status:200,json:[{item_code:"bathroom",label:"Ванная",completed_at:completed?"2026-10-10T10:00:00Z":null,completed_by:completed?"cleaner":null}]}));
+   await page.route("**/api/v1/cleaning/items/complete",route=>{completed=true;return route.fulfill({status:200,json:{taskId,itemCode:"bathroom",completed:true}})});
+   await page.getByRole("button",{name:"Открыть мои задания"}).click();
+   await page.getByRole("button",{name:"Открыть чек-лист"}).click();
+   await page.getByRole("button",{name:"Выполнено: Ванная"}).click();
+   await page.getByRole("button",{name:"Завершить уборку"}).waitFor();
+   assert.equal(completed,true);
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ });
  await run("finance: read-only payments and refunds",async()=>{
   const {context,page,errors}=await pageFor("/finance",{
    "GET /api/v1/finance/payments":{json:[{order_id:orderId,provider:"sandbox",amount_uzs:45000,status:"created"}]},
