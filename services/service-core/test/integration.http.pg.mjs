@@ -110,6 +110,8 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const cancelled=await fetch(base+"/api/v1/service-orders/"+order.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({fulfillmentStatus:"cancelled"})});
   assert.equal(cancelled.status,200);
   assert.equal((await cancelled.json()).fulfillmentStatus,"cancelled");
+  const cancelledTask=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT status FROM service_dispatch_tasks WHERE id=$1",[assignedTask.id])).rows[0]);
+  assert.equal(cancelledTask.status,"cancelled");
   const cancelGuest=await fetch(base+"/api/v1/service-orders/"+guestOrder.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({fulfillmentStatus:"cancelled"})});
   assert.equal(cancelGuest.status,200);
   const inventory=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT on_hand,reserved FROM inventory_lots WHERE organization_id=$1 AND sku='WATER-15'",[org])).rows[0]);
