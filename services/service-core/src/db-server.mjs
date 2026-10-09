@@ -2,6 +2,7 @@ import {createServer} from "node:http";
 import {Pool} from "pg";
 import {verifySignedContext,requireRole} from "./auth.mjs";
 import {createMarketOrder,inTenantTransaction} from "./postgres.mjs";
+import {changeOrderStatus} from "./order-status.mjs";
 
 const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
 const secret=process.env.VIEWS_AUTH_SECRET;
@@ -31,6 +32,13 @@ export const server=createServer(async(req,res)=>{
    return reply(res,200,orders);
   }
   const match=url.pathname.match(/^\/api\/v1\/service-orders\/([0-9a-f-]+)$/i);
+  if(req.method==="PATCH"&&match&&uuid.test(match[1])){
+   requireRole(context,["dispatcher","admin"]);
+   const body=await parse(req);
+   if(typeof body.fulfillmentStatus!=="string")return reply(res,422,{error:"Invalid status"});
+   const changed=await changeOrderStatus(pool,{organizationId:context.organizationId,orderId:match[1],actorId:context.sub,nextStatus:body.fulfillmentStatus});
+   return reply(res,200,changed);
+  }
   if(req.method==="GET"&&match&&uuid.test(match[1])){
    requireRole(context,["dispatcher","admin"]);
    const rows=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT id,property_id,service_type,fulfillment_status,payment_status,created_at FROM service_orders WHERE id=$1",[match[1]])).rows);
@@ -38,7 +46,7 @@ export const server=createServer(async(req,res)=>{
   }
   return reply(res,404,{error:"Not found"});
  }catch(error){
-  const status=error.message==="Forbidden"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.status||500;
+  const status=error.message==="Forbidden"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.status||500;
   if(status===500)console.error("VIEWS db-server error",error);
   return reply(res,status,{error:status===500?"Internal server error":error.message});
  }
