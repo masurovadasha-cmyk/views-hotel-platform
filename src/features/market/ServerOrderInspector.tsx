@@ -10,6 +10,11 @@ export function ServerOrderInspector(){
  const [loading,setLoading]=useState(false);
  const active=useRef<AbortController|null>(null);
  useEffect(()=>()=>active.current?.abort(),[]);
+ function changeLookup(field:"property"|"order",value:string){
+  active.current?.abort();active.current=null;
+  setLoading(false);setDetail(null);setError("");
+  if(field==="property")setPropertyId(value);else setOrderId(value);
+ }
  async function inspect(){
   active.current?.abort();
   const controller=new AbortController();active.current=controller;
@@ -31,19 +36,19 @@ export function ServerOrderInspector(){
   <header><small>SERVER · STAFF CRM</small><h2>Карточка заказа Core</h2></header>
   <p>Только просмотр через авторизованный серверный шлюз. Локальные демозаказы и склад не изменяются.</p>
   <div className="marketTaskFields">
-   <label>Объект<input value={propertyId} maxLength={80} onChange={e=>setPropertyId(e.target.value)}/></label>
-   <label>UUID заказа<input value={orderId} onChange={e=>setOrderId(e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/></label>
+   <label>Объект<input value={propertyId} maxLength={80} onChange={e=>changeLookup("property",e.target.value)}/></label>
+   <label>UUID заказа<input value={orderId} onChange={e=>changeLookup("order",e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/></label>
    <button disabled={loading||!UUID.test(orderId)} onClick={inspect}>{loading?"Загрузка…":"Загрузить заказ"}</button>
   </div>
   {error&&<p role="alert">{error}</p>}
   {detail&&<article>
    <h3>{detail.order.id}</h3>
    <p>Статус: {detail.order.status} · Оплата: {detail.order.payment_status}</p>
-   <p>Сумма: {detail.order.total_minor} UZS · Версия: {detail.order.version}</p>
+   <p>Сумма в минимальных денежных единицах: {detail.order.total_minor} · Валюта: UZS · Версия: {detail.order.version}</p>
    <p>Исполнитель: {detail.assignment?.assignee_membership_id||"Не назначен"}</p>
    {detail.assignment&&<p>SLA: {new Date(detail.assignment.due_at).toLocaleString("ru-RU")}</p>}
    <h4>Товары</h4>
-   <ul>{detail.lines.map(l=><li key={l.sku}>{l.product_name_snapshot} × {l.quantity} — {l.line_total_minor} UZS</li>)}</ul>
+   <ul>{detail.lines.map(l=><li key={l.sku}>{l.product_name_snapshot} × {l.quantity} — {l.line_total_minor} (минимальные единицы)</li>)}</ul>
    <h4>История</h4>
    <ol>{detail.events.map(e=><li key={String(e.id)}>{e.action} · {new Date(e.created_at).toLocaleString("ru-RU")}</li>)}</ol>
   </article>}
