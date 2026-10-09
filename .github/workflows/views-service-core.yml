@@ -42,6 +42,8 @@ jobs:
       - run: node --check src/dispatch.mjs
       - run: node --check src/guest-order-timeline.mjs
       - run: node --check src/guest-notifications.mjs
+      - run: node --check src/notification-worker.mjs
+      - run: node --check src/notification-worker-cli.mjs
       - run: node --check src/task-compensation.mjs
       - run: node --check public/staff.js
       - run: node --check src/cleaning-laundry.mjs
@@ -67,7 +69,7 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          for file in db/migrations/0001_service_core.sql db/migrations/0002_inventory_reservations.sql db/migrations/0003_order_items.sql db/migrations/0004_property_access.sql db/migrations/0005_order_audit.sql db/migrations/0006_order_ownership.sql db/migrations/0007_market_pricing.sql db/migrations/0008_guest_booking_access.sql db/migrations/0009_payment_ledger.sql db/migrations/0008_guest_stays.sql db/migrations/0009_guest_bookings.sql db/migrations/0010_booking_schema_compat.sql db/migrations/0011_pms_event_inbox.sql db/migrations/0012_payment_intents.sql db/migrations/0013_payment_ledger_refunds.sql db/migrations/0014_dispatch_tasks.sql db/migrations/0015_cleaning_laundry.sql db/migrations/0016_task_compensation.sql db/migrations/0017_guest_notifications.sql; do
+          for file in db/migrations/0001_service_core.sql db/migrations/0002_inventory_reservations.sql db/migrations/0003_order_items.sql db/migrations/0004_property_access.sql db/migrations/0005_order_audit.sql db/migrations/0006_order_ownership.sql db/migrations/0007_market_pricing.sql db/migrations/0008_guest_booking_access.sql db/migrations/0009_payment_ledger.sql db/migrations/0008_guest_stays.sql db/migrations/0009_guest_bookings.sql db/migrations/0010_booking_schema_compat.sql db/migrations/0011_pms_event_inbox.sql db/migrations/0012_payment_intents.sql db/migrations/0013_payment_ledger_refunds.sql db/migrations/0014_dispatch_tasks.sql db/migrations/0015_cleaning_laundry.sql db/migrations/0016_task_compensation.sql db/migrations/0017_guest_notifications.sql db/migrations/0018_notification_jobs.sql; do
             psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -f "$file"
           done
       - uses: actions/setup-node@v4
@@ -88,7 +90,7 @@ jobs:
           TEST_DATABASE_URL: postgresql://views_test_app:views_test_app_password@localhost:5432/views_test
         run: |
           export VIEWS_AUTH_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
-          node --test test/integration.pg.mjs test/integration.http.pg.mjs test/integration.stays.pg.mjs test/integration.bookings.pg.mjs test/integration.pms.pg.mjs test/integration.payments.pg.mjs test/integration.payment-events.pg.mjs test/integration.refunds.pg.mjs test/integration.cleaning-laundry.pg.mjs
+          node --test test/integration.pg.mjs test/integration.http.pg.mjs test/integration.stays.pg.mjs test/integration.bookings.pg.mjs test/integration.pms.pg.mjs test/integration.payments.pg.mjs test/integration.payment-events.pg.mjs test/integration.refunds.pg.mjs test/integration.cleaning-laundry.pg.mjs test/integration.notifications.pg.mjs
   web-snapshot:
     needs: [node-tests, postgres-migrations, local-staging-smoke, browser-smoke]
     runs-on: ubuntu-latest
