@@ -111,8 +111,65 @@ export function buildMarketSeed():MarketProduct[]{
 }
 export const marketSeed=buildMarketSeed();
 
+// Demo mutation boundary: quantities and UZS totals must be exact safe integers.
+// Rendering is not a trust boundary; persisted carts can be edited outside the UI.
+function assertInteger(value:number,minimum:number,code:string){
+  if(!Number.isSafeInteger(value)||value<minimum)throw new Error(code);
+}
+function checkedMoney(value:number){assertInteger(value,0,"INVALID_MONEY");return value}
+function cartEntries(cart:Cart):[string,number][]{
+  if(!cart||typeof cart!=="object"||Array.isArray(cart))throw new Error("INVALID_CART");
+  const prototype=Object.getPrototypeOf(cart);
+  if(prototype!==Object.prototype&&prototype!==null)throw new Error("INVALID_CART");
+  return Object.entries(cart).map(([id,quantity]):[string,number]=>{
+    assertInteger(quantity,1,"INVALID_QUANTITY");return [id,quantity];
+  }).sort(([a],[b])=>a<b?-1:a>b?1:0);
+}
+function requestIdentity(lines:[string,number][],apartment:string,deliverySlot:string,comment:string,payment:string,deliveryFeeUzs:number){
+  return JSON.stringify([lines,apartment,deliverySlot,comment,payment,deliveryFeeUzs]);
+}
+// In this single-browser demo, every reservation belongs to an active market order.
+// Reconcile the aggregate before any mutation instead of clamping corruption to zero.
+function assertInventory(state:MarketState){
+  const products=new Map<string,MarketProduct>();const skus=new Set<string>();
+  const held=new Map<string,number>();const ids=new Set<string>();const keys=new Set<string>();
+  for(const product of state.products){
+    assertInteger(product.stock,0,"INVENTORY_CONFLICT");
+    assertInteger(product.reserved,0,"INVENTORY_CONFLICT");
+    if(product.reserved>product.stock||products.has(product.id)||skus.has(product.sku))throw new Error("INVENTORY_CONFLICT");
+    products.set(product.id,product);skus.add(product.sku);
+  }
+  for(const order of state.orders){
+    if(ids.has(order.id)||keys.has(order.idempotencyKey))throw new Error("INVENTORY_CONFLICT");
+    ids.add(order.id);keys.add(order.idempotencyKey);
+    if(order.status==="delivered"||order.status==="cancelled")continue;
+    if(!["new","picking","packed","out_for_delivery"].includes(order.status)||!order.lines.length)throw new Error("INVENTORY_CONFLICT");
+    const seen=new Set<string>();
+    for(const line of order.lines){
+      const product=products.get(line.productId);
+      assertInteger(line.quantity,1,"INVENTORY_CONFLICT");
+      if(!product||seen.has(line.productId)||line.sku!==product.sku)throw new Error("INVENTORY_CONFLICT");
+      seen.add(line.productId);
+      const quantity=(held.get(line.productId)||0)+line.quantity;
+      assertInteger(quantity,0,"INVENTORY_CONFLICT");held.set(line.productId,quantity);
+    }
+  }
+  for(const product of state.products){
+    if(product.reserved!==(held.get(product.id)||0))throw new Error("INVENTORY_CONFLICT");
+  }
+}
+function uniqueOrderId(state:MarketState){
+  const used=new Set(state.orders.map(order=>order.id));
+  const base="VM-"+Date.now().toString(36).toUpperCase();let id=base;let suffix=0;
+  while(used.has(id)){suffix+=1;id=base+"-"+suffix.toString(36).toUpperCase()}
+  return id;
+}
+
 export function addCartLine(cart:Cart,product:MarketProduct,delta:number):Cart{
-  const current=cart[product.id]||0;
+  assertInteger(delta,-Number.MAX_SAFE_INTEGER,"INVALID_QUANTITY");
+  const current=cart[product.id]??0;
+  assertInteger(current,0,"INVALID_QUANTITY");
+  assertInteger(current+delta,-Number.MAX_SAFE_INTEGER,"INVALID_QUANTITY");
   const next=Math.max(0,Math.min(availableStock(product),current+delta));
   const copy={...cart};
   if(next===0)delete copy[product.id]; else copy[product.id]=next;
@@ -132,17 +189,41 @@ function entry(type:LedgerType,sku:string,quantity:number,now:string,orderId?:st
 export function placeDemoOrder(state:MarketState,cart:Cart,input:{
   idempotencyKey:string;apartment:string;deliverySlot:string;comment:string;payment:"demo_card"|"room_charge";paymentOutcome?:"success"|"failure";now?:string;orderId?:string;deliveryFeeUzs?:number
 }){
+  const requested=cartEntries(cart);
+  if(typeof input.idempotencyKey!=="string"||!input.idempotencyKey.trim())throw new Error("INVALID_IDEMPOTENCY_KEY");
+  if(typeof input.apartment!=="string"||!input.apartment.trim()||typeof input.deliverySlot!=="string"||!input.deliverySlot.trim()||typeof input.comment!=="string")throw new Error("INVALID_DELIVERY_DETAILS");
+  if(input.payment!=="demo_card"&&input.payment!=="room_charge")throw new Error("INVALID_PAYMENT_METHOD");
+  if(input.paymentOutcome!==undefined&&input.paymentOutcome!=="success"&&input.paymentOutcome!=="failure")throw new Error("INVALID_PAYMENT_OUTCOME");
+  const fee=checkedMoney(input.deliveryFeeUzs??10000);
   const existing=state.orders.find(o=>o.idempotencyKey===input.idempotencyKey);
-  if(existing)return {state,order:existing,duplicate:true};
+  if(existing){
+    // Replay compares the original request, not today's stock or catalogue price.
+    const original=existing.lines.map((line):[string,number]=>[line.productId,line.quantity]).sort(([a],[b])=>a<b?-1:a>b?1:0);
+    const originalPayment=existing.paymentStatus==="room_charge"?"room_charge":existing.paymentStatus==="demo_paid"?"demo_card":"failed";
+    if(requestIdentity(requested,input.apartment,input.deliverySlot,input.comment,input.payment,fee)!==requestIdentity(original,existing.apartment,existing.deliverySlot,existing.comment,originalPayment,existing.deliveryFeeUzs))throw new Error("IDEMPOTENCY_CONFLICT");
+    return {state,order:existing,duplicate:true};
+  }
+  if(!requested.length)throw new Error("EMPTY_CART");
+  assertInventory(state);
+  for(const [id] of requested){
+    const product=state.products.find(p=>p.id===id);
+    if(!product)throw new Error("UNKNOWN_PRODUCT:"+id);
+    checkedMoney(product.guestPriceUzs);
+  }
   if(input.payment==="demo_card"&&input.paymentOutcome==="failure")throw new Error("DEMO_PAYMENT_FAILED");
-  const summary=cartSummary(state.products,cart,input.deliveryFeeUzs??10000);
+  const summary=cartSummary(state.products,cart,fee);
+  checkedMoney(summary.subtotalUzs);checkedMoney(summary.totalUzs);
   if(!summary.lines.length)throw new Error("EMPTY_CART");
   for(const line of summary.lines){
+    checkedMoney(line.lineTotalUzs);
     const p=state.products.find(x=>x.id===line.productId);
     if(!p||availableStock(p)<line.quantity)throw new Error("OUT_OF_STOCK:"+line.sku);
   }
-  const now=input.now||new Date().toISOString();
-  const orderId=input.orderId||"VM-"+Date.now().toString().slice(-8);
+  const now=input.now??new Date().toISOString();
+  if(typeof now!=="string"||!Number.isFinite(Date.parse(now)))throw new Error("INVALID_TIMESTAMP");
+  const orderId=input.orderId??uniqueOrderId(state);
+  if(typeof orderId!=="string"||!orderId.trim())throw new Error("INVALID_ORDER_ID");
+  if(state.orders.some(order=>order.id===orderId))throw new Error("ORDER_ID_CONFLICT");
   const products=state.products.map(p=>{
     const line=summary.lines.find(l=>l.productId===p.id);
     return line?{...p,reserved:p.reserved+line.quantity}:p;
@@ -156,13 +237,14 @@ const nextStatus:Record<Exclude<MarketOrderStatus,"delivered"|"cancelled">,Marke
 export function advanceMarketOrder(state:MarketState,orderId:string,now=new Date().toISOString()):MarketState{
   const target=state.orders.find(o=>o.id===orderId);
   if(!target||target.status==="delivered"||target.status==="cancelled")return state;
+  assertInventory(state);
   const status=nextStatus[target.status as keyof typeof nextStatus];
   let products=state.products; let ledger=state.ledger;
   if(status==="delivered"){
     products=state.products.map(p=>{
       const line=target.lines.find(l=>l.productId===p.id);
       if(!line)return p;
-      return {...p,stock:Math.max(0,p.stock-line.quantity),reserved:Math.max(0,p.reserved-line.quantity)};
+      return {...p,stock:p.stock-line.quantity,reserved:p.reserved-line.quantity};
     });
     ledger=[...ledger,...target.lines.map(l=>entry("SALE",l.sku,-l.quantity,now,target.id,"delivered order"))];
   }
@@ -171,20 +253,25 @@ export function advanceMarketOrder(state:MarketState,orderId:string,now=new Date
 export function cancelMarketOrder(state:MarketState,orderId:string,now=new Date().toISOString()):MarketState{
   const target=state.orders.find(o=>o.id===orderId);
   if(!target||target.status==="delivered"||target.status==="cancelled")return state;
+  assertInventory(state);
   const products=state.products.map(p=>{
     const line=target.lines.find(l=>l.productId===p.id);
-    return line?{...p,reserved:Math.max(0,p.reserved-line.quantity)}:p;
+    return line?{...p,reserved:p.reserved-line.quantity}:p;
   });
   const ledger=[...state.ledger,...target.lines.map(l=>entry("RELEASE",l.sku,l.quantity,now,target.id,"cancelled order"))];
   return {...state,products,ledger,orders:state.orders.map(o=>o.id===orderId?{...o,status:"cancelled"}:o)};
 }
 export function receiveMarketStock(state:MarketState,productId:string,quantity:number,reason="demo receiving",now=new Date().toISOString()):MarketState{
-  if(quantity<=0)return state;
+  assertInteger(quantity,0,"INVALID_QUANTITY");
+  if(quantity===0)return state;
   const product=state.products.find(p=>p.id===productId);if(!product)return state;
+  assertInventory(state);assertInteger(product.stock+quantity,0,"INVALID_QUANTITY");
   return {...state,products:state.products.map(p=>p.id===productId?{...p,stock:p.stock+quantity}:p),ledger:[...state.ledger,entry("RECEIVE",product.sku,quantity,now,undefined,reason)]};
 }
 export function adjustMarketStock(state:MarketState,productId:string,quantityDelta:number,reason:string,now=new Date().toISOString()):MarketState{
-  const product=state.products.find(p=>p.id===productId);if(!product||!reason.trim())return state;
+  assertInteger(quantityDelta,-Number.MAX_SAFE_INTEGER,"INVALID_QUANTITY");
+  const product=state.products.find(p=>p.id===productId);if(!product||typeof reason!=="string"||!reason.trim())return state;
+  assertInventory(state);assertInteger(product.stock+quantityDelta,-Number.MAX_SAFE_INTEGER,"INVALID_QUANTITY");
   const minDelta=-(product.stock-product.reserved);
   const safe=Math.max(minDelta,quantityDelta);
   if(safe===0)return state;
