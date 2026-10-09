@@ -17,3 +17,14 @@ test("client sends bearer token and PATCH body",async()=>{
   assert.equal(captured.options.credentials,"omit");
  }finally{globalThis.fetch=original}
 });
+
+test("client requests verified identity from server instead of browser claims",async()=>{
+ const original=globalThis.fetch;let url;
+ globalThis.fetch=async(path)=>{url=path;return {ok:true,json:async()=>({sub:"staff-1",organizationId:"tenant",roles:["staff"]})}};
+ try{
+  const client=createViewsClient({getToken:async()=>"test-signed-token"});
+  const session=await client.getSession();
+  assert.equal(url,"/api/v1/me");
+  assert.deepEqual(session.roles,["staff"]);
+ }finally{globalThis.fetch=original}
+});
