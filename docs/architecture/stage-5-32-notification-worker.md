@@ -20,3 +20,8 @@
 - A dead job requires explicit operator investigation and a controlled requeue mechanism.
 - There is no production identity-provider login, permanent HTTPS hosting, real payment collection or completed Android hardware validation.
 - Do not expose development token entry pages publicly.
+
+## Operator visibility
+- Admin-only `GET /api/v1/admin/notifications/health` reports total, pending, ready, completed and dead job counts for the authenticated organization. It does not return event payloads, employee identifiers or guest information.
+- HTTP integration tests reject non-admin access and verify that another organization sees zero jobs.
+- These counters do not mean push/SMS/email was delivered: only the internal projection is counted.
