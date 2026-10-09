@@ -55,12 +55,34 @@ try{
   try{
    await page.getByRole("button",{name:"Загрузить мои бронирования"}).click();
    await page.getByRole("button",{name:"Загрузить каталог"}).click();
-   await page.getByRole("button",{name:"+"}).click();
+   await page.getByRole("button",{name:"Увеличить количество: Вода 1,5 л"}).click();
    await page.getByRole("button",{name:"Создать тестовый заказ"}).click();
    await page.getByText("Сумма заказа: 30").waitFor();
    assert.equal(await page.getByRole("button",{name:"Обновить статус"}).isEnabled(),true);
    assert.deepEqual(errors,[]);
    await page.screenshot({path:resolve(screenshotDir,"guest.png"),fullPage:true});
+  }finally{await context.close()}
+ });
+ await run("guest: successful checkout stays locked when status lookup fails",async()=>{
+  const {context,page,errors}=await pageFor("/guest",{
+   "GET /api/v1/market/catalog":{json:[{sku:"WATER-15",name:"Вода 1,5 л",priceUzs:15000}]},
+   "GET /api/v1/me/bookings":{json:[{id:bookingId,property_id:propertyId,ends_at:"2026-12-10T12:00:00Z"}]},
+   "POST /api/v1/service-orders":{status:201,json:{id:orderId}},
+   ["GET /api/v1/service-orders/"+orderId]:{status:503,json:{error:"Temporarily unavailable"}}
+  });
+  try{
+   let creates=0;
+   page.on("request",req=>{if(req.method()==="POST"&&new URL(req.url()).pathname==="/api/v1/service-orders")creates++});
+   await page.getByRole("button",{name:"Загрузить мои бронирования"}).click();
+   await page.getByRole("button",{name:"Загрузить каталог"}).click();
+   await page.getByRole("button",{name:"Увеличить количество: Вода 1,5 л"}).click();
+   await page.getByRole("button",{name:"Создать тестовый заказ"}).click();
+   await page.getByText("Заказ создан. Статус временно недоступен").waitFor();
+   assert.equal(await page.locator("#checkout").isDisabled(),true);
+   assert.equal(await page.locator("#load-catalog").isDisabled(),true);
+   assert.equal(await page.locator("#booking").isDisabled(),true);
+   assert.equal(creates,1);
+   assert.deepEqual(errors,[]);
   }finally{await context.close()}
  });
  await run("CRM: authorized orders, SLA and details",async()=>{
