@@ -123,6 +123,19 @@ try{
    assert.deepEqual(errors,[]);
   }finally{await context.close()}
  });
+ await run("guest: inbox loads and marks notification read",async()=>{
+  const notificationId="55555555-5555-4555-8555-555555555555";
+  const {context,page,errors}=await pageFor("/guest",{
+   "GET /api/v1/me/notifications":{json:[{id:notificationId,order_id:orderId,message:"Назначена доставка",occurred_at:"2026-10-10T10:00:00Z",read_at:null}]},
+   ["POST /api/v1/me/notifications/"+notificationId+"/read"]:{json:{id:notificationId,read_at:"2026-10-10T10:10:00Z"}}
+  });
+  try{
+   await page.getByRole("button",{name:"Обновить уведомления"}).click();
+   await page.getByText("Назначена доставка",{exact:false}).waitFor();
+   await page.getByRole("button",{name:"Прочитано"}).click();
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ });
  await run("CRM: authorized orders, SLA and details",async()=>{
   const {context,page,errors}=await pageFor("/crm",{
    "GET /api/v1/service-orders":{json:[{id:orderId,fulfillment_status:"confirmed"}]},
