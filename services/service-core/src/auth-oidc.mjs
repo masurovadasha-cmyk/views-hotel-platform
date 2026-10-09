@@ -13,6 +13,10 @@ export function validateOidcContext(payload,{organizationClaim="organization_id"
  if(!Array.isArray(roles)||roles.length<1||roles.length>10||roles.some(role=>typeof role!=="string"||!rolesAllowed.has(role)))throw Error("Unauthorized");
  return {sub:payload.sub,organizationId:org,roles:[...new Set(roles)]};
 }
+export async function verifyOidcAccessToken(token,keySet,{issuer,audience,organizationClaim="organization_id",rolesClaim="views_roles"}){
+ const {payload}=await jwtVerify(token,keySet,{issuer,audience,algorithms:["RS256","ES256"],clockTolerance:5,requiredClaims:["exp","iat","sub"]});
+ return validateOidcContext(payload,{organizationClaim,rolesClaim});
+}
 export function createOidcVerifier({issuer,audience,jwksUrl,organizationClaim="organization_id",rolesClaim="views_roles"}){
  if(!issuer||!audience||!jwksUrl)throw Error("OIDC issuer, audience and JWKS URL required");
  const issuerUrl=new URL(issuer);
@@ -20,8 +24,5 @@ export function createOidcVerifier({issuer,audience,jwksUrl,organizationClaim="o
  if(issuerUrl.protocol!=="https:"||keyUrl.protocol!=="https:"||issuerUrl.username||keyUrl.username||issuerUrl.password||keyUrl.password)throw Error("OIDC configuration requires HTTPS");
  if(!/^[-a-zA-Z0-9_]{1,64}$/.test(organizationClaim)||!/^[-a-zA-Z0-9_]{1,64}$/.test(rolesClaim))throw Error("Invalid OIDC claim names");
  const jwks=createRemoteJWKSet(keyUrl,{timeoutDuration:5000,cooldownDuration:30000});
- return async token=>{
-  const {payload}=await jwtVerify(token,jwks,{issuer,audience,algorithms:["RS256","ES256"],clockTolerance:5,requiredClaims:["exp","iat","sub"]});
-  return validateOidcContext(payload,{organizationClaim,rolesClaim});
- };
+ return token=>verifyOidcAccessToken(token,jwks,{issuer,audience,organizationClaim,rolesClaim});
 }
