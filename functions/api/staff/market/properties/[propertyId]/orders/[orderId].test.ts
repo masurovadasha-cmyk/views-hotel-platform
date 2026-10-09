@@ -60,6 +60,15 @@ describe("same-origin Staff CRM gateway",()=>{
    expect(await response.text()).not.toContain("different-order");
   }finally{vi.unstubAllGlobals()}
  });
+ it("rejects oversized upstream responses before exposing them",async()=>{
+  const fetcher=vi.fn(async()=>new Response("{}",{status:200,headers:{"content-type":"application/json","content-length":"200000"}}));
+  vi.stubGlobal("fetch",fetcher);
+  try{
+   const response=await onRequestGet(context());
+   expect(response.status).toBe(502);
+   expect(await response.text()).toContain("CORE_RESPONSE_TOO_LARGE");
+  }finally{vi.unstubAllGlobals()}
+ });
  it("fails closed when signing credentials are missing",async()=>{
   vi.mocked(coreApiConfig).mockReturnValue({baseUrl:"https://core.views.example",internalKey:"legacy",signingPrivateKey:null,signingKid:null});
   const fetcher=vi.fn();vi.stubGlobal("fetch",fetcher);
