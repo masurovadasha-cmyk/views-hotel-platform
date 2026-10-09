@@ -28,6 +28,15 @@ test("cleaning checklist is immutable and must be completed by assignee",async()
  await completeCleaningItem(pool,{...context,actorId:"cleaner",itemCode:"bed"});
  const finished=await finalizeCleaningTask(pool,{...context,actorId:"cleaner"});
  assert.equal(finished.status,"completed");
+ const accrual=await accrueTaskCompensation(pool,{organizationId:org,taskId,actorId:"manager",amountUzs:25000});
+ assert.equal(accrual.status,"accrued");
+ const replay=await accrueTaskCompensation(pool,{organizationId:org,taskId,actorId:"manager",amountUzs:25000});
+ assert.equal(replay.id,accrual.id);
+ await assert.rejects(accrueTaskCompensation(pool,{organizationId:org,taskId,actorId:"manager",amountUzs:30000}),/Accrual conflict/);
+ await assert.rejects(approveTaskCompensation(pool,{organizationId:org,accrualId:accrual.id,actorId:"cleaner"}),/Forbidden/);
+ const approved=await approveTaskCompensation(pool,{organizationId:org,accrualId:accrual.id,actorId:"manager"});
+ assert.equal(approved.status,"approved");
+ await assert.rejects(approveTaskCompensation(pool,{organizationId:org,accrualId:accrual.id,actorId:"manager"}),/already processed/);
  await assert.rejects(finalizeCleaningTask(pool,{...context,actorId:"cleaner"}),/Forbidden/);
  const hidden=await inTenantTransaction(pool,randomUUID(),async db=>(await db.query("SELECT id FROM service_cleaning_checklist_items WHERE task_id=$1",[taskId])).rows);
  assert.equal(hidden.length,0);
