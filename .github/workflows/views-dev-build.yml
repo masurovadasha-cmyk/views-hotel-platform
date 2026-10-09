@@ -7,6 +7,11 @@ on:
       - 'services/service-core/public/**'
       - 'android/**'
       - '.github/workflows/views-dev-build.yml'
+  pull_request:
+    paths:
+      - 'services/service-core/public/**'
+      - 'android/**'
+      - '.github/workflows/views-dev-build.yml'
   workflow_dispatch:
 jobs:
   web-snapshot:
