@@ -308,7 +308,7 @@ export function MarketDemo(){
     </section>}
 
     {screen==="staff"&&<section className="staffMarket">
-      {import.meta.env.VITE_VIEWS_STAFF_GATEWAY==="true"&&<ServerOrderInspector/>}
+      {(import.meta as ImportMeta & {env?:{VITE_VIEWS_STAFF_GATEWAY?:string}}).env?.VITE_VIEWS_STAFF_GATEWAY==="true"&&<ServerOrderInspector/>}
       <div className="marketKpis">
         <article><small>Delivered sales</small><b>{formatUzs(analytics.salesUzs)}</b></article>
         <article><small>Delivered orders</small><b>{analytics.orders}</b></article>
