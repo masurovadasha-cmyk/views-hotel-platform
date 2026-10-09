@@ -25,6 +25,13 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
  const base="http://127.0.0.1:"+server.address().port;
  const staffToken=sign(org,staff,["dispatcher"]),guestToken=sign(org,"guest-1",["guest"]);
  try{
+  const staffPage=await fetch(base+"/staff");
+  assert.equal(staffPage.status,200);
+  assert.match(await staffPage.text(),/staff\.css/);
+  const staffScript=await fetch(base+"/staff.js");
+  assert.equal(staffScript.status,200);
+  const staffStyles=await fetch(base+"/staff.css");
+  assert.equal(staffStyles.status,200);
   const page=await fetch(base+"/crm");
   assert.equal(page.status,200);
   assert.match(await page.text(),/crm\.css/);
@@ -103,6 +110,14 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const deliveryAssignment=await fetch(base+"/api/v1/dispatch/assign",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({orderId:order.id,assigneeId:"picker-1",kind:"market_deliver"})});
   assert.equal(deliveryAssignment.status,201);
   const deliveryTask=await deliveryAssignment.json();
+  const sla=await fetch(base+"/api/v1/dispatch/sla",{headers:{Authorization:"Bearer "+staffToken}});
+  assert.equal(sla.status,200);
+  const summary=await sla.json();
+  assert.ok(summary.total>=2);
+  const deniedSla=await fetch(base+"/api/v1/dispatch/sla",{headers:{Authorization:"Bearer "+sign(org,"guest-1",["guest"])}});
+  assert.equal(deniedSla.status,403);
+  const hiddenSla=await fetch(base+"/api/v1/dispatch/sla",{headers:{Authorization:"Bearer "+unrelatedDispatcher}});
+  assert.equal((await hiddenSla.json()).total,0);
   const staffTasks=await fetch(base+"/api/v1/dispatch/tasks",{headers:{Authorization:"Bearer "+staffToken}});
   assert.ok((await staffTasks.json()).some(t=>t.id===assignedTask.id));
   const unauthorizedTasks=await fetch(base+"/api/v1/dispatch/tasks",{headers:{Authorization:"Bearer "+unrelatedDispatcher}});
