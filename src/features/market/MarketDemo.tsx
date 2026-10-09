@@ -5,6 +5,7 @@ import {
   type Cart,type MarketState
 } from "../../domain/marketModel";
 import {assignMarketTask,appendMarketTaskEvent,validMarketTasks,type MarketTaskMap,type MarketPriority} from "../../domain/marketTasks";
+import {ServerOrderInspector} from "./ServerOrderInspector";
 import "./market.css";
 
 type Screen="shop"|"cart"|"orders"|"staff";
@@ -307,6 +308,7 @@ export function MarketDemo(){
     </section>}
 
     {screen==="staff"&&<section className="staffMarket">
+      {(import.meta as ImportMeta & {env?:{VITE_VIEWS_STAFF_GATEWAY?:string}}).env?.VITE_VIEWS_STAFF_GATEWAY==="true"&&<ServerOrderInspector/>}
       <div className="marketKpis">
         <article><small>Delivered sales</small><b>{formatUzs(analytics.salesUzs)}</b></article>
         <article><small>Delivered orders</small><b>{analytics.orders}</b></article>
