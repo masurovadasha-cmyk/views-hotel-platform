@@ -26,6 +26,7 @@ export function createViewsClient({baseUrl="",getToken}){
   listMyTasks:()=>request("/api/v1/staff/tasks"),
   updateMyTask:(id,status)=>request("/api/v1/staff/tasks/"+encodeURIComponent(id),{method:"PATCH",body:{status}}),
   listDispatchTasks:()=>request("/api/v1/dispatch/tasks"),
+  getDispatchSla:()=>request("/api/v1/dispatch/sla"),
   getOrder:id=>request("/api/v1/service-orders/"+encodeURIComponent(id)),
   changeStatus:(id,fulfillmentStatus)=>request("/api/v1/service-orders/"+encodeURIComponent(id),{method:"PATCH",body:{fulfillmentStatus}}),
   createOrder:(propertyId,items,key)=>request("/api/v1/service-orders",{method:"POST",body:{propertyId,items},idempotencyKey:key})
