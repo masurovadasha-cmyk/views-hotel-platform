@@ -1,11 +1,12 @@
 import {createServer} from "node:http";
-import {readFile} from "node:fs/promises";
+import {readFile,mkdir} from "node:fs/promises";
 import {resolve,extname,sep} from "node:path";
 import {fileURLToPath} from "node:url";
 import assert from "node:assert/strict";
 import {chromium} from "playwright";
 
 const publicDir=resolve(fileURLToPath(new URL("../public/",import.meta.url)));
+const screenshotDir=resolve(fileURLToPath(new URL("../browser-screenshots/",import.meta.url)));
 const orderId="11111111-1111-4111-8111-111111111111";
 const propertyId="22222222-2222-4222-8222-222222222222";
 const bookingId="33333333-3333-4333-8333-333333333333";
@@ -25,6 +26,7 @@ let browser;
 const failures=[];
 async function run(name,fn){try{await fn();console.log("PASS",name)}catch(e){failures.push(name+": "+e.message);console.error("FAIL",name,e)}}
 try{
+ await mkdir(screenshotDir,{recursive:true});
  await listen();
  const origin="http://127.0.0.1:"+server.address().port;
  browser=await chromium.launch({headless:true});
@@ -58,6 +60,7 @@ try{
    await page.getByText("Сумма заказа: 30").waitFor();
    assert.equal(await page.getByRole("button",{name:"Обновить статус"}).isEnabled(),true);
    assert.deepEqual(errors,[]);
+   await page.screenshot({path:resolve(screenshotDir,"guest.png"),fullPage:true});
   }finally{await context.close()}
  });
  await run("CRM: authorized orders, SLA and details",async()=>{
@@ -72,6 +75,7 @@ try{
    await page.locator("#orders button").first().click();
    await page.getByText("Статус: Подтверждён").waitFor();
    assert.deepEqual(errors,[]);
+   await page.screenshot({path:resolve(screenshotDir,"crm.png"),fullPage:true});
   }finally{await context.close()}
  });
  await run("staff: task lifecycle",async()=>{
@@ -84,6 +88,7 @@ try{
    await page.getByText("Собрать товары").waitFor();
    assert.equal(await page.getByRole("button",{name:"Начать"}).isVisible(),true);
    assert.deepEqual(errors,[]);
+   await page.screenshot({path:resolve(screenshotDir,"staff.png"),fullPage:true});
   }finally{await context.close()}
  });
  await run("finance: read-only payments and refunds",async()=>{
@@ -96,6 +101,7 @@ try{
    await page.getByText("Данные загружены").waitFor();
    await page.getByText("Нет записей").waitFor();
    assert.deepEqual(errors,[]);
+   await page.screenshot({path:resolve(screenshotDir,"finance.png"),fullPage:true});
   }finally{await context.close()}
  });
 }finally{
