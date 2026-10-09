@@ -19,8 +19,8 @@ test("signed OIDC access tokens require correct key, issuer, audience, expiry an
    .setIssuedAt().setExpirationTime(Math.floor(Date.now()/1000)+exp).sign(privateKey);
  const token=await makeToken();
  assert.deepEqual(await verifyOidcAccessToken(token,keys,{issuer,audience}),{sub:"staff-123",organizationId:organization_id,roles:["staff"]});
- await assert.rejects(verifyOidcAccessToken(token,keys,{issuer:"https://different.example.org/",audience}),/issuer/i);
- await assert.rejects(verifyOidcAccessToken(token,keys,{issuer,audience:"other-service"}),/audience/i);
+ await assert.rejects(verifyOidcAccessToken(token,keys,{issuer:"https://different.example.org/",audience}),/issuer|iss/i);
+ await assert.rejects(verifyOidcAccessToken(token,keys,{issuer,audience:"other-service"}),/audience|aud/i);
  await assert.rejects(verifyOidcAccessToken(await makeToken({exp:-60}),keys,{issuer,audience}),/expired/i);
  await assert.rejects(verifyOidcAccessToken(await makeToken({roles:["owner"]}),keys,{issuer,audience}),/Unauthorized/);
  const {privateKey:foreignKey}=await generateKeyPair("RS256");
