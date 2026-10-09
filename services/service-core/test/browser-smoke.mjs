@@ -1,0 +1,105 @@
+import {createServer} from "node:http";
+import {readFile} from "node:fs/promises";
+import {resolve,extname,sep} from "node:path";
+import {fileURLToPath} from "node:url";
+import assert from "node:assert/strict";
+import {chromium} from "playwright";
+
+const publicDir=resolve(fileURLToPath(new URL("../public/",import.meta.url)));
+const orderId="11111111-1111-4111-8111-111111111111";
+const propertyId="22222222-2222-4222-8222-222222222222";
+const bookingId="33333333-3333-4333-8333-333333333333";
+const taskId="44444444-4444-4444-8444-444444444444";
+const mime={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8"};
+const server=createServer(async(req,res)=>{
+ const path=new URL(req.url,"http://localhost").pathname;
+ const staticPath=({"/guest":"/guest.html","/crm":"/crm.html","/staff":"/staff.html","/finance":"/finance.html"})[path]||path;
+ const file=resolve(publicDir,"."+staticPath);
+ if(!file.startsWith(publicDir+sep)){res.writeHead(403);return res.end()}
+ try{const data=await readFile(file);res.writeHead(200,{"content-type":mime[extname(file)]||"application/octet-stream","content-security-policy":"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'"});res.end(data)}
+ catch{res.writeHead(404);res.end("Not found")}
+});
+const listen=()=>new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
+const close=()=>new Promise((resolve,reject)=>server.close(e=>e?reject(e):resolve()));
+let browser;
+const failures=[];
+async function run(name,fn){try{await fn();console.log("PASS",name)}catch(e){failures.push(name+": "+e.message);console.error("FAIL",name,e)}}
+try{
+ await listen();
+ const origin="http://127.0.0.1:"+server.address().port;
+ browser=await chromium.launch({headless:true});
+ async function pageFor(path,api){
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  const page=await context.newPage();
+  const errors=[];
+  page.on("pageerror",error=>errors.push(error.message));
+  await page.route("**/api/v1/**",async route=>{
+   const request=route.request(),url=new URL(request.url()),key=request.method()+" "+url.pathname;
+   if(request.headers().authorization!=="Bearer test-only-token")return route.fulfill({status:401,json:{error:"Unauthorized"}});
+   const response=api[key]||{status:404,json:{error:"Not found"}};
+   await route.fulfill({status:response.status||200,json:response.json});
+  });
+  await page.goto(origin+path);
+  await page.locator("#token").fill("test-only-token");
+  return {context,page,errors};
+ }
+ await run("guest: catalog, booking, cart and order total",async()=>{
+  const {context,page,errors}=await pageFor("/guest",{
+   "GET /api/v1/market/catalog":{json:[{sku:"WATER-15",name:"Вода 1,5 л",priceUzs:15000}]},
+   "GET /api/v1/me/bookings":{json:[{id:bookingId,property_id:propertyId,ends_at:"2026-12-10T12:00:00Z"}]},
+   "POST /api/v1/service-orders":{status:201,json:{id:orderId}},
+   ["GET /api/v1/service-orders/"+orderId]:{json:{id:orderId,fulfillment_status:"draft",payment_status:"unpaid",total_uzs:30000}}
+  });
+  try{
+   await page.getByRole("button",{name:"Загрузить мои бронирования"}).click();
+   await page.getByRole("button",{name:"Загрузить каталог"}).click();
+   await page.getByRole("button",{name:"+"}).click();
+   await page.getByRole("button",{name:"Создать тестовый заказ"}).click();
+   await page.getByText("Сумма заказа: 30").waitFor();
+   assert.equal(await page.getByRole("button",{name:"Обновить статус"}).isEnabled(),true);
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ });
+ await run("CRM: authorized orders, SLA and details",async()=>{
+  const {context,page,errors}=await pageFor("/crm",{
+   "GET /api/v1/service-orders":{json:[{id:orderId,fulfillment_status:"confirmed"}]},
+   "GET /api/v1/dispatch/sla":{json:{total:1,open:1,overdue:0,completed:0}},
+   ["GET /api/v1/service-orders/"+orderId]:{json:{id:orderId,property_id:propertyId,service_type:"market",fulfillment_status:"confirmed",payment_status:"unpaid"}}
+  });
+  try{
+   await page.getByRole("button",{name:"Подключиться"}).click();
+   await page.getByText("Всего: 1").waitFor();
+   await page.locator("#orders button").first().click();
+   await page.getByText("Статус: Подтверждён").waitFor();
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ });
+ await run("staff: task lifecycle",async()=>{
+  const {context,page,errors}=await pageFor("/staff",{
+   "GET /api/v1/staff/tasks":{json:[{id:taskId,order_id:orderId,property_id:propertyId,task_kind:"market_pick",status:"assigned"}]},
+   ["PATCH /api/v1/staff/tasks/"+taskId]:{json:{id:taskId,status:"in_progress"}}
+  });
+  try{
+   await page.getByRole("button",{name:"Открыть мои задания"}).click();
+   await page.getByText("Собрать товары").waitFor();
+   assert.equal(await page.getByRole("button",{name:"Начать"}).isVisible(),true);
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ });
+ await run("finance: read-only payments and refunds",async()=>{
+  const {context,page,errors}=await pageFor("/finance",{
+   "GET /api/v1/finance/payments":{json:[{order_id:orderId,provider:"sandbox",amount_uzs:45000,status:"created"}]},
+   "GET /api/v1/finance/refunds":{json:[]}
+  });
+  try{
+   await page.getByRole("button",{name:"Загрузить"}).click();
+   await page.getByText("Данные загружены").waitFor();
+   await page.getByText("Нет записей").waitFor();
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ });
+}finally{
+ if(browser)await browser.close();
+ await close();
+}
+if(failures.length){for(const failure of failures)console.error(failure);process.exitCode=1}
