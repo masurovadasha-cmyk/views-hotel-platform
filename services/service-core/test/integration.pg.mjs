@@ -33,5 +33,23 @@ test("PostgreSQL inventory lifecycle and tenant isolation",async t=>{
   }
   const lot=await asTenant(org,async db=>(await db.query("SELECT on_hand,reserved FROM inventory_lots WHERE organization_id=$1 AND sku='WATER-15'",[org])).rows[0]);
   assert.equal(lot.on_hand,1);assert.equal(lot.reserved,0);
- }finally{await pool.end()}
+ }finally{}
 });
+
+test("PostgreSQL cancellation releases stock and rejects repeat transition",async()=>{
+ const tenant=randomUUID(),unit=randomUUID(),staff="cancel-test-staff",key="cancel-"+randomUUID();
+ await asTenant(tenant,async db=>{
+  await db.query("INSERT INTO service_property_access(organization_id,property_id,principal_id,permission) VALUES($1,$2,$3,'order:create'),($1,$2,$3,'order:manage')",[tenant,unit,staff]);
+  await db.query("INSERT INTO inventory_lots(organization_id,sku,on_hand,reserved) VALUES($1,'MILK-1',4,0)",[tenant]);
+ });
+ const created=await createMarketOrder(pool,{organizationId:tenant,propertyId:unit,principalId:staff,idempotencyKey:key,items:[{sku:"MILK-1",quantity:3}],asOf:"2026-10-09"});
+ const result=await changeOrderStatus(pool,{organizationId:tenant,orderId:created.id,actorId:staff,nextStatus:"cancelled"});
+ assert.equal(result.fulfillmentStatus,"cancelled");
+ const lot=await asTenant(tenant,async db=>(await db.query("SELECT on_hand,reserved FROM inventory_lots WHERE organization_id=$1 AND sku='MILK-1'",[tenant])).rows[0]);
+ assert.equal(lot.on_hand,4);assert.equal(lot.reserved,0);
+ await assert.rejects(changeOrderStatus(pool,{organizationId:tenant,orderId:created.id,actorId:staff,nextStatus:"cancelled"}),/Invalid transition/);
+ const movement=await asTenant(tenant,async db=>(await db.query("SELECT count(*)::integer AS count FROM stock_movements WHERE organization_id=$1 AND order_id=$2 AND movement_type='release'",[tenant,created.id])).rows[0]);
+ assert.equal(movement.count,1);
+});
+
+process.on('beforeExit',()=>pool.end());
