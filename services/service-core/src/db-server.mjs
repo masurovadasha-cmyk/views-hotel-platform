@@ -5,7 +5,7 @@ import {verifySignedContext,requireRole} from "./auth.mjs";
 import {createMarketOrder,inTenantTransaction} from "./postgres.mjs";
 import {changeOrderStatus} from "./order-status.mjs";
 
-const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
+export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
 const secret=process.env.VIEWS_AUTH_SECRET;
 if(!process.env.DATABASE_URL||!secret||secret.length<32)throw Error("DATABASE_URL and VIEWS_AUTH_SECRET (32+ chars) required");
 const reply=(res,status,data)=>{res.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});res.end(JSON.stringify(data))};
@@ -14,7 +14,7 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const server=createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,"http://localhost");
-  const staticFiles={"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
+  const staticFiles={"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.css":{file:"crm.css",type:"text/css; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
   if(req.method==="GET"&&staticFiles[url.pathname]){
    const entry=staticFiles[url.pathname];
    const data=await readFile(new URL("../public/"+entry.file,import.meta.url));
@@ -30,7 +30,8 @@ export const server=createServer(async(req,res)=>{
    requireRole(context,["guest","dispatcher","admin"]);
    const key=req.headers["idempotency-key"];
    const body=await parse(req);
-   if(!uuid.test(body.propertyId))return reply(res,422,{error:"Invalid property"});
+   if(typeof key!=="string"||key.length<8||key.length>128)return reply(res,400,{error:"Valid Idempotency-Key required"});
+   if(!body||typeof body!=="object"||!uuid.test(body.propertyId))return reply(res,422,{error:"Invalid property"});
    const order=await createMarketOrder(pool,{organizationId:context.organizationId,propertyId:body.propertyId,idempotencyKey:key,items:body.items,principalId:context.sub,asOf:new Date().toISOString().slice(0,10)});
    return reply(res,order.replayed?200:201,order);
   }
@@ -43,7 +44,7 @@ export const server=createServer(async(req,res)=>{
   if(req.method==="PATCH"&&match&&uuid.test(match[1])){
    requireRole(context,["dispatcher","admin"]);
    const body=await parse(req);
-   if(typeof body.fulfillmentStatus!=="string")return reply(res,422,{error:"Invalid status"});
+   if(!body||typeof body!=="object"||typeof body.fulfillmentStatus!=="string")return reply(res,422,{error:"Invalid status"});
    const changed=await changeOrderStatus(pool,{organizationId:context.organizationId,orderId:match[1],actorId:context.sub,nextStatus:body.fulfillmentStatus});
    return reply(res,200,changed);
   }
@@ -54,7 +55,7 @@ export const server=createServer(async(req,res)=>{
   }
   return reply(res,404,{error:"Not found"});
  }catch(error){
-  const status=error.message==="Forbidden"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.status||500;
+  const status=error.message==="Forbidden"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Invalid idempotency key"?400:error.status||500;
   if(status===500)console.error("VIEWS db-server error",error);
   return reply(res,status,{error:status===500?"Internal server error":error.message});
  }
