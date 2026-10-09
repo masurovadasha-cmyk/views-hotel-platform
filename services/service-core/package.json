@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.mjs",
     "test": "node --test test/*.test.mjs",
-    "start:db": "node src/db-server.mjs"
+    "start:db": "node src/db-server.mjs",
+    "notifications:worker": "node src/notification-worker-cli.mjs"
   },
   "engines": {
     "node": ">=20"
