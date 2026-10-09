@@ -4,6 +4,7 @@ import {Pool} from "pg";
 import {randomUUID} from "node:crypto";
 import {inTenantTransaction} from "../src/postgres.mjs";
 import {updateAssignedTask} from "../src/dispatch.mjs";
+import {accrueTaskCompensation,approveTaskCompensation} from "../src/task-compensation.mjs";
 import {initializeCleaningChecklist,completeCleaningItem,finalizeCleaningTask,registerLaundryBag,transitionLaundryBag} from "../src/cleaning-laundry.mjs";
 if(!process.env.TEST_DATABASE_URL)throw Error("TEST_DATABASE_URL required");
 const pool=new Pool({connectionString:process.env.TEST_DATABASE_URL});
