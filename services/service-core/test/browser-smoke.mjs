@@ -110,12 +110,14 @@ try{
  await run("guest: recover existing order after fresh page load",async()=>{
   const {context,page,errors}=await pageFor("/guest",{
    "GET /api/v1/me/orders":{json:[{id:orderId,fulfillment_status:"confirmed",total_uzs:45000}]},
-   ["GET /api/v1/service-orders/"+orderId]:{json:{id:orderId,fulfillment_status:"confirmed",payment_status:"unpaid",total_uzs:45000}}
+   ["GET /api/v1/service-orders/"+orderId]:{json:{id:orderId,fulfillment_status:"confirmed",payment_status:"unpaid",total_uzs:45000}},
+   ["GET /api/v1/me/orders/"+orderId+"/timeline"]:{json:[{id:"event-1",type:"market.order.created",at:"2026-10-10T10:00:00Z"},{id:"event-2",type:"service.task.assigned",taskKind:"market_deliver",at:"2026-10-10T10:05:00Z"}]}
   });
   try{
    await page.getByRole("button",{name:"Показать историю заказов"}).click();
    await page.locator("#order-history button").first().click();
    await page.getByText("Сумма заказа: 45").waitFor();
+   await page.getByText("Назначен исполнитель · market_deliver").waitFor();
    assert.equal(await page.locator("#checkout").isDisabled(),true);
    assert.equal(await page.locator("#token").isDisabled(),true);
    assert.deepEqual(errors,[]);
