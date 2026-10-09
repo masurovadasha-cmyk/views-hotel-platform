@@ -32,8 +32,8 @@ export async function getGuestOrderTimeline(pool,{organizationId,orderId,princip
    [organizationId,orderId,principalId]);
   if(!owned.rowCount)throw Error("Not found");
   const rows=await db.query(
-   "SELECT id,event_type,payload,created_at FROM service_outbox WHERE organization_id=$1 AND aggregate_id=$2 AND event_type=ANY($3::text[]) ORDER BY created_at,id LIMIT 100",
+   "SELECT id,event_type,payload,created_at FROM service_outbox WHERE organization_id=$1 AND aggregate_id=$2 AND event_type=ANY($3::text[]) ORDER BY created_at DESC,id DESC LIMIT 100",
    [organizationId,orderId,[...allowedEvents]]);
-  return rows.rows.map(publicOrderEvent).filter(Boolean);
+  return rows.rows.reverse().map(publicOrderEvent).filter(Boolean);
  });
 }
