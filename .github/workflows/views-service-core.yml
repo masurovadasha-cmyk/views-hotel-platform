@@ -40,6 +40,7 @@ jobs:
       - run: node --check src/payment-provider-contract.mjs
       - run: node --check src/refunds.mjs
       - run: node --check src/dispatch.mjs
+      - run: node --check src/guest-order-timeline.mjs
       - run: node --check src/task-compensation.mjs
       - run: node --check public/staff.js
       - run: node --check src/cleaning-laundry.mjs
