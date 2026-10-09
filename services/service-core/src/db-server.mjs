@@ -31,13 +31,22 @@ export const server=createServer(async(req,res)=>{
    const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT sku,name,price_uzs FROM market_catalog WHERE active=true ORDER BY name,sku LIMIT 200")).rows);
    return reply(res,200,products.map(p=>({sku:p.sku,name:p.name,priceUzs:Number(p.price_uzs)})));
   }
+  if(req.method==="GET"&&url.pathname==="/api/v1/me/bookings"){
+   requireRole(context,["guest"]);
+   const bookings=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(
+    "SELECT id,property_id,starts_at,ends_at FROM service_guest_bookings WHERE guest_principal_id=$1 AND status='checked_in' AND starts_at<=now() AND ends_at>now() ORDER BY ends_at ASC LIMIT 20",[context.sub])).rows);
+   return reply(res,200,bookings);
+  }
   if(req.method==="POST"&&url.pathname==="/api/v1/service-orders"){
    requireRole(context,["guest","dispatcher","admin"]);
    const key=req.headers["idempotency-key"];
    const body=await parse(req);
    if(typeof key!=="string"||key.length<8||key.length>128)return reply(res,400,{error:"Valid Idempotency-Key required"});
-   if(!body||typeof body!=="object"||!uuid.test(body.propertyId))return reply(res,422,{error:"Invalid property"});
-   const order=await createMarketOrder(pool,{organizationId:context.organizationId,propertyId:body.propertyId,idempotencyKey:key,items:body.items,principalId:context.sub,asOf:new Date().toISOString().slice(0,10)});
+   if(!body||typeof body!=="object")return reply(res,422,{error:"Invalid request"});
+   const guestOnly=context.roles.includes("guest")&&!context.roles.some(role=>["dispatcher","admin"].includes(role));
+   if(guestOnly&&!uuid.test(body.bookingId))return reply(res,422,{error:"Valid booking required"});
+   if(!guestOnly&&!uuid.test(body.propertyId))return reply(res,422,{error:"Invalid property"});
+   const order=await createMarketOrder(pool,{organizationId:context.organizationId,propertyId:guestOnly?null:body.propertyId,bookingId:guestOnly?body.bookingId:null,idempotencyKey:key,items:body.items,principalId:context.sub,asOf:new Date().toISOString().slice(0,10)});
    return reply(res,order.replayed?200:201,order);
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/service-orders"){
@@ -63,7 +72,7 @@ export const server=createServer(async(req,res)=>{
   }
   return reply(res,404,{error:"Not found"});
  }catch(error){
-  const status=error.message==="Forbidden"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Unavailable SKU"?422:error.message==="Invalid catalog price"?422:error.message==="Price overflow"?422:error.message==="Invalid idempotency key"?400:error.status||500;
+  const status=error.message==="Forbidden"?403:error.message==="Booking access denied"?403:error.message==="Idempotency conflict"?409:error.message==="Insufficient inventory"?409:error.message==="Invalid transition"?409:error.message==="Inventory consistency error"?409:error.message==="Not found"?404:error.message==="Invalid items"?422:error.message==="Duplicate SKU"?422:error.message==="Unavailable SKU"?422:error.message==="Invalid catalog price"?422:error.message==="Price overflow"?422:error.message==="Invalid idempotency key"?400:error.status||500;
   if(status===500)console.error("VIEWS db-server error",error);
   return reply(res,status,{error:status===500?"Internal server error":error.message});
  }
