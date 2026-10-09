@@ -11,11 +11,12 @@ describe("V-Market internal checkout transaction",()=>{
  });
  it("replays an identical command without reserving stock again",async()=>{
   const query=vi.fn(async(sql:string)=>{
+   if(sql.includes("app.can_access_property"))return {rows:[{allowed:true}],rowCount:1};
    if(sql.includes("FROM market_service_orders"))return {rows:[{id:"existing",request_hash:"bad",status:"new"}],rowCount:1};
    return {rows:[],rowCount:1};
   });
   await expect(createMarketOrderInTransaction({query} as never,base)).rejects.toThrow("MARKET_IDEMPOTENCY_CONFLICT");
-  expect(query).toHaveBeenCalledTimes(2);
+  expect(query).toHaveBeenCalledTimes(3);
  });
  it("denies property access before reading catalog prices",async()=>{
   const query=vi.fn(async(sql:string)=>{
