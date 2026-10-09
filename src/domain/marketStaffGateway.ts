@@ -1,5 +1,5 @@
 /**
- * VIEWS Staff CRM server-read adapter (inactive until a trusted same-origin gateway exists).
+ * VIEWS Staff CRM server-read adapter (opt-in; requires deployed trusted same-origin gateway).
  * NEVER call /v1/internal/market from a browser or put signed service keys in web bundles.
  */
 export type StaffOrderHeader={
@@ -16,6 +16,7 @@ export type StaffOrderDetail={
 export class StaffGatewayError extends Error{
  constructor(readonly status:number,code:string){super(code);this.name="StaffGatewayError"}
 }
+const LOCAL_PROPERTY=/^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const amount=(value:unknown)=>typeof value==="string"&&/^\d+$/.test(value)&&BigInt(value)<=9223372036854775807n;
 function object(x:unknown):x is Record<string,unknown>{return x!==null&&typeof x==="object"&&!Array.isArray(x)}
@@ -48,7 +49,7 @@ export async function fetchStaffOrderDetail(
  options:{gatewayEnabled:boolean;fetcher:typeof fetch;signal?:AbortSignal}
 ):Promise<StaffOrderDetail>{
  if(!options.gatewayEnabled)throw new StaffGatewayError(503,"STAFF_GATEWAY_NOT_CONFIGURED");
- if(!UUID.test(propertyId)||!UUID.test(orderId))throw new StaffGatewayError(400,"INVALID_ORDER_ID");
+ if(!LOCAL_PROPERTY.test(propertyId)||!UUID.test(orderId))throw new StaffGatewayError(400,"INVALID_ORDER_ID");
  // The gateway must authenticate the staff session and sign requests to the
  // internal API server-side. Browser supplies no trusted actor or service headers.
  const path="/api/staff/market/properties/"+encodeURIComponent(propertyId)+"/orders/"+encodeURIComponent(orderId);
