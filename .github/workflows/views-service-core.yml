@@ -140,9 +140,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Package verified development source
         run: |
-          mkdir -p dist/views-staging
-          cp -R services/service-core dist/views-staging/service-core
-          cp -R db/migrations dist/views-staging/migrations
+          mkdir -p dist/views-staging/services dist/views-staging/db dist/views-staging/deploy
+          cp -R services/service-core dist/views-staging/services/service-core
+          cp -R db/migrations dist/views-staging/db/migrations
+          cp -R deploy/staging dist/views-staging/deploy/staging
           cp docs/release/staging-readiness-2026-10-09.md dist/views-staging/README.md
           printf '%s\n' "${GITHUB_SHA}" > dist/views-staging/COMMIT_SHA
       - uses: actions/upload-artifact@v4
