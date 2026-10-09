@@ -41,7 +41,7 @@ export const onRequestGet=async({request,env}:{request:Request;env:Env})=>{
   if(!response.ok)return json({error:response.status===403?"PROPERTY_FORBIDDEN":"CORE_API_ERROR",requestId:rid},response.status===403?403:502);
   let body:unknown;
   try{body=await response.json()}catch{return json({error:"CORE_API_INVALID_RESPONSE",requestId:rid},502)}
-  return json(body,200,{"Cache-Control":"private, no-store"});
+  return json(body,200);
  }catch(error){
   if(error instanceof CoreBridgeError)return json({error:error.code,requestId:rid},error.code==="PROPERTY_FORBIDDEN"?403:503);
   return json({error:"CORE_BRIDGE_ERROR",requestId:rid},500);
