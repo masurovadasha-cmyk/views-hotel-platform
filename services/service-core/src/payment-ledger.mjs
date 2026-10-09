@@ -10,9 +10,10 @@ export async function createPaymentIntent(pool,{organizationId,orderId,merchantR
  if(!["sandbox","payme","click","uzum"].includes(provider))throw Error("Invalid provider");
  if(typeof merchantReference!=="string"||merchantReference.length<8||merchantReference.length>128)throw Error("Invalid payment reference");
  return inTenantTransaction(pool,organizationId,async db=>{
-  const found=await db.query("SELECT id,total_uzs,payment_status FROM service_orders WHERE organization_id=$1 AND id=$2 FOR UPDATE",[organizationId,orderId]);
+  const found=await db.query("SELECT id,total_uzs,payment_status,fulfillment_status FROM service_orders WHERE organization_id=$1 AND id=$2 FOR UPDATE",[organizationId,orderId]);
   if(!found.rowCount)throw Error("Not found");
   const order=found.rows[0];
+  if(order.fulfillment_status==="cancelled")throw Error("Cancelled order cannot be charged");
   const amount=validatePaymentAmount(Number(order.total_uzs));
   if(order.payment_status==="paid"||order.payment_status==="refunded")throw Error("Already settled");
   const previous=await db.query("SELECT id,order_id,provider,amount_uzs,status FROM service_payment_attempts WHERE organization_id=$1 AND merchant_reference=$2",[organizationId,merchantReference]);
