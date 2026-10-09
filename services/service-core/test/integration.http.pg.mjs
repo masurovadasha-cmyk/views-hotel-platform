@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {once} from "node:events";
 import {createHmac,randomUUID} from "node:crypto";
 import {inTenantTransaction} from "../src/postgres.mjs";
+import {enqueueNotificationEvents,processNotificationJobs} from "../src/notification-worker.mjs";
 
 if(!process.env.TEST_DATABASE_URL)throw Error("TEST_DATABASE_URL required");
 if(!process.env.VIEWS_AUTH_SECRET||process.env.VIEWS_AUTH_SECRET.length<32)throw Error("VIEWS_AUTH_SECRET required");
@@ -83,6 +84,11 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   await inTenantTransaction(pool,org,async db=>db.query(
    "INSERT INTO service_outbox(organization_id,aggregate_id,event_type,payload) VALUES($1,$2,'service.task.assigned',$3::jsonb)",
    [org,guestOrder.id,JSON.stringify({orderId:guestOrder.id,kind:"market_deliver",assigneeId:"private-employee-identifier"})]));
+  const enqueued=await enqueueNotificationEvents(pool,{organizationId:org});
+  assert.ok(enqueued>=2);
+  const projected=await processNotificationJobs(pool,{organizationId:org});
+  assert.ok(projected.completed>=2);
+  assert.equal(await enqueueNotificationEvents(pool,{organizationId:org}),0);
   const notifications=await fetch(base+"/api/v1/me/notifications",{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(notifications.status,200);
   const inbox=await notifications.json();
