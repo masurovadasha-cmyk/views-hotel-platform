@@ -191,5 +191,6 @@ export const server=createServer(async(req,res)=>{
 });
 if(process.argv[1]&&new URL(import.meta.url).pathname===process.argv[1]){
  const port=Number(process.env.PORT||3200);
- server.listen(port,"127.0.0.1",()=>console.log("VIEWS DB API listening on localhost:"+port));
+ const host=process.env.VIEWS_BIND_HOST||"127.0.0.1";
+ server.listen(port,host,()=>console.log("VIEWS DB API listening on "+host+":"+port));
 }
