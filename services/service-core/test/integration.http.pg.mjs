@@ -42,6 +42,12 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const myBookings=await fetch(base+"/api/v1/me/bookings",{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(myBookings.status,200);
   assert.ok((await myBookings.json()).some(b=>b.id===bookingId));
+  const missingBooking=await fetch(base+"/api/v1/service-orders",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+guestToken,"Idempotency-Key":"missing-"+randomUUID()},body:JSON.stringify({items:[{sku:"WATER-15",quantity:1}]})});
+  assert.equal(missingBooking.status,422);
+  const expiredBooking=randomUUID();
+  await inTenantTransaction(pool,org,async db=>db.query("INSERT INTO service_guest_bookings(id,organization_id,property_id,guest_principal_id,status,starts_at,ends_at) VALUES($1,$2,$3,$4,'checked_out',now()-interval '3 days',now()-interval '1 day')",[expiredBooking,org,property,"guest-1"]));
+  const expiredOrder=await fetch(base+"/api/v1/service-orders",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+guestToken,"Idempotency-Key":"expired-"+randomUUID()},body:JSON.stringify({bookingId:expiredBooking,items:[{sku:"WATER-15",quantity:1}]})});
+  assert.equal(expiredOrder.status,403);
   const guestOrderResponse=await fetch(base+"/api/v1/service-orders",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+guestToken,"Idempotency-Key":"guest-"+randomUUID()},body:JSON.stringify({bookingId,items:[{sku:"WATER-15",quantity:1}]})});
   assert.equal(guestOrderResponse.status,201);
   const guestOrder=await guestOrderResponse.json();
