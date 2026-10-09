@@ -26,6 +26,17 @@ describe("internal V-Market Staff CRM read controller",()=>{
   await expect(controller.list(PROPERTY,ORG,USER,MEMBER,"request","1.5")).rejects.toThrow();
   expect(listOrders).not.toHaveBeenCalled();
  });
+ it("returns HTTP 404 for an inaccessible or nonexistent order after authorization",async()=>{
+  const orderDetail=vi.fn(async()=>{throw Error("MARKET_ORDER_NOT_FOUND")});
+  const controller=new MarketStaffReadController({orderDetail} as never);
+  await expect(controller.detail(PROPERTY,"00000000-0000-4000-8000-000000000005",ORG,USER,MEMBER,"request")).rejects.toMatchObject({status:404});
+ });
+ it("rejects malformed detail order identifiers",async()=>{
+  const orderDetail=vi.fn();
+  const controller=new MarketStaffReadController({orderDetail} as never);
+  await expect(controller.detail(PROPERTY,"not-uuid",ORG,USER,MEMBER,"request")).rejects.toThrow();
+  expect(orderDetail).not.toHaveBeenCalled();
+ });
  it("maps staff role denial to forbidden response",async()=>{
   const listOrders=vi.fn(async()=>{throw Error("MARKET_ROLE_FORBIDDEN")});
   const controller=new MarketStaffReadController({listOrders} as never);
