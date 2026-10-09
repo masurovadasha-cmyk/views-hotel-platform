@@ -1,0 +1,44 @@
+name: Publish signed VIEWS Preview
+on:
+  push:
+    branches: ['release-artifacts/v0.10.1-preview']
+    paths: ['release-artifacts/**', '.github/workflows/publish-signed-preview.yml']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify immutable public APK
+        working-directory: release-artifacts/v0.10.1-preview
+        run: |
+          sha256sum -c SHA256SUMS.txt
+          test "$(sha256sum VIEWS-0.10.1-preview.apk | cut -d ' ' -f 1)" = ca371db1b670fb3b72e2f1fee55025dfc5c8d1167e7d8ecfb03f87f5c53c4b4f
+          SIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -x "$SIGNER"
+          test -n "$SIGNER"
+          "$SIGNER" verify --verbose --print-certs VIEWS-0.10.1-preview.apk | tee signature.txt
+          test "${PIPESTATUS[0]}" = 0
+          grep -F 'Signer #1 certificate SHA-256 digest: 3a973f0de0333ced89769ddfdae476fe826da605910c952212bbfd1c8179e052' signature.txt
+          python3 - <<'PY'
+          import json, zipfile, hashlib
+          from pathlib import Path
+          proof=json.loads(Path('signing-evidence.json').read_text())
+          assert proof['signatureVerified'] is True and proof['productionEnabled'] is False
+          assert proof['apkSha256']==hashlib.sha256(Path('VIEWS-0.10.1-preview.apk').read_bytes()).hexdigest()
+          with zipfile.ZipFile('VIEWS-0.10.1-preview.apk') as apk:
+              release=json.loads(apk.read('assets/www/release.json'))
+          assert release['sourceCommit']==proof['sourceCommit']=='9de7df28a1b38d00f340b0b4c6b53de7bde282fa'
+          assert release['sourceDirty'] is False and release['emailConnected'] is False and release['corePublic'] is False
+          assert release['androidVersionCode']==1000002
+          assert release['designSources']['reviewedPages']==32 and release['designSources']['fullDesignPackReviewed'] is False
+          assert release['version']=='0.10.1-preview' and release['androidApplicationId']=='uz.views.preview'
+          PY
+      - name: Upload and publish requested prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: release-artifacts/v0.10.1-preview
+        run: |
+          gh release upload v0.10.1-preview VIEWS-0.10.1-preview.apk SHA256SUMS.txt signing-evidence.json
+          gh release edit v0.10.1-preview --draft=false --prerelease
