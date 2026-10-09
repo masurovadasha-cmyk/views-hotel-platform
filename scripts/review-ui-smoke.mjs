@@ -14,7 +14,7 @@ const marketChecks=[];
 page.on('pageerror',error=>errors.push(error.message));
 page.on('request',request=>{
   const url=new URL(request.url());
-  if(/\/(api|v1)(\/|$)/.test(url.pathname))apiRequests.push(url.pathname);
+  if(url.origin===origin&&/\/(api|v1)(\/|$)/.test(url.pathname))apiRequests.push(url.pathname);
 });
 await page.route(origin+'/**',async route=>{
   const url=new URL(route.request().url());
