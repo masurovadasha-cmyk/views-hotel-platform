@@ -73,6 +73,9 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const foreignHistory=await fetch(base+"/api/v1/me/orders",{headers:{Authorization:"Bearer "+sign(org,"other-guest",["guest"])}});
   assert.equal(foreignHistory.status,200);
   assert.deepEqual(await foreignHistory.json(),[]);
+  const otherTenantHistory=await fetch(base+"/api/v1/me/orders",{headers:{Authorization:"Bearer "+sign(randomUUID(),"guest-1",["guest"])}});
+  assert.equal(otherTenantHistory.status,200);
+  assert.deepEqual(await otherTenantHistory.json(),[]);
   const unauthHistory=await fetch(base+"/api/v1/me/orders");
   assert.equal(unauthHistory.status,401);
   const staffHistory=await fetch(base+"/api/v1/me/orders",{headers:{Authorization:"Bearer "+staffToken}});
