@@ -15,7 +15,7 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const server=createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,"http://localhost");
-  const staticFiles={"/finance":{file:"finance.html",type:"text/html; charset=utf-8"},"/finance.js":{file:"finance.js",type:"text/javascript; charset=utf-8"},"/guest":{file:"guest.html",type:"text/html; charset=utf-8"},"/guest.js":{file:"guest.js",type:"text/javascript; charset=utf-8"},"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.css":{file:"crm.css",type:"text/css; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
+  const staticFiles={"/staff":{file:"staff.html",type:"text/html; charset=utf-8"},"/staff.js":{file:"staff.js",type:"text/javascript; charset=utf-8"},"/staff.css":{file:"staff.css",type:"text/css; charset=utf-8"},"/finance":{file:"finance.html",type:"text/html; charset=utf-8"},"/finance.js":{file:"finance.js",type:"text/javascript; charset=utf-8"},"/guest":{file:"guest.html",type:"text/html; charset=utf-8"},"/guest.js":{file:"guest.js",type:"text/javascript; charset=utf-8"},"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.css":{file:"crm.css",type:"text/css; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
   if(req.method==="GET"&&staticFiles[url.pathname]){
    const entry=staticFiles[url.pathname];
    const data=await readFile(new URL("../public/"+entry.file,import.meta.url));
@@ -36,6 +36,16 @@ export const server=createServer(async(req,res)=>{
    requireRole(context,["admin","finance"]);
    const rows=await inTenantTransaction(pool,context.organizationId,async db=>(await db.query("SELECT id,intent_id,amount_uzs,status,reason,created_at FROM service_refund_requests ORDER BY created_at DESC LIMIT 100")).rows);
    return reply(res,200,rows);
+  }
+  if(req.method==="GET"&&url.pathname==="/api/v1/dispatch/sla"){
+   requireRole(context,["dispatcher","admin"]);
+   const admin=context.roles.includes("admin");
+   const summary=await inTenantTransaction(pool,context.organizationId,async db=>{
+    const condition=admin?"":"AND EXISTS (SELECT 1 FROM service_property_access a WHERE a.organization_id=t.organization_id AND a.property_id=t.property_id AND a.principal_id=$1 AND a.permission='order:manage')";
+    const query="SELECT count(*)::integer AS total, count(*) FILTER (WHERE t.status IN ('assigned','in_progress') AND t.due_at<now())::integer AS overdue, count(*) FILTER (WHERE t.status='completed')::integer AS completed, count(*) FILTER (WHERE t.status IN ('unassigned','assigned','in_progress') AND (t.due_at IS NULL OR t.due_at>=now()))::integer AS open FROM service_dispatch_tasks t WHERE true "+condition;
+    return (await db.query(query,admin?[]:[context.sub])).rows[0];
+   });
+   return reply(res,200,summary);
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/staff/tasks"){
    requireRole(context,["staff","dispatcher","admin"]);
