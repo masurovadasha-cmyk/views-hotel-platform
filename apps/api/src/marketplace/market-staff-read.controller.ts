@@ -26,7 +26,7 @@ export class MarketStaffReadController{
   if(!Number.isSafeInteger(limit)||limit<1||limit>100)throw new BadRequestException("limit must be 1..100");
   try{return {orders:await this.service.listOrders(actor,property,limit)}}
   catch(error){
-   if(error instanceof Error&&error.message==="MARKET_PROPERTY_FORBIDDEN")throw new ForbiddenException("property access denied");
+   if(error instanceof Error&&["MARKET_PROPERTY_FORBIDDEN","MARKET_ROLE_FORBIDDEN"].includes(error.message))throw new ForbiddenException("property access denied");
    throw error;
   }
  }

@@ -7,6 +7,7 @@ describe("market staff read service",()=>{
   const query=vi.fn(async(sql:string)=>{
    calls.push(sql);
    if(sql.includes("can_access_property"))return {rows:[{allowed:true}]};
+   if(sql.includes("organization_memberships"))return {rows:[{allowed:true}]};
    return {rows:[{id:"order",status:"new"}]};
   });
   const db={withActor:vi.fn(async(_actor:unknown,work:(client:unknown)=>Promise<unknown>)=>work({query}))};
@@ -14,13 +15,26 @@ describe("market staff read service",()=>{
   const rows=await service.listOrders(actor,"property",20);
   expect(rows).toHaveLength(1);
   expect(calls[0]).toContain("can_access_property");
-  expect(calls[1]).toContain("organization_id=$1 AND property_id=$2");
+  expect(calls[1]).toContain("organization_memberships");
+  expect(calls[2]).toContain("organization_id=$1 AND property_id=$2");
  });
  it("denies unscoped properties before querying orders",async()=>{
   const query=vi.fn(async()=>({rows:[{allowed:false}]}));
   const db={withActor:vi.fn(async(_actor:unknown,work:(client:unknown)=>Promise<unknown>)=>work({query}))};
   await expect(new MarketStaffReadService(db as never).listOrders(actor,"other")).rejects.toThrow("MARKET_PROPERTY_FORBIDDEN");
   expect(query).toHaveBeenCalledTimes(1);
+ });
+ it("denies an inactive or unapproved staff role before querying orders",async()=>{
+  const calls:string[]=[];
+  const query=vi.fn(async(sql:string)=>{
+   calls.push(sql);
+   if(sql.includes("can_access_property"))return {rows:[{allowed:true}]};
+   if(sql.includes("organization_memberships"))return {rows:[{allowed:false}]};
+   throw Error("ORDER_LOOKUP_MUST_NOT_RUN");
+  });
+  const db={withActor:vi.fn(async(_actor:unknown,work:(client:unknown)=>Promise<unknown>)=>work({query}))};
+  await expect(new MarketStaffReadService(db as never).listOrders(actor,"property")).rejects.toThrow("MARKET_ROLE_FORBIDDEN");
+  expect(calls).toHaveLength(2);
  });
  it("limits result sizes",async()=>{
   const db={withActor:vi.fn()};
