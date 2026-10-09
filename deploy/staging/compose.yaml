@@ -45,6 +45,7 @@ services:
       VIEWS_AUTH_SECRET: ${VIEWS_AUTH_SECRET:?Set VIEWS_AUTH_SECRET}
       VIEWS_ALLOW_DEV_AUTH: "1"
       PORT: "3200"
+      VIEWS_BIND_HOST: "0.0.0.0"
     ports:
       - "127.0.0.1:3200:3200"
     networks: [views_private]
