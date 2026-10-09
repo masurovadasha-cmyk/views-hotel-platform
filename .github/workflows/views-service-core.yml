@@ -5,12 +5,14 @@ on:
       - 'services/service-core/**'
       - 'db/migrations/**'
       - 'android/**'
+      - 'deploy/staging/**'
       - '.github/workflows/views-service-core.yml'
   pull_request:
     paths:
       - 'services/service-core/**'
       - 'db/migrations/**'
       - 'android/**'
+      - 'deploy/staging/**'
       - '.github/workflows/views-service-core.yml'
 jobs:
   node-tests:
