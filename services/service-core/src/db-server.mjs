@@ -9,6 +9,7 @@ import {assignMarketTask,updateAssignedTask} from "./dispatch.mjs";
 import {initializeCleaningChecklist,completeCleaningItem,finalizeCleaningTask,registerLaundryBag,transitionLaundryBag} from "./cleaning-laundry.mjs";
 import {accrueTaskCompensation,approveTaskCompensation} from "./task-compensation.mjs";
 import {getGuestOrderTimeline} from "./guest-order-timeline.mjs";
+import {listGuestNotifications,markGuestNotificationRead} from "./guest-notifications.mjs";
 
 export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
 const oidcMode=process.env.VIEWS_AUTH_MODE==="oidc";
@@ -147,6 +148,15 @@ export const server=createServer(async(req,res)=>{
    requireRole(context,["guest","dispatcher","admin"]);
    const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT sku,name,price_uzs FROM market_catalog WHERE active=true ORDER BY name,sku LIMIT 200")).rows);
    return reply(res,200,products.map(p=>({sku:p.sku,name:p.name,priceUzs:Number(p.price_uzs)})));
+  }
+  if(req.method==="GET"&&url.pathname==="/api/v1/me/notifications"){
+   requireRole(context,["guest"]);
+   return reply(res,200,await listGuestNotifications(pool,{organizationId:context.organizationId,principalId:context.sub}));
+  }
+  const notificationReadMatch=url.pathname.match(/^\/api\/v1\/me\/notifications\/([0-9a-f-]+)\/read$/i);
+  if(req.method==="POST"&&notificationReadMatch&&uuid.test(notificationReadMatch[1])){
+   requireRole(context,["guest"]);
+   return reply(res,200,await markGuestNotificationRead(pool,{organizationId:context.organizationId,principalId:context.sub,notificationId:notificationReadMatch[1]}));
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/me/orders"){
    requireRole(context,["guest"]);
