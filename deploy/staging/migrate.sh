@@ -2,6 +2,7 @@
 set -euo pipefail
 # Run in an isolated, private environment only. This script must not be
 # executed against a shared or production database.
+psql -X -v ON_ERROR_STOP=1 -c "CREATE TABLE IF NOT EXISTS views_staging_schema_migrations (filename text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())"
 for file in \
   0001_service_core.sql \
   0002_inventory_reservations.sql \
@@ -22,7 +23,10 @@ for file in \
   0015_cleaning_laundry.sql \
   0016_task_compensation.sql
 do
-  psql -X -v ON_ERROR_STOP=1 -f "/migrations/$file"
+  applied="$(psql -X -v ON_ERROR_STOP=1 -Atc "SELECT 1 FROM views_staging_schema_migrations WHERE filename = '$file'")"
+  if [[ "$applied" == "1" ]]; then continue; fi
+  psql -X -v ON_ERROR_STOP=1 --single-transaction -f "/migrations/$file"
+  psql -X -v ON_ERROR_STOP=1 -c "INSERT INTO views_staging_schema_migrations(filename) VALUES ('$file')"
 done
 # Set up a non-owner app role without BYPASSRLS.
 psql -X -v ON_ERROR_STOP=1 -v app_password="$VIEWS_APP_DB_PASSWORD" <<'SQL'
