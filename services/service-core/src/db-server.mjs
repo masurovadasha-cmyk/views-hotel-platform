@@ -9,6 +9,8 @@ import {initializeCleaningChecklist,completeCleaningItem,finalizeCleaningTask,re
 import {accrueTaskCompensation,approveTaskCompensation} from "./task-compensation.mjs";
 
 export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
+// This service accepts development-only HMAC context tokens, not production OIDC.
+if(process.env.VIEWS_ALLOW_DEV_AUTH!=="1")throw Error("Development authentication is disabled; set VIEWS_ALLOW_DEV_AUTH=1 only in isolated test environments");
 const secret=process.env.VIEWS_AUTH_SECRET;
 if(!process.env.DATABASE_URL||!secret||secret.length<32)throw Error("DATABASE_URL and VIEWS_AUTH_SECRET (32+ chars) required");
 const reply=(res,status,data)=>{res.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store"});res.end(JSON.stringify(data))};
