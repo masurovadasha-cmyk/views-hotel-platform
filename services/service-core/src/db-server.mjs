@@ -14,7 +14,7 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const server=createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,"http://localhost");
-  const staticFiles={"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.css":{file:"crm.css",type:"text/css; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
+  const staticFiles={"/guest":{file:"guest.html",type:"text/html; charset=utf-8"},"/guest.js":{file:"guest.js",type:"text/javascript; charset=utf-8"},"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.css":{file:"crm.css",type:"text/css; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"}};
   if(req.method==="GET"&&staticFiles[url.pathname]){
    const entry=staticFiles[url.pathname];
    const data=await readFile(new URL("../public/"+entry.file,import.meta.url));
@@ -49,8 +49,11 @@ export const server=createServer(async(req,res)=>{
    return reply(res,200,changed);
   }
   if(req.method==="GET"&&match&&uuid.test(match[1])){
-   requireRole(context,["dispatcher","admin"]);
-   const rows=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT id,property_id,service_type,fulfillment_status,payment_status,created_at FROM service_orders WHERE id=$1",[match[1]])).rows);
+   requireRole(context,["guest","dispatcher","admin"]);
+   const isStaff=context.roles.some(role=>["dispatcher","admin"].includes(role));
+   const rows=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(isStaff
+    ?"SELECT id,property_id,service_type,fulfillment_status,payment_status,created_at FROM service_orders WHERE id=$1"
+    :"SELECT id,property_id,service_type,fulfillment_status,payment_status,created_at FROM service_orders WHERE id=$1 AND created_by=$2",isStaff?[match[1]]:[match[1],context.sub])).rows);
    return rows.length?reply(res,200,rows[0]):reply(res,404,{error:"Not found"});
   }
   return reply(res,404,{error:"Not found"});
