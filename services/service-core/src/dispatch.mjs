@@ -19,7 +19,7 @@ export async function assignMarketTask(pool,{organizationId,orderId,actorId,assi
   if(existing.rowCount){
    const task=existing.rows[0];
    if(["completed","cancelled"].includes(task.status))throw Error("Task already closed");
-   if(task.status==="in_progress"&&task.assigned_principal_id!==assigneeId)throw Error("Task already in progress");
+   if(task.status==="in_progress")throw Error("Task already in progress");
    const updated=await db.query("UPDATE service_dispatch_tasks SET assigned_principal_id=$1,status='assigned',due_at=$2,updated_at=now() WHERE id=$3 AND organization_id=$4 RETURNING id",[assigneeId,dueAt,task.id,organizationId]);
    taskId=updated.rows[0].id;
   }else{
