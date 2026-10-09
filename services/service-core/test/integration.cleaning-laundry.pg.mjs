@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {Pool} from "pg";
 import {randomUUID} from "node:crypto";
 import {inTenantTransaction} from "../src/postgres.mjs";
+import {updateAssignedTask} from "../src/dispatch.mjs";
 import {initializeCleaningChecklist,completeCleaningItem,finalizeCleaningTask,registerLaundryBag,transitionLaundryBag} from "../src/cleaning-laundry.mjs";
 if(!process.env.TEST_DATABASE_URL)throw Error("TEST_DATABASE_URL required");
 const pool=new Pool({connectionString:process.env.TEST_DATABASE_URL});
@@ -22,6 +23,7 @@ test("cleaning checklist is immutable and must be completed by assignee",async()
  await assert.rejects(completeCleaningItem(pool,{...context,actorId:"intruder",itemCode:"bath"}),/Forbidden/);
  await completeCleaningItem(pool,{...context,actorId:"cleaner",itemCode:"bath"});
  await assert.rejects(finalizeCleaningTask(pool,{...context,actorId:"cleaner"}),/Checklist incomplete/);
+ await assert.rejects(updateAssignedTask(pool,{organizationId:org,taskId,actorId:"cleaner",nextStatus:"completed"}),/Cleaning checklist required/);
  await completeCleaningItem(pool,{...context,actorId:"cleaner",itemCode:"bed"});
  const finished=await finalizeCleaningTask(pool,{...context,actorId:"cleaner"});
  assert.equal(finished.status,"completed");
