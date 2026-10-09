@@ -82,6 +82,17 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const adminToken=sign(org,"test-admin",["admin"]);
   const adminList=await fetch(base+"/api/v1/service-orders",{headers:{Authorization:"Bearer "+adminToken}});
   assert.ok((await adminList.json()).some(x=>x.id===order.id));
+  await inTenantTransaction(pool,org,async db=>db.query("INSERT INTO service_task_assignees(organization_id,property_id,principal_id) VALUES($1,$2,$3)",[org,property,"picker-1"]));
+  const assigned=await fetch(base+"/api/v1/dispatch/assign",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({orderId:order.id,assigneeId:"picker-1",kind:"market_pick"})});
+  assert.equal(assigned.status,201);
+  const assignedTask=await assigned.json();
+  assert.equal(assignedTask.assigneeId,"picker-1");
+  const staffTasks=await fetch(base+"/api/v1/dispatch/tasks",{headers:{Authorization:"Bearer "+staffToken}});
+  assert.ok((await staffTasks.json()).some(t=>t.id===assignedTask.id));
+  const unauthorizedTasks=await fetch(base+"/api/v1/dispatch/tasks",{headers:{Authorization:"Bearer "+unrelatedDispatcher}});
+  assert.deepEqual(await unauthorizedTasks.json(),[]);
+  const deniedAssign=await fetch(base+"/api/v1/dispatch/assign",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+unrelatedDispatcher},body:JSON.stringify({orderId:order.id,assigneeId:"picker-1"})});
+  assert.equal(deniedAssign.status,403);
   const guestRead=await fetch(base+"/api/v1/service-orders/"+order.id,{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(guestRead.status,404);
   const staffRead=await fetch(base+"/api/v1/service-orders/"+order.id,{headers:{Authorization:"Bearer "+staffToken}});
