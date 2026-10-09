@@ -1,0 +1,52 @@
+name: VIEWS Service Core
+on:
+  push:
+    paths:
+      - 'services/service-core/**'
+      - 'db/migrations/**'
+      - '.github/workflows/views-service-core.yml'
+  pull_request:
+    paths:
+      - 'services/service-core/**'
+      - 'db/migrations/**'
+      - '.github/workflows/views-service-core.yml'
+jobs:
+  node-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/service-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: node --check src/server.mjs
+      - run: node --check src/postgres.mjs
+      - run: node --check src/auth.mjs
+  postgres-migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: views_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for file in db/migrations/0001_service_core.sql db/migrations/0002_inventory_reservations.sql db/migrations/0003_order_items.sql; do
+            psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -f "$file"
+          done
