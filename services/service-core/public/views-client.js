@@ -22,6 +22,7 @@ export function createViewsClient({baseUrl="",getToken}){
   listPayments:()=>request("/api/v1/finance/payments"),
   listRefunds:()=>request("/api/v1/finance/refunds"),
   listBookings:()=>request("/api/v1/me/bookings"),
+  listGuestOrders:()=>request("/api/v1/me/orders"),
   createGuestOrder:(bookingId,items,key)=>request("/api/v1/service-orders",{method:"POST",body:{bookingId,items},idempotencyKey:key}),
   listOrders:()=>request("/api/v1/service-orders"),
   listMyTasks:()=>request("/api/v1/staff/tasks"),
