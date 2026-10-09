@@ -13,11 +13,12 @@ const sign=(organizationId,sub,roles)=>{
  return body+"."+createHmac("sha256",process.env.VIEWS_AUTH_SECRET).update(body).digest("base64url");
 };
 test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
- const org=randomUUID(),property=randomUUID(),staff="crm-integration-staff";
+ const org=randomUUID(),property=randomUUID(),bookingId=randomUUID(),staff="crm-integration-staff";
  await inTenantTransaction(pool,org,async db=>{
   await db.query("INSERT INTO market_catalog(organization_id,sku,name,price_uzs) VALUES($1,$2,$3,$4)",[org,"WATER-15","Вода 1,5 л",15000]);
   await db.query("INSERT INTO service_property_access(organization_id,property_id,principal_id,permission) VALUES($1,$2,$3,'order:create'),($1,$2,$3,'order:manage')",[org,property,staff]);
   await db.query("INSERT INTO inventory_lots(organization_id,sku,on_hand,reserved) VALUES($1,'WATER-15',5,0)",[org]);
+  await db.query("INSERT INTO service_guest_bookings(id,organization_id,property_id,guest_principal_id,status,starts_at,ends_at) VALUES($1,$2,$3,$4,'checked_in',now()-interval '1 day',now()+interval '1 day')",[bookingId,org,property,"guest-1"]);
  });
  server.listen(0,"127.0.0.1");
  await once(server,"listening");
@@ -38,6 +39,19 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const catalog=await fetch(base+"/api/v1/market/catalog",{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(catalog.status,200);
   assert.equal((await catalog.json())[0].priceUzs,15000);
+  const myBookings=await fetch(base+"/api/v1/me/bookings",{headers:{Authorization:"Bearer "+guestToken}});
+  assert.equal(myBookings.status,200);
+  assert.ok((await myBookings.json()).some(b=>b.id===bookingId));
+  const guestOrderResponse=await fetch(base+"/api/v1/service-orders",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+guestToken,"Idempotency-Key":"guest-"+randomUUID()},body:JSON.stringify({bookingId,items:[{sku:"WATER-15",quantity:1}]})});
+  assert.equal(guestOrderResponse.status,201);
+  const guestOrder=await guestOrderResponse.json();
+  const owned=await fetch(base+"/api/v1/service-orders/"+guestOrder.id,{headers:{Authorization:"Bearer "+guestToken}});
+  assert.equal(owned.status,200);
+  const foreignGuestToken=sign(org,"other-guest",["guest"]);
+  const foreign=await fetch(base+"/api/v1/service-orders/"+guestOrder.id,{headers:{Authorization:"Bearer "+foreignGuestToken}});
+  assert.equal(foreign.status,404);
+  const foreignCreate=await fetch(base+"/api/v1/service-orders",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+foreignGuestToken,"Idempotency-Key":"foreign-"+randomUUID()},body:JSON.stringify({bookingId,items:[{sku:"WATER-15",quantity:1}]})});
+  assert.equal(foreignCreate.status,403);
   const key="http-"+randomUUID();
   const request={method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken,"Idempotency-Key":key},body:JSON.stringify({propertyId:property,items:[{sku:"WATER-15",quantity:2}]})};
   const created=await fetch(base+"/api/v1/service-orders",request);
@@ -68,6 +82,8 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   const cancelled=await fetch(base+"/api/v1/service-orders/"+order.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({fulfillmentStatus:"cancelled"})});
   assert.equal(cancelled.status,200);
   assert.equal((await cancelled.json()).fulfillmentStatus,"cancelled");
+  const cancelGuest=await fetch(base+"/api/v1/service-orders/"+guestOrder.id,{method:"PATCH",headers:{"content-type":"application/json",Authorization:"Bearer "+staffToken},body:JSON.stringify({fulfillmentStatus:"cancelled"})});
+  assert.equal(cancelGuest.status,200);
   const inventory=await inTenantTransaction(pool,org,async db=>(await db.query("SELECT on_hand,reserved FROM inventory_lots WHERE organization_id=$1 AND sku='WATER-15'",[org])).rows[0]);
   assert.deepEqual(inventory,{on_hand:5,reserved:0});
  }finally{
