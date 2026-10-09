@@ -22,7 +22,7 @@ describe("VIEWS staff gateway adapter",()=>{
   const fetcher=vi.fn(async()=>({ok:true,json:async()=>detail}));
   const result=await fetchStaffOrderDetail("utower",O,{gatewayEnabled:true,fetcher:fetcher as never});
   expect(result.order.property_id).toBe(P);
-  expect(fetcher.mock.calls[0][0]).toBe("/api/staff/market/properties/utower/orders/"+O);
+  expect((fetcher.mock.calls as unknown as [string,unknown][])[0][0]).toBe("/api/staff/market/properties/utower/orders/"+O);
  });
  it("rejects unsafe local property paths",async()=>{
   const fetcher=vi.fn();
