@@ -80,6 +80,21 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   assert.equal(unauthHistory.status,401);
   const staffHistory=await fetch(base+"/api/v1/me/orders",{headers:{Authorization:"Bearer "+staffToken}});
   assert.equal(staffHistory.status,403);
+  await inTenantTransaction(pool,org,async db=>db.query(
+   "INSERT INTO service_outbox(organization_id,aggregate_id,event_type,payload) VALUES($1,$2,'service.task.assigned',$3::jsonb)",
+   [org,guestOrder.id,JSON.stringify({orderId:guestOrder.id,kind:"market_deliver",assigneeId:"private-employee-identifier"})]));
+  const guestTimeline=await fetch(base+"/api/v1/me/orders/"+guestOrder.id+"/timeline",{headers:{Authorization:"Bearer "+guestToken}});
+  assert.equal(guestTimeline.status,200);
+  const timelineEvents=await guestTimeline.json();
+  assert.ok(timelineEvents.some(e=>e.type==="market.order.created"));
+  assert.ok(timelineEvents.some(e=>e.type==="service.task.assigned"&&e.taskKind==="market_deliver"));
+  assert.ok(!JSON.stringify(timelineEvents).includes("private-employee-identifier"));
+  const foreignTimeline=await fetch(base+"/api/v1/me/orders/"+guestOrder.id+"/timeline",{headers:{Authorization:"Bearer "+sign(org,"other-guest",["guest"])}});
+  assert.equal(foreignTimeline.status,404);
+  const tenantTimeline=await fetch(base+"/api/v1/me/orders/"+guestOrder.id+"/timeline",{headers:{Authorization:"Bearer "+sign(randomUUID(),"guest-1",["guest"])}});
+  assert.equal(tenantTimeline.status,404);
+  const staffTimeline=await fetch(base+"/api/v1/me/orders/"+guestOrder.id+"/timeline",{headers:{Authorization:"Bearer "+staffToken}});
+  assert.equal(staffTimeline.status,403);
   const owned=await fetch(base+"/api/v1/service-orders/"+guestOrder.id,{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(owned.status,200);
   const foreignGuestToken=sign(org,"other-guest",["guest"]);
