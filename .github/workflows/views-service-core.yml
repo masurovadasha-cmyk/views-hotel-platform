@@ -25,6 +25,8 @@ jobs:
       - run: node --check src/server.mjs
       - run: node --check src/postgres.mjs
       - run: node --check src/auth.mjs
+      - run: node --check src/db-server.mjs
+      - run: node --check src/order-status.mjs
   postgres-migrations:
     runs-on: ubuntu-latest
     services:
@@ -50,3 +52,14 @@ jobs:
           for file in db/migrations/0001_service_core.sql db/migrations/0002_inventory_reservations.sql db/migrations/0003_order_items.sql db/migrations/0004_property_access.sql db/migrations/0005_order_audit.sql; do
             psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -f "$file"
           done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        working-directory: services/service-core
+        run: npm install --no-audit --no-fund
+      - name: PostgreSQL integration test
+        working-directory: services/service-core
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/views_test
+        run: node --test test/integration.pg.mjs
