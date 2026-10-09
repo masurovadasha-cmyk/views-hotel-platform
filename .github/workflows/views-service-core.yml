@@ -129,3 +129,22 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
+
+  staging-source-bundle:
+    needs: [node-tests, postgres-migrations]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package verified development source
+        run: |
+          mkdir -p dist/views-staging
+          cp -R services/service-core dist/views-staging/service-core
+          cp -R db/migrations dist/views-staging/migrations
+          cp docs/release/staging-readiness-2026-10-09.md dist/views-staging/README.md
+          printf '%s\n' "${GITHUB_SHA}" > dist/views-staging/COMMIT_SHA
+      - uses: actions/upload-artifact@v4
+        with:
+          name: views-staging-source
+          path: dist/views-staging/
+          if-no-files-found: error
+          retention-days: 14
