@@ -1,7 +1,7 @@
 # Local-only isolated staging. Do not expose this stack to the public internet.
 services:
   db:
-    image: public.ecr.aws/docker/library/postgres:16
+    image: mirror.gcr.io/library/postgres:16
     restart: unless-stopped
     environment:
       POSTGRES_DB: views_staging
@@ -16,7 +16,7 @@ services:
       retries: 15
     networks: [views_private]
   migrate:
-    image: public.ecr.aws/docker/library/postgres:16
+    image: mirror.gcr.io/library/postgres:16
     restart: "no"
     depends_on:
       db:
