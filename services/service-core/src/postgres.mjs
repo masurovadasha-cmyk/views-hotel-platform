@@ -1,0 +1,63 @@
+/**
+ * PostgreSQL transaction adapter. Pass an initialized pg.Pool; no network calls occur on import.
+ * Every request's organizationId MUST be derived from authenticated server context.
+ */
+export async function inTenantTransaction(pool,organizationId,fn){
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(organizationId))throw Error("Invalid organization");
+ const client=await pool.connect();
+ try{
+  await client.query("BEGIN");
+  await client.query("SELECT set_config('app.organization_id', $1, true)",[organizationId]);
+  const result=await fn(client);
+  await client.query("COMMIT");
+  return result;
+ }catch(error){await client.query("ROLLBACK");throw error}
+ finally{client.release()}
+}
+export async function reserveFefo(client,{organizationId,orderId,sku,quantity,asOf}){
+ if(!Number.isSafeInteger(quantity)||quantity<1)throw Error("Invalid quantity");
+ if(!/^[-\w.]{1,128}$/.test(sku))throw Error("Invalid SKU");
+ // Locks eligible rows in deterministic FEFO order. Caller must use a transaction.
+ const result=await client.query(`SELECT id,on_hand,reserved FROM inventory_lots
+ WHERE organization_id=$1 AND sku=$2 AND blocked=false
+ AND (expires_at IS NULL OR expires_at > $3::date)
+ AND on_hand>reserved
+ ORDER BY expires_at ASC NULLS LAST,id ASC FOR UPDATE`,[organizationId,sku,asOf]);
+ let remaining=quantity;const allocations=[];
+ for(const lot of result.rows){
+  const available=Number(lot.on_hand)-Number(lot.reserved);
+  const take=Math.min(remaining,available);
+  if(!take)continue;
+  await client.query("UPDATE inventory_lots SET reserved=reserved+$1 WHERE id=$2 AND organization_id=$3",[take,lot.id,organizationId]);
+  await client.query(`INSERT INTO inventory_reservations(organization_id,order_id,lot_id,quantity)
+   VALUES ($1,$2,$3,$4)`,[organizationId,orderId,lot.id,take]);
+  await client.query(`INSERT INTO stock_movements(organization_id,lot_id,order_id,movement_type,quantity)
+   VALUES ($1,$2,$3,'reserve',$4)`,[organizationId,lot.id,orderId,take]);
+  allocations.push({lotId:lot.id,quantity:take});remaining-=take;
+  if(remaining===0)break;
+ }
+ if(remaining)throw Error("Insufficient inventory"); // caller rolls back all allocations
+ return allocations;
+}
+export async function createMarketOrder(pool,{organizationId,propertyId,idempotencyKey,items,asOf}){
+ if(!Array.isArray(items)||items.length<1||items.some(x=>!/^[-\w.]{1,128}$/.test(x.sku)||!Number.isSafeInteger(x.quantity)||x.quantity<1))throw Error("Invalid items");
+ if(typeof idempotencyKey!=="string"||idempotencyKey.length<8||idempotencyKey.length>128)throw Error("Invalid idempotency key");
+ const normalized=[...items].sort((a,b)=>a.sku.localeCompare(b.sku));
+ if(new Set(normalized.map(x=>x.sku)).size!==normalized.length)throw Error("Duplicate SKU");
+ return inTenantTransaction(pool,organizationId,async client=>{
+  // Lock per tenant/key so a concurrent retry cannot double reserve.
+  await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))",[organizationId+":"+idempotencyKey]);
+  const existing=await client.query("SELECT id,property_id,service_type FROM service_orders WHERE organization_id=$1 AND idempotency_key=$2",[organizationId,idempotencyKey]);
+  if(existing.rowCount){
+   if(existing.rows[0].property_id!==propertyId||existing.rows[0].service_type!=="market")throw Error("Idempotency conflict");
+   return {id:existing.rows[0].id,replayed:true};
+  }
+  const created=await client.query(`INSERT INTO service_orders(organization_id,property_id,service_type,fulfillment_status,idempotency_key)
+   VALUES ($1,$2,'market','draft',$3) RETURNING id`,[organizationId,propertyId,idempotencyKey]);
+  const id=created.rows[0].id;
+  for(const item of normalized)await reserveFefo(client,{organizationId,orderId:id,sku:item.sku,quantity:item.quantity,asOf});
+  await client.query(`INSERT INTO service_outbox(organization_id,aggregate_id,event_type,payload)
+   VALUES($1,$2,'market.order.created',$3::jsonb)`,[organizationId,id,JSON.stringify({orderId:id,propertyId})]);
+  return {id,replayed:false};
+ });
+}
