@@ -23,6 +23,9 @@ export async function changeOrderStatus(pool,{organizationId,orderId,actorId,nex
     await db.query("INSERT INTO stock_movements(organization_id,lot_id,order_id,movement_type,quantity) VALUES($1,$2,$3,$4,$5)",[organizationId,item.lot_id,orderId,consume?"consume":"release",item.quantity]);
    }
   }
+  if(nextStatus==="cancelled"){
+   await db.query("UPDATE service_dispatch_tasks SET status='cancelled',updated_at=now() WHERE organization_id=$1 AND order_id=$2 AND status IN ('unassigned','assigned','in_progress')",[organizationId,orderId]);
+  }
   await db.query("UPDATE service_orders SET fulfillment_status=$1 WHERE organization_id=$2 AND id=$3",[nextStatus,organizationId,orderId]);
   await db.query("INSERT INTO service_order_audit(organization_id,order_id,actor_id,previous_status,next_status) VALUES($1,$2,$3,$4,$5)",[organizationId,orderId,actorId,order.fulfillment_status,nextStatus]);
   await db.query("INSERT INTO service_outbox(organization_id,aggregate_id,event_type,payload) VALUES($1,$2,'service.order.changed',$3::jsonb)",[organizationId,orderId,JSON.stringify({orderId,from:order.fulfillment_status,to:nextStatus})]);
