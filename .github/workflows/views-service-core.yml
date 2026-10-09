@@ -49,7 +49,7 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          for file in db/migrations/0001_service_core.sql db/migrations/0002_inventory_reservations.sql db/migrations/0003_order_items.sql db/migrations/0004_property_access.sql db/migrations/0005_order_audit.sql db/migrations/0006_order_ownership.sql db/migrations/0007_market_pricing.sql; do
+          for file in db/migrations/0001_service_core.sql db/migrations/0002_inventory_reservations.sql db/migrations/0003_order_items.sql db/migrations/0004_property_access.sql db/migrations/0005_order_audit.sql db/migrations/0006_order_ownership.sql db/migrations/0007_market_pricing.sql db/migrations/0008_guest_booking_access.sql; do
             psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -f "$file"
           done
       - uses: actions/setup-node@v4
