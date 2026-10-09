@@ -29,6 +29,7 @@ jobs:
       - run: node --check src/order-status.mjs
       - run: node --check src/pms-sync.mjs
       - run: node --check src/payment-intents.mjs
+      - run: node --check src/payment-events.mjs
   postgres-migrations:
     runs-on: ubuntu-latest
     services:
