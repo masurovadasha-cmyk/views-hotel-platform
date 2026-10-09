@@ -9,6 +9,7 @@ function fakePool(){
   async query(sql,args=[]){
    calls.push({sql,args});
    if(sql.startsWith("SELECT 1 FROM service_property_access"))return {rowCount:1,rows:[{one:1}]};
+   if(sql.startsWith("SELECT price_uzs FROM market_catalog"))return {rowCount:1,rows:[{price_uzs:15000}]};
    if(sql.startsWith("SELECT id,property_id"))return {rowCount:stored?1:0,rows:stored?[stored]:[]};
    if(sql.startsWith("INSERT INTO service_orders")){stored={id:"order-1",property_id:args[1],service_type:"market",request_fingerprint:args[3]};return {rows:[{id:stored.id}]};}
    if(sql.startsWith("SELECT id,on_hand"))return {rows:[{id:"lot-1",on_hand:stock,reserved:0}]};
