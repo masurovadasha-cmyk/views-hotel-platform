@@ -1,4 +1,4 @@
-# VIEWS 0.10.0-preview — адаптация по Canva
+# VIEWS 0.10.1-preview — адаптация по Canva
 
 Подготавливается обновление веб-предпросмотра и Android по трём присланным
 документам: Guest App — 9 страниц, Staff CRM — 17, Design System — 6.
@@ -24,15 +24,15 @@
 
 ## Параметры и воспроизведение
 
-- Версия: `0.10.0-preview`; Android versionCode: `1000001`.
+- Версия: `0.10.1-preview`; Android versionCode: `1000002`.
 - applicationId: прежний `uz.views.preview`, Android 8+, target SDK 35.
 - Подпись: тот же существующий preview-ключ, без ротации или нового applicationId.
 - Источники: чистый окончательный commit; `release.json`, APK assets и evidence
   должны указывать этот же SHA и `sourceDirty=false`.
 
 Использовать [процедуру сборки и подписания 0.9](RELEASE_0_9_PREVIEW.md), заменив
-версию, tag и имена файлов на `0.10.0-preview`, `v0.10.0-preview`,
-`VIEWS-0.10.0-preview.apk`. Старые APK/evidence предварительно сохранить.
+версию, tag и имена файлов на `0.10.1-preview`, `v0.10.1-preview`,
+`VIEWS-0.10.1-preview.apk`. Старые APK/evidence предварительно сохранить.
 Не использовать старые checksum/source SHA при проверке нового артефакта.
 
 Перед сборкой релиза выполнить typecheck, unit-тесты, новую Canva browser proof,
@@ -55,10 +55,20 @@ portal и9role-entry proof. Финальная сборка повторяет C
 не выдаются за новый локальный прогон этого frontend-блока.
 
 Финальный чистый source SHA, результаты сборки/публикации и SHA-256 скачанного
-APK записываются в [GitHub Release v0.10.0-preview](https://github.com/masurovadasha-cmyk/views-hotel-platform/releases/tag/v0.10.0-preview)
+APK записываются в [GitHub Release v0.10.1-preview](https://github.com/masurovadasha-cmyk/views-hotel-platform/releases/tag/v0.10.1-preview)
 после проверки доставки. Локальный build не заменяет внешний release.json.
 
 Отдельно остаётся ручная приёмка на физическом Android: установка поверх прежней
 версии, холодный старт, клавиатура, системная кнопка «Назад», обе темы, три языка,
 фотографии и повторное открытие без сети. Браузерная проверка не доказывает работу
 нативного WebView и не подтверждает соответствие WCAG без измерений.
+
+0.10.1 устраняет дублирование общего offline-уведомления в Core-кабинетах:
+там уже есть собственные уведомления и блокировка действий без сети.
+Первый hosted Core-прогон0.10 прошёл SQL/HTTP и семь браузерных групп,
+но остановился на неоднозначном поиске двух offline-сообщений. Старый0.10APK
+сохранён, новый получает отдельную версию и увеличенный versionCode.
+
+Повторная проверка0.10.1: frontend307/56, Core476/83, весь изолированный
+HTTP/browser/PostgreSQL/SMTP-прогон завершён с exit0, включая offline/logout,
+фолио и склад. Публичный Core при этом не включался.

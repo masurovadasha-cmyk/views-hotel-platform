@@ -78,7 +78,7 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
         {live&&session&&<button onClick={async()=>{await api.logout();setSession(null)}}>{staffMode?t('Выйти'):guestT('Sign out')}</button>}
       </div>
     </header>
-    <ConnectionNotice locale={staffMode?staffLocale:guestLocale}/>
+    {(runtime==='static-demo'||runtime==='live-api')&&<ConnectionNotice locale={staffMode?staffLocale:guestLocale}/>}
     {content()}
   </div>;
 }

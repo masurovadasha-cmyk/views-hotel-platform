@@ -77,7 +77,7 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
   await heldRow.getByText('Cancelled',{exact:true}).waitFor();report.checks.push('quote_survives_language_change_hold_reload_release');
   await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.getByRole('heading',{name:'Sign in to workspace',exact:true}).waitFor();
   await change('uz');await page.getByText('Siz tizimdan chiqdingiz.',{exact:true}).waitFor();
-  assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage)),['views.staff.locale']);
+  assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage).sort()),['views.staff.locale','views.theme']);
   report.checks.push('notices_retranslate_and_only_language_is_stored');
   const isolated=await browser.newContext();await isolated.addInitScript(()=>{Object.defineProperty(Storage.prototype,'getItem',{value(){throw new DOMException('Blocked','SecurityError');}});Object.defineProperty(Storage.prototype,'setItem',{value(){throw new DOMException('Blocked','SecurityError');}});});
   const blocked=await isolated.newPage();blocked.on('pageerror',e=>errors.push(e.name));await blocked.goto('http://localhost:4173/');await blocked.getByRole('heading',{name:'Вход в рабочую область',exact:true}).waitFor();

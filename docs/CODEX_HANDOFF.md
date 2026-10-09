@@ -912,3 +912,15 @@ RELEASE_0_10_PREVIEW.md for final test evidence and release procedure. Final cle
 SHA/download checksum are recorded in GitHub release notes and release.json at
 publication, not invented in this pre-commit handoff. Public Core/mail/payments
 remain disconnected. No main merge or persistent DB changes.
+
+Hosted Core on1d86bcf exposed duplicate offline notices in guest-core: existing
+auth notice plus the new global indicator made a strict browser locator ambiguous.
+0.10.1 scopes the global indicator to legacy/static surfaces; Core retains its
+own actionable offline state. Staff locale storage proof also explicitly permits
+the new appearance-only views.theme key. Original0.10 prerelease retained; new
+0.10.1/1000002 uses the same signing key and separate immutable asset.
+
+0.10.1 dirty-source verification: root307/56, Core476/83; full disposable
+HTTP/browser/PostgreSQL/loopback-SMTP harness exited0, including the previously
+failing offline/logout group, supply6 and folio4. Log /tmp/views-0101-core.log.
+No source gates/assertions were disabled; persistent data untouched.
