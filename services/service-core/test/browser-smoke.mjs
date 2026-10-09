@@ -85,6 +85,28 @@ try{
    assert.deepEqual(errors,[]);
   }finally{await context.close()}
  });
+ await run("guest: retry uncertain order with same idempotency key",async()=>{
+  const {context,page,errors}=await pageFor("/guest",{
+   "GET /api/v1/market/catalog":{json:[{sku:"WATER-15",name:"Вода 1,5 л",priceUzs:15000}]},
+   "GET /api/v1/me/bookings":{json:[{id:bookingId,property_id:propertyId,ends_at:"2026-12-10T12:00:00Z"}]},
+   "POST /api/v1/service-orders":{status:503,json:{error:"Temporary failure"}}
+  });
+  const keys=[];
+  try{
+   page.on("request",req=>{if(req.method()==="POST"&&new URL(req.url()).pathname==="/api/v1/service-orders")keys.push(req.headers()["idempotency-key"])});
+   await page.getByRole("button",{name:"Загрузить мои бронирования"}).click();
+   await page.getByRole("button",{name:"Загрузить каталог"}).click();
+   await page.getByRole("button",{name:"Увеличить количество: Вода 1,5 л"}).click();
+   await page.getByRole("button",{name:"Создать тестовый заказ"}).click();
+   await page.getByText("Ошибка создания:").waitFor();
+   assert.equal(await page.locator("#load-catalog").isDisabled(),true);
+   await page.getByRole("button",{name:"Создать тестовый заказ"}).click();
+   await page.getByText("Ошибка создания:").waitFor();
+   assert.equal(keys.length,2);
+   assert.ok(keys[0]&&keys[0]===keys[1]);
+   assert.deepEqual(errors,[]);
+  }finally{await context.close()}
+ });
  await run("CRM: authorized orders, SLA and details",async()=>{
   const {context,page,errors}=await pageFor("/crm",{
    "GET /api/v1/service-orders":{json:[{id:orderId,fulfillment_status:"confirmed"}]},
