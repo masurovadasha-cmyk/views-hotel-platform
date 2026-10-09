@@ -14,6 +14,7 @@ test("cleaning checklist is immutable and must be completed by assignee",async()
   await db.query("INSERT INTO service_orders(id,organization_id,property_id,service_type,idempotency_key,fulfillment_status) VALUES($1,$2,$3,'cleaning',$4,'confirmed')",[orderId,org,property,"clean-"+randomUUID()]);
   await db.query("INSERT INTO service_property_access(organization_id,property_id,principal_id,permission) VALUES($1,$2,'manager','order:manage')",[org,property]);
   await db.query("INSERT INTO service_task_assignees(organization_id,property_id,principal_id) VALUES($1,$2,$3)",[org,property,"cleaner"]);
+  await db.query("INSERT INTO service_property_access(organization_id,property_id,principal_id,permission) VALUES($1,$2,$3,$4)",[org,property,"finance-approver","order:manage"]);
   await db.query("INSERT INTO service_dispatch_tasks(id,organization_id,order_id,property_id,task_kind,assigned_principal_id,status) VALUES($1,$2,$3,$4,'cleaning','cleaner','in_progress')",[taskId,org,orderId,property]);
  });
  const context={organizationId:org,taskId};
@@ -35,9 +36,10 @@ test("cleaning checklist is immutable and must be completed by assignee",async()
  assert.equal(replay.id,accrual.id);
  await assert.rejects(accrueTaskCompensation(pool,{organizationId:org,taskId,actorId:"manager",amountUzs:30000}),/Accrual conflict/);
  await assert.rejects(approveTaskCompensation(pool,{organizationId:org,accrualId:accrual.id,actorId:"cleaner"}),/Forbidden/);
- const approved=await approveTaskCompensation(pool,{organizationId:org,accrualId:accrual.id,actorId:"manager"});
+ await assert.rejects(approveTaskCompensation(pool,{organizationId:org,accrualId:accrual.id,actorId:"manager"}),/Forbidden/);
+ const approved=await approveTaskCompensation(pool,{organizationId:org,accrualId:accrual.id,actorId:"finance-approver"});
  assert.equal(approved.status,"approved");
- await assert.rejects(approveTaskCompensation(pool,{organizationId:org,accrualId:accrual.id,actorId:"manager"}),/already processed/);
+ await assert.rejects(approveTaskCompensation(pool,{organizationId:org,accrualId:accrual.id,actorId:"finance-approver"}),/already processed/);
  await assert.rejects(finalizeCleaningTask(pool,{...context,actorId:"cleaner"}),/Forbidden/);
  const hidden=await inTenantTransaction(pool,randomUUID(),async db=>(await db.query("SELECT id FROM service_cleaning_checklist_items WHERE task_id=$1",[taskId])).rows);
  assert.equal(hidden.length,0);
