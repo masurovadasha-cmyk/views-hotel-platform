@@ -1,9 +1,10 @@
 import {useMemo,useState} from "react";
+import {nextStaySelection,stayNights} from "./stayDateRangeModel";
 type Props={checkIn:string;checkOut:string;onChange:(start:string,end:string)=>void};
 const iso=(d:Date)=>d.toISOString().slice(0,10);
 const date=(s:string)=>new Date(s+"T12:00:00Z");
 const monthLabel=(d:Date)=>new Intl.DateTimeFormat("ru-RU",{month:"long",year:"numeric",timeZone:"UTC"}).format(d);
-const dayCount=(a:string,b:string)=>Math.round((Date.parse(b+"T00:00:00Z")-Date.parse(a+"T00:00:00Z"))/86400000);
+
 export function StayDateRange({checkIn,checkOut,onChange}:Props){
  const [open,setOpen]=useState(false);
  const [draftStart,setDraftStart]=useState(checkIn);
@@ -15,16 +16,15 @@ export function StayDateRange({checkIn,checkOut,onChange}:Props){
  },[today]);
  function show(){setDraftStart(checkIn);setDraftEnd(checkOut);setOpen(true)}
  function select(value:string){
-  if(value<today)return;
-  if(!draftStart||draftEnd||value<=draftStart){setDraftStart(value);setDraftEnd("");return}
-  setDraftEnd(value);
+  const [start,end]=nextStaySelection(draftStart,draftEnd,value,today);
+  setDraftStart(start);setDraftEnd(end);
  }
  return <div className="stayDateRange">
-  <button type="button" onClick={show} aria-label="Выбрать даты заезда и выезда">{checkIn||"Заезд"} — {checkOut||"Выезд"}{checkIn&&checkOut?" · "+dayCount(checkIn,checkOut)+" ночей":""}</button>
+  <button type="button" onClick={show} aria-label="Выбрать даты заезда и выезда">{checkIn||"Заезд"} — {checkOut||"Выезд"}{checkIn&&checkOut?" · "+stayNights(checkIn,checkOut)+" ночей":""}</button>
   {open&&<div role="dialog" aria-modal="true" aria-label="Календарь бронирования" className="stayDateDialog">
    <div className="stayDateDialogCard">
     <header><strong>Выберите даты проживания</strong><button type="button" onClick={()=>setOpen(false)} aria-label="Закрыть календарь">✕</button></header>
-    <p>{draftStart||"Заезд"} — {draftEnd||"Выезд"}{draftStart&&draftEnd?" · "+dayCount(draftStart,draftEnd)+" ночей":""}</p>
+    <p>{draftStart||"Заезд"} — {draftEnd||"Выезд"}{draftStart&&draftEnd?" · "+stayNights(draftStart,draftEnd)+" ночей":""}</p>
     <div className="stayDateMonths">
      {months.map(m=>{
       const year=m.getUTCFullYear(),month=m.getUTCMonth(),first=m.getUTCDay(),offset=(first+6)%7;
@@ -44,7 +44,7 @@ export function StayDateRange({checkIn,checkOut,onChange}:Props){
      })}
     </div>
     <footer><button type="button" onClick={()=>{setDraftStart("");setDraftEnd("")}}>Сбросить</button>
-     <button type="button" disabled={!draftStart||!draftEnd} onClick={()=>{onChange(draftStart,draftEnd);setOpen(false)}}>Сохранить · {draftStart&&draftEnd?dayCount(draftStart,draftEnd):0} ночей</button></footer>
+     <button type="button" disabled={!draftStart||!draftEnd} onClick={()=>{onChange(draftStart,draftEnd);setOpen(false)}}>Сохранить · {draftStart&&draftEnd?stayNights(draftStart,draftEnd):0} ночей</button></footer>
    </div>
   </div>}
  </div>;
