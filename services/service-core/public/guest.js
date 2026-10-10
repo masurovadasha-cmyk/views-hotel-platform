@@ -14,7 +14,6 @@ const guestCalendar=mountViewsCalendar(document.querySelector("#guest-calendar")
   guestDateSummary.textContent=start+" — "+end+" · "+nights+" ночей (просмотр; не изменяет бронь)";
  },
  onClear:()=>{guestDateSummary.textContent="Предпросмотр сброшен; бронь не изменена"}
- }
 });
 document.querySelector("#guest-calendar-open").onclick=()=>guestCalendar.open();
 const cart=new Map();
