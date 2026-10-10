@@ -4,10 +4,10 @@ import {assignMarketOrderInTransaction,type MarketAssignmentCommand} from "./mar
 /** Server-side authorization gate for staff assignment commands.
  * Must execute within a trusted actor transaction; no public controller yet.
  */
-export async function authorizedMarketAssignment(
+export async function assertMarketDispatcherPermission(
  client:Pick<PoolClient,"query">,
- input:MarketAssignmentCommand
-){
+ input:{organizationId:string;propertyId:string;actorMembershipId:string}
+):Promise<void>{
  const permission=await client.query<{allowed:boolean}>(
   `SELECT EXISTS(
     SELECT 1 FROM organization_memberships m
@@ -19,5 +19,12 @@ export async function authorizedMarketAssignment(
   [input.actorMembershipId,input.organizationId,input.propertyId]
  );
  if(!permission.rows[0]?.allowed)throw Error("MARKET_DISPATCHER_FORBIDDEN");
+}
+
+export async function authorizedMarketAssignment(
+ client:Pick<PoolClient,"query">,
+ input:MarketAssignmentCommand
+){
+ await assertMarketDispatcherPermission(client,input);
  return assignMarketOrderInTransaction(client,input);
 }
