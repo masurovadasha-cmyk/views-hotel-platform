@@ -171,6 +171,13 @@ loadBookingsButton.onclick=async()=>{
    option.textContent="Объект "+b.property_id.slice(0,8)+" · до "+new Date(b.ends_at).toLocaleDateString("ru-RU");
    booking.append(option);
   }
+  booking.onchange=()=>{
+   const current=bookings.find(b=>b.id===booking.value);
+   if(!current)return;
+   const start=current.starts_at.slice(0,10),end=current.ends_at.slice(0,10);
+   guestCalendar.setRange(start,end);
+   guestDateSummary.textContent=start+" — "+end+" (подтверждённое проживание)";
+  };
   if(bookings.length){
    const current=bookings[0];
    const checkin=current.starts_at.slice(0,10),checkout=current.ends_at.slice(0,10);
