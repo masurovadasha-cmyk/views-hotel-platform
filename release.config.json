@@ -1,6 +1,6 @@
 {
-  "version": "0.13.0-preview",
-  "androidVersionCode": 1300001,
+  "version": "0.14.0-preview",
+  "androidVersionCode": 1400001,
   "androidApplicationId": "uz.views.preview",
   "androidLabel": "VIEWS Preview",
   "mode": "static-demo",
@@ -17,7 +17,7 @@
       "pages": 280,
       "uniqueScreens": 140,
       "sha256": "e25bf1f219f348b07ce6672ad57c55f7e3aa94f001f7aac25238b9d2fb590447",
-      "implementedScope": "shared theme and service catalogue; full screen workflows pending"
+      "implementedScope": "shared theme and eight-direction catalogue; authenticated cleaning workflow verified in local Core; other screen workflows pending"
     }
   }
 }
