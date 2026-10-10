@@ -18,6 +18,17 @@ test("client sends bearer token and PATCH body",async()=>{
  }finally{globalThis.fetch=original}
 });
 
+test("client loads tenant market inventory through the authenticated API",async()=>{
+ const original=globalThis.fetch;let captured;
+ globalThis.fetch=async(url,options)=>{captured={url,options};return {ok:true,json:async()=>[{sku:"WATER-15",available:4}]}};
+ try{
+  const client=createViewsClient({getToken:async()=>"staff-session"});
+  assert.deepEqual(await client.listMarketInventory(),[{sku:"WATER-15",available:4}]);
+  assert.equal(captured.url,"/api/v1/market/inventory");
+  assert.equal(captured.options.headers.Authorization,"Bearer staff-session");
+ }finally{globalThis.fetch=original}
+});
+
 test("client requests verified identity from server instead of browser claims",async()=>{
  const original=globalThis.fetch;let url;
  globalThis.fetch=async(path)=>{url=path;return {ok:true,json:async()=>({sub:"staff-1",organizationId:"tenant",roles:["staff"]})}};

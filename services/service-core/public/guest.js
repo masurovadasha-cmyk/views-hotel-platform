@@ -4,6 +4,7 @@ const token=document.querySelector("#token"),booking=document.querySelector("#bo
 const loadCatalogButton=document.querySelector("#load-catalog"),loadBookingsButton=document.querySelector("#load-bookings");
 const loadOrdersButton=document.querySelector("#load-orders"),historyEl=document.querySelector("#order-history");
 const timelineEl=document.querySelector("#order-timeline");
+const searchEl=document.querySelector("#product-search"),categoryEl=document.querySelector("#category-filter"),catalogStatus=document.querySelector("#catalog-status");
 const notificationsEl=document.querySelector("#notifications"),notificationsButton=document.querySelector("#load-notifications");
 const eventLabels={"market.order.created":"Заказ оформлен","service.order.changed":"Статус заказа","service.task.assigned":"Назначен исполнитель","service.task.status_changed":"Выполнение задания","cleaning.task.completed":"Уборка завершена","laundry.bag.changed":"Прачечная"};
 const client=createViewsClient({getToken:async()=>token.value.trim()});
@@ -20,9 +21,19 @@ const cart=new Map();
 let catalog=[],orderId=null,pendingKey=null,pendingPayload=null,inFlight=false;
 function render(){
  catalogEl.replaceChildren();
- for(const product of catalog){
-  const row=document.createElement("div");row.className="item";
-  const name=document.createElement("span");name.textContent=product.name+" · "+money(product.priceUzs);
+ const query=searchEl.value.trim().toLocaleLowerCase("ru-RU"),category=categoryEl.value;
+ const visible=catalog.filter(p=>(!category||p.category===category)&&(!query||[p.name,p.brand,p.packageLabel,p.category].filter(Boolean).join(" ").toLocaleLowerCase("ru-RU").includes(query)));
+ for(const product of visible){
+  const row=document.createElement("article");row.className="product-card";
+  const image=document.createElement("div");image.className="product-image";
+  if(product.imageUrl&&product.imageUrl.startsWith("/market-images/")){const img=document.createElement("img");img.src=product.imageUrl;img.alt=product.name;img.loading="lazy";image.replaceChildren(img)}else{image.textContent="Фото уточняется у поставщика";image.setAttribute("aria-label","Фотография товара не подтверждена")}
+  row.append(image);
+  if(product.photoStatus==="verified"&&product.imageSourceUrl){const credit=document.createElement("small");credit.className="product-photo-credit";const link=document.createElement("a");link.href=product.imageSourceUrl;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Источник фото: Korzinka";credit.append(link,document.createTextNode(" · права на повторное использование не указаны"));credit.title=product.imageLicense||"Источник фотографии: официальный каталог Korzinka";row.append(credit)}
+  const categoryLabel=document.createElement("small");categoryLabel.className="product-category";categoryLabel.textContent=product.category||"Без категории";
+  const title=document.createElement("h3");title.className="product-title";title.textContent=product.name;
+  const details=document.createElement("p");details.className="product-details";details.textContent=[product.brand,product.packageLabel].filter(Boolean).join(" · ")||"Точные бренд и фасовка ожидают подтверждения";
+  const name=document.createElement("strong");name.className="product-price";name.textContent=product.priceUzs===null?"Цена уточняется":money(product.priceUzs);
+  const stock=document.createElement("small");stock.className="product-stock";stock.textContent=product.sourceReferenceOnly?"Справочная карточка · цену и остаток задаёт отель":product.stockAvailable===null?"Остатки ещё не заведены":product.stockAvailable>0?"В наличии: "+product.stockAvailable:"Нет в наличии";
   const controls=document.createElement("span");controls.className="actions";
   const minus=document.createElement("button"),plus=document.createElement("button"),count=document.createElement("output");
   minus.type=plus.type="button";
@@ -30,12 +41,14 @@ function render(){
   minus.setAttribute("aria-label","Уменьшить количество: "+product.name);
   plus.setAttribute("aria-label","Увеличить количество: "+product.name);
   count.textContent=cart.get(product.sku)||0;
-  minus.disabled=plus.disabled=!!pendingKey||!!orderId||inFlight;
+  minus.disabled=!!pendingKey||!!orderId||inFlight||!cart.get(product.sku);
+  plus.disabled=!!pendingKey||!!orderId||inFlight||!product.purchasable||!(product.stockAvailable>0)||(cart.get(product.sku)||0)>=product.stockAvailable;
   minus.onclick=()=>change(product.sku,-1);
   plus.onclick=()=>change(product.sku,1);
-  controls.append(minus,count,plus);row.append(name,controls);catalogEl.append(row);
+  controls.append(minus,count,plus);row.append(categoryLabel,title,details,name,stock,controls);catalogEl.append(row);
  }
- const subtotal=catalog.reduce((sum,p)=>sum+p.priceUzs*(cart.get(p.sku)||0),0);
+ if(catalog.length&&!visible.length)catalogEl.textContent="Ничего не найдено. Измените поиск или категорию.";
+ const subtotal=catalog.reduce((sum,p)=>sum+(Number.isSafeInteger(p.priceUzs)?p.priceUzs:0)*(cart.get(p.sku)||0),0);
  totalEl.textContent=money(subtotal+(subtotal?15000:0));
  checkout.disabled=!subtotal||!!orderId||inFlight;
  booking.disabled=!!pendingKey||!!orderId||inFlight;
@@ -158,7 +171,12 @@ loadCatalogButton.onclick=async()=>{
  try{
   const next=await client.listCatalog();
   if(pendingKey||orderId||inFlight)return;
-  catalog=next;cart.clear();message.textContent="Каталог загружен: "+catalog.length+" позиций";render();
+  catalog=next;cart.clear();message.textContent="Каталог загружен: "+catalog.length+" позиций";
+  const categories=[...new Set(catalog.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ru"));
+  categoryEl.replaceChildren(new Option("Все категории",""),...categories.map(value=>new Option(value,value)));
+  const referenceCount=catalog.filter(p=>p.sourceReferenceOnly).length;
+  catalogStatus.textContent=catalog.length?`Справочный каталог поставщика: ${referenceCount} карточек ждут SKU отеля, цену и остаток. Покупка доступна только по подтверждённым данным отеля.`:"Для этого объекта пока не настроен каталог.";
+  render();
  }catch(e){message.textContent="Не удалось загрузить каталог: "+e.message}
 };
 loadBookingsButton.onclick=async()=>{
@@ -189,3 +207,4 @@ loadBookingsButton.onclick=async()=>{
  }catch(e){message.textContent="Ошибка бронирований: "+e.message}
 };
 render();
+searchEl.addEventListener("input",render);categoryEl.addEventListener("change",render);

@@ -24,7 +24,8 @@ for file in \
   0016_task_compensation.sql \
   0017_guest_notifications.sql \
   0018_notification_jobs.sql \
-  0019_notification_recovery_audit.sql
+  0019_notification_recovery_audit.sql \
+  0020_market_catalog_metadata.sql
 do
   applied="$(psql -X -v ON_ERROR_STOP=1 -Atc "SELECT 1 FROM views_staging_schema_migrations WHERE filename = '$file'")"
   if [[ "$applied" == "1" ]]; then continue; fi

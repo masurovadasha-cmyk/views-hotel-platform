@@ -13,6 +13,7 @@ import {listGuestNotifications,markGuestNotificationRead} from "./guest-notifica
 import {requeueDeadLetterNotifications} from "./notification-admin.mjs";
 
 export const pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000});
+const marketReference=JSON.parse(await readFile(new URL("../public/market-reference.json",import.meta.url),"utf8"));
 const oidcMode=process.env.VIEWS_AUTH_MODE==="oidc";
 const devMode=process.env.VIEWS_AUTH_MODE===undefined||process.env.VIEWS_AUTH_MODE==="dev";
 if(!oidcMode&&!devMode)throw Error("Unsupported authentication mode");
@@ -33,6 +34,12 @@ export const server=createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,"http://localhost");
   const staticFiles={"/staff":{file:"staff.html",type:"text/html; charset=utf-8"},"/staff.js":{file:"staff.js",type:"text/javascript; charset=utf-8"},"/staff.css":{file:"staff.css",type:"text/css; charset=utf-8"},"/finance":{file:"finance.html",type:"text/html; charset=utf-8"},"/finance.js":{file:"finance.js",type:"text/javascript; charset=utf-8"},"/guest":{file:"guest.html",type:"text/html; charset=utf-8"},"/guest.js":{file:"guest.js",type:"text/javascript; charset=utf-8"},"/crm":{file:"crm.html",type:"text/html; charset=utf-8"},"/crm.css":{file:"crm.css",type:"text/css; charset=utf-8"},"/crm.js":{file:"crm.js",type:"text/javascript; charset=utf-8"},"/views-client.js":{file:"views-client.js",type:"text/javascript; charset=utf-8"},"/views-calendar.js":{file:"views-calendar.js",type:"text/javascript; charset=utf-8"}};
+  const imageMatch=url.pathname.match(/^\/market-images\/([A-Za-z0-9_-]+\.png)$/);
+  if(req.method==="GET"&&imageMatch){
+   const image=await readFile(new URL("../public/market-images/"+imageMatch[1],import.meta.url));
+   res.writeHead(200,{"content-type":"image/png","cache-control":"public, max-age=86400","content-security-policy":"default-src 'none'; img-src 'self'"});
+   return res.end(image);
+  }
   if(req.method==="GET"&&staticFiles[url.pathname]&&devMode){
    const entry=staticFiles[url.pathname];
    const data=await readFile(new URL("../public/"+entry.file,import.meta.url));
@@ -147,8 +154,35 @@ export const server=createServer(async(req,res)=>{
   }
   if(req.method==="GET"&&url.pathname==="/api/v1/market/catalog"){
    requireRole(context,["guest","dispatcher","admin"]);
-   const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query("SELECT sku,name,price_uzs FROM market_catalog WHERE active=true ORDER BY name,sku LIMIT 200")).rows);
-   return reply(res,200,products.map(p=>({sku:p.sku,name:p.name,priceUzs:Number(p.price_uzs)})));
+   const products=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(`SELECT c.sku,c.supplier_reference_id,c.name,c.price_uzs,c.category,c.brand,c.package_label,
+     CASE WHEN c.photo_status='verified' THEN c.image_url ELSE NULL END AS image_url,
+     CASE WHEN c.photo_status='verified' THEN c.image_source_url ELSE NULL END AS image_source_url,
+     CASE WHEN c.photo_status='verified' THEN c.image_license ELSE NULL END AS image_license,
+     c.photo_status,
+     CASE WHEN count(l.id)=0 THEN NULL ELSE COALESCE(sum(GREATEST(l.on_hand-l.reserved,0)) FILTER (WHERE l.blocked=false AND (l.expires_at IS NULL OR l.expires_at>current_date)),0)::integer END AS stock_available
+     FROM market_catalog c LEFT JOIN inventory_lots l ON l.organization_id=c.organization_id AND l.sku=c.sku
+     WHERE c.active=true GROUP BY c.organization_id,c.sku ORDER BY c.category NULLS LAST,c.name,c.sku LIMIT 200`)).rows);
+   const tenantRows=new Map(products.filter(p=>p.supplier_reference_id).map(p=>[p.supplier_reference_id,p]));
+   const linked=new Set();
+   const references=marketReference.items.map(reference=>{
+    const tenant=tenantRows.get(reference.referenceId);
+    const hasVerifiedTenantPhoto=tenant?.photo_status==="verified"&&tenant.image_url;
+    if(tenant)linked.add(reference.referenceId);
+    return {sku:tenant?.sku||reference.referenceId,supplierReferenceId:reference.referenceId,name:tenant?.name||reference.name,priceUzs:tenant?Number(tenant.price_uzs):null,category:tenant?.category||reference.category,brand:tenant?.brand||null,packageLabel:tenant?.package_label||reference.packageLabel,imageUrl:hasVerifiedTenantPhoto?tenant.image_url:reference.imageUrl,imageSourceUrl:hasVerifiedTenantPhoto?tenant.image_source_url:reference.imageSourceUrl,imageLicense:hasVerifiedTenantPhoto?tenant.image_license:reference.imageLicense,photoStatus:hasVerifiedTenantPhoto?"verified":reference.photoStatus,stockAvailable:tenant?(tenant.stock_available===null?null:Number(tenant.stock_available)):null,sourceReferenceOnly:!tenant,purchasable:!!tenant};
+   });
+   const custom=products.filter(p=>!p.supplier_reference_id||!linked.has(p.supplier_reference_id)).map(p=>({sku:p.sku,supplierReferenceId:p.supplier_reference_id,name:p.name,priceUzs:Number(p.price_uzs),category:p.category,brand:p.brand,packageLabel:p.package_label,imageUrl:p.image_url,imageSourceUrl:p.image_source_url,imageLicense:p.image_license,photoStatus:p.photo_status,stockAvailable:p.stock_available===null?null:Number(p.stock_available),sourceReferenceOnly:false,purchasable:true}));
+   return reply(res,200,[...references,...custom].slice(0,200));
+  }
+  if(req.method==="GET"&&url.pathname==="/api/v1/market/inventory"){
+   requireRole(context,["staff","dispatcher","admin"]);
+   const rows=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(`SELECT c.sku,c.name,c.category,
+     COALESCE(sum(l.on_hand),0)::integer AS on_hand,
+     COALESCE(sum(l.reserved),0)::integer AS reserved,
+     CASE WHEN count(l.id)=0 THEN NULL ELSE COALESCE(sum(GREATEST(l.on_hand-l.reserved,0)) FILTER (WHERE l.blocked=false AND (l.expires_at IS NULL OR l.expires_at>current_date)),0)::integer END AS available,
+     COALESCE(sum(l.on_hand-l.reserved) FILTER (WHERE l.expires_at BETWEEN current_date AND current_date+7 AND l.blocked=false),0)::integer AS expiring_soon
+     FROM market_catalog c LEFT JOIN inventory_lots l ON l.organization_id=c.organization_id AND l.sku=c.sku
+     WHERE c.active=true GROUP BY c.organization_id,c.sku ORDER BY c.category NULLS LAST,c.name,c.sku LIMIT 500`)).rows);
+   return reply(res,200,rows.map(p=>({sku:p.sku,name:p.name,category:p.category,onHand:Number(p.on_hand),reserved:Number(p.reserved),available:p.available===null?null:Number(p.available),expiringSoon:Number(p.expiring_soon)})));
   }
   if(req.method==="POST"&&url.pathname==="/api/v1/admin/notifications/dead-letters/requeue"){
    requireRole(context,["admin"]);

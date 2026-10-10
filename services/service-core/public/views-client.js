@@ -19,6 +19,7 @@ export function createViewsClient({baseUrl="",getToken}){
  return {
   getSession:()=>request("/api/v1/me"),
   listCatalog:()=>request("/api/v1/market/catalog"),
+  listMarketInventory:()=>request("/api/v1/market/inventory"),
   listPayments:()=>request("/api/v1/finance/payments"),
   listRefunds:()=>request("/api/v1/finance/refunds"),
   listBookings:()=>request("/api/v1/me/bookings"),

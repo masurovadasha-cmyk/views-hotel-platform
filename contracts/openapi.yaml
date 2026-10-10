@@ -8,6 +8,33 @@ servers:
 security:
   - bearerAuth: []
 paths:
+  /market/catalog:
+    get:
+      operationId: listMarketCatalog
+      summary: List hotel-priced products and supplier reference cards
+      responses:
+        '200':
+          description: Tenant-priced products plus non-purchasable supplier references
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MarketProduct' }
+        '401': { description: Unauthorized }
+  /market/inventory:
+    get:
+      operationId: listMarketInventory
+      summary: List inventory balances for authorized hotel staff
+      responses:
+        '200':
+          description: Tenant-scoped on-hand, reserved and usable balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MarketInventoryItem' }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
   /service-orders:
     post:
       operationId: createServiceOrder
@@ -85,6 +112,35 @@ components:
       type: http
       scheme: bearer
   schemas:
+    MarketProduct:
+      type: object
+      required: [sku, name, priceUzs, category, packageLabel, imageUrl, photoStatus, stockAvailable, sourceReferenceOnly, purchasable]
+      properties:
+        sku: { type: string }
+        supplierReferenceId: { type: [string, 'null'] }
+        name: { type: string }
+        priceUzs: { type: [integer, 'null'], minimum: 0 }
+        category: { type: [string, 'null'] }
+        brand: { type: [string, 'null'] }
+        packageLabel: { type: [string, 'null'] }
+        imageUrl: { type: [string, 'null'], description: Same-origin image URL only }
+        imageSourceUrl: { type: [string, 'null'], format: uri }
+        imageLicense: { type: [string, 'null'] }
+        photoStatus: { type: string, enum: [placeholder, verified] }
+        stockAvailable: { type: [integer, 'null'], minimum: 0 }
+        sourceReferenceOnly: { type: boolean }
+        purchasable: { type: boolean }
+    MarketInventoryItem:
+      type: object
+      required: [sku, name, onHand, reserved, available, expiringSoon]
+      properties:
+        sku: { type: string }
+        name: { type: string }
+        category: { type: [string, 'null'] }
+        onHand: { type: integer, minimum: 0 }
+        reserved: { type: integer, minimum: 0 }
+        available: { type: [integer, 'null'], minimum: 0 }
+        expiringSoon: { type: integer, minimum: 0 }
     ServiceOrder:
       type: object
       required: [id, serviceType, fulfillmentStatus, paymentStatus]

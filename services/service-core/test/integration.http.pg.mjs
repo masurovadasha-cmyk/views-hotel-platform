@@ -53,7 +53,15 @@ test("CRM serves assets, enforces roles, and cancels reserved order",async()=>{
   assert.equal(forbidden.status,403);
   const catalog=await fetch(base+"/api/v1/market/catalog",{headers:{Authorization:"Bearer "+guestToken}});
   assert.equal(catalog.status,200);
-  assert.equal((await catalog.json())[0].priceUzs,15000);
+  const marketProducts=await catalog.json();
+  assert.ok(marketProducts.length>=101);
+  const tenantWater=marketProducts.find(product=>product.sku==="WATER-15");
+  assert.equal(tenantWater.priceUzs,15000);
+  assert.equal(tenantWater.stockAvailable,5);
+  const supplierReference=marketProducts.find(product=>product.sourceReferenceOnly);
+  assert.equal(supplierReference.priceUzs,null);
+  assert.equal(supplierReference.stockAvailable,null);
+  assert.equal(supplierReference.purchasable,false);
   const crmBookings=await fetch(base+"/api/v1/crm/bookings",{headers:{Authorization:"Bearer "+staffToken}});
   assert.equal(crmBookings.status,200);
   assert.ok((await crmBookings.json()).some(b=>b.id===bookingId));

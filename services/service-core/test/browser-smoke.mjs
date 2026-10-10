@@ -47,7 +47,7 @@ try{
  }
  await run("guest: catalog, booking, cart and order total",async()=>{
   const {context,page,errors}=await pageFor("/guest",{
-   "GET /api/v1/market/catalog":{json:[{sku:"WATER-15",name:"Вода 1,5 л",priceUzs:15000}]},
+   "GET /api/v1/market/catalog":{json:[{sku:"WATER-15",name:"Вода 1,5 л",priceUzs:15000,stockAvailable:2,purchasable:true}]},
    "GET /api/v1/me/bookings":{json:[{id:bookingId,property_id:propertyId,ends_at:"2026-12-10T12:00:00Z"}]},
    "POST /api/v1/service-orders":{status:201,json:{id:orderId}},
    ["GET /api/v1/service-orders/"+orderId]:{json:{id:orderId,fulfillment_status:"draft",payment_status:"unpaid",total_uzs:30000}}
@@ -65,7 +65,7 @@ try{
  });
  await run("guest: successful checkout stays locked when status lookup fails",async()=>{
   const {context,page,errors}=await pageFor("/guest",{
-   "GET /api/v1/market/catalog":{json:[{sku:"WATER-15",name:"Вода 1,5 л",priceUzs:15000}]},
+   "GET /api/v1/market/catalog":{json:[{sku:"WATER-15",name:"Вода 1,5 л",priceUzs:15000,stockAvailable:2,purchasable:true}]},
    "GET /api/v1/me/bookings":{json:[{id:bookingId,property_id:propertyId,ends_at:"2026-12-10T12:00:00Z"}]},
    "POST /api/v1/service-orders":{status:201,json:{id:orderId}},
    ["GET /api/v1/service-orders/"+orderId]:{status:503,json:{error:"Temporarily unavailable"}}
@@ -87,7 +87,7 @@ try{
  });
  await run("guest: retry uncertain order with same idempotency key",async()=>{
   const {context,page,errors}=await pageFor("/guest",{
-   "GET /api/v1/market/catalog":{json:[{sku:"WATER-15",name:"Вода 1,5 л",priceUzs:15000}]},
+   "GET /api/v1/market/catalog":{json:[{sku:"WATER-15",name:"Вода 1,5 л",priceUzs:15000,stockAvailable:2,purchasable:true}]},
    "GET /api/v1/me/bookings":{json:[{id:bookingId,property_id:propertyId,ends_at:"2026-12-10T12:00:00Z"}]},
    "POST /api/v1/service-orders":{status:503,json:{error:"Temporary failure"}}
   });
@@ -159,12 +159,15 @@ try{
    "GET /api/v1/service-orders":{json:[{id:orderId,fulfillment_status:"confirmed"}]},
    "GET /api/v1/crm/bookings":{json:[{id:bookingId,property_id:propertyId,status:"checked_in",starts_at:"2026-10-13T00:00:00Z",ends_at:"2026-10-25T00:00:00Z"}]},
    "GET /api/v1/dispatch/sla":{json:{total:1,open:1,overdue:0,completed:0}},
+   "GET /api/v1/market/inventory":{json:[{sku:"WATER-15",name:"Вода 1,5 л",category:"Вода",onHand:8,reserved:2,available:6,expiringSoon:1}]},
    ["GET /api/v1/service-orders/"+orderId]:{json:{id:orderId,property_id:propertyId,service_type:"market",fulfillment_status:"confirmed",payment_status:"unpaid"}}
   });
   try{
    await page.getByRole("button",{name:"Подключиться"}).click();
    await page.getByText("Всего: 1").waitFor();
    await page.getByText("Бронь "+bookingId.slice(0,8),{exact:false}).waitFor();
+   await page.getByRole("button",{name:"Обновить остатки"}).click();
+   await page.getByText("Доступно 6 · резерв 2 · истекает за 7 дней: 1").waitFor();
    await page.locator("#orders button").first().click();
    await page.getByText("Статус: Подтверждён").waitFor();
    assert.deepEqual(errors,[]);

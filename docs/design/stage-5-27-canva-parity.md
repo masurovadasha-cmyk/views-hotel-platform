@@ -7,7 +7,7 @@
 - Responsive guest, CRM, staff, and finance screens; touch controls at least 44 px.
 
 ## Automated evidence
-The `browser-smoke` CI job captures mobile screenshots of the guest, CRM, staff and finance screens at 390 × 844 and desktop screenshots at 1280 × 900. It checks horizontal overflow at 320, 390, 768 and 1280 px, plus basic mocked UI flows.
+The `browser-smoke` CI job captures mobile screenshots of the guest, CRM, staff and finance screens at 390 × 844 and desktop screenshots at 1280 × 900. It checks horizontal overflow at 320, 390, 768 and 1280 px, plus mocked catalog search, category filtering, stock visibility and idempotent checkout flows.
 
 ## Manual comparison still required
 1. Open the approved Canva screens and the `views-browser-screenshots` artifact for the **same commit**.
@@ -15,7 +15,7 @@ The `browser-smoke` CI job captures mobile screenshots of the guest, CRM, staff 
 3. Confirm all guest/host/staff/finance roles show only permitted actions.
 4. Confirm images of apartments and catalog products are licensed, accurate and optimized; placeholders do not count.
 5. Verify RU/UZ/EN text and UZS formatting in every state.
-6. Verify dark mode and tablet layouts; currently **not implemented/approved**.
+6. Dark mode now follows the system color preference in the shared guest, CRM, staff and finance stylesheet. Compare light/dark and tablet screens against the Canva pages before production approval.
 7. Verify browser UI with a real staging API and authenticated booking, not just mocked data.
 8. Review physical Android device and keyboard/screen-reader behavior.
 

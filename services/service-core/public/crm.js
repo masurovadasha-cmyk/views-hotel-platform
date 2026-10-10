@@ -1,6 +1,7 @@
 import {createViewsClient} from "./views-client.js";
 import {mountViewsCalendar} from "./views-calendar.js";
 const token=document.querySelector("#token"),message=document.querySelector("#message"),orders=document.querySelector("#orders"),details=document.querySelector("#details"),actions=document.querySelector("#actions");
+const inventory=document.querySelector("#inventory"),inventoryButton=document.querySelector("#load-inventory");
 const client=createViewsClient({getToken:async()=>token.value.trim()});
 let dateFilter=null;
 let lastOrders=[];
@@ -42,3 +43,4 @@ async function selectOrder(id){const order=await client.getOrder(id);details.rep
 async function load(){message.textContent="Загрузка...";try{const [list,sla,bookings]=await Promise.all([client.listOrders(),client.getDispatchSla(),client.listCrmBookings()]);document.querySelector("#sla").textContent="Всего: "+sla.total+" · Открыто: "+sla.open+" · Просрочено: "+sla.overdue+" · Завершено: "+sla.completed;lastOrders=list;renderOrders(list);lastBookings=bookings;renderBookings(bookings);message.textContent="Загружено заказов: "+list.length}catch(e){message.textContent="Ошибка: "+e.message}}
 document.querySelector("#connect").onclick=load;
 document.querySelector("#refresh").onclick=load;
+inventoryButton.onclick=async()=>{inventoryButton.disabled=true;try{const rows=await client.listMarketInventory();inventory.replaceChildren();if(!rows.length){inventory.textContent="Активных складских SKU пока нет";return}for(const item of rows){const row=document.createElement("div");row.className="item";const name=document.createElement("strong");name.textContent=item.name+(item.category?" · "+item.category:"");const count=document.createElement("span");count.textContent=item.available===null?"Остаток не настроен":"Доступно "+item.available+" · резерв "+item.reserved+(item.expiringSoon?" · истекает за 7 дней: "+item.expiringSoon:"");row.append(name,count);inventory.append(row)}}catch(e){message.textContent="Не удалось загрузить остатки: "+e.message}finally{inventoryButton.disabled=false}};
