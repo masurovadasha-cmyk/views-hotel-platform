@@ -171,6 +171,12 @@ loadBookingsButton.onclick=async()=>{
    option.textContent="Объект "+b.property_id.slice(0,8)+" · до "+new Date(b.ends_at).toLocaleDateString("ru-RU");
    booking.append(option);
   }
+  if(bookings.length){
+   const current=bookings[0];
+   const checkin=current.starts_at.slice(0,10),checkout=current.ends_at.slice(0,10);
+   guestCalendar.setRange(checkin,checkout);
+   guestDateSummary.textContent=checkin+" — "+checkout+" (подтверждённое проживание)";
+  }
   if(!bookings.length)message.textContent="Нет активных заселений";
  }catch(e){message.textContent="Ошибка бронирований: "+e.message}
 };
