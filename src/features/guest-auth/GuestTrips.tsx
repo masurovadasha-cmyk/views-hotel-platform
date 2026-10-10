@@ -45,7 +45,7 @@ export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:bo
   {loading&&<p role="status">{t('Loading trips…')}</p>}{error&&<p role="alert">{t(error)}</p>}
   {!loading&&selected?<article data-testid="guest-trip-detail">{summary(selected)}<p>{t('Confirmation code')}: {selected.confirmationCode}</p>
    <p>{t('Booking changes and payment are not connected here yet.')}</p>
-   {selected.status==='checked_in'&&<GuestCleaning key={selected.id} reservationId={selected.id} csrf={csrf} online={online} onExpired={()=>expired.current()} onPending={setCancellationPending}/>}
+   {['checked_in','checked_out'].includes(selected.status)&&<GuestCleaning canRequest={selected.status==='checked_in'} key={selected.id} reservationId={selected.id} csrf={csrf} online={online} onExpired={()=>expired.current()} onPending={setCancellationPending}/>}
    <GuestCancellation key={selected.id} reservationId={selected.id} status={selected.status} csrf={csrf} online={online} onExpired={()=>expired.current()} onResolutionPending={setCancellationPending} onCancelled={()=>{setSelected(current=>current?{...current,status:'cancelled'}:null);setPage(current=>current?{...current,items:current.items.map(trip=>trip.id===selected.id?{...trip,status:'cancelled'}:trip)}:null);}}/>
    <button disabled={!online||cancellationPending} onClick={()=>void load()}>{t('Back to trips')}</button></article>:!loading&&page&&<>
    {!page.items.length&&<p>{t('No bookings are linked to this account yet.')}</p>}

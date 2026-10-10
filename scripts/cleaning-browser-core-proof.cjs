@@ -66,10 +66,34 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await card(mp).getByRole('button',{name:'Accept and charge',exact:true}).click();await card(mp).getByText(/Accepted and charged/).waitFor();
   const entries=(await admin.query('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[oid])).rows;assert.deepEqual(entries,[{amount_minor:'12345'}]);
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();await guest.getByText(/Accepted and charged/).waitFor();
+  const finished=guest.locator('article[data-order-id="'+oid+'"]');
+  assert.equal((await api('services/orders/'+oid+'/feedback','POST',{rating:5,comment:''},{'Idempotency-Key':randomUUID()})).status,403);
+  await finished.getByLabel('Service rating',{exact:true}).selectOption('5');
+  await finished.getByLabel('Comment (optional)',{exact:true}).fill('<b>Friendly team</b>');
+  const feedbackKeys=[];
+  await page.route('**/guest-api/services/orders/'+oid+'/feedback',async r=>{feedbackKeys.push(r.request().headers()['idempotency-key']);const response=await r.fetch();assert.equal(response.status(),200);await r.abort('failed');},{times:1});
+  await finished.getByRole('button',{name:'Submit rating',exact:true}).click();
+  await guest.getByText('No confirmation received. Retry the same operation to check its outcome.',{exact:true}).waitFor();
+  await page.route('**/guest-api/services/orders/'+oid+'/feedback',async r=>{feedbackKeys.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});
+  await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();
+  await finished.getByTestId('service-feedback-saved').waitFor();assert.equal(feedbackKeys[0],feedbackKeys[1]);
+  assert.equal(await finished.locator('b').count(),0);
+  await mp.getByRole('button',{name:'Refresh',exact:true}).click();await card(mp).getByText('<b>Friendly team</b>',{exact:true}).waitFor();
+  await admin.query('UPDATE service_catalog SET price_minor=24567 WHERE id=$1',[service]);
+  await finished.getByRole('button',{name:'Repeat at current price',exact:true}).click();
+  await page.waitForFunction(()=>{const select=document.querySelector('[data-testid="guest-cleaning"] select');return select?.selectedOptions[0]?.textContent.includes('245.67');});
+  assert.equal(await guest.getByLabel('I accept the price and folio charge',{exact:true}).isChecked(),false);
+  assert.equal(await guest.getByLabel('Preferred time (device time zone)',{exact:true}).inputValue(),'');
+  assert.equal((await admin.query('SELECT count(*)::int n FROM service_orders WHERE reservation_id=$1',[reservation])).rows[0].n,2);
+  await admin.query("UPDATE reservations SET status='checked_out' WHERE id=$1",[reservation]);
+  await page.reload();await page.getByRole('button',{name:'View trip',exact:true}).first().click();
+  await guest.getByText('Service history for a completed stay. New orders and rescheduling are unavailable.',{exact:true}).waitFor();
+  assert.equal(await guest.getByRole('button',{name:'Request cleaning',exact:true}).count(),0);
+  await guest.getByTestId('service-feedback-saved').waitFor();
   for(const l of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(l);await manager.locator('.staffLanguage select').selectOption(l);for(const p of [page,manager])assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   await page.locator('.guestLanguage select').selectOption('ru');await manager.locator('.staffLanguage select').selectOption('ru');
   await guest.screenshot({path:'/tmp/views-cleaning-guest.png'});await mp.locator('article').filter({hasText:'Уборка браузер'}).filter({hasNotText:'Отменён'}).screenshot({path:'/tmp/views-cleaning-staff.png'});
   await page.locator('.guestLanguage select').selectOption('en');
-  console.log(JSON.stringify({result:'pass',proof:'cleaning_guest_dispatch_worker_inspection_folio',duplicateRequests:1,folioEntries:1,csrf:true,offline:true,languages:3,guestReschedule:true,guestCancellation:true}));
+  console.log(JSON.stringify({result:'pass',proof:'cleaning_guest_dispatch_worker_inspection_folio',duplicateRequests:1,folioEntries:1,csrf:true,offline:true,languages:3,guestReschedule:true,guestCancellation:true,feedbackReplay:true,repeatCurrentPrice:true,historyAfterCheckout:true}));
  }catch(e){console.error('CLEANING_BROWSER_PHASE:'+phase);throw e;}finally{for(const c of contexts)await c.close();await web.close();}
 };

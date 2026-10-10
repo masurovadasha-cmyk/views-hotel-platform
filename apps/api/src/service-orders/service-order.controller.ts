@@ -10,6 +10,8 @@ export class GuestServiceOrderController{
  constructor(private readonly service:ServiceOrderService){}
  @Get('catalog') @Header('Cache-Control','no-store') catalog(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['reservationId','cursor']);return this.service.catalog(bearer(h),q.reservationId,q.cursor);}
  @Get('orders') @Header('Cache-Control','no-store') list(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['reservationId','cursor']);return this.service.orders(bearer(h),q.reservationId,q.cursor);}
+ @Get('orders/:id/repeat') @Header('Cache-Control','no-store') repeat(@Headers() h:Record<string,string>,@Param('id') id:string,@Query() q:Record<string,unknown>){query(q,[]);return this.service.repeat(bearer(h),id);}
+ @Post('orders/:id/feedback') @HttpCode(200) @Header('Cache-Control','no-store') feedback(@Headers() h:Record<string,string>,@Param('id') id:string,@Query() q:Record<string,unknown>,@Body() b:unknown){query(q,[]);return this.service.feedback(bearer(h),id,h['idempotency-key'],b);}
  @Post('orders') @HttpCode(200) @Header('Cache-Control','no-store') request(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>,@Body() b:unknown){query(q,[]);return this.service.request(bearer(h),h['idempotency-key'],b);}
  @Post('orders/:id/actions') @HttpCode(200) @Header('Cache-Control','no-store') change(@Headers() h:Record<string,string>,@Param('id') id:string,@Query() q:Record<string,unknown>,@Body() b:unknown){query(q,[]);return this.service.change(bearer(h),id,h['idempotency-key'],b);}
 }

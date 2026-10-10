@@ -29,3 +29,9 @@ export function actionInput(raw:unknown){
  if(action==='approve'||action==='reject'||action==='cancel'){const b=object(raw,['action','expectedRevision','note']);return {action,expectedRevision:revision(b.expectedRevision),note:note(b.note)};}
  return invalid();
 }
+
+export function feedbackInput(raw:unknown){
+ const b=object(raw,['rating','comment']);
+ if(!Number.isInteger(b.rating)||(b.rating as number)<1||(b.rating as number)>5||typeof b.comment!=='string'||b.comment.length>500||/[\u0000-\u001f\u007f]/.test(b.comment))return invalid();
+ return {rating:b.rating as number,comment:b.comment.trim()};
+}

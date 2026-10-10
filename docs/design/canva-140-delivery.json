@@ -97,7 +97,7 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; local cleaning only; full visual and other-service acceptance pending"
     },
     {
       "id": "SG-GN-007",
@@ -141,11 +141,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "guest",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; local cleaning only; full visual and other-service acceptance pending"
     },
     {
       "id": "SG-GN-010",
@@ -157,11 +157,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "guest",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; local cleaning only; full visual and other-service acceptance pending"
     },
     {
       "id": "SG-GN-011",
@@ -305,7 +305,7 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; local cleaning only; full visual and other-service acceptance pending"
     },
     {
       "id": "SG-CL-007",

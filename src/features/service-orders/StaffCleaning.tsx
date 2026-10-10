@@ -25,6 +25,7 @@ function Order({order:o,manager,workers,disabled,onAct}:{order:CleaningOrder;man
  const {locale}=useStaffLocale(),t=(k:string)=>cleaningText(locale,k);const [worker,setWorker]=useState(''),[note,setNote]=useState(''),[accept,setAccept]=useState(false),[check,setCheck]=useState({linen:false,bathroom:false,floor:false});
  return <article className="localPanel"><h3>{localizedName(o.name,locale)}</h3><p>{t(o.stage)} · {formatStaffMoney(o.totalMinor,locale).replace(/UZS$/,o.currency)}</p><p>{t('unit')}: {o.unitCode||'—'}</p><time>{new Date(o.requestedFor).toLocaleString(locale)}</time>
  {o.completionNote&&<p>{o.completionNote}</p>}{o.inspectionNote&&<p>{o.inspectionNote}</p>}
+ {manager&&o.feedback&&<aside><p>{t('rating')}: {o.feedback.rating} / 5</p><p>{o.feedback.comment}</p></aside>}
  <fieldset disabled={disabled}>
  {manager&&['requested','assigned'].includes(o.stage)&&<><label>{t('worker')}<select aria-label={t('worker')} value={worker} onChange={e=>setWorker(e.target.value)}><option value="">—</option>{workers.map(w=><option key={w.id} value={w.id}>{w.name||w.id}</option>)}</select></label><button disabled={!worker} onClick={()=>onAct('assign',{assigneeId:worker})}>{t('assign')}</button></>}
  {!manager&&['assigned','rework'].includes(o.stage)&&<button onClick={()=>onAct('start',{})}>{t('start')}</button>}

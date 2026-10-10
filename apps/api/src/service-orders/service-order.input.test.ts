@@ -1,8 +1,12 @@
 import {describe,it,expect} from 'vitest';
-import {requestInput,actionInput,guestChangeInput} from './service-order.input';
+import {requestInput,actionInput,guestChangeInput,feedbackInput} from './service-order.input';
 const id='76800000-0000-4000-8000-000000000001';
 const request={reservationId:id,serviceId:id,expectedRevision:1,expectedPriceMinor:'9007199254740993',requestedFor:'2037-01-01T10:00:00.000Z'};
 describe('service command boundaries',()=>{
+ it('accepts only a bounded integer rating and plain optional comment',()=>{
+  expect(feedbackInput({rating:4,comment:' Good '})).toEqual({rating:4,comment:'Good'});
+  for(const body of [{rating:0,comment:''},{rating:6,comment:''},{rating:1.5,comment:''},{rating:'5',comment:''},{rating:5,comment:'x'.repeat(501)},{rating:5,comment:'a\nb'},{rating:5,comment:'',tipMinor:'100'}])expect(()=>feedbackInput(body)).toThrow('SERVICE_INPUT_INVALID');
+ });
  it('limits guest changes to revision-bound cancellation and valid UTC rescheduling',()=>{
   expect(guestChangeInput({action:'cancel',expectedRevision:1})).toEqual({action:'cancel',expectedRevision:1});
   expect(guestChangeInput({action:'reschedule',expectedRevision:2,requestedFor:request.requestedFor})).toMatchObject({requestedFor:request.requestedFor});

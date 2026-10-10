@@ -4,8 +4,9 @@ import {DatabaseService} from '../database/database.service';
 import {GuestEmailService} from '../guest-identity/guest-email.service';
 import {StaffAuthService} from '../staff-auth/staff-auth.service';
 import type {RequestActorContext} from '../identity/actor-context';
-import {actionInput,guestChangeInput,requestInput,uuid} from './service-order.input';
+import {actionInput,feedbackInput,guestChangeInput,requestInput,uuid} from './service-order.input';
 export type ServiceReceipt={orderId:string;status:string;stage:string;revision:number;folioEntryId?:string|null;currency?:string;totalMinor?:string;idempotentReplay:boolean};
+export type ServiceFeedbackReceipt={orderId:string;revision:number;rating:number;idempotentReplay:boolean};
 type PageRow={id?:string;orderId?:string;[key:string]:unknown};
 const hash=(token:string)=>createHash('sha256').update(token).digest('hex');
 function enabled(){if(process.env.NODE_ENV!=='test'||process.env.VIEWS_LOCAL_REHEARSAL!=='true'||process.env.VIEWS_SERVICE_ORDER_PILOT_ENABLED!=='true')throw new NotFoundException('SERVICE_ORDERS_DISABLED');}
@@ -19,6 +20,8 @@ export class ServiceOrderService{
  orders(token:string,reservation:unknown,after?:unknown){return this.guestRead('orders',token,reservation,after);}
  async change(token:string,order:unknown,key:unknown,raw:unknown){enabled();await this.guest.session(token);const id=uuid(order),command=uuid(key),body=guestChangeInput(raw);return safe(()=>this.db.withOrganization('',async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:ServiceReceipt}>('SELECT app.guest_cleaning_change($1,$2,$3,$4) value',[hash(token),id,command,body])).rows[0].value;}));}
  async request(token:string,key:unknown,raw:unknown){enabled();await this.guest.session(token);const body=requestInput(raw),command=uuid(key);return safe(()=>this.db.withOrganization('',async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:ServiceReceipt}>('SELECT app.guest_cleaning_request($1,$2,$3) value',[hash(token),command,body])).rows[0].value;}));}
+ async feedback(token:string,order:unknown,key:unknown,raw:unknown){enabled();await this.guest.session(token);const id=uuid(order),command=uuid(key),body=feedbackInput(raw);return safe(()=>this.db.withOrganization('',async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:ServiceFeedbackReceipt}>('SELECT app.guest_service_feedback($1,$2,$3,$4) value',[hash(token),id,command,body])).rows[0].value;}));}
+ async repeat(token:string,order:unknown){enabled();await this.guest.session(token);const id=uuid(order);return safe(async()=>page((await this.db.query<{value:{items:PageRow[]}}>('SELECT app.guest_cleaning_repeat($1,$2) value',[hash(token),id])).rows[0].value));}
  private async staffActor(actor:RequestActorContext,token:string){enabled();const identity=await this.staff.resolve(token);if(identity.organizationId!==actor.organizationId||identity.userId!==actor.userId||identity.membershipId!==actor.membershipId)throw new UnauthorizedException('STAFF_ACTOR_MISMATCH');}
  async assignees(actor:RequestActorContext,token:string,property:unknown){await this.staffActor(actor,token);const p=uuid(property);return safe(()=>this.db.withActor(actor,async c=>(await c.query('SELECT app.cleaning_assignees($1,$2) value',[hash(token),p])).rows[0].value));}
  async queue(actor:RequestActorContext,token:string,property:unknown,after?:unknown){await this.staffActor(actor,token);const p=uuid(property),cursor=after===undefined?null:uuid(after);return safe(()=>this.db.withActor(actor,async c=>page((await c.query('SELECT app.staff_cleaning_queue($1,$2,$3) value',[hash(token),p,cursor])).rows[0].value)));}

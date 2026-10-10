@@ -33,6 +33,44 @@ beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid 
 beforeEach(()=>{for(const [k,v] of Object.entries({NODE_ENV:'test',VIEWS_LOCAL_REHEARSAL:'true',VIEWS_SERVICE_ORDER_PILOT_ENABLED:'true',VIEWS_GUEST_EMAIL_PILOT_ENABLED:'true',VIEWS_GUEST_EMAIL_TOKEN_KEY:'de'.repeat(32),VIEWS_STAFF_AUTH_PILOT_ENABLED:'true',VIEWS_STAFF_AUTH_ORGANIZATION_ID:org}))vi.stubEnv(k,v);});
 afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('single Core service order / inspected cleaning',()=>{
+ it('stores one private completed-service rating with replay and no financial mutation',async()=>{
+  const f=await fixture(),o=await inspection(f),done=await act(o,'approve',{note:'Accepted'}),key=randomUUID(),body={rating:4,comment:'Good service'};
+  await run("UPDATE reservations SET status='checked_out' WHERE id=$1",[f.r]);
+  const replies=await Promise.all([service.feedback(f.a.token,done.orderId,key,body),service.feedback(f.a.token,done.orderId,key,body)]);
+  expect(replies.filter(r=>!r.idempotentReplay)).toHaveLength(1);
+  expect(replies[0]).not.toHaveProperty('comment');
+  expect((await service.orders(f.a.token,f.r)).items[0].feedback).toEqual(body);
+  expect((await service.queue(actor(),token(),property)).items.find(r=>r.orderId===o.orderId)?.feedback).toEqual(body);
+  expect((await service.queue(actor(2),token(2),property)).items.find(r=>r.orderId===o.orderId)?.feedback).toBeNull();
+  await expect(service.feedback(f.a.token,o.orderId,key,{rating:5,comment:'Changed'})).rejects.toThrow('SERVICE_COMMAND_CONFLICT');
+  await expect(service.feedback(f.a.token,o.orderId,randomUUID(),body)).rejects.toThrow('SERVICE_FEEDBACK_EXISTS');
+  expect((await run('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[o.orderId])).rows[0].n).toBe(1);
+  expect((await run("SELECT count(*)::int n FROM outbox_events WHERE aggregate_id=$1 AND event_type='service.feedback_submitted'",[o.orderId])).rows[0].n).toBe(1);
+  expect((await db.withActor(actor(2),c=>c.query('SELECT * FROM service_order_feedback WHERE order_id=$1',[o.orderId]))).rowCount).toBe(0);
+  expect((await run("UPDATE service_order_feedback SET rating=1 WHERE order_id=$1",[o.orderId])).rowCount).toBe(0);
+ });
+ it('rejects feedback before inspection, foreign guests and revoked ownership',async()=>{
+  const f=await fixture(),o=await request(f),other=await account();
+  await expect(service.feedback(f.a.token,o.orderId,randomUUID(),{rating:5,comment:''})).rejects.toThrow('SERVICE_FEEDBACK_NOT_READY');
+  await expect(service.feedback(other.token,o.orderId,randomUUID(),{rating:5,comment:''})).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+  await act(o,'cancel',{note:'Cancelled'});
+  await expect(service.feedback(f.a.token,o.orderId,randomUUID(),{rating:5,comment:''})).rejects.toThrow('SERVICE_FEEDBACK_NOT_READY');
+  await run('UPDATE guest_profiles SET user_id=NULL WHERE id=$1',[f.g]);
+  await expect(service.repeat(f.a.token,o.orderId)).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+  await expect(service.feedback(f.a.token,o.orderId,randomUUID(),{rating:5,comment:''})).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+ });
+ it('repeats through a current quote without ordering or reusing an old price',async()=>{
+  const f=await fixture('100'),o=await request(f);
+  await expect(service.repeat(f.a.token,o.orderId)).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  await act(o,'cancel',{note:'Cancelled'});await run('UPDATE service_catalog SET price_minor=200 WHERE id=$1',[f.s]);
+  const quote=await service.repeat(f.a.token,o.orderId);expect(quote.items[0]).toMatchObject({id:f.s,revision:2,priceMinor:'200'});
+  expect((await service.orders(f.a.token,f.r)).items).toHaveLength(1);
+  await expect(request(f)).rejects.toThrow('SERVICE_PRICE_CHANGED');
+  await run('UPDATE service_catalog SET active=false WHERE id=$1',[f.s]);await expect(service.repeat(f.a.token,o.orderId)).rejects.toThrow('SERVICE_UNAVAILABLE');
+  await run("UPDATE reservations SET status='checked_out' WHERE id=$1",[f.r]);
+  expect((await service.orders(f.a.token,f.r)).items[0]).toMatchObject({stage:'cancelled',totalMinor:'100'});
+  await expect(service.repeat(f.a.token,o.orderId)).rejects.toThrow('SERVICE_STAY_INELIGIBLE');
+ });
  it('guest cancels an assigned order once, without a charge, and releases the employee slot',async()=>{
   const f=await fixture(),o=await act(await request(f),'assign',{assigneeId:id(2)}),key=randomUUID();
   const change={action:'cancel',expectedRevision:o.revision};

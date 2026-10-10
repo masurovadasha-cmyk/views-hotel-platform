@@ -1,5 +1,12 @@
 import type {Locale} from '../../i18n/messages';
 const rows:Record<string,[string,string,string]>={
+ howWasIt:['Как всё прошло?','How was the service?','Xizmat qanday bo‘ldi?'],
+ rating:['Оценка услуги','Service rating','Xizmat bahosi'],feedbackComment:['Комментарий (необязательно)','Comment (optional)','Izoh (ixtiyoriy)'],
+ sendFeedback:['Отправить оценку','Submit rating','Baho yuborish'],
+ feedbackTerms:['Одна оценка после инспекции. Комментарий виден руководителю для контроля качества, публично не размещается. Чаевые пока не подключены.','One rating after inspection. Your comment is shared with the manager for quality control, not published. Tips are not connected yet.','Tekshiruvdan keyin bitta baho. Izoh sifat nazorati uchun rahbarga ko‘rinadi, ommaga chiqarilmaydi. Choychaqa hali ulanmagan.'],
+ repeatOrder:['Повторить по актуальной цене','Repeat at current price','Joriy narxda takrorlash'],
+ repeatUnavailable:['Повтор недоступен. Услуга могла быть отключена или проживание завершено.','Cannot repeat. The service may be disabled or the stay may have ended.','Takrorlash mumkin emas. Xizmat o‘chirilgan yoki yashash muddati tugagan bo‘lishi mumkin.'],
+ historyOnly:['История услуг завершённого проживания. Новые заказы и перенос недоступны.','Service history for a completed stay. New orders and rescheduling are unavailable.','Tugagan yashash davri xizmatlari tarixi. Yangi buyurtma va vaqtni o‘zgartirish mavjud emas.'],
  changeTime:['Перенести время','Change time','Vaqtni o‘zgartirish'],
  cancelReview:['Подтвердите отмену','Review cancellation','Bekor qilishni tekshiring'],
  rescheduleReview:['Подтвердите перенос','Review time change','Vaqt o‘zgarishini tekshiring'],
