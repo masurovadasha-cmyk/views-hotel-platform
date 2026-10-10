@@ -47,6 +47,9 @@ jobs:
       - run: node --check src/notification-worker-cli.mjs
       - run: node --check src/task-compensation.mjs
       - run: node --check public/staff.js
+      - run: node --check public/views-calendar.js
+      - run: node --check public/crm.js
+      - run: node --check public/guest.js
       - run: node --check src/cleaning-laundry.mjs
   postgres-migrations:
     runs-on: ubuntu-latest
@@ -100,7 +103,7 @@ jobs:
       - name: Prepare web snapshot
         run: |
           mkdir -p dist/views-web
-          cp services/service-core/public/{guest.html,guest.js,crm.html,crm.js,crm.css,staff.html,staff.js,staff.css,finance.html,finance.js,views-client.js} dist/views-web/
+          cp services/service-core/public/{guest.html,guest.js,crm.html,crm.js,crm.css,staff.html,staff.js,staff.css,finance.html,finance.js,views-client.js,views-calendar.js} dist/views-web/
           printf '%s\n' "VIEWS development frontend snapshot" "Commit: ${GITHUB_SHA}" "This snapshot requires the PostgreSQL API and authentication." "Do not publish these files alone as a working production app." > dist/views-web/README.txt
           python3 - <<'PY'
           import json,os
