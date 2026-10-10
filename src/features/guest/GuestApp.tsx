@@ -1,3 +1,4 @@
+import {canvaServices,canvaOrderSteps} from "../../data/canvaServices";
 import {RangeCalendar,nightsBetween} from "../../components/RangeCalendar";
 import {useEffect,useMemo,useState} from "react";
 import {
@@ -107,12 +108,12 @@ export function GuestApp({live=false}:{live?:boolean}){
 
     {tab==="services"&&<section className="contentPage">
       <div className="sectionHead"><div><small>VIEWS SERVICES</small><h2>Everything for your stay</h2></div></div>
-      <div className="serviceGrid large">{services.map(([name,Icon,value])=><button key={name} className={serviceCategory===value?"selectedService":""} onClick={()=>setServiceCategory(value)}><Icon/><b>{name}</b><small>Tracked Service Order</small></button>)}</div>
-      {live?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category:serviceCategory,title:(services.find(x=>x[2]===serviceCategory)?.[0]??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch(err){setServiceMessage(err instanceof Error?err.message:"Request failed")}}}>
+      <div className="serviceGrid large">{canvaServices.map(service=><button key={service.id} className={serviceCategory===service.category?"selectedService":""} onClick={()=>setServiceCategory(service.category)}><b>{service.label}</b><small>{service.description}</small>{service.demoPriceUzs&&<small>От {service.demoPriceUzs.toLocaleString("ru-RU")} UZS · демо</small>}</button>)}</div><div className="canvaGuestOrderProgress"><h3>Как выполняется заказ</h3><ol>{canvaOrderSteps.map(step=><li key={step.id}>{step.label}</li>)}</ol><small>Демонстрационная схема: статус реального заказа определяется сервером.</small></div>
+      {live?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category:serviceCategory,title:(canvaServices.find(x=>x.category===serviceCategory)?.label??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch(err){setServiceMessage(err instanceof Error?err.message:"Request failed")}}}>
         <label>Booking<select value={serviceBookingId} onChange={e=>setServiceBookingId(e.target.value)}>{liveBookings.map(b=><option key={b.id} value={b.id}>{b.confirmation_code} · {b.property_name}</option>)}</select></label>
         <label>Details<textarea value={serviceDetails} onChange={e=>setServiceDetails(e.target.value)} placeholder="Tell us what you need…"/></label>
         <button className="primary" disabled={!serviceBookingId||serviceDetails.trim().length<2}>Send request</button>{serviceMessage&&<div className="notice">{serviceMessage}</div>}
-      </form>:<div className="serviceRequestMock"><label>From<input value="Airport" readOnly/></label><label>To<input value="Apartment" readOnly/></label><label>Date<input type="date"/></label><label>Time<input type="time"/></label><label className="full">Comment<textarea placeholder="Add a note…"/></label><button className="primary">Create request</button></div>}
+      </form>:<div className="serviceRequestMock"><p>Это демонстрационный интерфейс. Реальный заказ и оплата недоступны без подтверждённой брони и серверного подключения.</p><label>Дата услуги<input type="date"/></label><label>Время<input type="time"/></label><label className="full">Пожелания<textarea placeholder="Опишите запрос…"/></label><button className="primary" type="button" disabled>Оформление доступно после входа</button></div>}
     </section>}
 
     {tab==="messages"&&<section className="contentPage">
