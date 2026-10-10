@@ -1,3 +1,4 @@
+import {RangeCalendar,nightsBetween} from "../../components/RangeCalendar";
 import {useEffect,useMemo,useState} from "react";
 import {
   AlertCircle,Bath,BedDouble,Bell,CalendarDays,Car,CheckCircle2,ChevronLeft,ChevronRight,CircleHelp,
@@ -24,6 +25,7 @@ export function GuestApp({live=false}:{live?:boolean}){
   const [tab,setTab]=useState<Tab>("explore");
   const [checkIn,setCheckIn]=useState("");
   const [checkOut,setCheckOut]=useState("");
+  const [rangeOpen,setRangeOpen]=useState(false);
   const [guests,setGuests]=useState(2);
   const [selected,setSelected]=useState<Apartment|null>(null);
   const [flow,setFlow]=useState<FlowScreen>("apartment");
@@ -63,7 +65,7 @@ export function GuestApp({live=false}:{live?:boolean}){
   const go=(screen:FlowScreen)=>setFlow(screen);
   const activeBooking=liveBookings[0]??null;
 
-  return <main className="guestShell">
+  return <main className="guestShell">\n    {rangeOpen&&<RangeCalendar start={checkIn} end={checkOut} onApply={(start,end)=>{setCheckIn(start);setCheckOut(end)}} onClose={()=>setRangeOpen(false)}/>}
     {tab==="explore"&&<>
       <section className="hero"><div><span>PEOPLE · PLACES · POSSIBILITIES</span><h1>Stay beautifully.<br/>Move effortlessly.</h1></div><p>Book VIEWS apartments and manage your stay, services and concierge requests in one place.</p></section>
 
@@ -74,8 +76,7 @@ export function GuestApp({live=false}:{live?:boolean}){
 
       <section className="searchBox">
         <div className="location"><MapPin size={17}/><div><small>Destination</small><b>Tashkent</b></div></div>
-        <label><small>Check-in</small><input type="date" value={checkIn} onChange={e=>setCheckIn(e.target.value)}/></label>
-        <label><small>Check-out</small><input type="date" value={checkOut} onChange={e=>setCheckOut(e.target.value)}/></label>
+        <button type="button" className="viewsDateRangeTrigger" onClick={()=>setRangeOpen(true)} aria-label="Выбрать даты заезда и выезда"><CalendarDays size={18}/><span><small>Заезд — выезд</small><b>{checkIn&&checkOut?checkIn+" → "+checkOut+" · "+nightsBetween(checkIn,checkOut)+" ночей":"Выбрать даты"}</b></span></button>
         <label><small>Guests</small><input type="number" min={1} value={guests} onChange={e=>setGuests(Math.max(1,Number(e.target.value)||1))}/></label>
         <button className="primary"><Search size={16}/> Search</button>
       </section>
