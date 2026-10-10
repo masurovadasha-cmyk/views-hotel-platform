@@ -100,7 +100,12 @@ jobs:
               END IF;
               SELECT count(*) INTO n FROM pg_policies
                 WHERE schemaname='public' AND tablename=t AND cmd IN ('INSERT','UPDATE','DELETE','ALL');
-              IF n<>0 THEN RAISE EXCEPTION 'MARKET_WRITE_POLICY_UNEXPECTED: %',t; END IF;
+              IF t IN ('market_stock_balances','market_stock_movements','market_service_order_lines') AND n<>0 THEN
+                RAISE EXCEPTION 'MARKET_WRITE_POLICY_UNEXPECTED: %',t;
+              END IF;
+              IF t IN ('market_service_orders','market_service_assignments','market_service_events') AND n=0 THEN
+                RAISE EXCEPTION 'MARKET_STAFF_WRITE_POLICY_MISSING: %',t;
+              END IF;
             END LOOP;
           END $market_rls$;
           SQL
