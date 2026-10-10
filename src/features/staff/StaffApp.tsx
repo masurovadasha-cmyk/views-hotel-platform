@@ -1,4 +1,6 @@
 import {useEffect,useMemo,useState} from "react";
+import {StayDateRange} from "../guest/StayDateRange";
+import "../guest/stayDateRange.css";
 import {
   Bell,Building2,CalendarDays,Camera,CheckCircle2,ClipboardList,FileText,Gauge,Image as ImageIcon,
   Plus,RefreshCw,ShieldCheck,Sparkles,Users,WalletCards,Wrench
@@ -111,8 +113,9 @@ function Dashboard({orders,role}:{orders:ServiceOrder[];role:HospitalityRole}){
 }
 
 function FrontDesk(){
+  const [start,setStart]=useState("");const [end,setEnd]=useState("");
   return <div className="staffBoard">
-    <Panel title="Reservations"><div className="compactRows">{["Alex Johnson","Sarah Miller","David Kim"].map((n,i)=><div key={n}><span>{i===0?"12–15 Oct":"Upcoming"}</span><b>{n}</b><small>{i===0?"U-Tower #235":"VIEWS apartment"}</small><i className={"status "+(i===0?"confirmed":"assigned")}>{i===0?"confirmed":"request"}</i></div>)}</div></Panel>
+    <Panel title="Reservations"><div><small>Выбор дат бронирования · деморежим</small><StayDateRange checkIn={start} checkOut={end} onChange={(a,b)=>{setStart(a);setEnd(b)}}/></div><div className="compactRows">{["Alex Johnson","Sarah Miller","David Kim"].map((n,i)=><div key={n}><span>{i===0?"12–15 Oct":"Upcoming"}</span><b>{n}</b><small>{i===0?"U-Tower #235":"VIEWS apartment"}</small><i className={"status "+(i===0?"confirmed":"assigned")}>{i===0?"confirmed":"request"}</i></div>)}</div></Panel>
     <Panel title="Immigration registration queue"><div className="compactRows">{["John Smith (USA)","Maria Garcia (Spain)","Chen Wei (China)"].map((n,i)=><div key={n}><span>{i===0?"New":"Pending"}</span><b>{n}</b><small>Passport data + stay details</small><i className={"status "+(i===2?"done":"assigned")}>{i===2?"sent":"waiting"}</i></div>)}</div></Panel>
   </div>;
 }
@@ -163,10 +166,11 @@ function ApartmentTimeline(){
 }
 
 function HostDesk({step,setStep}:{step:number;setStep:(n:number)=>void}){
+  const [start,setStart]=useState("");const [end,setEnd]=useState("");
   return <div className="hostDesk">
     <div className="hostTabs">{["Listing wizard","Calendar & pricing","Bookings","Calendar sync","Host finance"].map((x,i)=><button className={step===i+1?"active":""} key={x} onClick={()=>setStep(i+1)}>{x}</button>)}</div>
     {step===1&&<Panel title="Listing wizard"><div className="wizardSteps"><span className="on">1 Basics</span><span>2 Photos</span><span>3 Amenities</span><span>4 Prices</span><span>5 Rules</span></div><div className="hostForm"><label>Property name<input placeholder="VIEWS apartment"/></label><label>Address<input value="Tashkent, NRG U-Tower" readOnly/></label><label>Type<select><option>Apartment</option></select></label><button className="primary">Next</button></div></Panel>}
-    {step===2&&<Panel title="Calendar & pricing"><div className="calendarGrid">{Array.from({length:31},(_,i)=><span key={i} className={[5,6,12,13,14].includes(i)?"booked":[19,20].includes(i)?"blocked":""}>{i+1}</span>)}</div><div className="calendarLegend"><span className="available">Available</span><span className="booked">Booked</span><span className="blocked">Blocked</span></div></Panel>}
+    {step===2&&<Panel title="Calendar & pricing"><p>Выбор диапазона · деморежим. Доступность и цены не изменяются.</p><StayDateRange checkIn={start} checkOut={end} onChange={(a,b)=>{setStart(a);setEnd(b)}}/><div className="calendarGrid">{Array.from({length:31},(_,i)=><span key={i} className={[5,6,12,13,14].includes(i)?"booked":[19,20].includes(i)?"blocked":""}>{i+1}</span>)}</div><div className="calendarLegend"><span className="available">Available</span><span className="booked">Booked</span><span className="blocked">Blocked</span></div></Panel>}
     {step===3&&<Panel title="Bookings"><div className="compactRows">{["Alex Johnson","Sarah Miller","David Kim"].map((n,i)=><div key={n}><span>{i===0?"12–15 Oct":"Upcoming"}</span><b>{n}</b><small>Live amount comes from booking source</small><i className={"status "+(i===2?"cancelled":"confirmed")}>{i===2?"cancelled":"confirmed"}</i></div>)}</div></Panel>}
     {step===4&&<Panel title="Calendar sync"><div className="syncCard"><RefreshCw/><div><b>iCal / OTA synchronization</b><p>Airbnb / Booking.com connectors appear here after partner authorization. No sync state is fabricated.</p></div><span className="status assigned">not connected</span></div></Panel>}
     {step===5&&<Panel title="Host finance"><section className="kpis"><article><span>Gross revenue</span><b>—</b></article><article><span>Paid out</span><b>—</b></article><article><span>Commission</span><b>—</b></article><article><span>Pending</span><b>—</b></article></section><div className="notice">Financial values remain unavailable until backed by live captured transactions.</div></Panel>}
