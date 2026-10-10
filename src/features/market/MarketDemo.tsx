@@ -309,6 +309,12 @@ export function MarketDemo(){
 
     {screen==="staff"&&<section className="staffMarket">
       {(import.meta as ImportMeta & {env?:{VITE_VIEWS_STAFF_GATEWAY?:string}}).env?.VITE_VIEWS_STAFF_GATEWAY==="true"&&<ServerOrderInspector/>}
+      <div className="marketPanel" aria-label="Статус интеграции VIEWS Stage 7">
+        <header><small>VIEWS · STAGE 7</small><h2>Статус интеграции</h2></header>
+        <p>Товары, корзина, склад и показатели на этом экране — демонстрационные данные, не реальные продажи.</p>
+        <p>Серверный Staff CRM: чтение заказов, проверка сессий и прав доступа, SLA и история действий подготовлены и проверены CI. Подключение к реальному Core требует staging E2E.</p>
+        <p>Онлайн-списания с банковских карт отключены. Демозаказы не передаются в производственную PostgreSQL.</p>
+      </div>
       <div className="marketKpis">
         <article><small>Delivered sales</small><b>{formatUzs(analytics.salesUzs)}</b></article>
         <article><small>Delivered orders</small><b>{analytics.orders}</b></article>
