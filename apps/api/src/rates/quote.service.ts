@@ -25,31 +25,35 @@ export class QuoteService{
   constructor(private readonly db:DatabaseService){}
 
   async createQuote(input:CreateQuoteInput):Promise<QuoteResult>{
-    if(!input.guests.length)throw new Error("GUESTS_REQUIRED");
+    if(!Array.isArray(input.guests)||!input.guests.length)throw new Error("GUESTS_REQUIRED");
     for(const guest of input.guests){
-      if(!Number.isInteger(guest.age)||guest.age<0||guest.age>130)throw new Error("INVALID_GUEST_AGE");
+      if(!guest||!Number.isInteger(guest.age)||guest.age<0||guest.age>130)throw new Error("INVALID_GUEST_AGE");
+      if(!["resident","nonresident"].includes(guest.residency))throw new Error("INVALID_GUEST_RESIDENCY");
     }
     const attribution=normalizeBookingAttribution(input.attribution);
 
     return this.db.withActor(input.actor,async client=>{
-      const access=await client.query<{allowed:boolean}>("SELECT app.can_access_property($1::uuid) AS allowed",[input.propertyId]);
+      const access=await client.query<{allowed:boolean}>("SELECT app.registry_access(app.current_organization_id(),$1::uuid,'reservation.read') AS allowed",[input.propertyId]);
       if(!access.rows[0]?.allowed)throw new Error("PROPERTY_FORBIDDEN");
 
       const core=await client.query<{
-        timezone:string;country_code:string;region_code:string|null;currency:string;base_nightly_minor:string;
+        max_guests:number;timezone:string;country_code:string;region_code:string|null;currency:string;base_nightly_minor:string;
         cancellation_rules:unknown|null;
       }>(
-        `SELECT p.timezone,p.country_code,p.region_code,rp.currency,rp.base_nightly_minor::text,
+        `SELECT ut.max_guests,p.timezone,p.country_code,p.region_code,rp.currency,rp.base_nightly_minor::text,
                 cp.rules AS cancellation_rules
            FROM units u
-           JOIN properties p ON p.id=u.property_id
+           JOIN properties p ON p.id=u.property_id AND p.status='active'
+           JOIN unit_types ut ON ut.id=u.unit_type_id AND ut.property_id=p.id
            JOIN rate_plans rp ON rp.id=$3 AND rp.property_id=p.id AND rp.unit_type_id=u.unit_type_id AND rp.active=true
-           LEFT JOIN cancellation_policy_templates cp ON cp.id=rp.cancellation_policy_id AND cp.active=true
-          WHERE u.id=$1 AND p.id=$2 AND u.status='active'`,
+           LEFT JOIN cancellation_policy_templates cp ON cp.id=rp.cancellation_policy_id AND cp.organization_id=p.organization_id AND cp.active=true
+          WHERE u.id=$1 AND p.id=$2 AND u.status='active'
+          FOR SHARE OF rp`,
         [input.unitId,input.propertyId,input.ratePlanId]
       );
       const row=core.rows[0];
       if(!row)throw new Error("UNIT_OR_RATE_NOT_FOUND");
+      if(input.guests.length>row.max_guests)throw new Error("INVALID_GUEST_COUNT");
       if(!row.cancellation_rules)throw new Error("CANCELLATION_POLICY_REQUIRED");
 
       const conflict=await client.query<{conflict:boolean}>(

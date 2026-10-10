@@ -1,0 +1,5 @@
+export type CleaningItem={id:string;name:Record<string,string>;priceMinor:string;currency:string;revision:number;durationMinutes:number};
+export type CleaningOrder={orderId:string;name:Record<string,string>;stage:string;revision:number;requestedFor:string;totalMinor:string;currency:string;unitId?:string;unitCode?:string;assignedMembershipId?:string;completionNote?:string;inspectionNote?:string;feedback?:{rating:number;comment:string}|null};
+export type Page<T>={items:T[];nextCursor:string|null};
+export type Attempt={route:string;body:Record<string,unknown>;key:string};
+export function retryable(code:string){return !/^(SERVICE_(FEEDBACK_EXISTS|FEEDBACK_NOT_READY|INPUT_INVALID|PRICE_CHANGED|REVISION_CHANGED|STAY_NOT_FOUND|STAY_INELIGIBLE|STAY_CHANGED|TIME_INVALID|UNAVAILABLE|FORBIDDEN|NOT_ASSIGNED|SELF_INSPECTION_FORBIDDEN|TRANSITION_INVALID|ASSIGNEE_BUSY|ASSIGNEE_INVALID|CHECKLIST_INCOMPLETE|COMMAND_CONFLICT|ORDERS_DISABLED)|FOLIO_NOT_OPEN|STAFF_PERMISSION_DENIED|GUEST_CSRF_REJECTED|CSRF_REQUIRED)$/.test(code);}

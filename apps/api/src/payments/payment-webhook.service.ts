@@ -153,6 +153,12 @@ export class PaymentWebhookService{
       const nextRefunded=BigInt(intent.refunded_minor)+event.amountMinor;
       if(nextRefunded>captured)throw new Error("REFUND_EXCEEDS_CAPTURED");
       const refundRequest=await this.findRefundRequest(client,intent.id,event.relatedExternalTransactionId,event.externalTransactionId,event.amountMinor);
+      if(refundRequest&&!event.relatedExternalTransactionId){
+        // A verified refund ID may correlate through the acknowledged request.
+        // Persist that capture link so recovery cannot queue the same money again.
+        await client.query('UPDATE provider_transactions SET related_external_transaction_id=$1 WHERE id=$2',
+          [refundRequest.external_capture_id,providerTransactionId]);
+      }
       const liabilityCode=refundRequest?.liability_account_code==="refunds_payable"?"refunds_payable" as const:"guest_deposits" as const;
       await this.ledger.postRefund(client,{organizationId:intent.organization_id,paymentIntentId:intent.id,amountMinor:event.amountMinor,
         currency:intent.currency,idempotencyKey:`refund:${provider}:${event.externalTransactionId}`,liabilityCode});
@@ -165,7 +171,7 @@ export class PaymentWebhookService{
       const nextStatus=nextRefunded===captured?"refunded":"partially_refunded";
       await client.query(`UPDATE payment_intents SET refunded_minor=$1,status=$2,updated_at=now(),version=version+1 WHERE id=$3`,[nextRefunded.toString(),nextStatus,intent.id]);
       if(refundRequest){
-        await client.query(`UPDATE payment_refund_requests SET status='completed',external_refund_id=$1,completed_at=now(),last_error=NULL WHERE id=$2`,[event.externalTransactionId,refundRequest.id]);
+        await client.query(`UPDATE payment_refund_requests SET status='completed',external_refund_id=$1,completed_at=now(),last_error=NULL,lease_until=NULL,locked_by=NULL WHERE id=$2`,[event.externalTransactionId,refundRequest.id]);
       }
       await publishPaymentProjection(client,intent.organization_id,intent.id);
       await this.markWebhookProcessed(client,event.organizationId,provider,event.externalEventId,{status:nextStatus});
@@ -197,12 +203,17 @@ export class PaymentWebhookService{
     return result.rows[0]?.id??null;
   }
   private async findRefundRequest(client:PoolClient,paymentIntentId:string,relatedCaptureId:string|undefined,externalRefundId:string,amountMinor:bigint){
-    const result=await client.query<{id:string;reason:string;liability_account_code:string}>(
-      `SELECT id,reason,liability_account_code FROM payment_refund_requests
-        WHERE payment_intent_id=$1 AND amount_minor=$2 AND status IN ('pending','processing','submitted')
-          AND (($3::text IS NOT NULL AND external_capture_id=$3) OR (external_refund_id IS NOT NULL AND external_refund_id=$4))
-        ORDER BY created_at LIMIT 1 FOR UPDATE`,[paymentIntentId,amountMinor.toString(),relatedCaptureId??null,externalRefundId]);
-    return result.rows[0]??null;
+    const result=await client.query<{id:string;reason:string;liability_account_code:string;amount_minor:string;external_capture_id:string;external_refund_id:string|null}>(
+      `SELECT id,reason,liability_account_code,amount_minor::text,external_capture_id,external_refund_id FROM payment_refund_requests
+        WHERE payment_intent_id=$1 AND status IN ('pending','processing','submitted','uncertain','blocked')
+          AND (($2::text IS NOT NULL AND external_capture_id=$2) OR (external_refund_id IS NOT NULL AND external_refund_id=$3))
+        ORDER BY created_at LIMIT 2 FOR UPDATE`,[paymentIntentId,relatedCaptureId??null,externalRefundId]);
+    if(result.rows.length>1)throw new Error('REFUND_RECONCILIATION_AMBIGUOUS');
+    const request=result.rows[0];
+    if(request&&(BigInt(request.amount_minor)!==amountMinor ||
+      (relatedCaptureId!==undefined&&request.external_capture_id!==relatedCaptureId) ||
+      (request.external_refund_id!==null&&request.external_refund_id!==externalRefundId)))throw new Error('REFUND_RECONCILIATION_MISMATCH');
+    return request??null;
   }
   private async markWebhookProcessed(client:PoolClient,organizationId:string,provider:string,eventId:string,result:Record<string,unknown>){
     await client.query(`UPDATE payment_webhook_inbox SET processed_at=now(),processing_error=NULL,result=$1::jsonb

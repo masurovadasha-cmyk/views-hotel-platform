@@ -22,6 +22,11 @@ export class BookingHoldService{
     for(let attempt=0;attempt<3;attempt++){
       try{
         return await this.db.withActor(input.actor,async client=>{
+        const authorized=await client.query<{allowed:boolean}>(
+          `SELECT app.registry_access(organization_id,property_id,'reservation.manage') AS allowed
+           FROM booking_quotes WHERE id=$1 AND organization_id=$2`,[input.quoteId,input.actor.organizationId]);
+        if(!authorized.rows[0])throw new Error('QUOTE_NOT_FOUND');
+        if(!authorized.rows[0].allowed)throw new Error('PROPERTY_FORBIDDEN');
         const inserted=await client.query<{id:string}>(
           `INSERT INTO booking_commands(id,organization_id,idempotency_key,command_type,request_hash)
            VALUES(gen_random_uuid(),$1,$2,'create_hold',$3)

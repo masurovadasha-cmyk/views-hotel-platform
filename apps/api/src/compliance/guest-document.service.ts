@@ -142,7 +142,7 @@ export class GuestDocumentService{
       if(!access)throw new Error("PROPERTY_FORBIDDEN");
       if(!row.object_key)throw new Error("DOCUMENT_OBJECT_KEY_MISSING");
       if(!row.data_residency_policy_id)throw new Error("DATA_RESIDENCY_POLICY_NOT_SNAPSHOTTED");
-      if(row.verification_status==="verified")throw new Error("DOCUMENT_ALREADY_VERIFIED");
+      if(row.verification_status!=="pending")throw new Error("DOCUMENT_NOT_PENDING");
       return {...row,object_key:row.object_key};
     });
 
@@ -155,18 +155,20 @@ export class GuestDocumentService{
     if(!/^[a-f0-9]{64}$/i.test(finalized.checksumSha256))throw new Error("INVALID_DOCUMENT_CHECKSUM");
 
     await this.db.withActor(actor,async client=>{
-      await client.query(
+      const updated=await client.query(
         `UPDATE guest_document_records
             SET object_checksum_sha256=$1,
                 encryption_key_ref=COALESCE($2,encryption_key_ref),
                 document_number_hash=COALESCE($3,document_number_hash),
                 updated_at=now()
-          WHERE id=$4`,
+          WHERE id=$4 AND verification_status='pending'
+            AND (object_checksum_sha256 IS NULL OR object_checksum_sha256=$1)`,
         [
           finalized.checksumSha256,finalized.encryptionKeyRef??null,
           finalized.documentNumberHash??null,documentRecordId
         ]
       );
+      if(updated.rowCount!==1)throw new Error("DOCUMENT_FINALIZE_CONFLICT");
       await client.query(
         `INSERT INTO outbox_events(
            id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload
@@ -192,13 +194,16 @@ export class GuestDocumentService{
       await assertComplianceRole(client,actor.membershipId,["owner","manager","front_desk"]);
       const row=(await client.query<{
         property_id:string;verification_status:string;object_checksum_sha256:string|null;
+        reservation_status:string;timezone:string;vault_id:string;data_residency_policy_id:string|null;
       }>(
-        `SELECT r.property_id,d.verification_status,d.object_checksum_sha256
+        `SELECT r.property_id,d.verification_status,d.object_checksum_sha256,r.status AS reservation_status,
+                p.timezone,d.vault_id,d.data_residency_policy_id
            FROM guest_document_records d
            JOIN reservation_guests rg ON rg.id=d.reservation_guest_id
            JOIN reservations r ON r.id=rg.reservation_id
+           JOIN properties p ON p.id=r.property_id
           WHERE d.id=$1
-          FOR UPDATE OF d`,
+          FOR UPDATE OF r,d`,
         [documentRecordId]
       )).rows[0];
       if(!row)throw new Error("DOCUMENT_RECORD_NOT_FOUND");
@@ -206,7 +211,16 @@ export class GuestDocumentService{
         "SELECT app.can_access_property($1::uuid) AS allowed",[row.property_id]
       )).rows[0]?.allowed;
       if(!access)throw new Error("PROPERTY_FORBIDDEN");
-      if(!row.object_checksum_sha256)throw new Error("DOCUMENT_UPLOAD_NOT_FINALIZED");
+      await assertComplianceRole(client,actor.membershipId,["owner","manager","front_desk"]);
+      if(!["confirmed","checked_in"].includes(row.reservation_status))throw new Error("DOCUMENT_REVIEW_NOT_AVAILABLE");
+      if(!row.object_checksum_sha256||! /^[a-f0-9]{64}$/i.test(row.object_checksum_sha256))throw new Error("DOCUMENT_UPLOAD_NOT_FINALIZED");
+      if(!["pending","verified"].includes(row.verification_status))throw new Error("DOCUMENT_NOT_PENDING");
+      // Evaluate wall-clock local date after any document/reservation lock wait.
+      const expired=(await client.query<{expired:boolean}>("SELECT expires_on IS NOT NULL AND expires_on<(clock_timestamp() AT TIME ZONE $2)::date AS expired FROM guest_document_records WHERE id=$1",[documentRecordId,row.timezone])).rows[0].expired;
+      if(expired)throw new Error("DOCUMENT_EXPIRED");
+      if(!row.data_residency_policy_id)throw new Error("DATA_RESIDENCY_POLICY_NOT_SNAPSHOTTED");
+      this.providers.vault(row.vault_id); // a stored checksum does not connect a vault
+
       if(row.verification_status==="verified"){
         return {documentRecordId,status:"verified" as const,idempotentReplay:true};
       }
@@ -222,13 +236,16 @@ export class GuestDocumentService{
            id,organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload
          )
          VALUES(gen_random_uuid(),$1,'guest_document',$2,'compliance.document_verified',$3,$4::jsonb)
-         ON CONFLICT(idempotency_key) DO NOTHING`,
+         `,
         [
           actor.organizationId,documentRecordId,
           "compliance:document-verified:"+documentRecordId,
           JSON.stringify({documentRecordId,verifiedBy:actor.userId})
         ]
       );
+      await client.query(`INSERT INTO audit_log(organization_id,actor_user_id,actor_membership_id,action,entity_type,entity_id,after_state)
+        VALUES($1,$2,$3,'compliance.document_verified','guest_document',$4,$5)`,
+        [actor.organizationId,actor.userId,actor.membershipId,documentRecordId,{status:'verified'}]);
       return {documentRecordId,status:"verified" as const,idempotentReplay:false};
     });
   }

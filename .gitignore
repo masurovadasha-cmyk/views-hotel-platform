@@ -5,3 +5,10 @@ dist
 !.env.example
 .DS_Store
 coverage
+mail-evidence/
+
+review-output/
+dist-android/
+dist-pages/
+diagnostic-evidence/
+.wrangler/

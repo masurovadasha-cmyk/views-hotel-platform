@@ -1,0 +1,5 @@
+# Retained Pages Functions configuration for the legacy integration layer.
+# Do not use with `wrangler deploy`; the root configuration targets Workers.
+name = "views-hotel-platform"
+compatibility_date = "2026-10-04"
+pages_build_output_dir = "dist"

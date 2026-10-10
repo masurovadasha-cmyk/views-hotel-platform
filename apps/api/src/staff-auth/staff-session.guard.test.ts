@@ -26,10 +26,49 @@ describe('staff session enforcement on the trusted local gateway',()=>{
   await expect(guard.canActivate(context(request('/v1/quotes','POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
   await expect(guard.canActivate(context(request('/v1/bookings/holds','POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
  });
+ it('stay mutations require reservation.manage and a matching live actor',async()=>{
+  const path='/v1/bookings/'+identity.userId+'/stay/document-view';
+  const allowed=new StaffSessionGuard({resolve:async()=>identity} as never);
+  expect(await allowed.canActivate(context(request(path,'POST')))).toBe(true);
+  const reader=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['reservation.read']})} as never);
+  await expect(reader.canActivate(context(request(path,'POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  await expect(allowed.canActivate(context(request(path,'POST',{'x-membership-id':identity.userId})))).rejects.toThrow('STAFF_ACTOR_MISMATCH');
+ });
+ it('front desk cannot access owner inventory through a trusted gateway',async()=>{
+  const guard=new StaffSessionGuard({resolve:async()=>identity} as never);
+  for(const path of ['/v1/owner-inventory','/v1/owner-inventory/'+identity.userId,'/v1/owner-inventory/'+identity.userId+'/calendar'])for(const method of ['GET','POST'])await expect(guard.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+ });
+ it('requires a matched owner session and permission on draft detail and edits',async()=>{
+  const guard=new StaffSessionGuard({resolve:async()=>({...identity,role:'owner',permissions:['property.manage']})} as never);
+  for(const suffix of ['', '/calendar'])for(const method of ['GET','POST']){
+   const path='/v1/owner-inventory/'+identity.userId+suffix;
+   expect(await guard.canActivate(context(request(path,method)))).toBe(true);
+   await expect(guard.canActivate(context(request(path,method,{'x-membership-id':identity.userId})))).rejects.toThrow('STAFF_ACTOR_MISMATCH');
+  }
+ });
+ it('housekeeper can use only its dedicated route, not reception, owner or booking writes',async()=>{
+  const guard=new StaffSessionGuard({resolve:async()=>({...identity,role:'housekeeper',permissions:['property.read','housekeeping.work']})} as never);
+  expect(await guard.canActivate(context(request('/v1/housekeeping','GET')))).toBe(true);
+  expect(await guard.canActivate(context(request('/v1/housekeeping','POST')))).toBe(true);
+  for(const [path,method] of [['/v1/booking-workspace','GET'],['/v1/quotes','POST'],['/v1/owner-inventory','GET']])await expect(guard.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+ });
+ it('uses existing finance permissions for review routes without enabling financial commands',async()=>{
+  const reader=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['finance.read']})} as never);
+  const writer=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['finance.read','finance.manage']})} as never);
+  const route='/v1/refund-reconciliation/'+identity.userId;
+  expect(await reader.canActivate(context(request(route)))).toBe(true);
+  await expect(reader.canActivate(context(request(route+'/reviews','POST')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  expect(await writer.canActivate(context(request(route+'/reviews','POST')))).toBe(true);
+  for(const action of ['resend','complete','refund'])await expect(writer.canActivate(context(request(route+'/'+action,'POST')))).rejects.toThrow('STAFF_ROUTE_DENIED');
+ });
  it('does not expand the local service into a payment or confirm client',async()=>{
   const guard=new StaffSessionGuard({resolve:async()=>identity} as never);
   for(const p of ['/v1/payments','/v1/bookings/'+identity.userId+'/confirm','/v1/internal/analytics/report-cycle'])
    await expect(guard.canActivate(context(request(p,'POST')))).rejects.toThrow('STAFF_ROUTE_DENIED');
+ });
+ it('admits service routes only with execution or dispatch permission and matching actor',async()=>{
+  for(const permissions of [['reservation.manage'],['housekeeping.work']]){const guard=new StaffSessionGuard({resolve:async()=>({...identity,permissions})} as never);expect(await guard.canActivate(context(request('/v1/service-orders')))).toBe(true);expect(await guard.canActivate(context(request('/v1/service-orders/'+identity.userId+'/actions','POST')))).toBe(true);}
+  const reader=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['reservation.read']})} as never);await expect(reader.canActivate(context(request('/v1/service-orders')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
  });
  it('default-off production boundary is not an implicit release',()=>{
   const old={...process.env};try{process.env.NODE_ENV='production';process.env.VIEWS_STAFF_AUTH_PILOT_ENABLED='true';process.env.VIEWS_LOCAL_REHEARSAL='true';

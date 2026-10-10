@@ -1,3 +1,9 @@
+import {ServiceOrderModule} from './service-orders/service-order.module';
+import {SupplyModule} from './supply/supply.module';
+import {FolioModule} from './folios/folio.module';
+import {GuestIdentityModule} from './guest-identity/guest-identity.module';
+import {HousekeepingModule} from './housekeeping/housekeeping.module';
+import {OwnerModule} from './owner/owner.module';
 import {Module} from "@nestjs/common";
 import {StaffAuthModule} from "./staff-auth/staff-auth.module";
 import {StaffSessionGuard} from "./staff-auth/staff-session.guard";
@@ -24,9 +30,9 @@ import {ProviderEgressModule} from "./security/egress/provider-egress.module";
 
 @Module({
   imports:[
-    DatabaseModule,InventoryModule,RatesModule,BookingModule,
+    ServiceOrderModule,SupplyModule,FolioModule,GuestIdentityModule,DatabaseModule,InventoryModule,RatesModule,BookingModule,
     PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule,
-    ProviderEgressModule,StaffAuthModule
+    ProviderEgressModule,StaffAuthModule,OwnerModule,HousekeepingModule
   ],
   controllers:[
     HealthController,

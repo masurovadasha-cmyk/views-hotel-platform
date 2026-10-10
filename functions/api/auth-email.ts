@@ -3,6 +3,9 @@ import {requireMutationOrigin} from "./_auth";
 
 export const onRequestPost=async({request,env}:{request:Request;env:Env})=>{
   const originError=requireMutationOrigin(request,env);if(originError)return originError;
+  // No delivery adapter exists here. Never claim an email was queued when
+  // only a database token was created. Legacy synthetic-token tests stay explicit.
+  if(env.VIEWS_ENV!=="staging"||env.VIEWS_EXPOSE_LOGIN_TOKEN!=="true")return json({error:'EMAIL_DELIVERY_NOT_CONFIGURED',requestId:requestId(request)},503);
   let db;try{db=requireDatabase(env)}catch{return json({error:"DATABASE_NOT_BOUND",requestId:requestId(request)},503)}
   const body=await request.json() as Record<string,unknown>;
   const email=String(body.email||"").trim().toLowerCase();

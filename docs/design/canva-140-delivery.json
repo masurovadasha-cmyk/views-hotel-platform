@@ -1,0 +1,2247 @@
+{
+  "sourceSha256": "e25bf1f219f348b07ce6672ad57c55f7e3aa94f001f7aac25238b9d2fb590447",
+  "baselineCommit": "503ff65892b58fac81ad0da80514bf595b58ae86",
+  "meaning": "Acceptance backlog, not completion percentage. partial means reusable functionality exists; every screen still needs full PDF acceptance.",
+  "screens": [
+    {
+      "id": "SG-GN-001",
+      "role": "Гость",
+      "title": "Услуги для вашего отдыха",
+      "pages": {
+        "Light": 1,
+        "Dark": 56
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SG-GN-002",
+      "role": "Гость",
+      "title": "Стандартная уборка",
+      "pages": {
+        "Light": 2,
+        "Dark": 57
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SG-GN-003",
+      "role": "Гость",
+      "title": "Пакет «Прилёт»",
+      "pages": {
+        "Light": 3,
+        "Dark": 58
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-GN-004",
+      "role": "Гость",
+      "title": "Как оплатить?",
+      "pages": {
+        "Light": 4,
+        "Dark": 59
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-GN-005",
+      "role": "Гость",
+      "title": "Заказ принят",
+      "pages": {
+        "Light": 5,
+        "Dark": 60
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SG-GN-006",
+      "role": "Гость",
+      "title": "Мои заказы",
+      "pages": {
+        "Light": 6,
+        "Dark": 61
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; local cleaning only; full visual and other-service acceptance pending"
+    },
+    {
+      "id": "SG-GN-007",
+      "role": "Гость",
+      "title": "Ваш заказ CL-1042",
+      "pages": {
+        "Light": 7,
+        "Dark": 62
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SG-GN-008",
+      "role": "Гость",
+      "title": "Изменить или отменить",
+      "pages": {
+        "Light": 8,
+        "Dark": 63
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_3_GUEST_CHANGES.md; cleaning before-start only, full visual acceptance pending"
+    },
+    {
+      "id": "SG-GN-009",
+      "role": "Гость",
+      "title": "Как всё прошло?",
+      "pages": {
+        "Light": 9,
+        "Dark": 64
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; local cleaning only; full visual and other-service acceptance pending"
+    },
+    {
+      "id": "SG-GN-010",
+      "role": "Гость",
+      "title": "Повторить заказ",
+      "pages": {
+        "Light": 10,
+        "Dark": 65
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; local cleaning only; full visual and other-service acceptance pending"
+    },
+    {
+      "id": "SG-GN-011",
+      "role": "Гость",
+      "title": "Для вашего путешествия",
+      "pages": {
+        "Light": 11,
+        "Dark": 66
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-GN-012",
+      "role": "Гость",
+      "title": "Уведомления",
+      "pages": {
+        "Light": 12,
+        "Dark": 67
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-GN-013",
+      "role": "Гость",
+      "title": "Добро пожаловать",
+      "pages": {
+        "Light": 13,
+        "Dark": 68
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SG-CL-001",
+      "role": "Гость",
+      "title": "Выберите уборку",
+      "pages": {
+        "Light": 14,
+        "Dark": 69
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SG-CL-002",
+      "role": "Гость",
+      "title": "Когда убрать?",
+      "pages": {
+        "Light": 15,
+        "Dark": 70
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SG-CL-003",
+      "role": "Гость",
+      "title": "Проверьте заказ",
+      "pages": {
+        "Light": 16,
+        "Dark": 71
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SG-CL-004",
+      "role": "Гость",
+      "title": "Уборка запланирована",
+      "pages": {
+        "Light": 17,
+        "Dark": 72
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SG-CL-005",
+      "role": "Гость",
+      "title": "Уборка выполняется",
+      "pages": {
+        "Light": 18,
+        "Dark": 73
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SG-CL-006",
+      "role": "Гость",
+      "title": "Уборка завершена",
+      "pages": {
+        "Light": 19,
+        "Dark": 74
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; local cleaning only; full visual and other-service acceptance pending"
+    },
+    {
+      "id": "SG-CL-007",
+      "role": "Гость",
+      "title": "Вызвать техника",
+      "pages": {
+        "Light": 20,
+        "Dark": 75
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SG-LA-001",
+      "role": "Гость",
+      "title": "Вещи в прачечную",
+      "pages": {
+        "Light": 21,
+        "Dark": 76
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-LA-002",
+      "role": "Гость",
+      "title": "Когда забрать вещи?",
+      "pages": {
+        "Light": 22,
+        "Dark": 77
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-LA-003",
+      "role": "Гость",
+      "title": "Проверьте опись",
+      "pages": {
+        "Light": 23,
+        "Dark": 78
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-LA-004",
+      "role": "Гость",
+      "title": "Ваша прачечная",
+      "pages": {
+        "Light": 24,
+        "Dark": 79
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-LA-005",
+      "role": "Гость",
+      "title": "Сообщить о вещи",
+      "pages": {
+        "Light": 25,
+        "Dark": 80
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-MK-001",
+      "role": "Гость",
+      "title": "Маркет в номер",
+      "pages": {
+        "Light": 26,
+        "Dark": 81
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SG-MK-002",
+      "role": "Гость",
+      "title": "Ваша корзина",
+      "pages": {
+        "Light": 27,
+        "Dark": 82
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SG-MK-003",
+      "role": "Гость",
+      "title": "Доставка продуктов",
+      "pages": {
+        "Light": 28,
+        "Dark": 83
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-MK-004",
+      "role": "Гость",
+      "title": "Собираем ваш заказ",
+      "pages": {
+        "Light": 29,
+        "Dark": 84
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CO-001",
+      "role": "Гость",
+      "title": "Консьерж VIEWS",
+      "pages": {
+        "Light": 30,
+        "Dark": 85
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CO-002",
+      "role": "Гость",
+      "title": "Уточним поручение",
+      "pages": {
+        "Light": 31,
+        "Dark": 86
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CO-003",
+      "role": "Гость",
+      "title": "Ищем стол для вас",
+      "pages": {
+        "Light": 32,
+        "Dark": 87
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TX-001",
+      "role": "Гость",
+      "title": "Куда поедем?",
+      "pages": {
+        "Light": 33,
+        "Dark": 88
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TX-002",
+      "role": "Гость",
+      "title": "Выберите автомобиль",
+      "pages": {
+        "Light": 34,
+        "Dark": 89
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TX-003",
+      "role": "Гость",
+      "title": "Водитель едет к вам",
+      "pages": {
+        "Light": 35,
+        "Dark": 90
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TX-004",
+      "role": "Гость",
+      "title": "Поездка завершена",
+      "pages": {
+        "Light": 36,
+        "Dark": 91
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CR-001",
+      "role": "Гость",
+      "title": "Авто для ваших планов",
+      "pages": {
+        "Light": 37,
+        "Dark": 92
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CR-002",
+      "role": "Гость",
+      "title": "Leapmotor C01",
+      "pages": {
+        "Light": 38,
+        "Dark": 93
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CR-003",
+      "role": "Гость",
+      "title": "Данные водителя",
+      "pages": {
+        "Light": 39,
+        "Dark": 94
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CR-004",
+      "role": "Гость",
+      "title": "Оплата и залог",
+      "pages": {
+        "Light": 40,
+        "Dark": 95
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CR-005",
+      "role": "Гость",
+      "title": "Договор аренды",
+      "pages": {
+        "Light": 41,
+        "Dark": 96
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CR-006",
+      "role": "Гость",
+      "title": "Осмотр перед выдачей",
+      "pages": {
+        "Light": 42,
+        "Dark": 97
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CR-007",
+      "role": "Гость",
+      "title": "Продлить аренду",
+      "pages": {
+        "Light": 43,
+        "Dark": 98
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-CR-008",
+      "role": "Гость",
+      "title": "Возврат автомобиля",
+      "pages": {
+        "Light": 44,
+        "Dark": 99
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-EX-001",
+      "role": "Гость",
+      "title": "Откройте Ташкент",
+      "pages": {
+        "Light": 45,
+        "Dark": 100
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-EX-002",
+      "role": "Гость",
+      "title": "Старый Ташкент",
+      "pages": {
+        "Light": 46,
+        "Dark": 101
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-EX-003",
+      "role": "Гость",
+      "title": "Дата и участники",
+      "pages": {
+        "Light": 47,
+        "Dark": 102
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-EX-004",
+      "role": "Гость",
+      "title": "Ваш ваучер",
+      "pages": {
+        "Light": 48,
+        "Dark": 103
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TK-001",
+      "role": "Гость",
+      "title": "Авиа и ж/д билеты",
+      "pages": {
+        "Light": 49,
+        "Dark": 104
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TK-002",
+      "role": "Гость",
+      "title": "Ташкент → Самарканд",
+      "pages": {
+        "Light": 50,
+        "Dark": 105
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TK-003",
+      "role": "Гость",
+      "title": "Условия билета",
+      "pages": {
+        "Light": 51,
+        "Dark": 106
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TK-004",
+      "role": "Гость",
+      "title": "Пассажир",
+      "pages": {
+        "Light": 52,
+        "Dark": 107
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TK-005",
+      "role": "Гость",
+      "title": "Проверка цены",
+      "pages": {
+        "Light": 53,
+        "Dark": 108
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TK-006",
+      "role": "Гость",
+      "title": "Электронный билет",
+      "pages": {
+        "Light": 54,
+        "Dark": 109
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SG-TK-007",
+      "role": "Гость",
+      "title": "Оформление у партнёра",
+      "pages": {
+        "Light": 55,
+        "Dark": 110
+      },
+      "runtimeParity": "not_verified",
+      "area": "guest",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-CL-001",
+      "role": "CRM / диспетчер",
+      "title": "Состояние номеров",
+      "pages": {
+        "Light": 111,
+        "Dark": 141
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SD-CL-002",
+      "role": "CRM / диспетчер",
+      "title": "График горничных",
+      "pages": {
+        "Light": 112,
+        "Dark": 142
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SD-CL-003",
+      "role": "CRM / диспетчер",
+      "title": "Контроль уборки",
+      "pages": {
+        "Light": 113,
+        "Dark": 143
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SD-CL-004",
+      "role": "CRM / диспетчер",
+      "title": "Ремонт и обслуживание",
+      "pages": {
+        "Light": 114,
+        "Dark": 144
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SD-LA-001",
+      "role": "CRM / диспетчер",
+      "title": "Очередь прачечной",
+      "pages": {
+        "Light": 115,
+        "Dark": 145
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-LA-002",
+      "role": "CRM / диспетчер",
+      "title": "Учёт и расчёты",
+      "pages": {
+        "Light": 116,
+        "Dark": 146
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-LA-003",
+      "role": "CRM / диспетчер",
+      "title": "Претензия LA-1081",
+      "pages": {
+        "Light": 117,
+        "Dark": 147
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-MK-001",
+      "role": "CRM / диспетчер",
+      "title": "Остатки и сборка",
+      "pages": {
+        "Light": 118,
+        "Dark": 148
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-MK-002",
+      "role": "CRM / диспетчер",
+      "title": "Доставки и исключения",
+      "pages": {
+        "Light": 119,
+        "Dark": 149
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-CO-001",
+      "role": "CRM / диспетчер",
+      "title": "Входящие консьержа",
+      "pages": {
+        "Light": 120,
+        "Dark": 150
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-CO-002",
+      "role": "CRM / диспетчер",
+      "title": "Ответ по CO-309",
+      "pages": {
+        "Light": 121,
+        "Dark": 151
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-CO-003",
+      "role": "CRM / диспетчер",
+      "title": "Профиль гостя",
+      "pages": {
+        "Light": 122,
+        "Dark": 152
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-CO-004",
+      "role": "CRM / диспетчер",
+      "title": "База знаний",
+      "pages": {
+        "Light": 123,
+        "Dark": 153
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-TX-001",
+      "role": "CRM / диспетчер",
+      "title": "Карта транспорта",
+      "pages": {
+        "Light": 124,
+        "Dark": 154
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-TX-002",
+      "role": "CRM / диспетчер",
+      "title": "Ручной трансфер",
+      "pages": {
+        "Light": 125,
+        "Dark": 155
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-CR-001",
+      "role": "CRM / диспетчер",
+      "title": "Календарь автопарка",
+      "pages": {
+        "Light": 126,
+        "Dark": 156
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-CR-002",
+      "role": "CRM / диспетчер",
+      "title": "Выдачи и возвраты",
+      "pages": {
+        "Light": 127,
+        "Dark": 157
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-EX-001",
+      "role": "CRM / диспетчер",
+      "title": "Экскурсии и гиды",
+      "pages": {
+        "Light": 128,
+        "Dark": 158
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-EX-002",
+      "role": "CRM / диспетчер",
+      "title": "Как продаём экскурсию?",
+      "pages": {
+        "Light": 129,
+        "Dark": 159
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-TK-001",
+      "role": "CRM / диспетчер",
+      "title": "Билетная очередь",
+      "pages": {
+        "Light": 130,
+        "Dark": 160
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-TK-002",
+      "role": "CRM / диспетчер",
+      "title": "Изменение билета",
+      "pages": {
+        "Light": 131,
+        "Dark": 161
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-GN-001",
+      "role": "CRM / диспетчер",
+      "title": "Все заказы",
+      "pages": {
+        "Light": 132,
+        "Dark": 162
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SD-GN-002",
+      "role": "CRM / диспетчер",
+      "title": "Карта заказов",
+      "pages": {
+        "Light": 133,
+        "Dark": 163
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-GN-003",
+      "role": "CRM / диспетчер",
+      "title": "Нарушения SLA",
+      "pages": {
+        "Light": 134,
+        "Dark": 164
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-GN-004",
+      "role": "CRM / диспетчер",
+      "title": "Заказ CL-1042",
+      "pages": {
+        "Light": 135,
+        "Dark": 165
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SD-GN-005",
+      "role": "CRM / диспетчер",
+      "title": "Назначение сотрудника",
+      "pages": {
+        "Light": 136,
+        "Dark": 166
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SD-GN-006",
+      "role": "CRM / диспетчер",
+      "title": "Лестница эскалации",
+      "pages": {
+        "Light": 137,
+        "Dark": 167
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-GN-007",
+      "role": "CRM / диспетчер",
+      "title": "Услуги: показатели",
+      "pages": {
+        "Light": 138,
+        "Dark": 168
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SD-GN-008",
+      "role": "CRM / диспетчер",
+      "title": "Финансы CL-1042",
+      "pages": {
+        "Light": 139,
+        "Dark": 169
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SD-GN-009",
+      "role": "CRM / диспетчер",
+      "title": "Партнёры и назначения",
+      "pages": {
+        "Light": 140,
+        "Dark": 170
+      },
+      "runtimeParity": "not_verified",
+      "area": "dispatcher",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-CL-001",
+      "role": "Персонал",
+      "title": "Номера на смену",
+      "pages": {
+        "Light": 171,
+        "Dark": 191
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SS-CL-002",
+      "role": "Персонал",
+      "title": "Уборка #235",
+      "pages": {
+        "Light": 172,
+        "Dark": 192
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SS-CL-003",
+      "role": "Персонал",
+      "title": "Проверка #235",
+      "pages": {
+        "Light": 173,
+        "Dark": 193
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SS-CL-004",
+      "role": "Персонал",
+      "title": "Кондиционер #235",
+      "pages": {
+        "Light": 174,
+        "Dark": 194
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SS-LA-001",
+      "role": "Персонал",
+      "title": "Приёмка вещей",
+      "pages": {
+        "Light": 175,
+        "Dark": 195
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-LA-002",
+      "role": "Персонал",
+      "title": "Обработка LA-1081",
+      "pages": {
+        "Light": 176,
+        "Dark": 196
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-LA-003",
+      "role": "Персонал",
+      "title": "Вернуть вещи гостю",
+      "pages": {
+        "Light": 177,
+        "Dark": 197
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-MK-001",
+      "role": "Персонал",
+      "title": "Сборка MK-2041",
+      "pages": {
+        "Light": 178,
+        "Dark": 198
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-MK-002",
+      "role": "Персонал",
+      "title": "Передать заказ",
+      "pages": {
+        "Light": 179,
+        "Dark": 199
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-CO-001",
+      "role": "Персонал",
+      "title": "Поручение CO-309",
+      "pages": {
+        "Light": 180,
+        "Dark": 200
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-GN-001",
+      "role": "Персонал",
+      "title": "Мои задания",
+      "pages": {
+        "Light": 181,
+        "Dark": 201
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SS-GN-002",
+      "role": "Персонал",
+      "title": "Задание CL-1042",
+      "pages": {
+        "Light": 182,
+        "Dark": 202
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SS-GN-003",
+      "role": "Персонал",
+      "title": "Начать уборку",
+      "pages": {
+        "Light": 183,
+        "Dark": 203
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SS-GN-004",
+      "role": "Персонал",
+      "title": "Чек-лист и фото",
+      "pages": {
+        "Light": 184,
+        "Dark": 204
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SS-GN-005",
+      "role": "Персонал",
+      "title": "Отправить на проверку",
+      "pages": {
+        "Light": 185,
+        "Dark": 205
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity"
+    },
+    {
+      "id": "SS-GN-006",
+      "role": "Персонал",
+      "title": "Нет соединения",
+      "pages": {
+        "Light": 186,
+        "Dark": 206
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "partial",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+    },
+    {
+      "id": "SS-GN-007",
+      "role": "Персонал",
+      "title": "Сообщить о проблеме",
+      "pages": {
+        "Light": 187,
+        "Dark": 207
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-GN-008",
+      "role": "Персонал",
+      "title": "Моя смена",
+      "pages": {
+        "Light": 188,
+        "Dark": 208
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-GN-009",
+      "role": "Персонал",
+      "title": "Показатели и бонусы",
+      "pages": {
+        "Light": 189,
+        "Dark": 209
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SS-GN-010",
+      "role": "Персонал",
+      "title": "Уведомления",
+      "pages": {
+        "Light": 190,
+        "Dark": 210
+      },
+      "runtimeParity": "not_verified",
+      "area": "staff",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-MK-001",
+      "role": "Партнёр",
+      "title": "Доставка в #235",
+      "pages": {
+        "Light": 211,
+        "Dark": 227
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-TX-001",
+      "role": "Партнёр",
+      "title": "Новый трансфер",
+      "pages": {
+        "Light": 212,
+        "Dark": 228
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-TX-002",
+      "role": "Партнёр",
+      "title": "Трансфер TX-809",
+      "pages": {
+        "Light": 213,
+        "Dark": 229
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-CR-001",
+      "role": "Партнёр",
+      "title": "Проверка водителя",
+      "pages": {
+        "Light": 214,
+        "Dark": 230
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-CR-002",
+      "role": "Партнёр",
+      "title": "Выдача CR-601",
+      "pages": {
+        "Light": 215,
+        "Dark": 231
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-CR-003",
+      "role": "Партнёр",
+      "title": "Приём автомобиля",
+      "pages": {
+        "Light": 216,
+        "Dark": 232
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-EX-001",
+      "role": "Партнёр",
+      "title": "Мои группы",
+      "pages": {
+        "Light": 217,
+        "Dark": 233
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-EX-002",
+      "role": "Партнёр",
+      "title": "Участники экскурсии",
+      "pages": {
+        "Light": 218,
+        "Dark": 234
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-TK-001",
+      "role": "Партнёр",
+      "title": "Заявка на выписку",
+      "pages": {
+        "Light": 219,
+        "Dark": 235
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-TK-002",
+      "role": "Партнёр",
+      "title": "Выписка и изменения",
+      "pages": {
+        "Light": 220,
+        "Dark": 236
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-GN-001",
+      "role": "Партнёр",
+      "title": "Входящие заказы",
+      "pages": {
+        "Light": 221,
+        "Dark": 237
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-GN-002",
+      "role": "Партнёр",
+      "title": "Принять заказ",
+      "pages": {
+        "Light": 222,
+        "Dark": 238
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-GN-003",
+      "role": "Партнёр",
+      "title": "Исполнение заказа",
+      "pages": {
+        "Light": 223,
+        "Dark": 239
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-GN-004",
+      "role": "Партнёр",
+      "title": "Акты и выплаты",
+      "pages": {
+        "Light": 224,
+        "Dark": 240
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-GN-005",
+      "role": "Партнёр",
+      "title": "Календарь партнёра",
+      "pages": {
+        "Light": 225,
+        "Dark": 241
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SP-GN-006",
+      "role": "Партнёр",
+      "title": "Портал партнёра",
+      "pages": {
+        "Light": 226,
+        "Dark": 242
+      },
+      "runtimeParity": "not_verified",
+      "area": "partner",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SH-GN-001",
+      "role": "Хост",
+      "title": "Услуги объекта",
+      "pages": {
+        "Light": 243,
+        "Dark": 247
+      },
+      "runtimeParity": "not_verified",
+      "area": "host",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SH-GN-002",
+      "role": "Хост",
+      "title": "Цена и комиссия",
+      "pages": {
+        "Light": 244,
+        "Dark": 248
+      },
+      "runtimeParity": "not_verified",
+      "area": "host",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SH-GN-003",
+      "role": "Хост",
+      "title": "Заказы гостей",
+      "pages": {
+        "Light": 245,
+        "Dark": 249
+      },
+      "runtimeParity": "not_verified",
+      "area": "host",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SH-GN-004",
+      "role": "Хост",
+      "title": "Доход от услуг",
+      "pages": {
+        "Light": 246,
+        "Dark": 250
+      },
+      "runtimeParity": "not_verified",
+      "area": "host",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-001",
+      "role": "Администратор",
+      "title": "Название услуги",
+      "pages": {
+        "Light": 251,
+        "Dark": 266
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-002",
+      "role": "Администратор",
+      "title": "Поля формы",
+      "pages": {
+        "Light": 252,
+        "Dark": 267
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-003",
+      "role": "Администратор",
+      "title": "Правила цены",
+      "pages": {
+        "Light": 253,
+        "Dark": 268
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-004",
+      "role": "Администратор",
+      "title": "Доступность услуги",
+      "pages": {
+        "Light": 254,
+        "Dark": 269
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-005",
+      "role": "Администратор",
+      "title": "Способ исполнения",
+      "pages": {
+        "Light": 255,
+        "Dark": 270
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-006",
+      "role": "Администратор",
+      "title": "Сроки по этапам",
+      "pages": {
+        "Light": 256,
+        "Dark": 271
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-007",
+      "role": "Администратор",
+      "title": "Кому направить заказ?",
+      "pages": {
+        "Light": 257,
+        "Dark": 272
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-008",
+      "role": "Администратор",
+      "title": "Уведомления",
+      "pages": {
+        "Light": 258,
+        "Dark": 273
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-009",
+      "role": "Администратор",
+      "title": "Предпросмотр услуги",
+      "pages": {
+        "Light": 259,
+        "Dark": 274
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-010",
+      "role": "Администратор",
+      "title": "Матрица SLA",
+      "pages": {
+        "Light": 260,
+        "Dark": 275
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-011",
+      "role": "Администратор",
+      "title": "Шаблоны сообщений",
+      "pages": {
+        "Light": 261,
+        "Dark": 276
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-012",
+      "role": "Администратор",
+      "title": "Правила объекта",
+      "pages": {
+        "Light": 262,
+        "Dark": 277
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-013",
+      "role": "Администратор",
+      "title": "Справочники и права",
+      "pages": {
+        "Light": 263,
+        "Dark": 278
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-014",
+      "role": "Администратор",
+      "title": "Партнёры и зарплата",
+      "pages": {
+        "Light": 264,
+        "Dark": 279
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    },
+    {
+      "id": "SA-GN-015",
+      "role": "Администратор",
+      "title": "Журнал интеграций",
+      "pages": {
+        "Light": 265,
+        "Dark": 280
+      },
+      "runtimeParity": "not_verified",
+      "area": "admin",
+      "implementation": "pending",
+      "visualAcceptance": "pending",
+      "functionalAcceptance": "pending",
+      "publicCoreEnabled": false,
+      "evidence": null
+    }
+  ]
+}

@@ -8,6 +8,8 @@ on:
       - "docker-compose.production-dev.yml"
       - "docker-compose.core-tunnel.yml"
       - "scripts/core-origin-isolation-gate.mjs"
+      - "scripts/guest-email-http-proof.cjs"
+      - "scripts/fixtures/guest-email-smtp.cjs"
       - ".github/workflows/production-core.yml"
   pull_request:
     branches: [main, "staging/master-reference-v1"]
@@ -16,6 +18,8 @@ on:
       - "infra/postgres/**"
       - "docker-compose.core-tunnel.yml"
       - "scripts/core-origin-isolation-gate.mjs"
+      - "scripts/guest-email-http-proof.cjs"
+      - "scripts/fixtures/guest-email-smtp.cjs"
 
 jobs:
   postgres-core:
@@ -42,45 +46,12 @@ jobs:
         run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f infra/postgres/init/001_extensions.sql
       - name: Apply production migrations
         run: |
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0001_core_inventory.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0002_tenant_rls.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0003_identity_access.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0004_identity_rls.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0005_booking_hold_engine.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0006_inventory_rls.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0007_rates_quotes_cancellation.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0008_payments_ledger.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0009_uzbekistan_compliance.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0010_identity_rls_role_helpers.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0011_guest_access_sessions.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0012_guest_auth_challenges.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0013_security_rate_limits.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0014_analytics_foundation.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0015_analytics_dimensions_health.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0016_analytics_worker_slo.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0017_analytics_rollups.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0018_analytics_booking_cohorts.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0019_marketplace_economics.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0020_analytics_marketplace_economics.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0021_booking_attribution.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0022_analytics_portfolio_rollups.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0023_analytics_dashboard_cache.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0024_analytics_dashboard_scope_hardening.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0025_analytics_report_exports.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0026_analytics_report_schedules.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0027_report_governance.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0028_internal_service_request_audit.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0029_internal_auth_rejection_metrics.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0030_signed_service_tokens.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0031_internal_service_credential_posture.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0032_signed_only_auth_mode.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0033_internal_ingress_boundary.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0034_internal_service_posture_type_fix.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0035_provider_egress_audit.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0036_payme_merchant_api.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0037_payme_transaction_invariants.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0038_payme_expiry_scan_index.sql
-          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0039_staff_password_sessions.sql
+          # Apply the complete ordered chain, matching the disposable cloud runner.
+          for migration in apps/api/db/migrations/[0-9][0-9][0-9][0-9]_*.sql; do
+            psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f "$migration"
+          done
+      - name: Mark isolated CI database
+        run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE views IS 'VIEWS_DISPOSABLE_CORE_TEST'"
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
@@ -156,6 +127,33 @@ jobs:
           ('30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000002'),
           ('30000000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000002');
 
+          -- Isolated nonprivileged reception fixture with valid HTTP UUIDs.
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '73100000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001',
+            '20000000-0000-4000-8000-000000000001',id,'active',now() FROM roles WHERE code='front_desk';
+          INSERT INTO membership_property_scopes(membership_id,property_id)
+          VALUES('73100000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002');
+
+          INSERT INTO staff_private.credentials(membership_id,password_hash,verification_channel)
+          VALUES('73100000-0000-4000-8000-000000000001','scrypt-v1$131072$8$1$'||repeat('0',32)||'$'||repeat('0',128),'local_fixture');
+
+          -- Disposable housekeeping identities only; no live role is promoted.
+          INSERT INTO users(id,email,display_name) VALUES
+          ('74900000-0000-4000-8000-000000000001','cleaner1@views.invalid','Cleaner one'),
+          ('74900000-0000-4000-8000-000000000002','cleaner2@views.invalid','Cleaner two');
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT u.id,'10000000-0000-4000-8000-000000000001',u.id,r.id,'active',now()
+          FROM users u CROSS JOIN roles r WHERE u.id IN ('74900000-0000-4000-8000-000000000001','74900000-0000-4000-8000-000000000002') AND r.code='housekeeper';
+          INSERT INTO membership_property_scopes(membership_id,property_id) VALUES
+          ('74900000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002'),
+          ('74900000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000002');
+          INSERT INTO staff_private.credentials(membership_id,password_hash,verification_channel)
+          SELECT id,'scrypt-v1$131072$8$1$'||repeat('0',32)||'$'||repeat('0',128),'local_fixture'
+          FROM organization_memberships WHERE id IN ('74900000-0000-4000-8000-000000000001','74900000-0000-4000-8000-000000000002');
+          INSERT INTO staff_private.sessions(token_hash,membership_id,credential_version,role_id)
+          SELECT encode(digest(repeat(CASE WHEN id='74900000-0000-4000-8000-000000000001' THEN '7' ELSE '8' END,64),'sha256'),'hex'),id,1,role_id
+          FROM organization_memberships WHERE id IN ('74900000-0000-4000-8000-000000000001','74900000-0000-4000-8000-000000000002');
+
           INSERT INTO analytics_dashboard_cache(
             cache_key,organization_id,membership_id,property_id,property_ids,
             from_date,to_date,schema_version,source_fingerprint,payload,generated_at,expires_at
@@ -174,6 +172,13 @@ jobs:
           );
           SQL
 
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/seeds/stage-b1.synthetic.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/seeds/service-orders.synthetic.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b1.constraints.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b2.sms.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b2.email.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b4.supply-auth.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/seeds/supply-auth.synthetic.sql
           OWN=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='00000000-0000-0000-0000-000000000002'; ROLLBACK;" | tail -2 | head -1)
           FOREIGN=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='10000000-0000-4000-8000-000000000002'; ROLLBACK;" | tail -2 | head -1)
           ACCESS=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT app.can_access_property('00000000-0000-0000-0000-000000000002'); ROLLBACK;" | tail -2 | head -1)
@@ -199,3 +204,13 @@ jobs:
       - name: Build API
         working-directory: apps/api
         run: npm run build
+      - name: Build guest browser and install isolated browser test runtime
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Guest email browser, HTTP and local SMTP proof
+        env:
+          VIEWS_GUEST_EMAIL_BROWSER_PROOF: 'true'
+          VIEWS_GUEST_EMAIL_PROOF_OWNER_URL: postgresql://views:views_test@localhost:5432/views
+        run: node scripts/guest-email-http-proof.cjs

@@ -40,9 +40,9 @@ function validateStay(input,fixture){
  return {propertyId:fixture.propertyId,unitId:unit.unitId,ratePlanId:unit.ratePlanId,checkInAt:input.checkIn+'T14:00:00+05:00',
  checkOutAt:input.checkOut+'T12:00:00+05:00',guests:Array.from({length:input.guests},()=>({age:18,residency:'resident'}))};
 }
-async function readJson(req){
+async function readJson(req,limit=4096){
  if(req.headers['content-type']!=='application/json'||req.headers['content-encoding'])fail(415,'JSON_REQUIRED');
- let size=0;const parts=[];for await(const part of req){size+=part.length;if(size>4096)fail(413,'BODY_TOO_LARGE');parts.push(part);}
+ let size=0;const parts=[];for await(const part of req){size+=part.length;if(size>limit)fail(413,'BODY_TOO_LARGE');parts.push(part);}
  try{return JSON.parse(Buffer.concat(parts).toString('utf8'));}catch{fail(400,'INVALID_JSON');}
 }
 function tokenFrom(req){const parts=(req.headers.cookie||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(COOKIE+'='));
@@ -78,7 +78,14 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
   if(!req.url?.startsWith('/local-api'))return false;
   try{
    if(!config)fail(503,'LOCAL_WORKSPACE_NOT_PREPARED');requireSameOrigin(req,req.method!=='GET');
-   const u=new URL(req.url,'http://127.0.0.1:4173');if(u.search||u.hash||u.pathname!==req.url)fail(400,'INVALID_ROUTE');
+   const u=new URL(req.url,'http://127.0.0.1:4173');
+   const calendarRoute=/^\/local-api\/owner-inventory\/[a-f0-9-]{36}\/calendar$/i.test(u.pathname);
+   const ratesRoute=/^\/local-api\/owner-inventory\/[a-f0-9-]{36}\/rates(?:\/[a-f0-9-]{36})?$/i.test(u.pathname);
+   const rateDetail=ratesRoute&&!u.pathname.endsWith('/rates');
+   const catalogSearch=u.pathname==='/local-api/inventory-search'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['from','to','guests','city','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
+   const refundSearch=u.pathname==='/local-api/refund-reconciliation'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['status','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
+   const validSearch=require('./service-order-gateway.cjs').validSearch(u,req.method)||require('./supply-gateway.cjs').validSearch(u,req.method)||require('./folio-gateway.cjs').validSearch(u,req.method)||refundSearch||catalogSearch||((calendarRoute||rateDetail)?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1);
+   if(u.pathname+u.search!==req.url||u.hash||(u.search&&!validSearch))fail(400,'INVALID_ROUTE');
    const route=u.pathname,token=tokenFrom(req);
    if(req.method==='GET'&&route==='/local-api/session'){
     if(!token){json(res,200,{authenticated:false});return true;}
@@ -95,22 +102,81 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    }
    const identity=await authenticate(token);
    if(!same(req.headers['x-csrf-token'],csrf(token)))fail(403,'CSRF_REQUIRED');
+   if(req.method==='POST'&&['/local-api/passkey/state','/local-api/passkey/options','/local-api/passkey/verify','/local-api/passkey/recovery-codes','/local-api/passkey/replace/options'].includes(route)){
+    const body=await readJson(req,16384);
+    const result=await core('/v1/staff-auth/'+route.slice('/local-api/'.length),'POST',body,undefined,token);
+    if(result.loginRequired===true){contexts.delete(hash(token));cookie(res,null);}
+    json(res,200,result);return true;
+   }
    if(req.method==='POST'&&['/local-api/logout','/local-api/password'].includes(route)){
     const body=await readJson(req);exactKeys(body,route.endsWith('logout')?['all']:['currentPassword','password']);
     const result=await core('/v1/staff-auth/'+route.split('/').pop(),'POST',body,undefined,token);
     contexts.delete(hash(token));cookie(res,null);json(res,200,result);return true;
    }
-   if(!identity.propertyIds.includes(config.fixture.propertyId))fail(403,'PROPERTY_FORBIDDEN');
+   if(['GET','POST'].includes(req.method)&&/^\/local-api\/reservations\/[a-f0-9-]{36}\/guest-link(?:\/revoke)?$/i.test(route)){
+    if(process.env.VIEWS_GUEST_LINK_PILOT_ENABLED!=='true')fail(404,'GUEST_LINK_DISABLED');
+    if(!identity.permissions.includes('reservation.manage'))fail(403,'STAFF_PERMISSION_DENIED');
+    if(req.method==='GET'){if(route.endsWith('/revoke'))fail(404,'ROUTE_NOT_FOUND');json(res,200,await core('/v1/bookings/'+route.split('/')[3]+'/guest-link','GET',undefined,undefined,token,identity));return true;}
+    const body=await readJson(req),revoke=route.endsWith('/revoke');exactKeys(body,revoke?['linkId']:['email']);
+    const key=req.headers['idempotency-key'];if(!revoke&&!UUID.test(key||''))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
+    const result=await core('/v1/bookings/'+route.split('/')[3]+'/guest-link'+(revoke?'/revoke':''),'POST',body,key,token,identity);
+    json(res,200,result);return true;
+   }
    const digest=hash(token);for(const [key,c] of contexts)if(c.expires<=Date.now())contexts.delete(key);
    let s=contexts.get(digest);if(!s){if(contexts.size>=32)fail(429,'SESSION_LIMIT');s={quotes:new Map(),reservations:new Set(),window:Date.now(),requests:0,expires:Date.parse(identity.expiresAt)};contexts.set(digest,s);}
    if(Date.now()-s.window>60000){s.window=Date.now();s.requests=0;}if(++s.requests>120)fail(429,'RATE_LIMIT');
+   if(await require('./service-order-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,propertyId:config.fixture.propertyId}))return true;
+   if(await require('./supply-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,exactKeys}))return true;
+   if(await require('./folio-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,exactKeys}))return true;
+   if(route==='/local-api/owner-inventory'||/^\/local-api\/owner-inventory\/[a-f0-9-]{36}(?:\/(?:calendar|rates(?:\/[a-f0-9-]{36})?))?$/i.test(route)){
+    if(process.env[ratesRoute?'VIEWS_OWNER_RATES_ENABLED':calendarRoute?'VIEWS_OWNER_CALENDAR_ENABLED':'VIEWS_OWNER_INVENTORY_DRAFT_ENABLED']!=='true')fail(404,ratesRoute?'OWNER_RATES_DISABLED':calendarRoute?'OWNER_CALENDAR_DISABLED':'OWNER_INVENTORY_DISABLED');
+    if(!['owner','manager'].includes(identity.role)||!identity.permissions.includes('property.manage'))fail(403,'OWNER_INVENTORY_FORBIDDEN');
+    if(req.method==='GET'){json(res,200,await core(route.replace('/local-api/','/v1/')+u.search,'GET',undefined,undefined,token,identity));return true;}
+    if(req.method!=='POST'||(ratesRoute&&!rateDetail))fail(405,'METHOD_DENIED');
+    const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
+    json(res,200,await core(route.replace('/local-api/','/v1/'),'POST',await readJson(req,32768),key,token,identity));return true;
+   }
+   if(route==='/local-api/inventory-search'){
+    if(req.method!=='GET')fail(405,'METHOD_DENIED');
+    if(!identity.permissions.includes('reservation.read'))fail(403,'STAFF_PERMISSION_DENIED');
+    json(res,200,await core('/v1/inventory-search'+u.search,'GET',undefined,undefined,token,identity));return true;
+   }
+   if(!identity.propertyIds.includes(config.fixture.propertyId))fail(403,'PROPERTY_FORBIDDEN');
+   if(route==='/local-api/refund-reconciliation'||/^\/local-api\/refund-reconciliation\/[a-f0-9-]{36}(?:\/reviews)?$/i.test(route)){
+    const review=route.endsWith('/reviews');
+    if(req.method!==(review?'POST':'GET'))fail(405,'METHOD_DENIED');
+    if(!identity.permissions.includes(review?'finance.manage':'finance.read'))fail(403,'STAFF_PERMISSION_DENIED');
+    let query='';
+    if(route==='/local-api/refund-reconciliation'){const params=new URLSearchParams(u.search);params.set('propertyId',config.fixture.propertyId);query='?'+params.toString();}
+    if(!review){json(res,200,await core(route.replace('/local-api/','/v1/')+query,'GET',undefined,undefined,token,identity));return true;}
+    const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
+    const body=await readJson(req);exactKeys(body,['expectedRevision','action','caseReference']);
+    json(res,200,await core(route.replace('/local-api/','/v1/'),'POST',body,key,token,identity));return true;
+   }
+   if(route==='/local-api/housekeeping'){
+    if(process.env.VIEWS_HOUSEKEEPING_PILOT_ENABLED!=='true')fail(404,'HOUSEKEEPING_DISABLED');
+    if(identity.role!=='housekeeper'||!identity.permissions.includes('housekeeping.work'))fail(403,'HOUSEKEEPING_FORBIDDEN');
+    if(req.method==='GET'){json(res,200,await core('/v1/housekeeping?propertyId='+config.fixture.propertyId,'GET',undefined,undefined,token,identity));return true;}
+    if(req.method!=='POST')fail(405,'METHOD_DENIED');
+    const body=await readJson(req);exactKeys(body,['taskId','action']);
+    if(!UUID.test(body.taskId||'')||!['claim','release','complete'].includes(body.action))fail(400,'INVALID_HOUSEKEEPING_REQUEST');
+    const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
+    json(res,200,await core('/v1/housekeeping','POST',{...body,propertyId:config.fixture.propertyId},key,token,identity));return true;
+   }
+   if(req.method==='GET'&&route==='/local-api/reception'){
+    const day=u.searchParams.get('day')||'today';if(day!=='today'&&!/^\d{4}-\d{2}-\d{2}$/.test(day))fail(400,'INVALID_RECEPTION_DAY');
+    const value=await core('/v1/booking-workspace?propertyId='+config.fixture.propertyId+'&day='+encodeURIComponent(day),'GET',undefined,undefined,token,identity);
+    if(value.property?.id!==config.fixture.propertyId||!value.arrivals||!value.departures||!value.staying)fail(502,'CORE_RESPONSE_INVALID');
+    s.reservations=new Set([...s.reservations,...['arrivals','departures','staying','cleaning'].flatMap(k=>value[k].items.map(r=>r.reservationId))]);
+    json(res,200,value);return true;
+   }
    if(req.method==='GET'&&route==='/local-api/workspace'){
     const value=await core('/v1/booking-workspace?propertyId='+config.fixture.propertyId,'GET',undefined,undefined,token,identity);
     if(value.property?.id!==config.fixture.propertyId||!Array.isArray(value.reservations)||!Array.isArray(value.units))fail(502,'CORE_RESPONSE_INVALID');
-    s.reservations=new Set(value.reservations.map(r=>r.reservationId));json(res,200,{...value,mode:'local-core',syntheticData:true,realPayments:false});return true;
+    s.reservations=new Set([...s.reservations,...value.reservations.map(r=>r.reservationId)]);json(res,200,{...value,mode:'local-core',syntheticData:true,realPayments:false});return true;
    }
    if(req.method!=='POST')fail(405,'METHOD_DENIED');
-   if(!['/local-api/quotes','/local-api/holds','/local-api/release'].includes(route))fail(404,'ROUTE_NOT_ALLOWED');
+   if(!['/local-api/quotes','/local-api/holds','/local-api/release','/local-api/check-in','/local-api/check-out','/local-api/guest','/local-api/document-view','/local-api/document-review','/local-api/cleaning-complete'].includes(route))fail(404,'ROUTE_NOT_ALLOWED');
    if(!identity.permissions.includes('reservation.manage'))fail(403,'STAFF_PERMISSION_DENIED');
    const body=await readJson(req);
    if(route==='/local-api/quotes'){
@@ -125,8 +191,8 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     const value=await core('/v1/bookings/holds','POST',{quoteId:body.quoteId,ttlSeconds:900},key,token,identity);
     if(!UUID.test(value.reservationId||''))fail(502,'CORE_RESPONSE_INVALID');s.reservations.add(value.reservationId);json(res,200,value);return true;
    }
-   exactKeys(body,['reservationId']);if(!UUID.test(body.reservationId||'')||!s.reservations.has(body.reservationId))fail(403,'RESERVATION_OUTSIDE_WORKSPACE');
-   json(res,200,await core('/v1/bookings/'+body.reservationId+'/release','POST',{},key,token,identity));return true;
+   exactKeys(body,route==='/local-api/guest'?['reservationId','guest']:route==='/local-api/document-view'?['reservationId','documentId']:route==='/local-api/document-review'?['reservationId','documentId','decision','reviewToken']:['reservationId']);if(!UUID.test(body.reservationId||'')||!s.reservations.has(body.reservationId))fail(403,'RESERVATION_OUTSIDE_WORKSPACE');
+   json(res,200,await core('/v1/bookings/'+body.reservationId+(route==='/local-api/release'?'/release':'/stay/'+route.split('/').pop()),'POST',route==='/local-api/guest'?body.guest:route==='/local-api/document-view'?{documentId:body.documentId}:route==='/local-api/document-review'?{documentId:body.documentId,decision:body.decision,reviewToken:body.reviewToken}:{},key,token,identity));return true;
   }catch(e){if(e.status===401&&e.message!=='STAFF_LOGIN_FAILED')cookie(res,null);if(!res.headersSent)json(res,e instanceof GatewayError?e.status:500,{error:e instanceof GatewayError?e.message:'LOCAL_GATEWAY_ERROR'});else res.end();return true;}
  };
 }
