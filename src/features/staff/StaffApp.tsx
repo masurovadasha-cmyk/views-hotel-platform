@@ -17,6 +17,8 @@ import {ApartmentTimelineLive,Guest360Live,StayCardLive} from "./LiveGuestStay";
 import {IntegrationHubLive,TeamWorkloadLive} from "./LiveTeamIntegrations";
 import {LiveDashboard} from "./LiveDashboard";
 import {LiveFinance} from "./LiveFinance";
+import {StayDateRange} from "../guest/StayDateRange";
+import "../guest/stayDateRange.css";
 
 const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","general_manager","super_admin"];
 const labels:Record<string,string>={
@@ -163,10 +165,11 @@ function ApartmentTimeline(){
 }
 
 function HostDesk({step,setStep}:{step:number;setStep:(n:number)=>void}){
+  const [range,setRange]=useState<[string,string]>(["",""]);
   return <div className="hostDesk">
     <div className="hostTabs">{["Listing wizard","Calendar & pricing","Bookings","Calendar sync","Host finance"].map((x,i)=><button className={step===i+1?"active":""} key={x} onClick={()=>setStep(i+1)}>{x}</button>)}</div>
     {step===1&&<Panel title="Listing wizard"><div className="wizardSteps"><span className="on">1 Basics</span><span>2 Photos</span><span>3 Amenities</span><span>4 Prices</span><span>5 Rules</span></div><div className="hostForm"><label>Property name<input placeholder="VIEWS apartment"/></label><label>Address<input value="Tashkent, NRG U-Tower" readOnly/></label><label>Type<select><option>Apartment</option></select></label><button className="primary">Next</button></div></Panel>}
-    {step===2&&<Panel title="Calendar & pricing"><div className="calendarGrid">{Array.from({length:31},(_,i)=><span key={i} className={[5,6,12,13,14].includes(i)?"booked":[19,20].includes(i)?"blocked":""}>{i+1}</span>)}</div><div className="calendarLegend"><span className="available">Available</span><span className="booked">Booked</span><span className="blocked">Blocked</span></div></Panel>}
+    {step===2&&<Panel title="Calendar & pricing"><p>Выберите период для просмотра. Демо: даты не блокируются и не синхронизируются с OTA.</p><StayDateRange checkIn={range[0]} checkOut={range[1]} onChange={(a,b)=>setRange([a,b])}/><div className="calendarGrid">{Array.from({length:31},(_,i)=><span key={i} className={[5,6,12,13,14].includes(i)?"booked":[19,20].includes(i)?"blocked":""}>{i+1}</span>)}</div><div className="calendarLegend"><span className="available">Available</span><span className="booked">Booked</span><span className="blocked">Blocked</span></div></Panel>}
     {step===3&&<Panel title="Bookings"><div className="compactRows">{["Alex Johnson","Sarah Miller","David Kim"].map((n,i)=><div key={n}><span>{i===0?"12–15 Oct":"Upcoming"}</span><b>{n}</b><small>Live amount comes from booking source</small><i className={"status "+(i===2?"cancelled":"confirmed")}>{i===2?"cancelled":"confirmed"}</i></div>)}</div></Panel>}
     {step===4&&<Panel title="Calendar sync"><div className="syncCard"><RefreshCw/><div><b>iCal / OTA synchronization</b><p>Airbnb / Booking.com connectors appear here after partner authorization. No sync state is fabricated.</p></div><span className="status assigned">not connected</span></div></Panel>}
     {step===5&&<Panel title="Host finance"><section className="kpis"><article><span>Gross revenue</span><b>—</b></article><article><span>Paid out</span><b>—</b></article><article><span>Commission</span><b>—</b></article><article><span>Pending</span><b>—</b></article></section><div className="notice">Financial values remain unavailable until backed by live captured transactions.</div></Panel>}
