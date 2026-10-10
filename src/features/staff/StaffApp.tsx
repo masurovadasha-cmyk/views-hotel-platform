@@ -1,3 +1,4 @@
+import {CanvaDispatcherQueue} from "./CanvaDispatcherQueue";
 import {CanvaAdminServiceCatalog} from "./CanvaAdminServiceCatalog";
 import {RangeCalendar,nightsBetween} from "../../components/RangeCalendar";
 import {useEffect,useMemo,useState} from "react";
@@ -77,7 +78,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="overview")return live?<LiveDashboard role={role}/>:<Dashboard orders={visible} role={role}/>;
     if(current==="my-tasks")return <><div className="sectionHead"><div><small>OPERATIONS QUEUE</small><h2>My Tasks</h2></div></div>{liveError&&<div className="notice">{liveError}</div>}<Orders orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/></>;
     if(current==="inbox")return <UnifiedInbox orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/>;
-    if(current==="operations")return live?<OperationsOverviewLive/>:<Panel title="Operations"><div className="notice">Live operations data is available in the authenticated staging runtime.</div></Panel>;
+    if(current==="operations")return <><CanvaDispatcherQueue orders={visible} live={live}/>{live?<OperationsOverviewLive/>:<Panel title="Operations"><div className="notice">Live operations data is available in the authenticated staging runtime.</div></Panel>}</>;
     if(current==="front-desk")return live?<LiveFrontDesk role={role}/>:<FrontDesk/>;
     if(current==="guests")return live?<Guest360Live/>:<Guest360/>;
     if(current==="housekeeping")return live?<HousekeepingLive role={role}/>:<Housekeeping/>;
