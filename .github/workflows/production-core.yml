@@ -76,6 +76,39 @@ jobs:
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0032_signed_only_auth_mode.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0033_internal_ingress_boundary.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0034_internal_service_posture_type_fix.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0035_market_service_order_foundation.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0036_market_service_order_scope_hardening.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0037_market_stock_foundation.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0038_market_catalog_prices.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0039_market_command_idempotency.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/migrations/0040_market_staff_write_policies.sql
+      - name: Verify V-Market schema and RLS gates
+        run: |
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+          DO $market_rls$
+          DECLARE t text; p boolean; f boolean; n integer;
+          BEGIN
+            FOREACH t IN ARRAY ARRAY[
+              'market_service_orders','market_service_order_lines',
+              'market_service_assignments','market_service_events',
+              'market_stock_balances','market_stock_movements'
+            ] LOOP
+              SELECT c.relrowsecurity,c.relforcerowsecurity INTO p,f
+                FROM pg_class c WHERE c.oid=to_regclass('public.'||t);
+              IF NOT FOUND OR p IS DISTINCT FROM true OR f IS DISTINCT FROM true THEN
+                RAISE EXCEPTION 'MARKET_RLS_GATE_FAILED: %',t;
+              END IF;
+              SELECT count(*) INTO n FROM pg_policies
+                WHERE schemaname='public' AND tablename=t AND cmd IN ('INSERT','UPDATE','DELETE','ALL');
+              IF t IN ('market_stock_balances','market_stock_movements','market_service_order_lines') AND n<>0 THEN
+                RAISE EXCEPTION 'MARKET_WRITE_POLICY_UNEXPECTED: %',t;
+              END IF;
+              IF t IN ('market_service_orders','market_service_assignments','market_service_events') AND n=0 THEN
+                RAISE EXCEPTION 'MARKET_STAFF_WRITE_POLICY_MISSING: %',t;
+              END IF;
+            END LOOP;
+          END $market_rls$;
+          SQL
       - name: Verify no-overbooking exclusion
         run: |
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
@@ -177,6 +210,17 @@ jobs:
 
           SCOPED=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000002',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000002',true); SELECT app.can_access_property('00000000-0000-0000-0000-000000000002'); ROLLBACK;" | tail -2 | head -1)
           test "$SCOPED" = "t"
+      - name: Verify V-Market stock invariants and denied writes
+        run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/market_stock_invariants.sql
+      - name: Run market concurrency test with isolated CI admin role
+        working-directory: apps/api
+        env:
+          MARKET_TEST_ADMIN_DATABASE_URL: postgresql://views:views_test@localhost:5432/views
+        run: |
+          npm install
+          npx vitest run src/inventory/market-stock-concurrency.integration.test.ts
+      - name: Verify restricted market staff scope
+        run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/market_staff_scope.sql
       - name: Use restricted runtime database role
         run: echo "DATABASE_URL=postgresql://views_app:views_app_test@localhost:5432/views" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4

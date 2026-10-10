@@ -1,3 +1,5 @@
+import {canvaServices,canvaOrderSteps} from "../../data/canvaServices";
+import {RangeCalendar,nightsBetween} from "../../components/RangeCalendar";
 import {useEffect,useMemo,useState} from "react";
 import {
   AlertCircle,Bath,BedDouble,Bell,CalendarDays,Car,CheckCircle2,ChevronLeft,ChevronRight,CircleHelp,
@@ -24,6 +26,7 @@ export function GuestApp({live=false}:{live?:boolean}){
   const [tab,setTab]=useState<Tab>("explore");
   const [checkIn,setCheckIn]=useState("");
   const [checkOut,setCheckOut]=useState("");
+  const [rangeOpen,setRangeOpen]=useState(false);
   const [guests,setGuests]=useState(2);
   const [selected,setSelected]=useState<Apartment|null>(null);
   const [flow,setFlow]=useState<FlowScreen>("apartment");
@@ -63,7 +66,7 @@ export function GuestApp({live=false}:{live?:boolean}){
   const go=(screen:FlowScreen)=>setFlow(screen);
   const activeBooking=liveBookings[0]??null;
 
-  return <main className="guestShell">
+  return <main className="guestShell">\n    {rangeOpen&&<RangeCalendar start={checkIn} end={checkOut} onApply={(start,end)=>{setCheckIn(start);setCheckOut(end)}} onClose={()=>setRangeOpen(false)}/>}
     {tab==="explore"&&<>
       <section className="hero"><div><span>PEOPLE · PLACES · POSSIBILITIES</span><h1>Stay beautifully.<br/>Move effortlessly.</h1></div><p>Book VIEWS apartments and manage your stay, services and concierge requests in one place.</p></section>
 
@@ -74,8 +77,7 @@ export function GuestApp({live=false}:{live?:boolean}){
 
       <section className="searchBox">
         <div className="location"><MapPin size={17}/><div><small>Destination</small><b>Tashkent</b></div></div>
-        <label><small>Check-in</small><input type="date" value={checkIn} onChange={e=>setCheckIn(e.target.value)}/></label>
-        <label><small>Check-out</small><input type="date" value={checkOut} onChange={e=>setCheckOut(e.target.value)}/></label>
+        <button type="button" className="viewsDateRangeTrigger" onClick={()=>setRangeOpen(true)} aria-label="Выбрать даты заезда и выезда"><CalendarDays size={18}/><span><small>Заезд — выезд</small><b>{checkIn&&checkOut?checkIn+" → "+checkOut+" · "+nightsBetween(checkIn,checkOut)+" ночей":"Выбрать даты"}</b></span></button>
         <label><small>Guests</small><input type="number" min={1} value={guests} onChange={e=>setGuests(Math.max(1,Number(e.target.value)||1))}/></label>
         <button className="primary"><Search size={16}/> Search</button>
       </section>
@@ -106,12 +108,12 @@ export function GuestApp({live=false}:{live?:boolean}){
 
     {tab==="services"&&<section className="contentPage">
       <div className="sectionHead"><div><small>VIEWS SERVICES</small><h2>Everything for your stay</h2></div></div>
-      <div className="serviceGrid large">{services.map(([name,Icon,value])=><button key={name} className={serviceCategory===value?"selectedService":""} onClick={()=>setServiceCategory(value)}><Icon/><b>{name}</b><small>Tracked Service Order</small></button>)}</div>
-      {live?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category:serviceCategory,title:(services.find(x=>x[2]===serviceCategory)?.[0]??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch(err){setServiceMessage(err instanceof Error?err.message:"Request failed")}}}>
+      <div className="serviceGrid large">{canvaServices.map(service=><button key={service.id} className={serviceCategory===service.category?"selectedService":""} onClick={()=>setServiceCategory(service.category)}><b>{service.label}</b><small>{service.description}</small>{service.demoPriceUzs&&<small>От {service.demoPriceUzs.toLocaleString("ru-RU")} UZS · демо</small>}</button>)}</div><div className="canvaGuestOrderProgress"><h3>Как выполняется заказ</h3><ol>{canvaOrderSteps.map(step=><li key={step.id}>{step.label}</li>)}</ol><small>Демонстрационная схема: статус реального заказа определяется сервером.</small></div>
+      {live?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category:serviceCategory,title:(canvaServices.find(x=>x.category===serviceCategory)?.label??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch(err){setServiceMessage(err instanceof Error?err.message:"Request failed")}}}>
         <label>Booking<select value={serviceBookingId} onChange={e=>setServiceBookingId(e.target.value)}>{liveBookings.map(b=><option key={b.id} value={b.id}>{b.confirmation_code} · {b.property_name}</option>)}</select></label>
         <label>Details<textarea value={serviceDetails} onChange={e=>setServiceDetails(e.target.value)} placeholder="Tell us what you need…"/></label>
         <button className="primary" disabled={!serviceBookingId||serviceDetails.trim().length<2}>Send request</button>{serviceMessage&&<div className="notice">{serviceMessage}</div>}
-      </form>:<div className="serviceRequestMock"><label>From<input value="Airport" readOnly/></label><label>To<input value="Apartment" readOnly/></label><label>Date<input type="date"/></label><label>Time<input type="time"/></label><label className="full">Comment<textarea placeholder="Add a note…"/></label><button className="primary">Create request</button></div>}
+      </form>:<div className="serviceRequestMock"><p>Это демонстрационный интерфейс. Реальный заказ и оплата недоступны без подтверждённой брони и серверного подключения.</p><label>Дата услуги<input type="date"/></label><label>Время<input type="time"/></label><label className="full">Пожелания<textarea placeholder="Опишите запрос…"/></label><button className="primary" type="button" disabled>Оформление доступно после входа</button></div>}
     </section>}
 
     {tab==="messages"&&<section className="contentPage">
@@ -150,7 +152,7 @@ export function GuestApp({live=false}:{live?:boolean}){
         <div className="facts">{selected.amenities.map(x=><span key={x}>{x}</span>)}</div><p className="modalCopy">Premium VIEWS apartment with modern interiors and hotel-style service. Availability and price are resolved from live data only.</p><button className="primary wide" onClick={()=>go("booking")}>Choose dates</button>
       </>}
 
-      {flow==="booking"&&<div className="flow"><h2>Booking</h2><div className="two"><label>Check-in<input type="date" value={checkIn} onChange={e=>setCheckIn(e.target.value)}/></label><label>Check-out<input type="date" value={checkOut} onChange={e=>setCheckOut(e.target.value)}/></label></div><label>Guests<input type="number" value={guests} min={1} max={selected.capacity} onChange={e=>setGuests(Number(e.target.value)||1)}/></label><div className="extras"><label><input type="checkbox"/> Airport transfer</label><label><input type="checkbox"/> Cleaning</label><label><input type="checkbox"/> Late check-out</label></div><div className="priceSummary"><span>Stay</span><b>{quote?.total===null?"Live total unavailable":selected.currency+" "+quote?.total}</b><span>Services</span><b>Calculated when selected</b><span>Total</span><strong>{quote?.total===null?"—":selected.currency+" "+quote?.total}</strong></div><button className="primary wide" disabled={!quote?.canContinue} onClick={()=>go("guest-data")}>Continue</button></div>}
+      {flow==="booking"&&<div className="flow"><h2>Booking</h2><div className="two"><button type="button" className="viewsDateRangeTrigger" onClick={()=>setRangeOpen(true)}><CalendarDays size={18}/> {checkIn&&checkOut?checkIn+" — "+checkOut+" · "+nightsBetween(checkIn,checkOut)+" ночей":"Выбрать заезд и выезд"}</button></div><label>Guests<input type="number" value={guests} min={1} max={selected.capacity} onChange={e=>setGuests(Number(e.target.value)||1)}/></label><div className="extras"><label><input type="checkbox"/> Airport transfer</label><label><input type="checkbox"/> Cleaning</label><label><input type="checkbox"/> Late check-out</label></div><div className="priceSummary"><span>Stay</span><b>{quote?.total===null?"Live total unavailable":selected.currency+" "+quote?.total}</b><span>Services</span><b>Calculated when selected</b><span>Total</span><strong>{quote?.total===null?"—":selected.currency+" "+quote?.total}</strong></div><button className="primary wide" disabled={!quote?.canContinue} onClick={()=>go("guest-data")}>Continue</button></div>}
 
       {flow==="guest-data"&&<div className="flow"><h2>Guest data</h2><label>Full name<input placeholder="Primary guest"/></label><label>Date of birth<input type="date"/></label><label>Nationality<select><option>Uzbekistan</option><option>Other</option></select></label><label>Passport / ID<input placeholder="Secure upload required" readOnly/></label><div className="notice">Document upload remains disabled until encrypted file storage is connected.</div><button className="primary wide" onClick={()=>go("payment")}>Continue</button></div>}
 

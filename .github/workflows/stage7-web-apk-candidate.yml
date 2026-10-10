@@ -1,0 +1,54 @@
+name: VIEWS Stage 7 Web and APK Candidate
+on:
+  push:
+    branches: ['stage7/market-server-schema-20261009']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+      - name: Validate and build web
+        run: |
+          npm run typecheck
+          npm test
+          npm run build:pages
+      - name: Prepare Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -1)
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0' >/dev/null
+      - name: Build and verify Android review APK
+        run: python3 scripts/build-android-review.py
+      - name: Browser smoke
+        run: |
+          npm install --no-save --package-lock=false @playwright/test@1.56.1
+          npx playwright install --with-deps chromium
+          node scripts/review-ui-smoke.mjs
+      - name: Package review web and APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/downloads dist/review
+          cp review-output/VIEWS-Review.apk dist/downloads/
+          cp review-output/build-evidence.json review-output/ui-smoke.json review-output/SHA256SUMS.txt dist/review/
+          (cd dist && zip -qr ../VIEWS-Stage7-Web.zip .)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: views-stage7-web-apk
+          path: |
+            VIEWS-Stage7-Web.zip
+            review-output/VIEWS-Review.apk
+            review-output/build-evidence.json
+            review-output/ui-smoke.json
+            review-output/SHA256SUMS.txt
+          retention-days: 14

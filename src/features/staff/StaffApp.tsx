@@ -1,3 +1,6 @@
+import {CanvaDispatcherQueue} from "./CanvaDispatcherQueue";
+import {CanvaAdminServiceCatalog} from "./CanvaAdminServiceCatalog";
+import {RangeCalendar,nightsBetween} from "../../components/RangeCalendar";
 import {useEffect,useMemo,useState} from "react";
 import {
   Bell,Building2,CalendarDays,Camera,CheckCircle2,ClipboardList,FileText,Gauge,Image as ImageIcon,
@@ -28,6 +31,9 @@ const iconFor=(id:string)=>id.includes("maintenance")?Wrench:id.includes("housek
 
 export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{role:HospitalityRole;onRoleChange:(r:HospitalityRole)=>void;allowRoleSwitch?:boolean;live?:boolean}){
   const [active,setActive]=useState(roleNavigation[role][0]);
+  const [calendarOpen,setCalendarOpen]=useState(false);
+  const [periodStart,setPeriodStart]=useState("");
+  const [periodEnd,setPeriodEnd]=useState("");
   const [orders,setOrders]=useState<ServiceOrder[]>(live?[]:initialOrders);
   const [liveError,setLiveError]=useState("");
   const [mobileTab,setMobileTab]=useState<"tasks"|"detail"|"proof"|"create"|"notifications">("tasks");
@@ -72,7 +78,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="overview")return live?<LiveDashboard role={role}/>:<Dashboard orders={visible} role={role}/>;
     if(current==="my-tasks")return <><div className="sectionHead"><div><small>OPERATIONS QUEUE</small><h2>My Tasks</h2></div></div>{liveError&&<div className="notice">{liveError}</div>}<Orders orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/></>;
     if(current==="inbox")return <UnifiedInbox orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/>;
-    if(current==="operations")return live?<OperationsOverviewLive/>:<Panel title="Operations"><div className="notice">Live operations data is available in the authenticated staging runtime.</div></Panel>;
+    if(current==="operations")return <><CanvaDispatcherQueue orders={visible} live={live}/>{live?<OperationsOverviewLive/>:<Panel title="Operations"><div className="notice">Live operations data is available in the authenticated staging runtime.</div></Panel>}</>;
     if(current==="front-desk")return live?<LiveFrontDesk role={role}/>:<FrontDesk/>;
     if(current==="guests")return live?<Guest360Live/>:<Guest360/>;
     if(current==="housekeeping")return live?<HousekeepingLive role={role}/>:<Housekeeping/>;
@@ -83,18 +89,17 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="timeline")return live?<ApartmentTimelineLive/>:<ApartmentTimeline/>;
     if(current==="host")return <HostDesk step={hostStep} setStep={setHostStep}/>;
     if(current==="finance")return live?<LiveFinance/>:<Finance/>;
-    if(current==="admin")return <AdminPanel orders={orders} act={act}/>;
+    if(current==="admin")return <><CanvaAdminServiceCatalog/><AdminPanel orders={orders} act={act}/></>;
     if(current==="integrations")return live?<IntegrationHubLive/>:<IntegrationHub/>;
     if(current==="team")return live?<TeamWorkloadLive role={role}/>:<TeamPanel orders={orders}/>;
     return <Panel title={labels[current]??current}><div className="notice">Module foundation ready for the next backend slice.</div></Panel>;
   };
 
-  return <div className="staffLayout">
+  return <div className="staffLayout">\n    {calendarOpen&&<RangeCalendar start={periodStart} end={periodEnd} onApply={(start,end)=>{setPeriodStart(start);setPeriodEnd(end)}} onClose={()=>setCalendarOpen(false)}/>}
     <aside className="sidebar"><div className="sideBrand">VIEWS <small>OPERATIONS</small></div><nav>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} onClick={()=>setActive(id)}><Icon size={17}/><span>{labels[id]??id}</span></button>})}</nav></aside>
     <main className="staffMain">
       <header className="staffHead"><div><small>VIEWS OPERATIONS</small><h1>{labels[current]??current}</h1></div>{allowRoleSwitch?<select value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{r.replaceAll("_"," ")}</option>)}</select>:<span className="roleLock">{role.replaceAll("_"," ")}</span>}</header>
-      {content()}
-    </main>
+      <div className="staffPlanningRange"><button type="button" onClick={()=>setCalendarOpen(true)}><CalendarDays size={16}/> Период планирования: {periodStart&&periodEnd?periodStart+" — "+periodEnd+" ("+nightsBetween(periodStart,periodEnd)+" ночей)":"Выбрать даты"}</button><small>Демо-период · не фильтрует серверные заказы</small></div>\n      {content()}\n    </main>
     <StaffMobileDock tab={mobileTab} setTab={setMobileTab}/>
     <StaffMobileSheet tab={mobileTab} setTab={setMobileTab} orders={visible} selected={selectedOrder} setSelected={setSelectedOrder} act={act} proofBefore={proofBefore} proofAfter={proofAfter} setProofBefore={setProofBefore} setProofAfter={setProofAfter} live={live} role={role} onLiveCreated={loadLiveOrders}/>
   </div>;

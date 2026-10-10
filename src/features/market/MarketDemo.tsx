@@ -5,6 +5,7 @@ import {
   type Cart,type MarketState
 } from "../../domain/marketModel";
 import {assignMarketTask,appendMarketTaskEvent,validMarketTasks,type MarketTaskMap,type MarketPriority} from "../../domain/marketTasks";
+import {fetchStaffMarketOrders,type CoreMarketOrder} from "./staffMarketApi";
 import "./market.css";
 
 type Screen="shop"|"cart"|"orders"|"staff";
@@ -82,7 +83,22 @@ export function MarketDemo(){
   const [query,setQuery]=useState("");
   const [category,setCategory]=useState("Все");
   const [staffQuery,setStaffQuery]=useState("");
+  const [corePropertyId,setCorePropertyId]=useState("");
+  const [coreOrders,setCoreOrders]=useState<CoreMarketOrder[]>([]);
+  const [coreStatus,setCoreStatus]=useState<"idle"|"loading"|"ready"|"error">("idle");
+  const [coreError,setCoreError]=useState("");
   const [detailId,setDetailId]=useState<string|null>(null);
+  async function loadCoreOrders(){
+    setCoreStatus("loading");setCoreError("");
+    try{
+      const orders=await fetchStaffMarketOrders(corePropertyId);
+      setCoreOrders(orders);setCoreStatus("ready");
+    }catch(error){
+      setCoreOrders([]);setCoreStatus("error");
+      const code=error instanceof Error?error.message:"CORE_ORDERS_UNAVAILABLE";
+      setCoreError(code==="PROPERTY_FORBIDDEN"?"Нет доступа к объекту.":code==="STAFF_AUTH_REQUIRED"?"Необходимо войти как сотрудник.":"Серверный список недоступен или объект не выбран.");
+    }
+  }
   const [assignee,setAssignee]=useState("Диспетчер VIEWS");
   const [priority,setPriority]=useState<MarketPriority>("normal");
   const [tasks,setTasks]=useState<MarketTaskMap>({});
@@ -315,6 +331,15 @@ export function MarketDemo(){
       </div>
       <div className="marketTwoCol staffCols">
         <div className="marketPanel"><header><small>STAFF CRM</small><h2>Market Orders</h2></header>
+          <div className="marketCoreRead">
+            <h3>Серверные заказы · только чтение</h3>
+            <p>Для авторизованного сотрудника. Введите локальный ID объекта из CRM; демозаказы ниже остаются отдельными.</p>
+            <label>ID объекта <input value={corePropertyId} onChange={e=>setCorePropertyId(e.target.value)} placeholder="ID объекта CRM"/></label>
+            <button disabled={coreStatus==="loading"||!corePropertyId.trim()} onClick={loadCoreOrders}>Обновить с сервера</button>
+            {coreStatus==="loading"&&<p role="status">Загрузка заказов…</p>}
+            {coreStatus==="error"&&<p role="alert">{coreError}</p>}
+            {coreStatus==="ready"&&<div aria-live="polite">{coreOrders.length===0?<p>На сервере заказов нет.</p>:coreOrders.map(o=><article key={o.id}><b>{o.id}</b><small>{o.status} · {o.payment_status} · {o.total_minor} UZS · {o.delivery_slot}</small></article>)}</div>}
+          </div>
           <div className="staffOrders">{state.orders.length===0?<div className="marketEmpty">Нет заказов</div>:state.orders.map(o=><article key={o.id}>
             <div><b>{o.id}</b><small>{o.apartment} · {o.lines.reduce((s,l)=>s+l.quantity,0)} items · {formatUzs(o.totalUzs)}</small></div>
             <span className={"marketStatus "+o.status}>{o.status.replaceAll("_"," ")}</span>
