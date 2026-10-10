@@ -17,3 +17,21 @@ input,select{padding:12px;border:1px solid #aaa;border-radius:8px;max-width:100%
 small{color:#656565}
 @media(max-width:720px){main{grid-template-columns:minmax(0,1fr)}body{padding:12px}.panel{padding:16px}header{flex-wrap:wrap}}
 @media(max-width:360px){h1{font-size:1.5rem}.actions button{min-width:44px}}
+
+.vw-calendar[hidden]{display:none}
+.vw-calendar{position:fixed;inset:0;z-index:1000;background:#fff;display:flex;flex-direction:column;max-width:640px;margin:auto;box-shadow:0 0 0 100vmax #0009;border-radius:16px;overflow:hidden}
+.vw-cal-header,.vw-cal-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;background:#fff;flex-shrink:0}
+.vw-cal-header button{background:transparent;text-decoration:underline}
+.vw-cal-summary{padding:8px 22px 22px;font-size:1.2rem;font-weight:650}
+.vw-cal-months{overflow-y:auto;min-height:0;flex:1;padding:0 20px 20px}
+.vw-cal-month{margin-bottom:38px}
+.vw-cal-month h3{text-transform:capitalize}
+.vw-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.vw-cal-weekday{text-align:center;color:#777;padding:10px 0}
+.vw-cal-day{background:#fff;font-weight:500;padding:0;min-height:46px;border-radius:999px;color:#1a1d24}
+.vw-cal-day:disabled{color:#aaa;text-decoration:line-through;background:#fafafa}
+.vw-cal-day.vw-cal-between{background:#eeeeed;border-radius:0}
+.vw-cal-day.vw-cal-edge{background:#1a1d24;color:white;border-radius:999px}
+.vw-cal-footer{border-top:1px solid #eaeaea;justify-content:flex-end}
+.vw-cal-footer button{background:#1a1d24;color:#fff}
+@media(max-width:640px){.vw-calendar{border-radius:22px 22px 0 0;inset:6vh 0 0}.vw-cal-months{padding:0 12px 20px}.vw-cal-day{min-height:44px}}
