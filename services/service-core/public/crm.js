@@ -13,7 +13,6 @@ const crmCalendar=mountViewsCalendar(document.querySelector("#crm-calendar"),{
   renderBookings(lastBookings);
  },
  onClear:()=>{dateFilter=null;document.querySelector("#crm-date-summary").textContent="Все даты";renderOrders(lastOrders);renderBookings(lastBookings)}
- }
 });
 document.querySelector("#crm-calendar-open").onclick=()=>crmCalendar.open();
 function renderBookings(list){
