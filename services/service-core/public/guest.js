@@ -12,6 +12,8 @@ const guestDateSummary=document.querySelector("#guest-date-summary");
 const guestCalendar=mountViewsCalendar(document.querySelector("#guest-calendar"),{
  onSave:({start,end,nights})=>{
   guestDateSummary.textContent=start+" — "+end+" · "+nights+" ночей (просмотр; не изменяет бронь)";
+ },
+ onClear:()=>{guestDateSummary.textContent="Предпросмотр сброшен; бронь не изменена"}
  }
 });
 document.querySelector("#guest-calendar-open").onclick=()=>guestCalendar.open();
