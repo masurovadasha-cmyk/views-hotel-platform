@@ -1,0 +1,43 @@
+:root{font-family:Inter,system-ui,sans-serif;background:#f6f5f2;color:#1a1d24;color-scheme:light}
+*{box-sizing:border-box}
+body{max-width:1150px;margin:auto;padding:24px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{letter-spacing:.14em}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.panel{background:white;border-radius:12px;padding:20px;min-width:0;overflow-wrap:anywhere}
+button{background:#a88b58;color:#1a1d24;border:0;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;min-height:44px}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #a88b58;outline-offset:2px}
+input,select{padding:12px;border:1px solid #aaa;border-radius:8px;max-width:100%;min-width:0}
+.order{padding:12px;border-bottom:1px solid #ddd;width:100%;text-align:left;background:#f6f5f2;margin:4px 0;overflow-wrap:anywhere}
+.item{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 0;border-bottom:1px solid #e5e0d8}
+.environment-note{color:#656565}.muted{color:#656565;font-size:.92rem}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.catalog-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.6fr);gap:10px;margin:12px 0}.catalog-tools input,.catalog-tools select{width:100%}
+.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}.product-card{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:7px;padding:12px;border:1px solid #e5e0d8;border-radius:12px;background:#fff}.product-image{width:100%;aspect-ratio:4/3;display:grid;place-items:center;overflow:hidden;border-radius:9px;background:#f6f5f2;color:#656565;text-align:center;font-size:.85rem;padding:12px}.product-image img{width:100%;height:100%;object-fit:contain}.product-category{color:#656565}.product-title{margin:0;font-size:1rem}.product-details{margin:0;color:#656565;font-size:.88rem}.product-price{font-variant-numeric:tabular-nums}.product-stock{min-height:1.2em}.product-card .actions{align-self:flex-end}
+.product-photo-credit{color:#656565;font-size:.72rem;line-height:1.35}
+.actions{display:flex;align-items:center;gap:10px}
+.actions output{min-width:2ch;text-align:center;font-variant-numeric:tabular-nums}
+#message{min-height:28px}
+small{color:#656565}
+@media(max-width:720px){main{grid-template-columns:minmax(0,1fr)}body{padding:12px}.panel{padding:16px}header{flex-wrap:wrap}}
+@media(max-width:440px){.product-grid{grid-template-columns:minmax(0,1fr)}.catalog-tools{grid-template-columns:1fr}.product-card{display:grid;grid-template-columns:92px minmax(0,1fr);column-gap:12px}.product-image{grid-column:1;grid-row:1/7;aspect-ratio:1}.product-card .product-category,.product-card .product-title,.product-card .product-details,.product-card .product-price,.product-card .product-stock,.product-card .product-photo-credit{grid-column:2}.product-card .actions{grid-column:2;justify-self:end}}
+@media(prefers-color-scheme:dark){:root{background:#17191e;color:#f1efe9;color-scheme:dark}body{background:#17191e;color:#f1efe9}.panel,.product-card{background:#22252c;color:#f1efe9}.product-image,.order{background:#2c3038;color:#d7d3ca;border-color:#414650}.item,.product-card{border-color:#414650}input,select{background:#22252c;color:#f1efe9;border-color:#656a73}small,.muted,.environment-note,.product-details,.product-category{color:#b9bbc0}button{background:#a88b58;color:#17191e}}
+@media(max-width:360px){h1{font-size:1.5rem}.actions button{min-width:44px}}
+
+.vw-calendar[hidden]{display:none}
+.vw-calendar{position:fixed;inset:0;z-index:1000;background:#fff;display:flex;flex-direction:column;max-width:640px;margin:auto;box-shadow:0 0 0 100vmax #0009;border-radius:16px;overflow:hidden}
+.vw-cal-header,.vw-cal-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;background:#fff;flex-shrink:0}
+.vw-cal-header button{background:transparent;text-decoration:underline}
+.vw-cal-summary{padding:8px 22px 22px;font-size:1.2rem;font-weight:650}
+.vw-cal-months{overflow-y:auto;min-height:0;flex:1;padding:0 20px 20px}
+.vw-cal-month{margin-bottom:38px}
+.vw-cal-month h3{text-transform:capitalize}
+.vw-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.vw-cal-weekday{text-align:center;color:#777;padding:10px 0}
+.vw-cal-day{background:#fff;font-weight:500;padding:0;min-height:46px;border-radius:999px;color:#1a1d24}
+.vw-cal-day:disabled{color:#aaa;text-decoration:line-through;background:#fafafa}
+.vw-cal-day.vw-cal-between{background:#eeeeed;border-radius:0}
+.vw-cal-day.vw-cal-edge{background:#1a1d24;color:white;border-radius:999px}
+.vw-cal-footer{border-top:1px solid #eaeaea;justify-content:flex-end}
+.vw-cal-footer button{background:#1a1d24;color:#fff}
+@media(max-width:640px){.vw-calendar{border-radius:22px 22px 0 0;inset:6vh 0 0}.vw-cal-months{padding:0 12px 20px}.vw-cal-day{min-height:44px}}

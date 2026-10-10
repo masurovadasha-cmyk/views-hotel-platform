@@ -1,0 +1,10 @@
+FROM mirror.gcr.io/library/node:22-alpine
+WORKDIR /app
+COPY package.json ./
+RUN npm install --omit=dev --no-audit --no-fund
+COPY src ./src
+COPY public ./public
+USER node
+ENV NODE_ENV=development
+EXPOSE 3200
+CMD ["node","src/db-server.mjs"]

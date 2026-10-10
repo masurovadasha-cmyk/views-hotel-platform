@@ -1,0 +1,216 @@
+name: VIEWS Service Core
+on:
+  push:
+    paths:
+      - 'services/service-core/**'
+      - 'db/migrations/**'
+      - 'android/**'
+      - 'deploy/staging/**'
+      - '.github/workflows/views-service-core.yml'
+  pull_request:
+    paths:
+      - 'services/service-core/**'
+      - 'db/migrations/**'
+      - 'android/**'
+      - 'deploy/staging/**'
+      - '.github/workflows/views-service-core.yml'
+jobs:
+  node-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/service-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: node --check src/server.mjs
+      - run: node --check src/postgres.mjs
+      - run: node --check src/auth.mjs
+      - run: node --check src/db-server.mjs
+      - run: node --check src/order-status.mjs
+      - run: node --check src/payment-ledger.mjs
+      - run: node --check src/payment-domain.mjs
+      - run: node --check src/pms-sync.mjs
+      - run: node --check src/payment-intents.mjs
+      - run: node --check src/payment-events.mjs
+      - run: node --check src/payment-provider-contract.mjs
+      - run: node --check src/refunds.mjs
+      - run: node --check src/dispatch.mjs
+      - run: node --check src/guest-order-timeline.mjs
+      - run: node --check src/guest-notifications.mjs
+      - run: node --check src/notification-worker.mjs
+      - run: node --check src/notification-admin.mjs
+      - run: node --check src/notification-worker-cli.mjs
+      - run: node --check src/task-compensation.mjs
+      - run: node --check public/staff.js
+      - run: node --check public/views-calendar.js
+      - run: node --check public/crm.js
+      - run: node --check public/guest.js
+      - run: node --check src/cleaning-laundry.mjs
+  postgres-migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: mirror.gcr.io/library/postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: views_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for file in db/migrations/0001_service_core.sql db/migrations/0002_inventory_reservations.sql db/migrations/0003_order_items.sql db/migrations/0004_property_access.sql db/migrations/0005_order_audit.sql db/migrations/0006_order_ownership.sql db/migrations/0007_market_pricing.sql db/migrations/0008_guest_booking_access.sql db/migrations/0009_payment_ledger.sql db/migrations/0008_guest_stays.sql db/migrations/0009_guest_bookings.sql db/migrations/0010_booking_schema_compat.sql db/migrations/0011_pms_event_inbox.sql db/migrations/0012_payment_intents.sql db/migrations/0013_payment_ledger_refunds.sql db/migrations/0014_dispatch_tasks.sql db/migrations/0015_cleaning_laundry.sql db/migrations/0016_task_compensation.sql db/migrations/0017_guest_notifications.sql db/migrations/0018_notification_jobs.sql db/migrations/0019_notification_recovery_audit.sql db/migrations/0020_market_catalog_metadata.sql; do
+            psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -f "$file"
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        working-directory: services/service-core
+        run: npm install --no-audit --no-fund
+      - name: Create restricted application role
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -c "CREATE ROLE views_test_app LOGIN PASSWORD 'views_test_app_password' NOBYPASSRLS;"
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d views_test -c "GRANT USAGE ON SCHEMA public TO views_test_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO views_test_app;"
+      - name: PostgreSQL integration test
+        working-directory: services/service-core
+        env:
+          TEST_DATABASE_URL: postgresql://views_test_app:views_test_app_password@localhost:5432/views_test
+        run: |
+          export VIEWS_AUTH_SECRET="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))')"
+          node --test test/integration.pg.mjs test/integration.http.pg.mjs test/integration.stays.pg.mjs test/integration.bookings.pg.mjs test/integration.pms.pg.mjs test/integration.payments.pg.mjs test/integration.payment-events.pg.mjs test/integration.refunds.pg.mjs test/integration.cleaning-laundry.pg.mjs test/integration.notifications.pg.mjs test/integration.notification-recovery.pg.mjs
+  web-snapshot:
+    needs: [node-tests, postgres-migrations, local-staging-smoke, browser-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare web snapshot
+        run: |
+          mkdir -p dist/views-web
+          cp services/service-core/public/{guest.html,guest.js,crm.html,crm.js,crm.css,staff.html,staff.js,staff.css,finance.html,finance.js,views-client.js,views-calendar.js} dist/views-web/
+          cp -R services/service-core/public/market-images dist/views-web/market-images
+          printf '%s\n' "VIEWS development frontend snapshot" "Commit: ${GITHUB_SHA}" "This snapshot includes source-backed supplier product images." "It requires the PostgreSQL API and authentication." "Do not publish these files alone as a working production app." > dist/views-web/README.txt
+          python3 - <<'PY'
+          import json,os
+          with open('dist/views-web/build.json','w') as f:
+              json.dump({'commit':os.environ['GITHUB_SHA'],'kind':'development-web-snapshot','backendRequired':True,'livePayments':False,'supplierImagesIncluded':True},f,indent=2)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: views-web-development
+          path: dist/views-web/
+          if-no-files-found: error
+          retention-days: 14
+  android-debug:
+    needs: [node-tests, postgres-migrations, local-staging-smoke, browser-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-35 build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Assemble debug APK
+        working-directory: android
+        run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: views-android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  staging-source-bundle:
+    needs: [node-tests, postgres-migrations, local-staging-smoke, browser-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package verified development source
+        run: |
+          mkdir -p dist/views-staging/services dist/views-staging/db dist/views-staging/deploy
+          cp -R services/service-core dist/views-staging/services/service-core
+          cp -R db/migrations dist/views-staging/db/migrations
+          cp -R deploy/staging dist/views-staging/deploy/staging
+          cp docs/release/staging-readiness-2026-10-09.md dist/views-staging/README.md
+          printf '%s\n' "${GITHUB_SHA}" > dist/views-staging/COMMIT_SHA
+      - uses: actions/upload-artifact@v4
+        with:
+          name: views-staging-source
+          path: dist/views-staging/
+          if-no-files-found: error
+          retention-days: 14
+
+  local-staging-smoke:
+    needs: [node-tests, postgres-migrations]
+    runs-on: ubuntu-latest
+    env:
+      VIEWS_DB_ADMIN_PASSWORD: ci-staging-admin-password
+      VIEWS_APP_DB_PASSWORD: ci-staging-app-password
+      VIEWS_STAGING_DATABASE_URL: postgresql://views_staging_app:ci-staging-app-password@db:5432/views_staging
+      VIEWS_AUTH_SECRET: ci-staging-auth-secret-32-characters-minimum
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check local staging configuration
+        run: |
+          bash -n deploy/staging/migrate.sh
+          docker compose -f deploy/staging/compose.yaml config -q
+      - name: Boot isolated staging stack
+        run: docker compose -f deploy/staging/compose.yaml up -d --build --wait
+      - name: Verify local API and browser entrypoints
+        run: |
+          curl --fail --silent http://127.0.0.1:3200/health
+          for path in guest crm staff finance; do
+            curl --fail --silent --output /dev/null "http://127.0.0.1:3200/$path"
+          done
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3200/api/v1/service-orders)" = "401"
+      - name: Stop staging
+        if: always()
+        run: docker compose -f deploy/staging/compose.yaml down -v
+
+  browser-smoke:
+    needs: [node-tests, postgres-migrations]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/service-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium browser test dependencies
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Run real Chromium interface smoke checks
+        run: node test/browser-smoke.mjs
+      - name: Upload Chromium screen captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: views-browser-screenshots
+          path: services/service-core/browser-screenshots/
+          if-no-files-found: warn
+          retention-days: 14

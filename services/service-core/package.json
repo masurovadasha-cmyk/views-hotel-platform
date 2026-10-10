@@ -1,0 +1,19 @@
+{
+  "name": "@views/service-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "start:db": "node src/db-server.mjs",
+    "notifications:worker": "node src/notification-worker-cli.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "jose": "^6.0.13"
+  }
+}
