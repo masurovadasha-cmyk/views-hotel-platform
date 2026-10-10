@@ -219,6 +219,8 @@ jobs:
         run: |
           npm install
           npx vitest run src/inventory/market-stock-concurrency.integration.test.ts
+      - name: Verify restricted market staff scope
+        run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/market_staff_scope.sql
       - name: Use restricted runtime database role
         run: echo "DATABASE_URL=postgresql://views_app:views_app_test@localhost:5432/views" >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
