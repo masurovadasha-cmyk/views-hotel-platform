@@ -187,6 +187,17 @@ export const server=createServer(async(req,res)=>{
     [context.organizationId,context.sub])).rows);
    return reply(res,200,orders);
   }
+  if(req.method==="GET"&&url.pathname==="/api/v1/crm/bookings"){
+   requireRole(context,["dispatcher","admin"]);
+   const admin=context.roles.includes("admin");
+   const bookings=await inTenantTransaction(pool,context.organizationId,async db=>{
+    const sql=admin
+     ?"SELECT id,property_id,status,starts_at,ends_at FROM service_guest_bookings WHERE organization_id=$1 ORDER BY starts_at DESC LIMIT 200"
+     :"SELECT b.id,b.property_id,b.status,b.starts_at,b.ends_at FROM service_guest_bookings b WHERE b.organization_id=$1 AND EXISTS(SELECT 1 FROM service_property_access a WHERE a.organization_id=b.organization_id AND a.property_id=b.property_id AND a.principal_id=$2 AND a.permission='order:manage') ORDER BY b.starts_at DESC LIMIT 200";
+    return (await db.query(sql,admin?[context.organizationId]:[context.organizationId,context.sub])).rows;
+   });
+   return reply(res,200,bookings);
+  }
   if(req.method==="GET"&&url.pathname==="/api/v1/me/bookings"){
    requireRole(context,["guest"]);
    const bookings=await inTenantTransaction(pool,context.organizationId,async client=>(await client.query(
