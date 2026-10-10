@@ -1,4 +1,5 @@
 import {createViewsClient} from "./views-client.js";
+import {mountViewsCalendar} from "./views-calendar.js";
 const token=document.querySelector("#token"),booking=document.querySelector("#booking"),catalogEl=document.querySelector("#catalog"),totalEl=document.querySelector("#total"),message=document.querySelector("#message"),orderEl=document.querySelector("#order"),checkout=document.querySelector("#checkout"),refresh=document.querySelector("#refresh");
 const loadCatalogButton=document.querySelector("#load-catalog"),loadBookingsButton=document.querySelector("#load-bookings");
 const loadOrdersButton=document.querySelector("#load-orders"),historyEl=document.querySelector("#order-history");
@@ -7,6 +8,13 @@ const notificationsEl=document.querySelector("#notifications"),notificationsButt
 const eventLabels={"market.order.created":"Заказ оформлен","service.order.changed":"Статус заказа","service.task.assigned":"Назначен исполнитель","service.task.status_changed":"Выполнение задания","cleaning.task.completed":"Уборка завершена","laundry.bag.changed":"Прачечная"};
 const client=createViewsClient({getToken:async()=>token.value.trim()});
 const money=n=>Number(n).toLocaleString("ru-RU")+" UZS";
+const guestDateSummary=document.querySelector("#guest-date-summary");
+const guestCalendar=mountViewsCalendar(document.querySelector("#guest-calendar"),{
+ onSave:({start,end,nights})=>{
+  guestDateSummary.textContent=start+" — "+end+" · "+nights+" ночей (просмотр; не изменяет бронь)";
+ }
+});
+document.querySelector("#guest-calendar-open").onclick=()=>guestCalendar.open();
 const cart=new Map();
 let catalog=[],orderId=null,pendingKey=null,pendingPayload=null,inFlight=false;
 function render(){
