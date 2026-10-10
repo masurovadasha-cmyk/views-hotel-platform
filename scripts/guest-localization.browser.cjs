@@ -87,7 +87,9 @@ const tr=(locale,key)=>locale==='en'?key:catalog[key][locale];
   const beforeLanguage=calls;await live.locator('.guestLanguage select').selectOption('ru');await live.locator('.bookingCard').nth(1).getByRole('button',{name:'Детали',exact:true}).click();
   const details=live.getByRole('dialog',{name:'Детали брони',exact:true});await details.getByText('DEMO-TWO',{exact:true}).waitFor();await details.getByText('<em>Second Fixture</em>',{exact:true}).waitFor();
   assert.equal(await details.locator('em,img').count(),0);assert.equal(await details.getByText('First Fixture',{exact:true}).count(),0);await details.getByText('2027-06-09 → 2027-06-12',{exact:true}).waitFor();
-  assert.equal(calls,beforeLanguage);await live.keyboard.press('Escape');await live.close();report.checks.push('mocked_live_booking_retry_and_correct_selected_details_no_demo_substitution');
+  assert.equal(calls,beforeLanguage);await live.keyboard.press('Escape');
+  for(const locale of languages){await live.locator('.guestLanguage select').selectOption(locale);for(const dark of [false,true]){if((await live.locator('[data-theme-toggle]').getAttribute('aria-pressed'))!==String(dark))await live.locator('[data-theme-toggle]').click();for(const width of widths){await live.setViewportSize({width,height:1000});assert.ok(await live.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'live bookings overflow '+locale+' '+dark+' '+width);}}}
+  await live.close();report.checks.push('mocked_live_booking_retry_and_correct_selected_details_no_demo_substitution');
   let loginCalls=0;
   const auth=await newPage(async(route,url)=>{
    if(url==='/api/session')return route.fulfill({json:{authenticated:false}});

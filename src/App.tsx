@@ -65,7 +65,7 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
     return demoMode==="guest"?<GuestApp/>:<div lang={staffLocale}><StaffApp role={demoRole} onRoleChange={setDemoRole} allowRoleSwitch={!selectedStaffRole}/></div>;
   };
 
-  return <div data-workspace={staffMode||selectedStaffRole&&rolePreviewOpen?'staff':'guest'} className={(dark?"app dark":"app")+(runtime!=="local-core"?" guestLocaleApp":"")}>
+  return <div data-runtime={runtime} data-workspace={staffMode||selectedStaffRole&&rolePreviewOpen?'staff':'guest'} className={(dark?"app dark":"app")+(runtime!=="local-core"?" guestLocaleApp":"")}>
     <header className="brandbar">
       <div className="brand" lang="en"><span className="vmark">V</span><div><strong>VIEWS</strong><small>HOTEL & APARTMENTS</small></div><i/><p>One Ecosystem<br/>A Better Experience</p></div>
       <div className="cities" lang="en">TASHKENT · SAMARKAND · BUKHARA · KHIVA · AND BEYOND</div>

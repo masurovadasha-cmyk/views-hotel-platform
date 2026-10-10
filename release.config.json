@@ -1,6 +1,6 @@
 {
-  "version": "0.11.0-preview",
-  "androidVersionCode": 1100001,
+  "version": "0.12.0-preview",
+  "androidVersionCode": 1200001,
   "androidApplicationId": "uz.views.preview",
   "androidLabel": "VIEWS Preview",
   "mode": "static-demo",

@@ -33,3 +33,5 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify Canva navigation, themes, focus and sample contrast
         run: node scripts/canva-design.browser.cjs
+      - name: Verify Canva Core surfaces with read-only HTTP fixtures
+        run: node scripts/canva-core-surfaces.browser.cjs

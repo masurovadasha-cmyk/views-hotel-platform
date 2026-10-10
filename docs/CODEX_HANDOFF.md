@@ -943,3 +943,15 @@ an integration suite without DATABASE_URL;24unit assertions and Core build pass,
 full database evidence must come from hosted disposable CI. No blind liveDB run.
 Public deployment/APK verification are recorded after execution in release notes;
 no claim that public Core/email, actual retail orders or full B3–B11 are complete.
+
+## 49. Canva across runtimes / 11 October 2026 (Tashkent)
+
+Owner asked to finish Canva integration across modes. Presentation increment
+0.12.0-preview / 1200001 extends tokens to authenticated Core staff/guest surfaces.
+No backend/schema changes or public Core activation. See CANVA_ALL_MODES.md for
+exact fixture evidence and limits. New CI Core visual proof: 289 layouts, 2101
+sampled text contrasts, minimum4.90, no mutation. Static232/126 min5.15; root310/57.
+Legacy live now checks both themes. Preserve staff permission and offline gates.
+The incomplete services research was moved reversibly to
+/workspace/views-services-research-draft-2026-10-10/services-v1, not discarded or
+published as complete. Available Canva exports still cover32pages, not60/50 packs.
