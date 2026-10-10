@@ -28,6 +28,7 @@ export function createViewsClient({baseUrl="",getToken}){
   getGuestOrderTimeline:id=>request("/api/v1/me/orders/"+encodeURIComponent(id)+"/timeline"),
   createGuestOrder:(bookingId,items,key)=>request("/api/v1/service-orders",{method:"POST",body:{bookingId,items},idempotencyKey:key}),
   listOrders:()=>request("/api/v1/service-orders"),
+  listCrmBookings:()=>request("/api/v1/crm/bookings"),
   listMyTasks:()=>request("/api/v1/staff/tasks"),
   updateMyTask:(id,status)=>request("/api/v1/staff/tasks/"+encodeURIComponent(id),{method:"PATCH",body:{status}}),
   getCleaningChecklist:id=>request("/api/v1/staff/tasks/"+encodeURIComponent(id)+"/checklist"),
