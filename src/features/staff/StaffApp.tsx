@@ -1,3 +1,4 @@
+import {RangeCalendar,nightsBetween} from "../../components/RangeCalendar";
 import {useEffect,useMemo,useState} from "react";
 import {
   Bell,Building2,CalendarDays,Camera,CheckCircle2,ClipboardList,FileText,Gauge,Image as ImageIcon,
@@ -28,6 +29,9 @@ const iconFor=(id:string)=>id.includes("maintenance")?Wrench:id.includes("housek
 
 export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{role:HospitalityRole;onRoleChange:(r:HospitalityRole)=>void;allowRoleSwitch?:boolean;live?:boolean}){
   const [active,setActive]=useState(roleNavigation[role][0]);
+  const [calendarOpen,setCalendarOpen]=useState(false);
+  const [periodStart,setPeriodStart]=useState("");
+  const [periodEnd,setPeriodEnd]=useState("");
   const [orders,setOrders]=useState<ServiceOrder[]>(live?[]:initialOrders);
   const [liveError,setLiveError]=useState("");
   const [mobileTab,setMobileTab]=useState<"tasks"|"detail"|"proof"|"create"|"notifications">("tasks");
@@ -89,12 +93,11 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     return <Panel title={labels[current]??current}><div className="notice">Module foundation ready for the next backend slice.</div></Panel>;
   };
 
-  return <div className="staffLayout">
+  return <div className="staffLayout">\n    {calendarOpen&&<RangeCalendar start={periodStart} end={periodEnd} onApply={(start,end)=>{setPeriodStart(start);setPeriodEnd(end)}} onClose={()=>setCalendarOpen(false)}/>}
     <aside className="sidebar"><div className="sideBrand">VIEWS <small>OPERATIONS</small></div><nav>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} onClick={()=>setActive(id)}><Icon size={17}/><span>{labels[id]??id}</span></button>})}</nav></aside>
     <main className="staffMain">
       <header className="staffHead"><div><small>VIEWS OPERATIONS</small><h1>{labels[current]??current}</h1></div>{allowRoleSwitch?<select value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{r.replaceAll("_"," ")}</option>)}</select>:<span className="roleLock">{role.replaceAll("_"," ")}</span>}</header>
-      {content()}
-    </main>
+      <div className="staffPlanningRange"><button type="button" onClick={()=>setCalendarOpen(true)}><CalendarDays size={16}/> Период планирования: {periodStart&&periodEnd?periodStart+" — "+periodEnd+" ("+nightsBetween(periodStart,periodEnd)+" ночей)":"Выбрать даты"}</button><small>Демо-период · не фильтрует серверные заказы</small></div>\n      {content()}\n    </main>
     <StaffMobileDock tab={mobileTab} setTab={setMobileTab}/>
     <StaffMobileSheet tab={mobileTab} setTab={setMobileTab} orders={visible} selected={selectedOrder} setSelected={setSelectedOrder} act={act} proofBefore={proofBefore} proofAfter={proofAfter} setProofBefore={setProofBefore} setProofAfter={setProofAfter} live={live} role={role} onLiveCreated={loadLiveOrders}/>
   </div>;
