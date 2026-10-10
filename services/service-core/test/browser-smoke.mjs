@@ -136,6 +136,24 @@ try{
    assert.deepEqual(errors,[]);
   }finally{await context.close()}
  });
+ await run("unified calendar: two dates, number of nights, reset and save on guest and CRM",async()=>{
+  for(const route of ["/guest","/crm"]){
+   const {context,page,errors}=await pageFor(route,{});
+   try{
+    await page.locator(route==="/guest"?"#guest-calendar-open":"#crm-calendar-open").click();
+    const modal=page.locator(route==="/guest"?"#guest-calendar .vw-calendar":"#crm-calendar .vw-calendar");
+    await modal.locator("[data-date]").nth(2).click();
+    await modal.locator("[data-date]").nth(7).click();
+    await modal.getByText("5 ночей",{exact:false}).waitFor();
+    await modal.getByRole("button",{name:"Сохранить"}).click();
+    assert.equal(await modal.isVisible(),false);
+    await page.locator(route==="/guest"?"#guest-calendar-open":"#crm-calendar-open").click();
+    await modal.getByRole("button",{name:"Сбросить даты"}).click();
+    assert.equal(await modal.getByRole("button",{name:"Сохранить"}).isDisabled(),true);
+    assert.deepEqual(errors,[]);
+   }finally{await context.close()}
+  }
+ });
  await run("CRM: authorized orders, SLA and details",async()=>{
   const {context,page,errors}=await pageFor("/crm",{
    "GET /api/v1/service-orders":{json:[{id:orderId,fulfillment_status:"confirmed"}]},
