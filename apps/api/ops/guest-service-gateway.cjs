@@ -13,7 +13,8 @@ exports.handle=async function({route,req,res,token,csrf,upstream,reply,failed,js
  if(!route.startsWith('services'))return false;
  if(process.env.VIEWS_SERVICE_ORDER_PILOT_ENABLED!=='true'){reply(res,404,{error:'SERVICE_ORDERS_DISABLED'});return true;}
  const u=new URL('/'+route,'http://local'),read=req.method==='GET'&&['/services/catalog','/services/orders'].includes(u.pathname);
- const write=req.method==='POST'&&u.pathname==='/services/orders'&&!u.search;
+ const action=u.pathname.match(/^\/services\/orders\/([^/]+)\/actions$/);
+ const write=req.method==='POST'&&(u.pathname==='/services/orders'||action&&UUID.test(action[1]))&&!u.search;
  if((!read&&!write)||(read&&(!UUID.test(u.searchParams.get('reservationId')||'')||[...u.searchParams.keys()].some(k=>!['reservationId','cursor'].includes(k)||u.searchParams.getAll(k).length!==1)||(u.searchParams.has('cursor')&&!UUID.test(u.searchParams.get('cursor')))))){reply(res,400,{error:'SERVICE_INPUT_INVALID'});return true;}
  if(!token){reply(res,401,{error:'GUEST_EMAIL_SESSION_INVALID'});return true;}
  let body,key;

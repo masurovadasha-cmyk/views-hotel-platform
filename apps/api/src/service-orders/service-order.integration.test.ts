@@ -33,6 +33,52 @@ beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid 
 beforeEach(()=>{for(const [k,v] of Object.entries({NODE_ENV:'test',VIEWS_LOCAL_REHEARSAL:'true',VIEWS_SERVICE_ORDER_PILOT_ENABLED:'true',VIEWS_GUEST_EMAIL_PILOT_ENABLED:'true',VIEWS_GUEST_EMAIL_TOKEN_KEY:'de'.repeat(32),VIEWS_STAFF_AUTH_PILOT_ENABLED:'true',VIEWS_STAFF_AUTH_ORGANIZATION_ID:org}))vi.stubEnv(k,v);});
 afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('single Core service order / inspected cleaning',()=>{
+ it('guest cancels an assigned order once, without a charge, and releases the employee slot',async()=>{
+  const f=await fixture(),o=await act(await request(f),'assign',{assigneeId:id(2)}),key=randomUUID();
+  const change={action:'cancel',expectedRevision:o.revision};
+  const results=await Promise.all([service.change(f.a.token,o.orderId,key,change),service.change(f.a.token,o.orderId,key,change)]);
+  expect(results.filter(x=>!x.idempotentReplay)).toHaveLength(1);expect(results[0]).toMatchObject({stage:'cancelled',revision:3});
+  expect((await run('SELECT * FROM folio_entries WHERE source_id=$1',[o.orderId])).rowCount).toBe(0);
+  expect((await run("SELECT count(*)::int n FROM outbox_events WHERE aggregate_id=$1 AND event_type='service.guest_cancel'",[o.orderId])).rows[0].n).toBe(1);
+  await expect(act(results[0],'start',{},2)).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  const next=await fixture();next.body.requestedFor=f.body.requestedFor;
+  expect((await act(await request(next),'assign',{assigneeId:id(2)})).stage).toBe('assigned');
+ });
+ it('reschedules using frozen duration and price and updates both queues, preserving the original request',async()=>{
+  const f=await fixture('76543'),o=await act(await request(f),'assign',{assigneeId:id(2)});
+  await run('UPDATE service_catalog SET price_minor=99999,duration_minutes=90 WHERE id=$1',[f.s]);
+  const time=new Date(Date.parse(f.body.requestedFor)+600000).toISOString(),key=randomUUID();
+  const body={action:'reschedule',expectedRevision:o.revision,requestedFor:time};
+  const changed=await service.change(f.a.token,o.orderId,key,body);
+  expect(changed).toMatchObject({revision:3,stage:'assigned',totalMinor:'76543'});
+  expect(await service.change(f.a.token,o.orderId,key,body)).toMatchObject({idempotentReplay:true});
+  for(const page of [await service.orders(f.a.token,f.r),await service.queue(actor(),token(),property)]){
+   const row=page.items.find(x=>x.orderId===o.orderId)!;expect(new Date(row.requestedFor as string).toISOString()).toBe(time);
+  }
+  const stored=(await run('SELECT o.requested_for,extract(epoch FROM upper(t.scheduled_period)-lower(t.scheduled_period))::int seconds FROM service_orders o JOIN service_cleaning_tasks t ON t.order_id=o.id WHERE o.id=$1',[o.orderId])).rows[0];
+  expect(new Date(stored.requested_for).toISOString()).toBe(f.body.requestedFor);expect(stored.seconds).toBe(2400);
+  await expect(service.change(f.a.token,o.orderId,key,{...body,requestedFor:f.body.requestedFor})).rejects.toThrow('SERVICE_COMMAND_CONFLICT');
+ });
+ it('rejects foreign ownership, stale revision, out-of-stay time and overlapping worker changes atomically',async()=>{
+  const f=await fixture(),g=await fixture(),o=await act(await request(f),'assign',{assigneeId:id(3)}),other=await act(await request(g),'assign',{assigneeId:id(3)});
+  await expect(service.change(g.a.token,o.orderId,randomUUID(),{action:'cancel',expectedRevision:2})).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+  await expect(service.change(f.a.token,o.orderId,randomUUID(),{action:'cancel',expectedRevision:1})).rejects.toThrow('SERVICE_REVISION_CHANGED');
+  for(const time of ['2000-01-01T00:00:00.000Z','2099-01-01T00:00:00.000Z'])await expect(service.change(f.a.token,o.orderId,randomUUID(),{action:'reschedule',expectedRevision:2,requestedFor:time})).rejects.toThrow('SERVICE_TIME_INVALID');
+  await expect(service.change(f.a.token,o.orderId,randomUUID(),{action:'reschedule',expectedRevision:2,requestedFor:g.body.requestedFor})).rejects.toThrow('SERVICE_ASSIGNEE_BUSY');
+  expect((await service.orders(f.a.token,f.r)).items[0]).toMatchObject({revision:2,stage:'assigned'});
+  expect((await run("SELECT count(*)::int n FROM outbox_events WHERE aggregate_id=$1 AND event_type LIKE 'service.guest_%'",[o.orderId])).rows[0].n).toBe(0);
+  await guest.logout(f.a.token);await expect(service.change(f.a.token,o.orderId,randomUUID(),{action:'cancel',expectedRevision:2})).rejects.toThrow('GUEST_EMAIL_SESSION_INVALID');
+  expect(other.stage).toBe('assigned');
+ });
+ it('serializes a guest cancellation racing with a worker start',async()=>{
+  const f=await fixture(),o=await act(await request(f),'assign',{assigneeId:id(2)});
+  const results=await Promise.allSettled([service.change(f.a.token,o.orderId,randomUUID(),{action:'cancel',expectedRevision:o.revision}),act(o,'start',{},2)]);
+  expect(results.filter(x=>x.status==='fulfilled')).toHaveLength(1);
+  expect(results.find(x=>x.status==='rejected')).toMatchObject({reason:{message:'SERVICE_REVISION_CHANGED'}});
+  const current=(await service.orders(f.a.token,f.r)).items[0];expect(['working','cancelled']).toContain(current.stage);
+  if(current.stage==='working')await expect(service.change(f.a.token,o.orderId,randomUUID(),{action:'cancel',expectedRevision:current.revision})).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  expect((await run('SELECT * FROM folio_entries WHERE source_id=$1',[o.orderId])).rowCount).toBe(0);
+ });
  it('executes guest request, worker checklist, independent inspection and one exact frozen folio charge',async()=>{
   const f=await fixture(),catalog=await service.catalog(f.a.token,f.r);expect(catalog.items.some(x=>x.id===f.s&&x.priceMinor===f.body.expectedPriceMinor)).toBe(true);
   let o=await request(f);await run("UPDATE service_catalog SET price_minor=100,name='{\"en\":\"Changed later\"}' WHERE id=$1",[f.s]);

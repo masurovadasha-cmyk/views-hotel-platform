@@ -1,8 +1,24 @@
 # VIEWS 0.14.0 Preview — состояние приложения
 
 Базис функций: `503ff65`. Выпуск включает актуальный общий клиент веб/Android.
-Публикация подтверждается release.json и GitHub Release после развёртывания.
+Публикация проверена: исходный SHA `cd88ffef1031d081220b8dbc41e951ebedced2a0`,
+версия `0.14.0-preview`, `sourceDirty=false` на Cloudflare и GitHub Pages.
 Публичный режим — демонстрационный; Core/email/платежи публично не включаются.
+
+- [Cloudflare](https://staging-master-reference-v1-views-hotel-platform.masurovadasha.workers.dev/)
+- [GitHub Pages](https://masurovadasha-cmyk.github.io/views-hotel-platform/)
+- [Подписанный APK](https://github.com/masurovadasha-cmyk/views-hotel-platform/releases/download/v0.14.0-preview/VIEWS-0.14.0-preview.apk)
+
+APK скачан обратно: SHA-256
+`ca5863ef78902c9dda27c52c17248de69c214d0ecb07fdef9ab88e06a9a258c1`;
+подпись прежним preview-сертификатом и встроенные метаданные проверены.
+Android versionCode `1400001`. Установка/обновление на физическом телефоне не проверены.
+Проверка публичных JS/CSS: `scripts/public-release.browser.cjs` для обеих ссылок,
+TLS проверен curl, скачанные публичные ресурсы отрисованы в Chromium.
+
+Следующий блок отмены/переноса уборки описан в
+[CANVA_140_BLOCK_3_GUEST_CHANGES.md](design/CANVA_140_BLOCK_3_GUEST_CHANGES.md)
+и не включён в неизменяемый APK 0.14.0.
 
 ## Новый Canva
 

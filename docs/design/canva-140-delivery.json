@@ -125,11 +125,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "guest",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_3_GUEST_CHANGES.md; cleaning before-start only, full visual acceptance pending"
     },
     {
       "id": "SG-GN-009",

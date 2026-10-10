@@ -1,5 +1,12 @@
 import type {Locale} from '../../i18n/messages';
 const rows:Record<string,[string,string,string]>={
+ changeTime:['Перенести время','Change time','Vaqtni o‘zgartirish'],
+ cancelReview:['Подтвердите отмену','Review cancellation','Bekor qilishni tekshiring'],
+ rescheduleReview:['Подтвердите перенос','Review time change','Vaqt o‘zgarishini tekshiring'],
+ cancelTerms:['До начала уборки отмена бесплатна. Начисления за этот заказ не будет; возврат платежа не требуется. Если сотрудник уже начал работу, отмена будет отклонена.','Cancellation is free before cleaning starts. This order will not be charged; no payment refund is needed. If work has already started, cancellation will be rejected.','Tozalash boshlanishidan oldin bekor qilish bepul. Bu buyurtma uchun haq olinmaydi; to‘lovni qaytarish talab etilmaydi. Ish boshlangan bo‘lsa, bekor qilish rad etiladi.'],
+ rescheduleTerms:['Стоимость и длительность сохраняются. Перенос возможен до начала, в пределах проживания и при свободном времени назначенного сотрудника. Желаемое время требует согласования.','Price and duration stay the same. Changes are allowed before work starts, within your stay and the assigned employee’s availability. Preferred time requires confirmation.','Narx va davomiylik o‘zgarmaydi. Ish boshlanishidan oldin, yashash muddati va tayinlangan xodimning bo‘sh vaqtida o‘zgartirish mumkin. Istalgan vaqt kelishilishi kerak.'],
+ changeConsent:['Подтверждаю выбранное изменение','I confirm this change','Bu o‘zgarishni tasdiqlayman'],
+ confirmChange:['Подтвердить изменение','Confirm change','O‘zgarishni tasdiqlash'],keepOrder:['Оставить заказ без изменений','Keep current order','Buyurtmani o‘zgartirmaslik'],
  open:['Открыть очередь уборки','Open cleaning queue','Tozalash navbatini ochish'],
  title:['Заказы уборки','Cleaning orders','Tozalash buyurtmalari'],pilot:['Локальный пилот · платная уборка во время проживания','Local pilot · paid cleaning during your stay','Mahalliy sinov · yashash vaqtida pullik tozalash'],
  refresh:['Обновить','Refresh','Yangilash'],next:['Следующая страница','Next page','Keyingi sahifa'],empty:['Заказов нет','No orders','Buyurtmalar yo‘q'],

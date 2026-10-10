@@ -21,6 +21,33 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
  await page.route('**/guest-api/services/orders',async r=>{writes.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});
  await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();await guest.getByText('Saved',{exact:true}).waitFor();if(writes[0]!==writes[1])console.error('RETRY_KEYS:'+JSON.stringify(writes));assert.equal(writes[0],writes[1]);
  const orders=(await admin.query('SELECT id FROM service_orders WHERE reservation_id=$1',[reservation])).rows;assert.equal(orders.length,1);const oid=orders[0].id;
+ // Guest change review, CSRF, current plan in Core, then a separate cancelled
+ // order. The original order continues through worker execution below.
+ const changes=guest.getByTestId('guest-cleaning-change');
+ assert.equal((await api('services/orders/'+oid+'/actions','POST',{action:'cancel',expectedRevision:1},{'Idempotency-Key':randomUUID()})).status,403);
+ await changes.getByRole('button',{name:'Change time',exact:true}).click();
+ const moved=new Date(Date.now()+110*3600000).toISOString().slice(0,16);
+ await changes.getByLabel('Preferred time (device time zone)',{exact:true}).fill(moved);
+ assert.equal(await changes.getByRole('button',{name:'Confirm change',exact:true}).isDisabled(),true);
+ await changes.getByLabel('I confirm this change',{exact:true}).check();
+ const changedResponse=page.waitForResponse(r=>r.url().endsWith('/services/orders/'+oid+'/actions')&&r.request().method()==='POST');
+ await changes.getByRole('button',{name:'Confirm change',exact:true}).click();assert.equal((await changedResponse).status(),200);
+ await changes.getByRole('button',{name:'Change time',exact:true}).waitFor();
+ assert.equal(new Date((await admin.query('SELECT lower(scheduled_period) current_time FROM service_cleaning_tasks WHERE order_id=$1',[oid])).rows[0].current_time).toISOString(),new Date(moved).toISOString());
+ await guest.getByLabel('Service',{exact:true}).selectOption(service);
+ await guest.getByLabel('Preferred time (device time zone)',{exact:true}).fill(new Date(Date.now()+120*3600000).toISOString().slice(0,16));
+ await guest.getByLabel('I accept the price and folio charge',{exact:true}).check();
+ const createdResponse=page.waitForResponse(r=>r.url().endsWith('/services/orders')&&r.request().method()==='POST');
+ await guest.getByRole('button',{name:'Request cleaning',exact:true}).click();const second=(await (await createdResponse).json()).orderId;
+ await page.waitForFunction(()=>document.querySelectorAll('[data-testid="guest-cleaning-change"]').length===2);
+ const cancelCard=guest.locator('article[data-order-id="'+second+'"]');
+ await cancelCard.getByRole('button',{name:'Cancel before start',exact:true}).click();
+ await cancelCard.getByText(/Cancellation is free before cleaning starts/).waitFor();
+ await cancelCard.getByLabel('I confirm this change',{exact:true}).check();
+ const cancelResponse=page.waitForResponse(r=>r.url().endsWith('/services/orders/'+second+'/actions')&&r.request().method()==='POST');
+ await cancelCard.getByRole('button',{name:'Confirm change',exact:true}).click();assert.equal((await cancelResponse).status(),200);
+ await cancelCard.getByText(/Cancelled/).waitFor();
+ assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[second])).rows[0].n,0);
  const web=await require('./fixtures/folio-staff-web.cjs')({coreOrigin,organizationId:org,propertyId:property,internalKey:process.env.VIEWS_INTERNAL_API_KEY});
  const contexts=[];let phase='staff';
  try{
@@ -28,7 +55,7 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   const manager=await employee(1,'manager'),worker=await employee(2,'housekeeper');
   const mp=manager.getByTestId('staff-cleaning'),wp=worker.getByTestId('staff-cleaning');
   await mp.getByRole('button',{name:'Open cleaning queue',exact:true}).click();await wp.getByRole('button',{name:'Open cleaning queue',exact:true}).click();
-  const card=p=>p.locator('article').filter({hasText:'Browser cleaning'});
+  const card=p=>p.locator('article').filter({hasText:'Browser cleaning'}).filter({hasNotText:'Cancelled'});
   await card(mp).getByText(/Synthetic cleaning browser/).waitFor();
   await card(mp).getByLabel('Housekeeper',{exact:true}).selectOption(id(2));await card(mp).getByRole('button',{name:'Assign',exact:true}).click();await card(mp).getByText(/Assigned/).waitFor();
   await wp.getByRole('button',{name:'Refresh',exact:true}).click();await card(wp).getByRole('button',{name:'Start',exact:true}).click();await card(wp).getByLabel('Note',{exact:true}).fill('Synthetic completed checklist');
@@ -41,8 +68,8 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();await guest.getByText(/Accepted and charged/).waitFor();
   for(const l of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(l);await manager.locator('.staffLanguage select').selectOption(l);for(const p of [page,manager])assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   await page.locator('.guestLanguage select').selectOption('ru');await manager.locator('.staffLanguage select').selectOption('ru');
-  await guest.screenshot({path:'/tmp/views-cleaning-guest.png'});await mp.locator('article').filter({hasText:'Уборка браузер'}).screenshot({path:'/tmp/views-cleaning-staff.png'});
+  await guest.screenshot({path:'/tmp/views-cleaning-guest.png'});await mp.locator('article').filter({hasText:'Уборка браузер'}).filter({hasNotText:'Отменён'}).screenshot({path:'/tmp/views-cleaning-staff.png'});
   await page.locator('.guestLanguage select').selectOption('en');
-  console.log(JSON.stringify({result:'pass',proof:'cleaning_guest_dispatch_worker_inspection_folio',duplicateRequests:1,folioEntries:1,csrf:true,offline:true,languages:3}));
+  console.log(JSON.stringify({result:'pass',proof:'cleaning_guest_dispatch_worker_inspection_folio',duplicateRequests:1,folioEntries:1,csrf:true,offline:true,languages:3,guestReschedule:true,guestCancellation:true}));
  }catch(e){console.error('CLEANING_BROWSER_PHASE:'+phase);throw e;}finally{for(const c of contexts)await c.close();await web.close();}
 };

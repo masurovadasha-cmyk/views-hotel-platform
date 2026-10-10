@@ -4,6 +4,7 @@ import {useGuestLocale} from '../guest/GuestLocale';
 import {formatStaffMoney,localizedName} from '../local-core/staff-locale';
 import {cleaningText} from './locale';
 import {useCleaning} from './useCleaning';
+import {GuestCleaningChange} from './GuestCleaningChange';
 import type {CleaningItem,CleaningOrder,Page} from './model';
 export function GuestCleaning({reservationId,csrf,online,onExpired,onPending}:{reservationId:string;csrf:string;online:boolean;onExpired:()=>void;onPending:(v:boolean)=>void}){
  const {locale}=useGuestLocale(),t=(k:string)=>cleaningText(locale,k);
@@ -24,7 +25,7 @@ export function GuestCleaning({reservationId,csrf,online,onExpired,onPending}:{r
  <label>{t('time')}<input type="datetime-local" required value={time} onChange={e=>setTime(e.target.value)}/></label><p>{t('terms')}</p>
  <label><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/>{t('consent')}</label><button disabled={!chosen||!consent}>{t('request')}</button></fieldset></form>
  {catalog.nextCursor&&<button disabled={disabled} onClick={()=>void load('catalog',catalog.nextCursor!).catch(()=>setError('unavailable'))}>{t('service')} · {t('next')}</button>}
- {!orders.items.length&&<p>{t('empty')}</p>}{orders.items.map(o=><article key={o.orderId}><h4>{localizedName(o.name,locale)}</h4><p>{t(o.stage)} · {money(o.totalMinor,o.currency)}</p><time>{new Date(o.requestedFor).toLocaleString(locale)}</time></article>)}
+ {!orders.items.length&&<p>{t('empty')}</p>}{orders.items.map(o=><article key={o.orderId} data-order-id={o.orderId}><h4>{localizedName(o.name,locale)}</h4><p>{t(o.stage)} · {money(o.totalMinor,o.currency)}</p><time>{new Date(o.requestedFor).toLocaleString(locale)}</time><GuestCleaningChange key={o.revision} order={o} locale={locale} disabled={disabled} act={state.act}/></article>)}
  {orders.nextCursor&&<button disabled={disabled} onClick={()=>void load('orders',orders.nextCursor!).catch(()=>setError('unavailable'))}>{t('next')}</button>}
  <button disabled={disabled} onClick={()=>void refresh()}>{t('refresh')}</button></section>;
 }
