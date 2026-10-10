@@ -157,6 +157,7 @@ try{
  await run("CRM: authorized orders, SLA and details",async()=>{
   const {context,page,errors}=await pageFor("/crm",{
    "GET /api/v1/service-orders":{json:[{id:orderId,fulfillment_status:"confirmed"}]},
+   "GET /api/v1/crm/bookings":{json:[{id:bookingId,property_id:propertyId,status:"checked_in",starts_at:"2026-10-13T00:00:00Z",ends_at:"2026-10-25T00:00:00Z"}]},
    "GET /api/v1/dispatch/sla":{json:{total:1,open:1,overdue:0,completed:0}},
    ["GET /api/v1/service-orders/"+orderId]:{json:{id:orderId,property_id:propertyId,service_type:"market",fulfillment_status:"confirmed",payment_status:"unpaid"}}
   });
