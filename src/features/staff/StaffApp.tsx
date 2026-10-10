@@ -113,7 +113,9 @@ function Dashboard({orders,role}:{orders:ServiceOrder[];role:HospitalityRole}){
 }
 
 function FrontDesk(){
+  const [range,setRange]=useState<[string,string]>(["",""]);
   return <div className="staffBoard">
+    <Panel title="Reservation date range (demo)"><p>Единый календарь заезда и выезда. Выбор периода не меняет бронирования в Core.</p><StayDateRange checkIn={range[0]} checkOut={range[1]} onChange={(a,b)=>setRange([a,b])}/></Panel>
     <Panel title="Reservations"><div className="compactRows">{["Alex Johnson","Sarah Miller","David Kim"].map((n,i)=><div key={n}><span>{i===0?"12–15 Oct":"Upcoming"}</span><b>{n}</b><small>{i===0?"U-Tower #235":"VIEWS apartment"}</small><i className={"status "+(i===0?"confirmed":"assigned")}>{i===0?"confirmed":"request"}</i></div>)}</div></Panel>
     <Panel title="Immigration registration queue"><div className="compactRows">{["John Smith (USA)","Maria Garcia (Spain)","Chen Wei (China)"].map((n,i)=><div key={n}><span>{i===0?"New":"Pending"}</span><b>{n}</b><small>Passport data + stay details</small><i className={"status "+(i===2?"done":"assigned")}>{i===2?"sent":"waiting"}</i></div>)}</div></Panel>
   </div>;
