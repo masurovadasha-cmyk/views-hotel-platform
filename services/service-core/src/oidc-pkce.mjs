@@ -10,6 +10,6 @@ export function validateOidcBrowserConfig({issuer,clientId,redirectUri,scope="op
  if(provider.protocol!=="https:")throw Error("Issuer requires HTTPS");
  if(callback.protocol!=="https:"&&!(callback.protocol==="http:"&&["127.0.0.1","localhost"].includes(callback.hostname)))throw Error("Redirect requires HTTPS");
  if(callback.username||callback.password||callback.hash||provider.username||provider.password)throw Error("Unsafe OIDC URL");
- if(!scope.split(/\\s+/).includes("openid"))throw Error("OpenID scope required");
+ if(!scope.split(/\s+/).includes("openid"))throw Error("OpenID scope required");
  return {issuer:provider.href,clientId,redirectUri:callback.href,scope};
 }
