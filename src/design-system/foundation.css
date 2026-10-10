@@ -1,14 +1,14 @@
-/* Adapted from the supplied Canva boards, 09 Oct 2026. These are VIEWS
-   implementation tokens, not numerical token values extracted from the PDF. */
+/* Canva 140-screen PDF: neutral/gold and graphite surfaces.
+   Accent text/focus variants are adjusted for contrast; fills follow the export. */
 .app {
-  --bg: #f7f5ef;
-  --fg: #262822;
-  --card: #fffefa;
-  --surface: #efede5;
-  --muted: #65675f;
-  --line: #d8d8cc;
-  --gold: #856528;
-  --gold2: #d5bb80;
+  --bg: #f6f5f2;
+  --fg: #20242c;
+  --card: #ffffff;
+  --surface: #eef0f3;
+  --muted: #5f636c;
+  --line: #d6d8de;
+  --gold: #765c2f;
+  --gold2: #a88b58;
   --good: #296644;
   --warn: #815916;
   --danger: #ae3439;
@@ -16,18 +16,20 @@
   --warning-surface: #faf0d9;
   --danger-surface: #fcebed;
   --focus: #796026;
+  --action-bg: #a88b58;
+  --action-fg: #171a20;
   --radius: 16px;
   --shadow: 0 8px 28px rgb(25 31 24 / .06);
   font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   line-height: 1.5;
 }
 .app.dark {
-  --bg: #101514;
-  --fg: #f4f2e9;
-  --card: #1a211e;
-  --surface: #222c26;
-  --muted: #b8bfb4;
-  --line: #414d43;
+  --bg: #1a1d24;
+  --fg: #f2f3f6;
+  --card: #242832;
+  --surface: #303744;
+  --muted: #bfc4ce;
+  --line: #4b5260;
   --gold: #d9bd7d;
   --good: #8dd9aa;
   --warn: #eac278;
@@ -37,26 +39,6 @@
   --danger-surface: #41292f;
   --focus: #e2c786;
 }
-.app[data-workspace="staff"] {
-  --bg: #f3f5fa;
-  --fg: #232b42;
-  --card: #fff;
-  --surface: #edf0f8;
-  --muted: #5a6478;
-  --line: #d4dbea;
-  --gold: #485db5;
-  --focus: #435bbc;
-}
-.app.dark[data-workspace="staff"] {
-  --bg: #101622;
-  --fg: #edf1fa;
-  --card: #1a2334;
-  --surface: #232f44;
-  --muted: #b7c3d9;
-  --line: #40506d;
-  --gold: #aabaff;
-  --focus: #b5c3ff;
-}
 .app :is(input,select,textarea,button) { font-family: inherit; }
 .app :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 .app button:not(:disabled), .app select:not(:disabled) { cursor: pointer; }
@@ -64,9 +46,7 @@
 .app .status.done, .app .status.closed { color: var(--good); background: var(--success-surface); }
 .app .status.in_progress, .app .status.accepted, .app .status.assigned, .app .status.new { color: var(--warn); background: var(--warning-surface); }
 .app .status.failed, .app .status.cancelled, .app .status.overdue { color: var(--danger); background: var(--danger-surface); }
-.app .primary { min-height: 44px; background: #d6bd86; color: #252116; border-color: #997b41; box-shadow: none; }
-.app[data-workspace="staff"] .primary { background: #4458ad; color: #fff; border-color: #4458ad; }
-.app.dark[data-workspace="staff"] .primary { background: #afbdff; color: #1a2549; border-color: #afbdff; }
+.app .primary { min-height: 44px; background: var(--action-bg); color: var(--action-fg); border-color: var(--action-bg); box-shadow: none; }
 .app .brandbar { background: var(--card); color: var(--fg); border-bottom: 1px solid var(--line); grid-template-columns: auto minmax(0,1fr) auto; gap: 24px; }
 .app .brand strong { font-family: inherit; font-size: 19px; font-weight: 650; letter-spacing: .21em; }
 .app .brand small, .app .brand p, .app .cities { color: var(--muted); }
@@ -97,3 +77,5 @@
 @media (prefers-reduced-motion: reduce) {
   .app *, .app *::before, .app *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
+
+.app .status { height:auto; min-height:26px; white-space:normal; overflow-wrap:anywhere; line-height:1.4; }

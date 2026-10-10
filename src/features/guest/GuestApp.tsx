@@ -1,3 +1,5 @@
+import {GuestServiceCatalogue} from './GuestServiceCatalogue';
+import {findGuestService,guestRequestCategory} from './service-catalog';
 import {GuestDialog} from './GuestDialog';
 import {GuestBookingProgress} from './GuestBookingProgress';
 import {GuestMarket} from './GuestMarket';
@@ -9,11 +11,10 @@ import {useGuestLocale} from './GuestLocale';
 import {useEffect,useMemo,useState} from "react";
 import {SmsUnavailableDialog} from "./SmsUnavailableDialog";
 import {
-  AlertCircle,Bath,BedDouble,Bell,CalendarDays,Car,CheckCircle2,
-  ConciergeBell,CreditCard,Heart,Map as MapIcon,MapPin,MessageCircle,Search,Send,Shirt,ShoppingBag,
-  Sparkles,Star,UserRound,Users,UtensilsCrossed,Wine,Flower2,ArrowUpRight,ShieldCheck,Wifi,Armchair
+  AlertCircle,Bath,BedDouble,Bell,CalendarDays,CheckCircle2,
+  ConciergeBell,CreditCard,Heart,Map as MapIcon,MapPin,MessageCircle,Search,Send,
+  Star,UserRound,Users,ArrowUpRight,ShieldCheck,Wifi,Armchair
 } from "lucide-react";
-import type {LucideIcon} from "lucide-react";
 import {apartments} from "../../data/demo";
 import {bookingQuote} from "../../domain/bookingQuote";
 import type {Apartment} from "../../domain/types";
@@ -25,7 +26,6 @@ type FlowScreen="apartment"|"booking"|"guest-data"|"payment"|"secure-processing"
 const tabLabels:Record<Tab,string>={explore:'Explore',bookings:'Bookings',services:'Services',messages:'Messages',profile:'Profile'};
 const flowLabels:Record<FlowScreen,string>={apartment:'Apartment',booking:'Booking','guest-data':'Guest data',payment:'Payment','secure-processing':'Secure payment','payment-declined':'Payment declined','booking-confirmed':'Confirmation screen preview','booking-details':'Booking details','cancellation-refund':'Cancellation & refund'};
 function bookingStatus(status:string){return ({confirmed:'Confirmed',checked_in:'Checked in',checked_out:'Checked out',cancelled:'Cancelled',hold:'Temporary hold',pending:'Pending',no_show:'No-show'} as Record<string,string>)[status]||'Unknown status';}
-type ServiceTuple=readonly [string,LucideIcon,string];
 
 const helpTopics=[
  ['Modify booking','Booking changes are not connected in this interface. Contact the property through your confirmed booking channel.'],
@@ -34,10 +34,6 @@ const helpTopics=[
  ['Payment methods','VIEWS never collects raw card details. Checkout opens on the payment provider/bank page.'],
  ['Contact support','Support contact details have not been configured.']
 ] as const;
-const services:ServiceTuple[]=[
-  ["Concierge",ConciergeBell,"concierge"],["Cleaning",Sparkles,"cleaning"],["Laundry",Shirt,"laundry"],
-  ["V Market",ShoppingBag,"minimart"],["Restaurant",UtensilsCrossed,"restaurant"],["Bar",Wine,"bar"],["Rent Car",Car,"rent_car"],["Spa & Wellness",Flower2,"spa"]
-];
 
 export function GuestApp({live=false}:{live?:boolean}){
   const {t}=useGuestLocale();
@@ -89,7 +85,6 @@ export function GuestApp({live=false}:{live?:boolean}){
     results?.scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
   }
 
-
   return <main className="guestShell canvaGuest">
     {!live&&<p className="notice" role="status">{t("Demo catalog. No booking, payment, service request or message is sent.")}</p>}
     {tab==="explore"&&<>
@@ -124,7 +119,7 @@ export function GuestApp({live=false}:{live?:boolean}){
         </article>)}</div>
       </section>}
 
-      <section className="servicesSection"><div className="sectionHead"><div><small>{t("ONE ECOSYSTEM")}</small><h2>{t("Everything around your stay")}</h2></div></div><div className="serviceGrid">{services.map(([name,Icon,value])=><button key={name} onClick={()=>{setServiceCategory(value);setTab("services");}}><Icon/><b>{t(name)}</b><small>{t("Request in app")}</small></button>)}</div></section>
+      <section className="servicesSection"><div className="sectionHead"><div><small>{t("ONE ECOSYSTEM")}</small><h2>{t("Everything around your stay")}</h2></div></div><GuestServiceCatalogue onSelect={id=>{setServiceCategory(id);setServiceMessage("");setTab("services");}}/></section>
     </>}
 
     {tab==="bookings"&&<section className="contentPage">
@@ -135,13 +130,14 @@ export function GuestApp({live=false}:{live?:boolean}){
 
     {tab==="services"&&<section className="contentPage">
       <div className="sectionHead"><div><small>{t("VIEWS SERVICES")}</small><h2>{t("Everything for your stay")}</h2></div></div>
-      <div className="serviceGrid large">{services.map(([name,Icon,value])=><button key={name} className={serviceCategory===value?"selectedService":""} aria-pressed={serviceCategory===value} onClick={()=>setServiceCategory(value)}><Icon/><b>{t(name)}</b><small>{t("Tracked Service Order")}</small></button>)}</div>
+      <GuestServiceCatalogue large selected={serviceCategory} onSelect={id=>{setServiceCategory(id);setServiceMessage("");}}/>
+      {guestRequestCategory(serviceCategory)===null&&<p className="notice" role="status">{t("This service is not connected yet. Booking, payment and sending requests are unavailable.")}</p>}
       {serviceCategory==="minimart"&&<GuestMarket cart={marketCart} onChange={setMarketCart}/>}
-      {live?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category:serviceCategory,title:(services.find(x=>x[2]===serviceCategory)?.[0]??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch{setServiceMessage("Request not confirmed. Check with staff before submitting again.")}}}>
+      {live&&guestRequestCategory(serviceCategory)!==null?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();const category=guestRequestCategory(serviceCategory);if(category===null)return;setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category,title:(findGuestService(serviceCategory)?.name??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch{setServiceMessage("Request not confirmed. Check with staff before submitting again.")}}}>
         <label>{t("Booking")}<select value={serviceBookingId} onChange={e=>setServiceBookingId(e.target.value)}>{liveBookings.map(b=><option key={b.id} value={b.id}>{b.confirmation_code} · {b.property_name}</option>)}</select></label>
         <label>{t("Details")}<textarea value={serviceDetails} onChange={e=>setServiceDetails(e.target.value)} placeholder={t("Tell us what you need…")}/></label>
         <button className="primary" disabled={!serviceBookingId||serviceDetails.trim().length<2}>{t("Send request")}</button>{serviceMessage&&<div className="notice">{t(serviceMessage)}</div>}
-      </form>:serviceCategory!=="minimart"&&<GuestServicePreview service={services.find(service=>service[2]===serviceCategory)?.[0]??"Concierge"}/>}
+      </form>:guestRequestCategory(serviceCategory)!==null&&serviceCategory!=="minimart"&&<GuestServicePreview service={findGuestService(serviceCategory)?.name??"Concierge"}/>}
     </section>}
 
     {tab==="messages"&&<section className="contentPage">

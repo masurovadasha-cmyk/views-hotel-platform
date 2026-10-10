@@ -1,15 +1,14 @@
-/* Staff CRM adaptation of the supplied 17-page Canva operational board.
-   Tokens are deliberately scoped: guest branding and Core permissions are unchanged. */
-.staffLayout.canvaStaff{--bg:#f5f6fa;--fg:#202638;--card:#fff;--surface:#f1f3f9;--muted:#606a80;--line:#dce1ec;--gold:#4654bf;--staff-accent:#4654bf;--staff-tint:#edf0ff;--staff-danger:#af2e3b;--staff-danger-bg:#fff0f2;--staff-good:#216347;--staff-good-bg:#eaf7ef;background:var(--bg);color:var(--fg);grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 64px);font-size:14px;line-height:1.5}
-.app.dark .staffLayout.canvaStaff{--bg:#111521;--fg:#edf0f8;--card:#1a2030;--surface:#232b3e;--muted:#b0b9ce;--line:#394359;--gold:#aab5ff;--staff-accent:#aab5ff;--staff-tint:#293458;--staff-danger:#ffabb4;--staff-danger-bg:#452532;--staff-good:#a3dfbd;--staff-good-bg:#203d35}
-.canvaStaff .sidebar{background:#182038;border-right:1px solid #30394e;padding:30px 16px;box-shadow:none}
-.canvaStaff .sideBrand{font-size:25px;letter-spacing:.2em;color:#fff;padding:0 12px 24px}
-.canvaStaff .sideBrand small{font-size:9px;letter-spacing:.19em;color:#b5bfd8;margin-top:5px}
+/* Staff CRM layout with the shared neutral/gold 140-screen Canva tokens.
+   Presentation only; Core permissions are unchanged. */
+.staffLayout.canvaStaff{--staff-accent:var(--gold);--staff-tint:var(--surface);--staff-danger:var(--danger);--staff-danger-bg:var(--danger-surface);--staff-good:var(--good);--staff-good-bg:var(--success-surface);background:var(--bg);color:var(--fg);grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 64px);font-size:14px;line-height:1.5}
+.canvaStaff .sidebar{background:var(--card);border-right:1px solid var(--line);padding:30px 16px;box-shadow:none}
+.canvaStaff .sideBrand{font-size:25px;letter-spacing:.2em;color:var(--fg);padding:0 12px 24px}
+.canvaStaff .sideBrand small{font-size:9px;letter-spacing:.19em;color:var(--muted);margin-top:5px}
 .canvaStaff .sidebar nav{display:grid;gap:5px}
-.canvaStaff .sidebar nav button{min-height:44px;gap:12px;padding:11px 13px;border-radius:10px;color:#c4cce0;font-size:13px;text-align:left;line-height:1.3}
-.canvaStaff .sidebar nav button.active{background:#39477b;color:#fff;border-color:transparent;box-shadow:inset 3px 0 #bac5ff}
-.canvaStaff .sidebar nav button:hover{background:#2d3754;color:#fff}
-.canvaStaff .sidebar nav button:focus-visible{outline:3px solid #bac5ff;outline-offset:2px}
+.canvaStaff .sidebar nav button{min-height:44px;gap:12px;padding:11px 13px;border-radius:10px;color:var(--muted);font-size:13px;text-align:left;line-height:1.3}
+.canvaStaff .sidebar nav button.active{background:var(--action-bg);color:var(--action-fg);border-color:transparent;box-shadow:none}
+.canvaStaff .sidebar nav button:hover{background:var(--surface);color:var(--fg)}
+.canvaStaff .sidebar nav button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .canvaStaff .staffMain{padding:28px clamp(16px,3vw,44px) 48px;min-width:0;max-width:1800px;width:100%}
 .canvaStaff .staffHead{align-items:center;gap:16px;margin-bottom:16px}
 .canvaStaff .staffHead h1{font-family:inherit;letter-spacing:-.035em;font-size:clamp(26px,3vw,38px);line-height:1.2;margin:5px 0}
@@ -47,7 +46,7 @@
 .canvaStaff .orderOpen:hover{text-decoration-color:var(--staff-accent);color:var(--staff-accent)}
 .canvaStaff .orderActions{display:flex;flex-wrap:wrap;gap:7px}
 .canvaStaff .orderActions button,.canvaStaff .staffQueueSummary button,.canvaStaff .staffSheetClose{min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font-size:12px;font-weight:600}
-.canvaStaff button.primary{background:#4654bf;border-color:#4654bf;color:#fff;box-shadow:none}
+.canvaStaff button.primary{background:var(--action-bg);border-color:var(--action-bg);color:var(--action-fg);box-shadow:none}
 .canvaStaff button:disabled{opacity:.55;cursor:not-allowed}
 .canvaStaff :is(button,input,select,textarea):focus-visible{outline:3px solid var(--staff-accent);outline-offset:3px}
 .canvaStaff .inboxTabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 18px;border:0;background:transparent;padding:0}

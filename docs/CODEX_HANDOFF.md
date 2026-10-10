@@ -955,3 +955,28 @@ Legacy live now checks both themes. Preserve staff permission and offline gates.
 The incomplete services research was moved reversibly to
 /workspace/views-services-research-draft-2026-10-10/services-v1, not discarded or
 published as complete. Available Canva exports still cover32pages, not60/50 packs.
+
+## 50. Received updated Canva PDF — 10 October 2026 UTC
+
+New user attachment is accessible locally: 140 unique screens / 280 pages, each
+Light/RU + Dark/RU. See docs/design/CANVA_140_REVIEW.md and its complete ID/page
+inventory. Text extracted from all pages, representative visual pairs inspected;
+not a claim of full visual or functional parity. Six areas: guest55, CRM30,
+staff20, partner16, host4, admin15. New neutral/graphite + gold palette replaces
+the prior adaptation direction; no runtime change made in this review step.
+The eight-direction services lifecycle needs Core implementation, not merely
+new mock screens. Preserve existing supply/folio contracts and staff roles.
+Next block: tokens/catalog compatibility, then one complete cleaning order flow.
+Source examples (money, SLA, commissions, Vertex Taxi) are not approved live data.
+
+## 51. Canva 140 block 1 / 10 October 2026 UTC
+
+0.13.0-preview / 1300001: shared neutral/graphite/gold tokens and guest catalogue
+of eight main services plus restaurant/bar/spa. No backend/schema changes.
+New transfer/excursions/tickets explicitly have no legacy request category; both
+UI and submit handler guard against sending. Preserve all eight old API enums.
+Dynamic names/descriptions covered by locale tests (V Market explicitly invariant).
+Root311/57, catalogue54 layouts and eight synthetic legacy writes, demo232/min6.02,
+Core289/min5.27; no external browser requests. See design/CANVA_140_BLOCK_1.md.
+Next block: single Core service order/cleaning vertical flow. Do not turn PDF
+prices or promises into live configuration or claim all140 screens complete.

@@ -10,8 +10,8 @@
 .app[data-runtime] .localWorkspace :is(input,select,textarea)::placeholder{color:var(--muted);opacity:1}
 .app[data-runtime] .localWorkspace :is(button,a){overflow-wrap:anywhere;white-space:normal}
 .app[data-runtime] .localWorkspace button{min-height:44px;max-width:100%;background:var(--surface);color:var(--fg);border-color:var(--line);font-weight:550}
-.app[data-runtime] .localWorkspace button.primary{background:#4458ad;color:#fff;border-color:#4458ad}
-.app.dark[data-runtime] .localWorkspace button.primary{background:#afbdff;color:#1a2549;border-color:#afbdff}
+.app[data-runtime] .localWorkspace button.primary{background:var(--action-bg);color:var(--action-fg);border-color:var(--action-bg)}
+.app.dark[data-runtime] .localWorkspace button.primary{background:var(--action-bg);color:var(--action-fg);border-color:var(--action-bg)}
 .app[data-runtime] .localWorkspace :is(input,select,textarea,button,a):focus-visible{outline:3px solid var(--focus);outline-offset:3px}
 .app[data-runtime] :is(.folioList li,.folioEntries li,.supplyRows>li,.supplyWorkspace fieldset,.folioDetail fieldset,.folioAudit fieldset,.housekeepingTasks li,.supplyOrderLine,.supplyReceiptLine,.supplyStocktake){border-color:var(--line)}
 .app[data-runtime] :is(.folioList li,.folioEntries li,.supplyRows>li,.turnoverGrid li){background:var(--card);border-radius:12px}
@@ -39,7 +39,7 @@
 .app[data-runtime] .guestEmail aside{background:var(--surface);border-left-color:var(--gold);color:var(--fg)}
 .app[data-runtime] .guestEmail :is(input,select,textarea){color:var(--fg);background:var(--card);border-color:var(--line)}
 .app[data-runtime] .guestEmail button{background:var(--surface);color:var(--fg);border-color:var(--line);font-weight:550}
-.app[data-runtime] .guestEmail button.primary{background:#d6bd86;color:#252116;border-color:#997b41}
+.app[data-runtime] .guestEmail button.primary{background:var(--action-bg);color:var(--action-fg);border-color:var(--action-bg)}
 .app[data-runtime] .guestEmail :focus-visible{outline:3px solid var(--focus);outline-offset:3px}
 .app[data-runtime] .guestEmail :is(.guestEmailError,[role="alert"]){background:var(--danger-surface);color:var(--danger);border:1px solid var(--danger);border-radius:10px;padding:12px 16px}
 .app[data-runtime] :is(.guestTrips,.guestReservationLink,.guestCancellation){border-color:var(--line)}

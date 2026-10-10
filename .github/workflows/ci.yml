@@ -35,3 +35,5 @@ jobs:
         run: node scripts/canva-design.browser.cjs
       - name: Verify Canva Core surfaces with read-only HTTP fixtures
         run: node scripts/canva-core-surfaces.browser.cjs
+      - name: Verify service catalogue compatibility and disconnected directions
+        run: node scripts/service-catalog.browser.cjs

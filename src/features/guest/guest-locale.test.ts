@@ -4,6 +4,7 @@ import ts from 'typescript';
 import catalog from './guest-translations.json';
 import marketCatalog from './market-translations.json';
 import {parseGuestLocale,translateGuest} from './GuestLocale';
+import {guestServices} from './service-catalog';
 import {apartments} from '../../data/demo';
 const fields=(text:string)=>[...text.matchAll(/\{([A-Za-z]+)\}/g)].map(match=>match[1]).sort();
 describe('guest localization',()=>{
@@ -23,6 +24,9 @@ describe('guest localization',()=>{
     }ts.forEachChild(node,visit);
    }visit(tree);
   }
+ });
+ it('translates all service names and descriptions',()=>{
+  for(const service of guestServices)for(const key of [service.name,service.description])expect(Object.hasOwn(catalog,key),key).toBe(true);
  });
  it('covers static demo names and amenities without changing the original data',()=>{
   for(const apartment of apartments)for(const value of [apartment.title,apartment.city,...apartment.amenities]){

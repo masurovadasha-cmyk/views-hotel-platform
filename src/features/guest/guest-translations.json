@@ -1050,5 +1050,77 @@
   "No apartments match the selected filters.": {
     "ru": "По выбранным фильтрам апартаменты не найдены.",
     "uz": "Tanlangan filtrlarga mos apartamentlar topilmadi."
+  },
+  "Cleaning for your stay": {
+    "ru": "Уборка во время проживания",
+    "uz": "Yashash davrida tozalash"
+  },
+  "Care for your clothes": {
+    "ru": "Уход за вашими вещами",
+    "uz": "Kiyimlaringiz parvarishi"
+  },
+  "Everyday essentials": {
+    "ru": "Всё необходимое рядом",
+    "uz": "Kundalik zarur mahsulotlar"
+  },
+  "Help with your plans": {
+    "ru": "Поможем с планами",
+    "uz": "Rejalaringizga yordam"
+  },
+  "Transfers": {
+    "ru": "Трансферы",
+    "uz": "Transferlar"
+  },
+  "Airport and city journeys": {
+    "ru": "Встреча в аэропорту и поездки",
+    "uz": "Aeroport va shahar safarlari"
+  },
+  "A car for your dates": {
+    "ru": "Автомобиль на ваши даты",
+    "uz": "Sanangizga mos avtomobil"
+  },
+  "Excursions": {
+    "ru": "Экскурсии",
+    "uz": "Ekskursiyalar"
+  },
+  "Discover the city": {
+    "ru": "Откройте для себя город",
+    "uz": "Shaharni kashf eting"
+  },
+  "Flights & trains": {
+    "ru": "Авиа и ж/д",
+    "uz": "Avia va poyezd"
+  },
+  "Plan your onward journey": {
+    "ru": "Продолжение вашего путешествия",
+    "uz": "Keyingi safaringizni rejalang"
+  },
+  "Dining during your stay": {
+    "ru": "Питание во время проживания",
+    "uz": "Yashash davrida ovqatlanish"
+  },
+  "Drinks and refreshments": {
+    "ru": "Напитки и отдых",
+    "uz": "Ichimliklar va hordiq"
+  },
+  "Time to unwind": {
+    "ru": "Время для отдыха",
+    "uz": "Dam olish vaqti"
+  },
+  "More at the property": {
+    "ru": "Дополнительно на объекте",
+    "uz": "Obyektdagi boshqa xizmatlar"
+  },
+  "Not connected yet": {
+    "ru": "Пока не подключено",
+    "uz": "Hali ulanmagan"
+  },
+  "This service is not connected yet. Booking, payment and sending requests are unavailable.": {
+    "ru": "Услуга пока не подключена. Бронирование, оплата и отправка заявок недоступны.",
+    "uz": "Xizmat hali ulanmagan. Bronlash, toʻlov va soʻrov yuborish mavjud emas."
+  },
+  "V Market": {
+    "ru": "V Market",
+    "uz": "V Market"
   }
 }

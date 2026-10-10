@@ -1,12 +1,11 @@
-/* Guest adaptation of the supplied VIEWS Guest App nine-page Canva export. */
-.guestShell.canvaGuest{--guest-paper:#faf7f1;--guest-surface:#fffdfa;--guest-ink:#302c26;--guest-muted:#746b60;--guest-border:#e4dccf;--guest-champagne:#c7aa76;--guest-accent:#806330;--guest-soft:#eee5d5;--guest-shadow:0 16px 48px #5b452b0c;width:min(1180px,calc(100% - 48px));padding:24px 0 108px;color:var(--guest-ink);font-size:14px}
-.dark .guestShell.canvaGuest{--guest-paper:#181a17;--guest-surface:#22251f;--guest-ink:#f3eee3;--guest-muted:#bdb5a6;--guest-border:#414638;--guest-champagne:#ccb385;--guest-accent:#d3ba8c;--guest-soft:#34392d;--guest-shadow:0 16px 48px #0002}
+/* Shared-token adaptation of the supplied VIEWS 140-screen export. */
+.guestShell.canvaGuest{--guest-paper:var(--bg);--guest-surface:var(--card);--guest-ink:var(--fg);--guest-muted:var(--muted);--guest-border:var(--line);--guest-champagne:var(--action-bg);--guest-accent:var(--gold);--guest-soft:var(--surface);--guest-shadow:var(--shadow);width:min(1180px,calc(100% - 48px));padding:24px 0 108px;color:var(--guest-ink);font-size:14px}
 .guestShell.canvaGuest h1,.guestShell.canvaGuest h2,.guestShell.canvaGuest h3,.guestShell.canvaGuest h4{color:var(--guest-ink);text-wrap:balance}
 .guestShell.canvaGuest button{min-height:44px;cursor:pointer;font-size:13px;transition:border-color .18s,transform .18s}
-.guestShell.canvaGuest button:disabled{cursor:not-allowed;opacity:.5}.guestShell.canvaGuest button:focus-visible,.guestShell.canvaGuest input:focus-visible,.guestShell.canvaGuest select:focus-visible,.guestShell.canvaGuest textarea:focus-visible{outline:3px solid #9b7436;outline-offset:3px}
+.guestShell.canvaGuest button:disabled{cursor:not-allowed;opacity:.5}.guestShell.canvaGuest button:focus-visible,.guestShell.canvaGuest input:focus-visible,.guestShell.canvaGuest select:focus-visible,.guestShell.canvaGuest textarea:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
 .guestShell.canvaGuest input,.guestShell.canvaGuest select,.guestShell.canvaGuest textarea{color:var(--guest-ink);background:var(--guest-surface);border:1px solid var(--guest-border);border-radius:10px;padding:12px;min-height:46px;font:inherit;min-width:0;max-width:100%;box-sizing:border-box}
 .guestShell.canvaGuest label{font-size:13px;line-height:1.45;color:var(--guest-muted)}
-.guestShell.canvaGuest .primary{background:var(--guest-champagne);border:1px solid #b2986b;color:#292213;font-size:14px;padding:13px 20px;border-radius:12px;font-weight:650;min-height:48px}.guestShell.canvaGuest .primary:hover:not(:disabled){background:#d5bd91}
+.guestShell.canvaGuest .primary{background:var(--guest-champagne);border:1px solid #b2986b;color:var(--action-fg);font-size:14px;padding:13px 20px;border-radius:12px;font-weight:650;min-height:48px}.guestShell.canvaGuest .primary:hover:not(:disabled){background:#d5bd91}
 .guestShell.canvaGuest>.notice{padding:10px 16px;background:var(--guest-soft);border:0;border-radius:12px;font-size:12px;line-height:1.5;margin:0 0 24px;color:var(--guest-muted)}
 .guestShell.canvaGuest .guestExploreHero{grid-template-columns:1.08fr 1fr;align-items:center;gap:60px;padding:18px 0 34px}
 .guestShell.canvaGuest .guestHeroCopy>span{font-size:10px;letter-spacing:.18em;color:var(--guest-muted);font-weight:600}
@@ -46,3 +45,7 @@
 .guestShell.canvaGuest .guestMapLegend{position:absolute;left:16px;right:16px;top:16px;z-index:1;background:var(--guest-surface);color:var(--guest-muted);border-radius:8px;padding:10px;font-size:12px}.guestShell.canvaGuest .guestMapEmpty{position:absolute;left:20px;right:20px;top:45%;text-align:center;padding:15px;background:var(--guest-surface);border-radius:10px;color:var(--guest-ink)}
 
 .guestShell.canvaGuest .mapPin.d{left:18%;top:70%}
+
+.guestServiceCatalogue>h3{margin:28px 0 14px;font-size:18px}
+.guestShell.canvaGuest .serviceAvailability{font-weight:600;color:var(--guest-accent)}
+.guestShell.canvaGuest .serviceGrid button{text-align:left;align-items:flex-start;overflow-wrap:anywhere}
