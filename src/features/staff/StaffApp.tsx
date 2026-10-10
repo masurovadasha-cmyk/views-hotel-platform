@@ -1,3 +1,4 @@
+import {CanvaAdminServiceCatalog} from "./CanvaAdminServiceCatalog";
 import {RangeCalendar,nightsBetween} from "../../components/RangeCalendar";
 import {useEffect,useMemo,useState} from "react";
 import {
@@ -87,7 +88,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="timeline")return live?<ApartmentTimelineLive/>:<ApartmentTimeline/>;
     if(current==="host")return <HostDesk step={hostStep} setStep={setHostStep}/>;
     if(current==="finance")return live?<LiveFinance/>:<Finance/>;
-    if(current==="admin")return <AdminPanel orders={orders} act={act}/>;
+    if(current==="admin")return <><CanvaAdminServiceCatalog/><AdminPanel orders={orders} act={act}/></>;
     if(current==="integrations")return live?<IntegrationHubLive/>:<IntegrationHub/>;
     if(current==="team")return live?<TeamWorkloadLive role={role}/>:<TeamPanel orders={orders}/>;
     return <Panel title={labels[current]??current}><div className="notice">Module foundation ready for the next backend slice.</div></Panel>;
