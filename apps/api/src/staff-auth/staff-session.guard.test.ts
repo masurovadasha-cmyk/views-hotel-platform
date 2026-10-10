@@ -66,6 +66,10 @@ describe('staff session enforcement on the trusted local gateway',()=>{
   for(const p of ['/v1/payments','/v1/bookings/'+identity.userId+'/confirm','/v1/internal/analytics/report-cycle'])
    await expect(guard.canActivate(context(request(p,'POST')))).rejects.toThrow('STAFF_ROUTE_DENIED');
  });
+ it('admits service routes only with execution or dispatch permission and matching actor',async()=>{
+  for(const permissions of [['reservation.manage'],['housekeeping.work']]){const guard=new StaffSessionGuard({resolve:async()=>({...identity,permissions})} as never);expect(await guard.canActivate(context(request('/v1/service-orders')))).toBe(true);expect(await guard.canActivate(context(request('/v1/service-orders/'+identity.userId+'/actions','POST')))).toBe(true);}
+  const reader=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['reservation.read']})} as never);await expect(reader.canActivate(context(request('/v1/service-orders')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+ });
  it('default-off production boundary is not an implicit release',()=>{
   const old={...process.env};try{process.env.NODE_ENV='production';process.env.VIEWS_STAFF_AUTH_PILOT_ENABLED='true';process.env.VIEWS_LOCAL_REHEARSAL='true';
    expect(()=>new StaffAuthService({} as never).scope()).toThrow('STAFF_AUTH_NOT_ACTIVATED');

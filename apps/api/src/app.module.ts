@@ -1,3 +1,4 @@
+import {ServiceOrderModule} from './service-orders/service-order.module';
 import {SupplyModule} from './supply/supply.module';
 import {FolioModule} from './folios/folio.module';
 import {GuestIdentityModule} from './guest-identity/guest-identity.module';
@@ -29,7 +30,7 @@ import {ProviderEgressModule} from "./security/egress/provider-egress.module";
 
 @Module({
   imports:[
-    SupplyModule,FolioModule,GuestIdentityModule,DatabaseModule,InventoryModule,RatesModule,BookingModule,
+    ServiceOrderModule,SupplyModule,FolioModule,GuestIdentityModule,DatabaseModule,InventoryModule,RatesModule,BookingModule,
     PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule,
     ProviderEgressModule,StaffAuthModule,OwnerModule,HousekeepingModule
   ],

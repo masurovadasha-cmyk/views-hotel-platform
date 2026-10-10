@@ -49,6 +49,7 @@ const run = args => {
     assert.equal(blocks.length, 3, 'Review this runner when the CI seed contract changes');
     for (const sql of blocks) await admin.query(sql.replaceAll("'views_app_test'", "'" + runtimePassword + "'"));
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/stage-b1.synthetic.sql'), 'utf8'));
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/service-orders.synthetic.sql'), 'utf8'));
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b1.constraints.sql'), 'utf8'));
     console.log('B1 administrative constraint proofs: 7 groups PASS (rolled back).');
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b2.sms.sql'), 'utf8'));

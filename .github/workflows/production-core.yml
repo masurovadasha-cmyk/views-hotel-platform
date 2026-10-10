@@ -173,6 +173,7 @@ jobs:
           SQL
 
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/seeds/stage-b1.synthetic.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/seeds/service-orders.synthetic.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b1.constraints.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b2.sms.sql
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b2.email.sql
