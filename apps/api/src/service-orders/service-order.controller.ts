@@ -15,6 +15,7 @@ export class GuestServiceOrderController{
 @Controller('v1/service-orders')
 export class StaffServiceOrderController{
  constructor(private readonly service:ServiceOrderService){}
+ @Get('assignees') @Header('Cache-Control','no-store') assignees(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['propertyId']);return this.service.assignees(actor(h),h['x-views-staff-session'],q.propertyId);}
  @Get() @Header('Cache-Control','no-store') queue(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['propertyId','cursor']);return this.service.queue(actor(h),h['x-views-staff-session'],q.propertyId,q.cursor);}
  @Post(':id/actions') @HttpCode(200) @Header('Cache-Control','no-store') act(@Headers() h:Record<string,string>,@Param('id') id:string,@Query() q:Record<string,unknown>,@Body() b:unknown){query(q,[]);return this.service.act(actor(h),h['x-views-staff-session'],id,h['idempotency-key'],b);}
 }

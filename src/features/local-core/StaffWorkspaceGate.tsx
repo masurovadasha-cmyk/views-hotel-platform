@@ -1,3 +1,4 @@
+import {StaffCleaning} from '../service-orders/StaffCleaning';
 import {HousekeepingWorkspace} from './HousekeepingWorkspace';
 import {FolioWorkspace} from './FolioWorkspace';
 import {SupplyWorkspace} from './SupplyWorkspace';
@@ -107,6 +108,7 @@ export function StaffWorkspaceGate(){
     <label>{t("Новый пароль")}<input aria-label={t("Новый пароль")} type="password" required minLength={15} maxLength={128} autoComplete="new-password" value={next} onChange={e=>setNext(e.target.value)}/></label>
     <button className="primary" disabled={busy||assurance}>{t("Сохранить новый пароль")}</button></fieldset></form></div>}
   </section>
+  {session.identity.permissions.some(p=>['reservation.manage','housekeeping.work'].includes(p))&&<StaffCleaning csrf={session.csrf} manager={session.identity.permissions.includes('reservation.manage')}/>}
   <div id="staff-security" tabIndex={-1}><StaffPasskeyPanel csrf={session.csrf}/></div>
   {!sections.length&&<StaffRoleUnavailable locale={locale} noPermission={actualRole!=='technician'&&actualRole!=='concierge'}/>}
   {sections.includes('supplies')&&(actualRole==='procurement'||actualRole==='warehouse')&&<div id="staff-supplies" tabIndex={-1}><SupplyWorkspace staffCsrf={session.csrf} direction={actualRole} permissions={session.identity.permissions}/></div>}

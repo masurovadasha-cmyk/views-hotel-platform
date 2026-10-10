@@ -63,6 +63,9 @@ describe.sequential('single Core service order / inspected cleaning',()=>{
  });
  it('rejects worker/reader escalation, spoofed actors and self-inspection through another membership',async()=>{
   const f=await fixture(),o=await inspection(f);
+  const assignees=(await service.assignees(actor(),token(),property)).items.map((x:{id:string})=>x.id);expect(assignees).toEqual(expect.arrayContaining([id(2),id(3)]));expect(assignees).not.toContain(id(1));expect(assignees).not.toContain(id(4));
+  await expect(service.assignees(actor(2),token(2),property)).rejects.toThrow('SERVICE_FORBIDDEN');
+  await expect(service.assignees(actor(),token(),'00000000-0000-0000-0000-000000000002')).rejects.toThrow('SERVICE_FORBIDDEN');
   await expect(service.queue(actor(4),token(4),property)).rejects.toThrow('SERVICE_FORBIDDEN');
   await expect(service.queue({...actor(),userId:id(2)},token(),property)).rejects.toThrow('STAFF_ACTOR_MISMATCH');
   await expect(act(o,'approve',{note:'Self'},2)).rejects.toThrow('SERVICE_FORBIDDEN');

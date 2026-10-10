@@ -5,11 +5,11 @@ export type GuestSession={authenticated:false}|{authenticated:true;profile:Guest
 export class GuestEmailError extends Error{
  constructor(public code:string,public retryAfterSeconds=0){super(code);}
 }
-export async function guestEmailRequest(route:string,body?:object,csrf?:string):Promise<Record<string,unknown>>{
+export async function guestEmailRequest(route:string,body?:object,csrf?:string,key?:string):Promise<Record<string,unknown>>{
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
  try{
   const r=await fetch('/guest-api/'+route,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',redirect:'error',
-   headers:{'Content-Type':'application/json','X-Views-Guest-Pilot':'1',...(csrf?{'X-Views-Guest-Csrf':csrf}:{})},
+   headers:{'Content-Type':'application/json','X-Views-Guest-Pilot':'1',...(csrf?{'X-Views-Guest-Csrf':csrf}:{}),...(key?{'Idempotency-Key':key}:{})},
    body:body===undefined?undefined:JSON.stringify(body),signal:controller.signal});
   const value:unknown=await r.json();
   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('INVALID_RESPONSE');

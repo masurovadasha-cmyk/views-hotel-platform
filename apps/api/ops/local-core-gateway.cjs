@@ -84,7 +84,7 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    const rateDetail=ratesRoute&&!u.pathname.endsWith('/rates');
    const catalogSearch=u.pathname==='/local-api/inventory-search'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['from','to','guests','city','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
    const refundSearch=u.pathname==='/local-api/refund-reconciliation'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['status','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
-   const validSearch=require('./supply-gateway.cjs').validSearch(u,req.method)||require('./folio-gateway.cjs').validSearch(u,req.method)||refundSearch||catalogSearch||((calendarRoute||rateDetail)?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1);
+   const validSearch=require('./service-order-gateway.cjs').validSearch(u,req.method)||require('./supply-gateway.cjs').validSearch(u,req.method)||require('./folio-gateway.cjs').validSearch(u,req.method)||refundSearch||catalogSearch||((calendarRoute||rateDetail)?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1);
    if(u.pathname+u.search!==req.url||u.hash||(u.search&&!validSearch))fail(400,'INVALID_ROUTE');
    const route=u.pathname,token=tokenFrom(req);
    if(req.method==='GET'&&route==='/local-api/session'){
@@ -125,6 +125,7 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    const digest=hash(token);for(const [key,c] of contexts)if(c.expires<=Date.now())contexts.delete(key);
    let s=contexts.get(digest);if(!s){if(contexts.size>=32)fail(429,'SESSION_LIMIT');s={quotes:new Map(),reservations:new Set(),window:Date.now(),requests:0,expires:Date.parse(identity.expiresAt)};contexts.set(digest,s);}
    if(Date.now()-s.window>60000){s.window=Date.now();s.requests=0;}if(++s.requests>120)fail(429,'RATE_LIMIT');
+   if(await require('./service-order-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,propertyId:config.fixture.propertyId}))return true;
    if(await require('./supply-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,exactKeys}))return true;
    if(await require('./folio-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,exactKeys}))return true;
    if(route==='/local-api/owner-inventory'||/^\/local-api\/owner-inventory\/[a-f0-9-]{36}(?:\/(?:calendar|rates(?:\/[a-f0-9-]{36})?))?$/i.test(route)){

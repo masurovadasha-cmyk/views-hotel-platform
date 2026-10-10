@@ -15,3 +15,11 @@
 
 .housekeepingFilters{display:flex;gap:16px;flex-wrap:wrap;align-items:end}.housekeepingFilters label{display:grid;gap:6px;max-width:100%}.housekeepingTasks{list-style:none;padding:0}.housekeepingTasks li{border-top:1px solid #ccd4dd;padding:16px 0;overflow-wrap:anywhere}.housekeepingTasks button{margin:4px 8px 4px 0}
 .refundReference{overflow-wrap:anywhere;word-break:break-word}
+
+/* Shared cleaning pilot: mobile forms use the existing light/dark theme. */
+[data-testid="guest-cleaning"], [data-testid="staff-cleaning"] { overflow-wrap: anywhere; }
+[data-testid="guest-cleaning"] fieldset, [data-testid="staff-cleaning"] fieldset { border: 0; padding: 0; margin: 12px 0; min-width: 0; display: grid; gap: 12px; }
+[data-testid="guest-cleaning"] label, [data-testid="staff-cleaning"] label { display: grid; gap: 6px; }
+[data-testid="guest-cleaning"] input, [data-testid="guest-cleaning"] select, [data-testid="staff-cleaning"] select, [data-testid="staff-cleaning"] textarea { box-sizing: border-box; max-width: 100%; min-width: 0; font: inherit; }
+[data-testid="guest-cleaning"] label:has(input[type="checkbox"]), [data-testid="staff-cleaning"] label:has(input[type="checkbox"]) { display: flex; align-items: flex-start; gap: 10px; }
+[data-testid="guest-cleaning"] input[type="checkbox"], [data-testid="staff-cleaning"] input[type="checkbox"] { width: 22px; height: 22px; min-height: 22px; flex: 0 0 22px; margin: 2px 0; }

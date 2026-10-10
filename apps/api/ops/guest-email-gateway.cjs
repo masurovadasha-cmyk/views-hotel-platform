@@ -46,9 +46,9 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
   return {status:response.status,body:JSON.parse(Buffer.concat(chunks).toString('utf8'))};
  }
  function failed(res,result){
-  const code=ERRORS.has(result.body?.message)?result.body.message:'GUEST_CORE_UNAVAILABLE';
+  const code=(ERRORS.has(result.body?.message)||/^SERVICE_[A-Z_]+$/.test(result.body?.message||''))?result.body.message:'GUEST_CORE_UNAVAILABLE';
   const retry=result.body?.retryAfterSeconds;
-  reply(res,[400,401,404,409,429,503].includes(result.status)?result.status:502,
+  reply(res,[400,401,403,404,409,429,503].includes(result.status)?result.status:502,
    {error:code,...(Number.isInteger(retry)&&retry>0&&retry<=3600?{retryAfterSeconds:retry}:{})});
  }
  return async function handle(req,res){
@@ -64,6 +64,11 @@ exports.createGuestEmailGateway=function({origin,coreOrigin,csrfKey}){
    reply(res,403,{error:'GUEST_ORIGIN_REJECTED'});return true;
   }
   const route=req.url.slice('/guest-api/'.length);
+  if(route.startsWith('services')){
+   if(inFlight>=12){reply(res,503,{error:'GUEST_CORE_UNAVAILABLE'});return true;}
+   inFlight++;try{return await require('./guest-service-gateway.cjs').handle({route,req,res,token:sessionToken(req),csrf,upstream,reply,failed,jsonBody});}
+   catch{reply(res,502,{error:'GUEST_CORE_UNAVAILABLE'});return true;}finally{inFlight--;}
+  }
   const linkRoute=['reservation-link/preview','reservation-link/accept'].includes(route);
   const cancellation=/^trips\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\/cancellation\/(preview|confirm)$/i.exec(route);
   const tripRoute=/^trips(?:\?cursor=[A-Za-z0-9_-]{1,300}|\/[a-fA-F0-9-]{36})?$/.test(route);
