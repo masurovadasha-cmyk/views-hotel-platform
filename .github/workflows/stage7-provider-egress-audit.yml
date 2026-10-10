@@ -1,0 +1,52 @@
+name: Stage 7.19 Provider Egress Audit
+
+on:
+  push:
+    branches: ["stage7/provider-egress-audit-v1"]
+  pull_request:
+    branches: ["stage7/provider-egress-client-v1"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage7-19-provider-egress-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      POSTGRES_PASSWORD: proof_owner_password_2026
+      DATABASE_URL: postgresql://views_app:views_app_proof_2026@postgres:5432/views
+      GUEST_AUTH_RATE_LIMIT_SECRET: stage7-19-proof-rate-limit-secret-material
+      CLOUDFLARE_TUNNEL_TOKEN: proof-unused
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install API development dependencies
+        working-directory: apps/api
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Typecheck complete Core
+        working-directory: apps/api
+        run: npm run typecheck
+
+      - name: Run Stage 7.19 audit-store unit tests
+        working-directory: apps/api
+        run: npx vitest run src/security/egress/provider-egress-audit.store.test.ts
+
+      - name: Run durable audit and reconciliation proof
+        run: bash scripts/stage7-provider-egress-audit-proof.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: provider-egress-audit-evidence
+          path: /tmp/stage7.19-provider-egress-audit-proof.json
+          if-no-files-found: error

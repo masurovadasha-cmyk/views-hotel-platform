@@ -1,0 +1,76 @@
+name: VIEWS Stage 4 Acceptance
+
+on:
+  push:
+    branches: ["staging/master-reference-v1", "stage4/**"]
+    paths:
+      - "functions/**"
+      - "apps/api/**"
+      - "migrations/**"
+      - "src/**"
+      - "scripts/**"
+      - "docs/STAGE4_*.md"
+      - "wrangler.local.toml"
+      - "package.json"
+      - ".github/workflows/stage4-acceptance.yml"
+      - ".github/workflows/cloudflare-staging.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "functions/**"
+      - "apps/api/**"
+      - "migrations/**"
+      - "src/**"
+      - "scripts/**"
+      - "docs/STAGE4_*.md"
+      - "wrangler.local.toml"
+      - ".github/workflows/cloudflare-staging.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: views-stage4-acceptance-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Validate recovery tooling
+        run: bash scripts/stage4-recovery-check.sh
+
+      - name: Run local Pages + D1 acceptance flow
+        run: bash scripts/stage4-local-e2e.sh
+
+      - name: Acceptance summary
+        if: always()
+        run: |
+          echo "### VIEWS Stage 4 Acceptance" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Security audit: completed before acceptance flow" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Typecheck/tests/build: required" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Recovery tooling: required" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Local Pages + D1 Golden Flow: required" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Remote Cloudflare acceptance remains a separate credential-gated deployment check" >> "$GITHUB_STEP_SUMMARY"

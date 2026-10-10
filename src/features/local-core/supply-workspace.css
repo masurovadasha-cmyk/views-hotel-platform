@@ -1,0 +1,9 @@
+.supplyWorkspace label{display:grid;gap:8px}.supplyWorkspace input,.supplyWorkspace select{box-sizing:border-box;width:100%;max-width:100%;min-height:44px;padding:10px;border:1px solid #879389;border-radius:8px;font:inherit;background:#fff;color:#263027}
+.supplyWorkspace .localPanel{margin-top:20px}.supplyWorkspace fieldset{display:grid;gap:14px;padding:16px;margin-top:20px;min-width:0;border:1px solid #abb8ad;border-radius:12px}
+.supplyWorkspace button{min-height:44px;max-width:100%;white-space:normal}.supplyWorkspace p,.supplyWorkspace li,.supplyWorkspace strong{overflow-wrap:anywhere}
+.supplyRows{list-style:none;padding:0;display:grid;gap:12px}.supplyRows>li{padding:14px;border:1px solid #b4bdb5;border-radius:10px;min-width:0}.supplyOrderLine{display:grid;grid-template-columns:2fr 1fr;gap:12px;min-width:0;padding-bottom:12px;border-bottom:1px solid #b4bdb5}
+.dark .supplyWorkspace input,.dark .supplyWorkspace select{background:#202a24;color:#eef2eb;border-color:#859386}
+@media(max-width:640px){.supplyOrderLine{grid-template-columns:1fr}.supplyWorkspace fieldset{padding:12px}}
+
+.supplyWorkspace dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.supplyWorkspace dd{margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.supplyReceiptLine{padding:12px 0;border-bottom:1px solid #b4bdb5}.supplyStocktake{margin-top:28px;border-top:1px solid #b4bdb5;padding-top:20px}
+@media(max-width:480px){.supplyWorkspace dl{grid-template-columns:1fr}.supplyWorkspace dd{margin-bottom:8px}}

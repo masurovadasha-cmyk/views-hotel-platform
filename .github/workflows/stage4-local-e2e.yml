@@ -1,0 +1,56 @@
+name: VIEWS Stage 4 Local E2E
+
+on:
+  push:
+    branches: ["staging/**", "stage4/**", "stage5/**", "stage6/**"]
+    paths:
+      - "functions/**"
+      - "migrations/**"
+      - "src/**"
+      - "scripts/stage4-local-e2e.sh"
+      - "scripts/stage4-remote-smoke.sh"
+      - "wrangler.local.toml"
+      - "package.json"
+      - ".github/workflows/stage4-local-e2e.yml"
+  pull_request:
+    branches: [main, "staging/master-reference-v1"]
+    paths:
+      - "functions/**"
+      - "migrations/**"
+      - "src/**"
+      - "scripts/stage4-local-e2e.sh"
+      - "scripts/stage4-remote-smoke.sh"
+      - "wrangler.local.toml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: views-stage4-local-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  golden-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Validate remote smoke shell
+        run: bash -n scripts/stage4-remote-smoke.sh
+
+      - name: Build Pages assets
+        run: npm run build
+
+      - name: Run local Pages + D1 golden flow
+        run: bash scripts/stage4-local-e2e.sh

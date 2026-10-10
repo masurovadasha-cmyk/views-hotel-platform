@@ -1,0 +1,216 @@
+name: VIEWS Production Core
+on:
+  push:
+    branches: [main, "staging/**", "stage4/**", "stage5/**", "stage6/**", "stage7/**"]
+    paths:
+      - "apps/api/**"
+      - "infra/postgres/**"
+      - "docker-compose.production-dev.yml"
+      - "docker-compose.core-tunnel.yml"
+      - "scripts/core-origin-isolation-gate.mjs"
+      - "scripts/guest-email-http-proof.cjs"
+      - "scripts/fixtures/guest-email-smtp.cjs"
+      - ".github/workflows/production-core.yml"
+  pull_request:
+    branches: [main, "staging/master-reference-v1"]
+    paths:
+      - "apps/api/**"
+      - "infra/postgres/**"
+      - "docker-compose.core-tunnel.yml"
+      - "scripts/core-origin-isolation-gate.mjs"
+      - "scripts/guest-email-http-proof.cjs"
+      - "scripts/fixtures/guest-email-smtp.cjs"
+
+jobs:
+  postgres-core:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: views
+          POSTGRES_USER: views
+          POSTGRES_PASSWORD: views_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U views -d views"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      PGPASSWORD: views_test
+      DATABASE_URL: postgresql://views:views_test@localhost:5432/views
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable extensions
+        run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f infra/postgres/init/001_extensions.sql
+      - name: Apply production migrations
+        run: |
+          # Apply the complete ordered chain, matching the disposable cloud runner.
+          for migration in apps/api/db/migrations/[0-9][0-9][0-9][0-9]_*.sql; do
+            psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f "$migration"
+          done
+      - name: Mark isolated CI database
+        run: psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE views IS 'VIEWS_DISPOSABLE_CORE_TEST'"
+      - name: Verify no-overbooking exclusion
+        run: |
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO organizations(id,type,legal_name,display_name,country_code,default_currency,timezone)
+          VALUES('00000000-0000-0000-0000-000000000001','platform','VIEWS','{"en":"VIEWS"}','UZ','UZS','Asia/Tashkent');
+          INSERT INTO properties(id,organization_id,name,country_code,city,timezone)
+          VALUES('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','{"en":"NRG U-Tower"}','UZ','Tashkent','Asia/Tashkent');
+          INSERT INTO unit_types(id,property_id,name,max_guests)
+          VALUES('00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000002','{"en":"Studio"}',2);
+          INSERT INTO units(id,property_id,unit_type_id,code)
+          VALUES('00000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003','235');
+          INSERT INTO rate_plans(id,property_id,unit_type_id,name,currency,base_nightly_minor,cancellation_policy_snapshot_template)
+          VALUES('00000000-0000-0000-0000-000000000008','00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003','{"en":"Flexible"}','UZS',91000000,'{}');
+          INSERT INTO inventory_periods(id,organization_id,property_id,unit_id,kind,source_ref,stay_period)
+          VALUES('00000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000004','host_block','first',tstzrange('2026-10-10T14:00:00+05','2026-10-12T12:00:00+05','[)'));
+          INSERT INTO inventory_periods(id,organization_id,property_id,unit_id,kind,source_ref,stay_period)
+          VALUES('00000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000004','host_block','adjacent',tstzrange('2026-10-12T12:00:00+05','2026-10-14T12:00:00+05','[)'));
+          SQL
+          if psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -c "INSERT INTO inventory_periods(id,organization_id,property_id,unit_id,kind,source_ref,stay_period) VALUES('00000000-0000-0000-0000-000000000007','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000004','maintenance','overlap',tstzrange('2026-10-11T12:00:00+05','2026-10-13T12:00:00+05','[)'))"; then
+            echo "ERROR: overlap was accepted"
+            exit 1
+          else
+            echo "PASS: overlap rejected by PostgreSQL"
+          fi
+      - name: Verify tenant and property isolation
+        run: |
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE views_app LOGIN PASSWORD 'views_app_test' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+          GRANT CONNECT ON DATABASE views TO views_app;
+          GRANT USAGE ON SCHEMA public,app TO views_app;
+          GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO views_app;
+          REVOKE INSERT,UPDATE,DELETE ON provider_egress_attempts,provider_egress_reconciliation_queue FROM views_app;
+          GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app;
+          SQL
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO organizations(id,type,legal_name,display_name,country_code,default_currency,timezone)
+          VALUES('10000000-0000-4000-8000-000000000001','host','Host B','{"en":"Host B"}','UZ','UZS','Asia/Tashkent');
+          INSERT INTO properties(id,organization_id,name,country_code,city,timezone)
+          VALUES('10000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000001','{"en":"Other Property"}','UZ','Tashkent','Asia/Tashkent');
+          INSERT INTO properties(id,organization_id,name,country_code,city,timezone)
+          VALUES('50000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000001','{"en":"Samarkand Scoped Cache Test"}','UZ','Samarkand','Asia/Samarkand')
+          ON CONFLICT(id) DO NOTHING;
+
+          INSERT INTO users(id,email,display_name)
+          VALUES('20000000-0000-4000-8000-000000000001','manager@views.test','Manager A'),
+                ('20000000-0000-4000-8000-000000000002','frontdesk@views.test','Front Desk A'),
+                ('20000000-0000-4000-8000-000000000003','owner@views.test','Owner A'),
+                ('20000000-0000-4000-8000-000000000004','host@views.test','Scoped Host A'),
+                ('20000000-0000-4000-8000-000000000005','platform@views.test','Platform Admin A');
+
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000001',id,'active',now()
+          FROM roles WHERE code='manager';
+
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000002',id,'active',now()
+          FROM roles WHERE code='front_desk';
+
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000003','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000003',id,'active',now()
+          FROM roles WHERE code='owner';
+
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000004',id,'active',now()
+          FROM roles WHERE code='host';
+
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '30000000-0000-4000-8000-000000000005','00000000-0000-0000-0000-000000000001','20000000-0000-4000-8000-000000000005',id,'active',now()
+          FROM roles WHERE code='platform_admin';
+
+          INSERT INTO membership_property_scopes(membership_id,property_id)
+          VALUES
+          ('30000000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000002'),
+          ('30000000-0000-4000-8000-000000000004','00000000-0000-0000-0000-000000000002');
+
+          -- Isolated nonprivileged reception fixture with valid HTTP UUIDs.
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT '73100000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001',
+            '20000000-0000-4000-8000-000000000001',id,'active',now() FROM roles WHERE code='front_desk';
+          INSERT INTO membership_property_scopes(membership_id,property_id)
+          VALUES('73100000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002');
+
+          INSERT INTO staff_private.credentials(membership_id,password_hash,verification_channel)
+          VALUES('73100000-0000-4000-8000-000000000001','scrypt-v1$131072$8$1$'||repeat('0',32)||'$'||repeat('0',128),'local_fixture');
+
+          -- Disposable housekeeping identities only; no live role is promoted.
+          INSERT INTO users(id,email,display_name) VALUES
+          ('74900000-0000-4000-8000-000000000001','cleaner1@views.invalid','Cleaner one'),
+          ('74900000-0000-4000-8000-000000000002','cleaner2@views.invalid','Cleaner two');
+          INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at)
+          SELECT u.id,'10000000-0000-4000-8000-000000000001',u.id,r.id,'active',now()
+          FROM users u CROSS JOIN roles r WHERE u.id IN ('74900000-0000-4000-8000-000000000001','74900000-0000-4000-8000-000000000002') AND r.code='housekeeper';
+          INSERT INTO membership_property_scopes(membership_id,property_id) VALUES
+          ('74900000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000002'),
+          ('74900000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000002');
+          INSERT INTO staff_private.credentials(membership_id,password_hash,verification_channel)
+          SELECT id,'scrypt-v1$131072$8$1$'||repeat('0',32)||'$'||repeat('0',128),'local_fixture'
+          FROM organization_memberships WHERE id IN ('74900000-0000-4000-8000-000000000001','74900000-0000-4000-8000-000000000002');
+          INSERT INTO staff_private.sessions(token_hash,membership_id,credential_version,role_id)
+          SELECT encode(digest(repeat(CASE WHEN id='74900000-0000-4000-8000-000000000001' THEN '7' ELSE '8' END,64),'sha256'),'hex'),id,1,role_id
+          FROM organization_memberships WHERE id IN ('74900000-0000-4000-8000-000000000001','74900000-0000-4000-8000-000000000002');
+
+          INSERT INTO analytics_dashboard_cache(
+            cache_key,organization_id,membership_id,property_id,property_ids,
+            from_date,to_date,schema_version,source_fingerprint,payload,generated_at,expires_at
+          ) VALUES(
+            repeat('e',64),
+            '00000000-0000-0000-0000-000000000001',
+            '30000000-0000-4000-8000-000000000004',
+            NULL,
+            ARRAY[
+              '00000000-0000-0000-0000-000000000002'::uuid,
+              '50000000-0000-4000-8000-000000000001'::uuid
+            ],
+            '2035-01-01','2035-01-01',2,repeat('f',64),
+            '{"fixture":"stale-broad-scope"}'::jsonb,
+            now(),now()+interval '1 day'
+          );
+          SQL
+
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/seeds/stage-b1.synthetic.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/seeds/service-orders.synthetic.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b1.constraints.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b2.sms.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b2.email.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/tests/stage-b4.supply-auth.sql
+          psql -h localhost -U views -d views -v ON_ERROR_STOP=1 -f apps/api/db/seeds/supply-auth.synthetic.sql
+          OWN=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='00000000-0000-0000-0000-000000000002'; ROLLBACK;" | tail -2 | head -1)
+          FOREIGN=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT count(*) FROM properties WHERE id='10000000-0000-4000-8000-000000000002'; ROLLBACK;" | tail -2 | head -1)
+          ACCESS=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true); SELECT app.can_access_property('00000000-0000-0000-0000-000000000002'); ROLLBACK;" | tail -2 | head -1)
+          test "$OWN" = "1"
+          test "$FOREIGN" = "0"
+          test "$ACCESS" = "t"
+
+          SCOPED=$(PGPASSWORD=views_app_test psql -h localhost -U views_app -d views -Atc "BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000002',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000002',true); SELECT app.can_access_property('00000000-0000-0000-0000-000000000002'); ROLLBACK;" | tail -2 | head -1)
+          test "$SCOPED" = "t"
+      - name: Use restricted runtime database role
+        run: echo "DATABASE_URL=postgresql://views_app:views_app_test@localhost:5432/views" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Install API dependencies
+        working-directory: apps/api
+        run: npm install
+      - name: Typecheck API
+        working-directory: apps/api
+        run: npm run typecheck
+      - name: Test API domain
+        working-directory: apps/api
+        run: npm test
+      - name: Build API
+        working-directory: apps/api
+        run: npm run build
+      - name: Build guest browser and install isolated browser test runtime
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Guest email browser, HTTP and local SMTP proof
+        env:
+          VIEWS_GUEST_EMAIL_BROWSER_PROOF: 'true'
+          VIEWS_GUEST_EMAIL_PROOF_OWNER_URL: postgresql://views:views_test@localhost:5432/views
+        run: node scripts/guest-email-http-proof.cjs

@@ -1,0 +1,323 @@
+{
+ "Folios and night audit": {
+  "ru": "Фолио и ночной аудит",
+  "uz": "Folio va tungi audit"
+ },
+ "Folios are not connected on this server.": {
+  "ru": "Фолио на этом сервере пока не подключены.",
+  "uz": "Bu serverda folio hali ulanmagan."
+ },
+ "The record is unavailable or your access has changed. Reload the list.": {
+  "ru": "Запись недоступна или ваши права изменились. Обновите список.",
+  "uz": "Yozuv mavjud emas yoki huquqlaringiz o‘zgardi. Ro‘yxatni yangilang."
+ },
+ "This folio is closed. Reload it before continuing.": {
+  "ru": "Фолио закрыто. Обновите его перед продолжением.",
+  "uz": "Folio yopilgan. Davom etishdan oldin uni yangilang."
+ },
+ "This charge was already reversed. Reload the folio.": {
+  "ru": "Это начисление уже сторнировано. Обновите фолио.",
+  "uz": "Bu hisoblash allaqachon qaytarilgan. Folioni yangilang."
+ },
+ "Enter a positive amount with no more than two decimal places.": {
+  "ru": "Введите положительную сумму, не более двух знаков после запятой.",
+  "uz": "Musbat summani kiriting, kasr qismida ko‘pi bilan ikki raqam bo‘lsin."
+ },
+ "Check the date, amount and description.": {
+  "ru": "Проверьте дату, сумму и описание.",
+  "uz": "Sana, summa va tavsifni tekshiring."
+ },
+ "The command conflicts with an existing operation. Reload the record and check its history.": {
+  "ru": "Команда конфликтует с существующей операцией. Обновите запись и проверьте историю.",
+  "uz": "Buyruq mavjud operatsiyaga zid. Yozuvni yangilang va tarixini tekshiring."
+ },
+ "Choose a completed business date in the property time zone.": {
+  "ru": "Выберите завершённую операционную дату в часовом поясе объекта.",
+  "uz": "Obyekt vaqt mintaqasida tugagan operatsion sanani tanlang."
+ },
+ "Resolve pending arrivals before posting the night audit.": {
+  "ru": "Перед ночным аудитом обработайте незавершённые заезды.",
+  "uz": "Tungi auditdan oldin yakunlanmagan kirishlarni hal qiling."
+ },
+ "The nightly charges need reconciliation. Posting is blocked.": {
+  "ru": "Ночные начисления требуют сверки. Проведение заблокировано.",
+  "uz": "Tungi hisoblashlarni solishtirish kerak. O‘tkazish bloklangan."
+ },
+ "The audit preview changed. Review a new preview and confirm again.": {
+  "ru": "Предварительный расчёт аудита изменился. Проверьте новый расчёт и подтвердите заново.",
+  "uz": "Auditning dastlabki hisobi o‘zgardi. Yangi hisobni tekshiring va yana tasdiqlang."
+ },
+ "The server did not confirm the operation. Retry manually with the same request.": {
+  "ru": "Сервер не подтвердил операцию. Повторите вручную тот же запрос.",
+  "uz": "Server operatsiyani tasdiqlamadi. Ayni so‘rovni qo‘lda takrorlang."
+ },
+ "The folio entry was recorded. No payment was sent.": {
+  "ru": "Запись добавлена в фолио. Платёж не отправлялся.",
+  "uz": "Folio yozuvi saqlandi. To‘lov yuborilmadi."
+ },
+ "The entry was saved, but the folio could not be refreshed. Reload it.": {
+  "ru": "Запись сохранена, но фолио не обновилось. Загрузите его заново.",
+  "uz": "Yozuv saqlandi, lekin folio yangilanmadi. Uni qayta yuklang."
+ },
+ "Guest folio": {
+  "ru": "Фолио гостя",
+  "uz": "Mehmon foliosi"
+ },
+ "Retry the same entry": {
+  "ru": "Повторить ту же запись",
+  "uz": "Ayni yozuvni takrorlash"
+ },
+ "Reload folio": {
+  "ru": "Обновить фолио",
+  "uz": "Folioni yangilash"
+ },
+ "Closed": {
+  "ru": "Закрыто",
+  "uz": "Yopilgan"
+ },
+ "Open": {
+  "ru": "Открыто",
+  "uz": "Ochiq"
+ },
+ "Not opened": {
+  "ru": "Ещё не открыто",
+  "uz": "Hali ochilmagan"
+ },
+ "Operational charges balance": {
+  "ru": "Сальдо операционных начислений",
+  "uz": "Operatsion hisoblashlar qoldig‘i"
+ },
+ "Total entries": {
+  "ru": "Всего записей",
+  "uz": "Jami yozuvlar"
+ },
+ "No entries on this page.": {
+  "ru": "На этой странице нет записей.",
+  "uz": "Bu sahifada yozuvlar yo‘q."
+ },
+ "Reversed": {
+  "ru": "Сторнировано",
+  "uz": "Qaytarilgan"
+ },
+ "Next entries": {
+  "ru": "Следующие записи",
+  "uz": "Keyingi yozuvlar"
+ },
+ "Manual charge": {
+  "ru": "Ручное начисление",
+  "uz": "Qo‘lda hisoblash"
+ },
+ "Charge type": {
+  "ru": "Тип начисления",
+  "uz": "Hisoblash turi"
+ },
+ "service": {
+  "ru": "Услуга",
+  "uz": "Xizmat"
+ },
+ "minibar": {
+  "ru": "Мини-бар",
+  "uz": "Mini-bar"
+ },
+ "fee": {
+  "ru": "Сбор",
+  "uz": "Yig‘im"
+ },
+ "accommodation": {
+  "ru": "Проживание",
+  "uz": "Yashash"
+ },
+ "reversal": {
+  "ru": "Сторно",
+  "uz": "Teskari yozuv"
+ },
+ "Amount": {
+  "ru": "Сумма",
+  "uz": "Summa"
+ },
+ "Description": {
+  "ru": "Описание",
+  "uz": "Tavsif"
+ },
+ "Use a service description, without passport data or card details.": {
+  "ru": "Укажите описание услуги без паспортных данных и реквизитов карты.",
+  "uz": "Xizmat tavsifini pasport va karta ma’lumotlarisiz kiriting."
+ },
+ "Record charge": {
+  "ru": "Записать начисление",
+  "uz": "Hisoblashni yozish"
+ },
+ "Reverse an operational charge": {
+  "ru": "Сторнировать операционное начисление",
+  "uz": "Operatsion hisoblashni qaytarish"
+ },
+ "Entry on this page": {
+  "ru": "Запись на этой странице",
+  "uz": "Ushbu sahifadagi yozuv"
+ },
+ "Choose an entry": {
+  "ru": "Выберите запись",
+  "uz": "Yozuvni tanlang"
+ },
+ "Reason": {
+  "ru": "Причина",
+  "uz": "Sabab"
+ },
+ "Reversal adds an opposite entry and keeps the original. It does not refund a payment.": {
+  "ru": "Сторно добавляет противоположную запись и сохраняет исходную. Это не возврат платежа.",
+  "uz": "Teskari yozuv qo‘shiladi va asl yozuv saqlanadi. Bu to‘lovni qaytarish emas."
+ },
+ "Confirm reversal": {
+  "ru": "Подтвердить сторно",
+  "uz": "Teskari yozuvni tasdiqlash"
+ },
+ "Manual night audit": {
+  "ru": "Ручной ночной аудит",
+  "uz": "Qo‘lda tungi audit"
+ },
+ "Property": {
+  "ru": "Объект",
+  "uz": "Obyekt"
+ },
+ "Only accommodation is posted. This is not a cash close, fiscal receipt or general ledger posting. Nothing runs automatically.": {
+  "ru": "Начисляется только проживание. Это не закрытие кассы, фискальный чек или проводка главной книги. Автоматического запуска нет.",
+  "uz": "Faqat yashash hisoblanadi. Bu kassani yopish, fiskal chek yoki bosh kitob yozuvi emas. Avtomatik ishga tushmaydi."
+ },
+ "Completed business date": {
+  "ru": "Завершённая операционная дата",
+  "uz": "Tugagan operatsion sana"
+ },
+ "Preview night audit": {
+  "ru": "Проверить ночной аудит",
+  "uz": "Tungi auditni tekshirish"
+ },
+ "Review before posting": {
+  "ru": "Проверка перед проведением",
+  "uz": "O‘tkazishdan oldin tekshirish"
+ },
+ "Eligible reservations": {
+  "ru": "Брони для обработки",
+  "uz": "Qayta ishlanadigan bronlar"
+ },
+ "Unresolved arrivals": {
+  "ru": "Незавершённые заезды",
+  "uz": "Yakunlanmagan kirishlar"
+ },
+ "Confirm posting accommodation for this property and date. If the underlying bookings change, a new preview is required.": {
+  "ru": "Подтвердите начисление проживания по этому объекту и дате. При изменении броней понадобится новый предварительный расчёт.",
+  "uz": "Ushbu obyekt va sana uchun yashashni hisoblashni tasdiqlang. Bronlar o‘zgarsa, yangi dastlabki hisob talab qilinadi."
+ },
+ "Retry the same audit": {
+  "ru": "Повторить тот же аудит",
+  "uz": "Ayni auditni takrorlash"
+ },
+ "Confirm night audit": {
+  "ru": "Подтвердить ночной аудит",
+  "uz": "Tungi auditni tasdiqlash"
+ },
+ "Night audit recorded": {
+  "ru": "Ночной аудит записан",
+  "uz": "Tungi audit yozildi"
+ },
+ "Reservations processed": {
+  "ru": "Обработано броней",
+  "uz": "Qayta ishlangan bronlar"
+ },
+ "Charges posted": {
+  "ru": "Записано начислений",
+  "uz": "Yozilgan hisoblashlar"
+ },
+ "Zero amount nights": {
+  "ru": "Ночей с нулевой суммой",
+  "uz": "Nol summali tunlar"
+ },
+ "No payment was collected or sent by this operation.": {
+  "ru": "Эта операция не списывала и не отправляла деньги.",
+  "uz": "Bu operatsiya pulni yechmadi va yubormadi."
+ },
+ "Local test workspace. Operational charges only: this balance is not the amount payable and does not include payment settlement.": {
+  "ru": "Локальный тестовый стенд. Только операционные начисления: это сальдо не является суммой к оплате и не учитывает расчёты по платежам.",
+  "uz": "Mahalliy sinov muhiti. Faqat operatsion hisoblashlar: bu qoldiq to‘lanadigan summa emas va to‘lov hisob-kitoblarini o‘z ichiga olmaydi."
+ },
+ "Offline. Reconnect and retry manually. Nothing is sent automatically.": {
+  "ru": "Нет сети. Восстановите соединение и повторите вручную. Автоматической отправки нет.",
+  "uz": "Internet yo‘q. Qayta ulaning va qo‘lda takrorlang. Avtomatik yuborilmaydi."
+ },
+ "Read-only access. Recording charges and running the audit require separate permission.": {
+  "ru": "Доступ только для чтения. Начисления и проведение аудита требуют отдельного права.",
+  "uz": "Faqat o‘qish huquqi. Hisoblash va auditni o‘tkazish uchun alohida ruxsat kerak."
+ },
+ "Open folios": {
+  "ru": "Открыть фолио",
+  "uz": "Foliolarni ochish"
+ },
+ "Choose a property": {
+  "ru": "Выберите объект",
+  "uz": "Obyektni tanlang"
+ },
+ "No properties are available to this account.": {
+  "ru": "Этому аккаунту не доступны объекты.",
+  "uz": "Bu hisob uchun obyektlar mavjud emas."
+ },
+ "Load more properties": {
+  "ru": "Загрузить ещё объекты",
+  "uz": "Yana obyektlarni yuklash"
+ },
+ "Load folios": {
+  "ru": "Загрузить фолио",
+  "uz": "Foliolarni yuklash"
+ },
+ "An operation was recorded. Reload the folio list to see current balances.": {
+  "ru": "Операция записана. Обновите список фолио для просмотра актуального сальдо.",
+  "uz": "Operatsiya yozildi. Joriy qoldiqlarni ko‘rish uchun folio ro‘yxatini yangilang."
+ },
+ "No bookings are available for this property.": {
+  "ru": "По этому объекту нет доступных бронирований.",
+  "uz": "Bu obyekt uchun bronlar mavjud emas."
+ },
+ "View folio": {
+  "ru": "Открыть фолио гостя",
+  "uz": "Mehmon foliosini ochish"
+ },
+ "Next folios": {
+  "ru": "Следующие фолио",
+  "uz": "Keyingi foliolar"
+ },
+ "Invalid booking snapshots": {
+  "ru": "Некорректные снимки условий брони",
+  "uz": "Bron shartlarining noto‘g‘ri nusxalari"
+ },
+ "The set of bookings differs from the recorded audit. Reconciliation is required.": {
+  "ru": "Состав бронирований отличается от записанного аудита. Требуется сверка.",
+  "uz": "Bronlar tarkibi yozilgan auditdan farq qiladi. Solishtirish kerak."
+ },
+ "Some booking snapshots are invalid. Reconcile them before posting.": {
+  "ru": "Некоторые снимки условий брони некорректны. Проведите сверку перед начислением.",
+  "uz": "Ayrim bron shartlari nusxalari noto‘g‘ri. Hisoblashdan oldin solishtiring."
+ },
+ "tax": {
+  "ru": "Налог",
+  "uz": "Soliq"
+ },
+ "payment": {
+  "ru": "Оплата",
+  "uz": "To‘lov"
+ },
+ "deposit": {
+  "ru": "Депозит",
+  "uz": "Depozit"
+ },
+ "refund": {
+  "ru": "Возврат",
+  "uz": "Pulni qaytarish"
+ },
+ "Business date": {
+  "ru": "Операционная дата",
+  "uz": "Operatsion sana"
+ },
+ "This entry cannot be reversed here. Reload the folio and review its history.": {
+  "en": "This entry cannot be reversed here. Reload the folio and review its history.",
+  "ru": "Эту запись нельзя сторнировать здесь. Обновите фолио и проверьте его историю.",
+  "uz": "Bu yozuvni bu yerda qaytarib bo‘lmaydi. Folioni yangilang va tarixini tekshiring."
+ }
+}

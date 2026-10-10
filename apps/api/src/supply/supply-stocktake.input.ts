@@ -1,0 +1,4 @@
+import {exact,id,invalid,text} from './supply.input';
+function nonnegative(value:unknown){if(typeof value!=='string'||!/^(0|[1-9]\d{0,18})$/.test(value)||BigInt(value)>9223372036854775807n)return invalid();return value;}
+export function stocktakePreview(raw:unknown){const b=exact(raw,['propertyId','itemId','countedQuantity','reason']);return {propertyId:id(b.propertyId),itemId:id(b.itemId),countedQuantity:nonnegative(b.countedQuantity),reason:text(b.reason,160)};}
+export function stocktakeConfirm(raw:unknown){const b=exact(raw,['propertyId','itemId','countedQuantity','reason','expectedQuantity','expectedRevision']);return {...stocktakePreview({propertyId:b.propertyId,itemId:b.itemId,countedQuantity:b.countedQuantity,reason:b.reason}),expectedQuantity:nonnegative(b.expectedQuantity),expectedRevision:nonnegative(b.expectedRevision)};}

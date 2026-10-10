@@ -1,0 +1,368 @@
+{
+ "Supply operations are not connected on this server.": {
+  "ru": "Снабжение на этом сервере пока не подключено.",
+  "uz": "Bu serverda ta’minot hali ulanmagan."
+ },
+ "This record is unavailable or your access has changed. Reload the workspace.": {
+  "ru": "Запись недоступна или ваши права изменились. Обновите рабочую область.",
+  "uz": "Yozuv mavjud emas yoki huquqlaringiz o‘zgardi. Ish maydonini yangilang."
+ },
+ "Check the item, reference and positive whole quantity. Fractions are not supported.": {
+  "ru": "Проверьте товар, основание и положительное целое количество. Дроби не поддерживаются.",
+  "uz": "Tovar, asos va musbat butun miqdorni tekshiring. Kasrlar qo‘llab-quvvatlanmaydi."
+ },
+ "This order was already received. Reload orders and stock.": {
+  "ru": "Этот заказ уже принят. Обновите заказы и остатки.",
+  "uz": "Bu buyurtma allaqachon qabul qilingan. Buyurtmalar va qoldiqlarni yangilang."
+ },
+ "Not enough stock. Reload stock and check the quantity.": {
+  "ru": "Недостаточно остатка. Обновите склад и проверьте количество.",
+  "uz": "Zaxira yetarli emas. Omborni yangilang va miqdorni tekshiring."
+ },
+ "The quantity exceeds the supported stock limit.": {
+  "ru": "Количество превышает поддерживаемый предел остатка.",
+  "uz": "Miqdor qo‘llab-quvvatlanadigan zaxira chegarasidan oshdi."
+ },
+ "The command conflicts with an existing operation. Check the history before a new operation.": {
+  "ru": "Команда конфликтует с существующей операцией. Перед новой операцией проверьте историю.",
+  "uz": "Buyruq mavjud operatsiyaga zid. Yangi operatsiyadan oldin tarixni tekshiring."
+ },
+ "The server did not confirm the result. Retry the same request manually. Do not create a new operation.": {
+  "ru": "Сервер не подтвердил результат. Вручную повторите тот же запрос. Не создавайте новую операцию.",
+  "uz": "Server natijani tasdiqlamadi. Ayni so‘rovni qo‘lda takrorlang. Yangi operatsiya yaratmang."
+ },
+ "New catalogue item": {
+  "ru": "Новый товар каталога",
+  "uz": "Katalogga yangi tovar"
+ },
+ "SKU": {
+  "ru": "Артикул",
+  "uz": "Artikul"
+ },
+ "Item name": {
+  "ru": "Название товара",
+  "uz": "Tovar nomi"
+ },
+ "Stock unit": {
+  "ru": "Единица складского учёта",
+  "uz": "Ombor hisobi birligi"
+ },
+ "piece": {
+  "ru": "шт.",
+  "uz": "dona",
+  "en": "pieces"
+ },
+ "gram": {
+  "ru": "г",
+  "uz": "g",
+  "en": "grams"
+ },
+ "millilitre": {
+  "ru": "мл",
+  "uz": "ml",
+  "en": "millilitres"
+ },
+ "Use whole pieces, grams or millilitres. Kilograms and litres must be converted before entry.": {
+  "ru": "Указывайте целые штуки, граммы или миллилитры. Килограммы и литры перед вводом нужно перевести в выбранную единицу.",
+  "uz": "Butun dona, gramm yoki millilitr kiriting. Kilogramm va litrni kiritishdan oldin tanlangan birlikka aylantiring."
+ },
+ "Create catalogue item": {
+  "ru": "Создать товар каталога",
+  "uz": "Katalog tovarini yaratish"
+ },
+ "Create purchase order": {
+  "ru": "Создать заказ снабжения",
+  "uz": "Ta’minot buyurtmasini yaratish"
+ },
+ "Order reference": {
+  "ru": "Основание или номер заказа",
+  "uz": "Buyurtma asosi yoki raqami"
+ },
+ "Catalogue item": {
+  "ru": "Товар каталога",
+  "uz": "Katalog tovari"
+ },
+ "Choose an item": {
+  "ru": "Выберите товар",
+  "uz": "Tovarni tanlang"
+ },
+ "Quantity in the selected unit": {
+  "ru": "Количество в выбранной единице",
+  "uz": "Tanlangan birlikdagi miqdor"
+ },
+ "Remove line": {
+  "ru": "Удалить строку",
+  "uz": "Qatorni o‘chirish"
+ },
+ "Add line": {
+  "ru": "Добавить строку",
+  "uz": "Qator qo‘shish"
+ },
+ "This records an internal order. It does not send a supplier message or make a payment.": {
+  "ru": "Будет записан внутренний заказ. Сообщение поставщику и платёж не отправляются.",
+  "uz": "Ichki buyurtma yoziladi. Yetkazib beruvchiga xabar va to‘lov yuborilmaydi."
+ },
+ "Record purchase order": {
+  "ru": "Записать заказ снабжения",
+  "uz": "Ta’minot buyurtmasini yozish"
+ },
+ "Issue stock": {
+  "ru": "Выдать со склада",
+  "uz": "Ombordan berish"
+ },
+ "Stock item on this page": {
+  "ru": "Товар склада на этой странице",
+  "uz": "Ushbu sahifadagi ombor tovari"
+ },
+ "Issue reference or destination": {
+  "ru": "Основание или назначение выдачи",
+  "uz": "Berish asosi yoki yo‘nalishi"
+ },
+ "Confirm the physical issue. The server checks available stock; a negative balance is forbidden.": {
+  "ru": "Подтвердите фактическую выдачу. Сервер проверяет остаток; отрицательный остаток запрещён.",
+  "uz": "Haqiqiy berishni tasdiqlang. Server zaxirani tekshiradi; manfiy qoldiq taqiqlangan."
+ },
+ "Confirm stock issue": {
+  "ru": "Подтвердить выдачу",
+  "uz": "Berishni tasdiqlash"
+ },
+ "The operation was recorded. No payment or supplier message was sent.": {
+  "ru": "Операция записана. Платёж и сообщение поставщику не отправлялись.",
+  "uz": "Operatsiya yozildi. To‘lov va yetkazib beruvchiga xabar yuborilmadi."
+ },
+ "The operation was saved, but the lists could not be refreshed. Reload the workspace.": {
+  "ru": "Операция сохранена, но списки не обновились. Загрузите рабочую область заново.",
+  "uz": "Operatsiya saqlandi, lekin ro‘yxatlar yangilanmadi. Ish maydonini qayta yuklang."
+ },
+ "Supply access is not granted to this account.": {
+  "ru": "У этого аккаунта нет доступа к снабжению.",
+  "uz": "Bu hisobga ta’minotga kirish huquqi berilmagan."
+ },
+ "Procurement workspace": {
+  "ru": "Рабочая область снабженца",
+  "uz": "Ta’minotchi ish maydoni"
+ },
+ "Warehouse workspace": {
+  "ru": "Рабочая область склада",
+  "uz": "Ombor ish maydoni"
+ },
+ "Local test workspace. Quantities only: supplier delivery, payments and inventory valuation are not connected.": {
+  "ru": "Локальный тестовый стенд. Только количественный учёт: доставка поставщика, платежи и стоимостная оценка склада не подключены.",
+  "uz": "Mahalliy sinov muhiti. Faqat miqdor hisobi: yetkazib beruvchi yetkazishi, to‘lovlar va ombor qiymatini baholash ulanmagan."
+ },
+ "Read-only access. Changes require separate permission.": {
+  "ru": "Доступ только для чтения. Изменения требуют отдельного права.",
+  "uz": "Faqat o‘qish huquqi. O‘zgartirish uchun alohida ruxsat kerak."
+ },
+ "Offline. Reconnect and retry manually. Nothing is sent automatically.": {
+  "ru": "Нет сети. Восстановите соединение и повторите вручную. Автоматической отправки нет.",
+  "uz": "Internet yo‘q. Qayta ulaning va qo‘lda takrorlang. Avtomatik yuborilmaydi."
+ },
+ "Retry the same operation": {
+  "ru": "Повторить ту же операцию",
+  "uz": "Ayni operatsiyani takrorlash"
+ },
+ "Open supply workspace": {
+  "ru": "Открыть рабочую область снабжения",
+  "uz": "Ta’minot ish maydonini ochish"
+ },
+ "Property": {
+  "ru": "Объект",
+  "uz": "Obyekt"
+ },
+ "Choose a property": {
+  "ru": "Выберите объект",
+  "uz": "Obyektni tanlang"
+ },
+ "No properties are available to this account.": {
+  "ru": "Этому аккаунту не доступны объекты.",
+  "uz": "Bu hisob uchun obyektlar mavjud emas."
+ },
+ "Load more properties": {
+  "ru": "Загрузить ещё объекты",
+  "uz": "Yana obyektlarni yuklash"
+ },
+ "Load supply data": {
+  "ru": "Загрузить данные снабжения",
+  "uz": "Ta’minot ma’lumotlarini yuklash"
+ },
+ "Item catalogue": {
+  "ru": "Каталог товаров",
+  "uz": "Tovarlar katalogi"
+ },
+ "No catalogue items yet.": {
+  "ru": "В каталоге пока нет товаров.",
+  "uz": "Katalogda hali tovarlar yo‘q."
+ },
+ "Load more catalogue items": {
+  "ru": "Загрузить ещё товары каталога",
+  "uz": "Yana katalog tovarlarini yuklash"
+ },
+ "Purchase orders": {
+  "ru": "Заказы снабжения",
+  "uz": "Ta’minot buyurtmalari"
+ },
+ "Goods receipt": {
+  "ru": "Приёмка товаров",
+  "uz": "Tovarlarni qabul qilish"
+ },
+ "No orders on this page.": {
+  "ru": "На этой странице нет заказов.",
+  "uz": "Bu sahifada buyurtmalar yo‘q."
+ },
+ "ordered": {
+  "ru": "Заказ записан",
+  "uz": "Buyurtma yozilgan",
+  "en": "Order recorded"
+ },
+ "received": {
+  "ru": "Принято на склад",
+  "uz": "Omborga qabul qilingan",
+  "en": "Received"
+ },
+ "Review goods receipt": {
+  "ru": "Проверить приёмку",
+  "uz": "Qabulni tekshirish"
+ },
+ "Next orders": {
+  "ru": "Следующие заказы",
+  "uz": "Keyingi buyurtmalar"
+ },
+ "Confirm full receipt": {
+  "ru": "Подтвердить полную приёмку",
+  "uz": "To‘liq qabulni tasdiqlash"
+ },
+ "Confirm only when every listed quantity was physically received. Partial deliveries are not supported here.": {
+  "ru": "Подтверждайте только после фактической приёмки всего указанного количества. Частичные поставки здесь пока не поддерживаются.",
+  "uz": "Ko‘rsatilgan barcha miqdor amalda qabul qilingandan keyingina tasdiqlang. Qisman yetkazib berish bu yerda hali qo‘llab-quvvatlanmaydi."
+ },
+ "Confirm goods received": {
+  "ru": "Подтвердить получение товаров",
+  "uz": "Tovarlar olinganini tasdiqlash"
+ },
+ "Close receipt preview": {
+  "ru": "Закрыть проверку приёмки",
+  "uz": "Qabul tekshiruvini yopish"
+ },
+ "Current stock": {
+  "ru": "Текущие остатки",
+  "uz": "Joriy qoldiqlar"
+ },
+ "No stock items on this page.": {
+  "ru": "На этой странице нет складских остатков.",
+  "uz": "Bu sahifada ombor qoldiqlari yo‘q."
+ },
+ "Next stock items": {
+  "ru": "Следующие остатки",
+  "uz": "Keyingi qoldiqlar"
+ },
+ "Stock movement history": {
+  "ru": "История движений склада",
+  "uz": "Ombor harakatlari tarixi"
+ },
+ "receipt": {
+  "ru": "Приход",
+  "uz": "Kirim",
+  "en": "Receipt"
+ },
+ "issue": {
+  "ru": "Расход",
+  "uz": "Chiqim",
+  "en": "Issue"
+ },
+ "No stock movements on this page.": {
+  "ru": "На этой странице нет движений склада.",
+  "uz": "Bu sahifada ombor harakatlari yo‘q."
+ },
+ "Next movements": {
+  "ru": "Следующие движения",
+  "uz": "Keyingi harakatlar"
+ },
+ "The order has no valid lines. Contact the responsible employee before receipt.": {
+  "ru": "В заказе нет корректных строк. До приёмки обратитесь к ответственному сотруднику.",
+  "uz": "Buyurtmada to‘g‘ri qatorlar yo‘q. Qabul qilishdan oldin mas’ul xodimga murojaat qiling."
+ },
+ "Review received quantities": {
+  "ru": "Проверка количества при приёмке",
+  "uz": "Qabul qilinadigan miqdorlarni tekshirish"
+ },
+ "Enter only quantities physically received now. Use zero to skip an item; the outstanding quantities remain open.": {
+  "ru": "Укажите только количество, фактически полученное сейчас. Ноль пропускает товар; неполученное количество остаётся открытым.",
+  "uz": "Faqat hozir amalda olingan miqdorni kiriting. Tovarni o‘tkazib yuborish uchun nol kiriting; olinmagan miqdor ochiq qoladi."
+ },
+ "Ordered quantity": {
+  "ru": "Заказано",
+  "uz": "Buyurtma qilingan"
+ },
+ "Already received": {
+  "ru": "Уже принято",
+  "uz": "Allaqachon qabul qilingan"
+ },
+ "Outstanding quantity": {
+  "ru": "Осталось получить",
+  "uz": "Qabul qilinishi qolgan"
+ },
+ "Quantity received now": {
+  "ru": "Получено сейчас",
+  "uz": "Hozir qabul qilingan"
+ },
+ "partially_received": {
+  "ru": "Принято частично",
+  "uz": "Qisman qabul qilingan",
+  "en": "Partially received"
+ },
+ "Physical stock count": {
+  "ru": "Фактический пересчёт склада",
+  "uz": "Ombordagi haqiqiy miqdorni sanash"
+ },
+ "Count the physical stock, then review the difference. Previewing does not change stock.": {
+  "ru": "Пересчитайте фактический остаток и проверьте разницу. Предварительный просмотр не меняет склад.",
+  "uz": "Haqiqiy qoldiqni sanang va farqni tekshiring. Dastlabki ko‘rish omborni o‘zgartirmaydi."
+ },
+ "Physical quantity counted": {
+  "ru": "Фактически насчитано",
+  "uz": "Amalda sanalgan miqdor"
+ },
+ "Count reason": {
+  "ru": "Основание пересчёта",
+  "uz": "Sanash asosi"
+ },
+ "Enter a nonnegative whole quantity in the item unit. Zero means no physical stock.": {
+  "ru": "Введите неотрицательное целое количество в единицах товара. Ноль означает отсутствие фактического остатка.",
+  "uz": "Tovar birligida manfiy bo‘lmagan butun miqdorni kiriting. Nol haqiqiy qoldiq yo‘qligini bildiradi."
+ },
+ "Review stock count": {
+  "ru": "Проверить пересчёт",
+  "uz": "Sanashni tekshirish"
+ },
+ "Recorded stock": {
+  "ru": "Остаток по учёту",
+  "uz": "Hisobdagi qoldiq"
+ },
+ "Stock adjustment": {
+  "ru": "Корректировка остатка",
+  "uz": "Qoldiq tuzatishi"
+ },
+ "Confirm only after checking the physical count. If stock changed, reload and review a new count before confirming.": {
+  "ru": "Подтверждайте только после проверки фактического количества. Если остаток изменился, обновите данные и заново проверьте пересчёт перед подтверждением.",
+  "uz": "Faqat haqiqiy miqdorni tekshirgandan keyin tasdiqlang. Qoldiq o‘zgarsa, ma’lumotlarni yangilang va tasdiqlashdan oldin sanashni qayta tekshiring."
+ },
+ "Confirm physical count": {
+  "ru": "Подтвердить фактический пересчёт",
+  "uz": "Haqiqiy sanashni tasdiqlash"
+ },
+ "Stock changed after the preview. Reload stock, enter the count and review it again.": {
+  "ru": "После просмотра остаток изменился. Обновите склад, введите фактическое количество и проверьте расчёт заново.",
+  "uz": "Dastlabki ko‘rishdan keyin qoldiq o‘zgardi. Omborni yangilang, haqiqiy miqdorni kiriting va hisobni qayta tekshiring."
+ },
+ "The received quantity exceeds the outstanding order quantity. Reload the order and check the receipt.": {
+  "ru": "Полученное количество превышает остаток по заказу. Обновите заказ и проверьте приёмку.",
+  "uz": "Qabul qilinadigan miqdor buyurtma qoldig‘idan ko‘p. Buyurtmani yangilang va qabulni tekshiring."
+ },
+ "adjustment": {
+  "ru": "Корректировка по пересчёту",
+  "uz": "Sanash bo‘yicha tuzatish",
+  "en": "Stock count adjustment"
+ },
+  "V Market uses a separate demo shopping list. Warehouse quantities are not published to guests; retail orders, prices and stock reservations are not connected.": {"ru": "V Market использует отдельный демонстрационный список покупок. Остатки склада не публикуются гостям; розничные заказы, цены и резервирование товаров не подключены.", "uz": "V Market alohida demo xarid roʻyxatidan foydalanadi. Ombor qoldiqlari mehmonlarga koʻrsatilmaydi; chakana buyurtmalar, narxlar va tovarlarni band qilish ulanmagan."}
+}

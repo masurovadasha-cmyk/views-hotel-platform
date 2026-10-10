@@ -1,0 +1,81 @@
+/* Canva 140-screen PDF: neutral/gold and graphite surfaces.
+   Accent text/focus variants are adjusted for contrast; fills follow the export. */
+.app {
+  --bg: #f6f5f2;
+  --fg: #20242c;
+  --card: #ffffff;
+  --surface: #eef0f3;
+  --muted: #5f636c;
+  --line: #d6d8de;
+  --gold: #765c2f;
+  --gold2: #a88b58;
+  --good: #296644;
+  --warn: #815916;
+  --danger: #ae3439;
+  --success-surface: #e5f1e8;
+  --warning-surface: #faf0d9;
+  --danger-surface: #fcebed;
+  --focus: #796026;
+  --action-bg: #a88b58;
+  --action-fg: #171a20;
+  --radius: 16px;
+  --shadow: 0 8px 28px rgb(25 31 24 / .06);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+.app.dark {
+  --bg: #1a1d24;
+  --fg: #f2f3f6;
+  --card: #242832;
+  --surface: #303744;
+  --muted: #bfc4ce;
+  --line: #4b5260;
+  --gold: #d9bd7d;
+  --good: #8dd9aa;
+  --warn: #eac278;
+  --danger: #ff999c;
+  --success-surface: #213a2c;
+  --warning-surface: #3b3220;
+  --danger-surface: #41292f;
+  --focus: #e2c786;
+}
+.app :is(input,select,textarea,button) { font-family: inherit; }
+.app :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.app button:not(:disabled), .app select:not(:disabled) { cursor: pointer; }
+.app button:disabled { cursor: not-allowed; }
+.app .status.done, .app .status.closed { color: var(--good); background: var(--success-surface); }
+.app .status.in_progress, .app .status.accepted, .app .status.assigned, .app .status.new { color: var(--warn); background: var(--warning-surface); }
+.app .status.failed, .app .status.cancelled, .app .status.overdue { color: var(--danger); background: var(--danger-surface); }
+.app .primary { min-height: 44px; background: var(--action-bg); color: var(--action-fg); border-color: var(--action-bg); box-shadow: none; }
+.app .brandbar { background: var(--card); color: var(--fg); border-bottom: 1px solid var(--line); grid-template-columns: auto minmax(0,1fr) auto; gap: 24px; }
+.app .brand strong { font-family: inherit; font-size: 19px; font-weight: 650; letter-spacing: .21em; }
+.app .brand small, .app .brand p, .app .cities { color: var(--muted); }
+.app .vmark { color: var(--gold); }
+.app .cities { justify-self: center; text-align: center; line-height: 1.8; }
+.app .topActions { flex-wrap: wrap; align-items: center; justify-content: end; }
+.app .topActions button { min-height: 40px; background: var(--surface); color: var(--fg); border-color: var(--line); font-size: 12px; padding: 8px 12px; }
+.app .topActions label { color: var(--muted); }
+.app .topActions select { background: var(--card); color: var(--fg); border-color: var(--line); }
+.app .runtimeBadge { color: var(--muted); border-color: var(--line); font-size: 10px; }
+.app .connectionNotice { display: flex; gap: 12px; align-items: center; margin: 16px auto; padding: 14px 18px; max-width: 1200px; border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 10px; background: var(--surface); color: var(--fg); font-size: 14px; }
+.connectionNotice svg { flex-shrink: 0; color: var(--warn); }
+.app .staffRoleHeading { box-shadow: var(--shadow); }
+.app .staffRoleSignIn { padding: 24px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--card); }
+.app .staffRoleSignIn input, .app .staffRoleSignIn button { color: var(--fg); background: var(--surface); }
+@media (max-width: 1180px) {
+  .app .brandbar { grid-template-columns: auto minmax(0,1fr); gap: 16px; }
+  .app .cities { display: none; }
+  .app .brand p, .app .brand i { display: none; }
+}
+@media (max-width: 680px) {
+  .app .brandbar { grid-template-columns: minmax(0,1fr); gap: 12px; padding: 14px 16px; }
+  .app .brand { justify-content: center; }
+  .app .topActions { justify-self: stretch; justify-content: center; gap: 8px; }
+  .app .topActions button { min-height: 44px; }
+  .app .connectionNotice { margin: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app *, .app *::before, .app *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+}
+
+.app .status { height:auto; min-height:26px; white-space:normal; overflow-wrap:anywhere; line-height:1.4; }

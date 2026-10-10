@@ -1,0 +1,53 @@
+import {ServiceOrderModule} from './service-orders/service-order.module';
+import {SupplyModule} from './supply/supply.module';
+import {FolioModule} from './folios/folio.module';
+import {GuestIdentityModule} from './guest-identity/guest-identity.module';
+import {HousekeepingModule} from './housekeeping/housekeeping.module';
+import {OwnerModule} from './owner/owner.module';
+import {Module} from "@nestjs/common";
+import {StaffAuthModule} from "./staff-auth/staff-auth.module";
+import {StaffSessionGuard} from "./staff-auth/staff-session.guard";
+import {APP_GUARD,APP_INTERCEPTOR} from "@nestjs/core";
+import {MarketplaceModule} from "./marketplace/marketplace.module";
+import {AnalyticsModule} from "./analytics/analytics.module";
+import {BookingModule} from "./booking/booking.module";
+import {DatabaseModule} from "./database/database.module";
+import {HealthController} from "./health.controller";
+import {InventoryModule} from "./inventory/inventory.module";
+import {RatesModule} from "./rates/rates.module";
+import {PaymentsModule} from "./payments/payments.module";
+import {ComplianceModule} from "./compliance/compliance.module";
+import {InternalActorAuthGuard} from "./security/internal-actor-auth.guard";
+import {InternalIngressGuard} from "./security/internal-ingress.guard";
+import {InternalAuthRejectionController} from "./security/internal-auth-rejection.controller";
+import {InternalAuthRejectionService} from "./security/internal-auth-rejection.service";
+import {InternalServiceAuditController} from "./security/internal-service-audit.controller";
+import {InternalServiceAuditInterceptor} from "./security/internal-service-audit.interceptor";
+import {InternalServiceAuditService} from "./security/internal-service-audit.service";
+import {InternalServicePostureController} from "./security/internal-service-posture.controller";
+import {InternalServicePostureService} from "./security/internal-service-posture.service";
+import {ProviderEgressModule} from "./security/egress/provider-egress.module";
+
+@Module({
+  imports:[
+    ServiceOrderModule,SupplyModule,FolioModule,GuestIdentityModule,DatabaseModule,InventoryModule,RatesModule,BookingModule,
+    PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule,
+    ProviderEgressModule,StaffAuthModule,OwnerModule,HousekeepingModule
+  ],
+  controllers:[
+    HealthController,
+    InternalServiceAuditController,
+    InternalAuthRejectionController,
+    InternalServicePostureController
+  ],
+  providers:[
+    InternalServiceAuditService,
+    InternalAuthRejectionService,
+    InternalServicePostureService,
+    {provide:APP_GUARD,useClass:InternalIngressGuard},
+    {provide:APP_GUARD,useClass:InternalActorAuthGuard},
+    {provide:APP_GUARD,useClass:StaffSessionGuard},
+    {provide:APP_INTERCEPTOR,useClass:InternalServiceAuditInterceptor}
+  ]
+})
+export class AppModule{}
