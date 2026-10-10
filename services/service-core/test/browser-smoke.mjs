@@ -164,6 +164,7 @@ try{
   try{
    await page.getByRole("button",{name:"Подключиться"}).click();
    await page.getByText("Всего: 1").waitFor();
+   await page.getByText("Бронь "+bookingId.slice(0,8),{exact:false}).waitFor();
    await page.locator("#orders button").first().click();
    await page.getByText("Статус: Подтверждён").waitFor();
    assert.deepEqual(errors,[]);
