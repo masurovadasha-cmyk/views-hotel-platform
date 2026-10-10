@@ -58,13 +58,13 @@ try{
   await page.getByText('VIEWS',{exact:true}).first().waitFor();
   await page.getByText('Static staging demo',{exact:true}).waitFor();
   // Calendar acceptance: shared stay picker must work on desktop and mobile.
-  await page.getByRole('button',{name:'Выбрать даты заезда и выезда'}).first().click();
+  await page.locator('.stayDateRange > button').first().click();
   await page.getByRole('dialog',{name:'Календарь бронирования'}).waitFor();
   const available=page.locator('.stayDateGrid button:not([disabled])');
   await available.nth(2).click();
   await available.nth(5).click();
   await page.getByRole('button',{name:/Сохранить · 3 ночей/}).click();
-  assert.match(await page.getByRole('button',{name:'Выбрать даты заезда и выезда'}).first().innerText(),/3 ночей/);
+  assert.match(await page.locator('.stayDateRange > button').first().innerText(),/3 ночей/);
   await checkWidth('calendar-desktop-1440');
   await page.locator('.apartmentCard').first().getByRole('button',{name:'View',exact:true}).click();
   await page.locator('.apartmentGallery').waitFor();
