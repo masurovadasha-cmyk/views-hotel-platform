@@ -104,11 +104,12 @@ jobs:
         run: |
           mkdir -p dist/views-web
           cp services/service-core/public/{guest.html,guest.js,crm.html,crm.js,crm.css,staff.html,staff.js,staff.css,finance.html,finance.js,views-client.js,views-calendar.js} dist/views-web/
-          printf '%s\n' "VIEWS development frontend snapshot" "Commit: ${GITHUB_SHA}" "This snapshot requires the PostgreSQL API and authentication." "Do not publish these files alone as a working production app." > dist/views-web/README.txt
+          cp -R services/service-core/public/market-images dist/views-web/market-images
+          printf '%s\n' "VIEWS development frontend snapshot" "Commit: ${GITHUB_SHA}" "This snapshot includes source-backed supplier product images." "It requires the PostgreSQL API and authentication." "Do not publish these files alone as a working production app." > dist/views-web/README.txt
           python3 - <<'PY'
           import json,os
           with open('dist/views-web/build.json','w') as f:
-              json.dump({'commit':os.environ['GITHUB_SHA'],'kind':'development-web-snapshot','backendRequired':True,'livePayments':False},f,indent=2)
+              json.dump({'commit':os.environ['GITHUB_SHA'],'kind':'development-web-snapshot','backendRequired':True,'livePayments':False,'supplierImagesIncluded':True},f,indent=2)
           PY
       - uses: actions/upload-artifact@v4
         with:
