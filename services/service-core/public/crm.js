@@ -11,6 +11,8 @@ const crmCalendar=mountViewsCalendar(document.querySelector("#crm-calendar"),{
   document.querySelector("#crm-date-summary").textContent=start+" — "+end+" · "+nights+" ночей";
   renderOrders(lastOrders);
   renderBookings(lastBookings);
+ },
+ onClear:()=>{dateFilter=null;document.querySelector("#crm-date-summary").textContent="Все даты";renderOrders(lastOrders);renderBookings(lastBookings)}
  }
 });
 document.querySelector("#crm-calendar-open").onclick=()=>crmCalendar.open();
