@@ -42,7 +42,7 @@ export function RangeCalendar({start,end,onApply,onClose}:Props){
     })}
    </div>
    <footer><button type="button" onClick={()=>{setDraftStart("");setDraftEnd("")}}>Сбросить даты</button>
-   <button type="button" className="viewsRangeSave" disabled={!nightsBetween(draftStart,draftEnd)} onClick={()=>{onApply(draftStart,draftEnd);onClose()}}>Сохранить · {nightsBetween(draftStart,draftEnd)} ночей</button></footer>
+   <button type="button" className="viewsRangeSave" disabled={!!draftStart&&!nightsBetween(draftStart,draftEnd)} onClick={()=>{onApply(draftStart,draftEnd);onClose()}}>{draftStart?"Сохранить · "+nightsBetween(draftStart,draftEnd)+" ночей":"Очистить даты"}</button></footer>
   </section>
  </div>;
 }
