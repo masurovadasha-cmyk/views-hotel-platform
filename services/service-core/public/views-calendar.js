@@ -3,7 +3,7 @@ const parse=s=>new Date(s+"T00:00:00Z");
 const months=new Intl.DateTimeFormat("ru-RU",{month:"long",year:"numeric",timeZone:"UTC"});
 const label=new Intl.DateTimeFormat("ru-RU",{day:"numeric",month:"short",timeZone:"UTC"});
 export const nights=(start,end)=>start&&end?Math.round((parse(end)-parse(start))/86400000):0;
-export function mountViewsCalendar(root,{onSave=()=>{},initialStart=null,initialEnd=null,blocked=[]}={}){
+export function mountViewsCalendar(root,{onSave=()=>{},onClear=()=>{},initialStart=null,initialEnd=null,blocked=[]}={}){
  if(!root)throw Error("calendar element required");
  const forbidden=new Set(blocked);
  let start=initialStart,end=initialEnd;
@@ -56,7 +56,7 @@ export function mountViewsCalendar(root,{onSave=()=>{},initialStart=null,initial
  function open(){overlay.hidden=false;update();scroll.scrollTop=0;close.focus()}
  function dismiss(){overlay.hidden=true}
  close.onclick=dismiss;
- reset.onclick=()=>{start=null;end=null;update()};
+ reset.onclick=()=>{start=null;end=null;update();onClear()};
  save.onclick=()=>{if(!start||!end)return;onSave({start,end,nights:nights(start,end)});dismiss()};
  overlay.addEventListener("keydown",e=>{if(e.key==="Escape")dismiss()});
  update();
