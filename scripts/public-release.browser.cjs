@@ -33,7 +33,7 @@ function download(url){
    }
    const key=url.origin+url.pathname;
    if(!cache.has(key))cache.set(key,download(key));
-   const ext=url.pathname.split('.').pop(),mime={js:'application/javascript',css:'text/css',svg:'image/svg+xml',jpg:'image/jpeg',png:'image/png',json:'application/json',woff2:'font/woff2'}[ext]||'text/html';
+   const ext=url.pathname.split('.').pop(),mime={js:'application/javascript',css:'text/css',svg:'image/svg+xml',jpg:'image/jpeg',png:'image/png',webp:'image/webp',json:'application/json',woff2:'font/woff2'}[ext]||'text/html';
    return route.fulfill({status:200,body:cache.get(key),contentType:mime});
   });
   await page.goto(target.origin+prefix+'?api=demo&entry=access',{waitUntil:'networkidle'});
@@ -42,6 +42,8 @@ function download(url){
   for(const role of ['procurement','warehouse'])assert.ok((await page.locator('[data-staff-entry="'+role+'"]').getAttribute('href')).includes('staffRole='+role));
   assert.ok((await page.locator('.accessVersion').innerText()).includes(expectedVersion));
   checks.push('five_public_directions_and_separate_supply_entries');
+  await page.goto(target.origin+prefix+'?api=demo&design=140&screen=SG-LA-005');const gallery=page.getByTestId('design-review');await gallery.getByRole('heading',{name:/SG-LA-005/}).waitFor();assert.equal(await gallery.locator('nav button').count(),140);await page.waitForFunction(()=>{const i=document.querySelector('.designDetail img');return i&&i.complete&&i.naturalWidth>0;});await page.locator('[data-theme-toggle]').click();await page.waitForFunction(()=>{const i=document.querySelector('.designDetail img');return i&&i.src.includes('-dark.webp')&&i.complete&&i.naturalWidth>0;});checks.push('public_140_reference_viewer_light_dark_not_runtime_screens');
+
   for(const role of ['front_desk','housekeeper','technician','concierge','accountant','manager','owner','procurement','warehouse']){
    await page.goto(target.origin+prefix+'?api=demo&entry=staff&staffRole='+role,{waitUntil:'networkidle'});
    assert.equal(await page.locator('[data-staff-role]').getAttribute('data-staff-role'),role);

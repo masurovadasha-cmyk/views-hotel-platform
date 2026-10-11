@@ -1,3 +1,5 @@
+import {DesignReview} from './features/design-review/DesignReview';
+import {designText} from './features/design-review/locale';
 import {GuestEmailEntry} from './features/guest-auth/GuestEmailEntry';
 import type {GuestEmailLinkState} from './features/guest-auth/guest-email-link';
 import {GuestLocaleProvider,GuestLanguageSelector,useGuestLocale} from './features/guest/GuestLocale';
@@ -26,6 +28,7 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
   const {t,locale:staffLocale}=useStaffLocale();
   const {t:guestT,locale:guestLocale}=useGuestLocale();
   const runtime=detectRuntimeMode();
+  const [designOpen,setDesignOpen]=useState(()=>new URLSearchParams(location.search).get('design')==='140');
   const selectedStaffRole=requestedStaffRole();
   const [demoMode,setDemoMode]=useState<"guest"|"staff">("guest");
   const [demoRole,setDemoRole]=useState<HospitalityRole>("general_manager");
@@ -49,10 +52,11 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
   useEffect(()=>{saveTheme(dark?'dark':'light');},[dark]);
 
   const live=runtime==="live-api";
-  const staffMode=runtime==='local-core'||(live?session?.mode==='staff':!accessOpen&&demoMode==='staff');
+  const staffMode=!designOpen&&(runtime==='local-core'||(live?session?.mode==='staff':!accessOpen&&demoMode==='staff'));
   function preview(audience:AccessAudience){if(audience==='supplies'){location.assign(staffEntryUrl('procurement',false));return;}setDemoMode(audience==='guest'?'guest':'staff');setDemoRole(audience==='host'?'owner_readonly':audience==='admin'?'super_admin':'general_manager');setAccessOpen(false);}
   useEffect(()=>{const locale=staffMode?staffLocale:guestLocale;document.documentElement.lang=locale;try{localStorage.setItem(staffMode?"views.staff.locale":"views.guest.locale",locale);}catch{/* Language selection still works without storage. */}},[staffMode,staffLocale,guestLocale]);
   const content=()=>{
+    if(runtime==='static-demo'&&designOpen)return <DesignReview locale={guestLocale} dark={dark} onClose={()=>{const u=new URL(location.href);u.searchParams.delete('design');u.searchParams.delete('screen');history.replaceState(null,'',u);setDesignOpen(false);}}/>;
     if(runtime==="guest-core")return <GuestEmailEntry initialLink={guestLink}/>;
     if(runtime==="local-core")return <StaffMailEntry/>;
     if(runtime==='static-demo'&&selectedStaffRole&&rolePreviewOpen)return <StaffRolePreviewEntry role={selectedStaffRole} locale={guestLocale} onPreview={()=>{setDemoMode('staff');const demo=roleInfo[selectedStaffRole].demoRole;if(demo)setDemoRole(demo);setAccessOpen(false);setRolePreviewOpen(false);}}/>;
@@ -70,6 +74,7 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
       <div className="brand" lang="en"><span className="vmark">V</span><div><strong>VIEWS</strong><small>HOTEL & APARTMENTS</small></div><i/><p>One Ecosystem<br/>A Better Experience</p></div>
       <div className="cities" lang="en">TASHKENT · SAMARKAND · BUKHARA · KHIVA · AND BEYOND</div>
       <div className="topActions">
+        {runtime==='static-demo'&&!designOpen&&<button onClick={()=>setDesignOpen(true)}>{designText(guestLocale,'title')}</button>}
         <span className="runtimeBadge">{staffMode?t(runtimeLabel(runtime)):guestT(runtimeLabel(runtime))}</span>
         {staffMode?<StaffLanguageSelector/>:<GuestLanguageSelector/>}
         {!live&&runtime!=="local-core"&&runtime!=="guest-core"&&!accessOpen&&<button onClick={()=>{setRolePreviewOpen(false);setAccessOpen(true);}}>VIEWS · {guestT('Sign in')}</button>}
