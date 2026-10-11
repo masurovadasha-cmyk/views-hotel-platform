@@ -13,6 +13,21 @@ export function marketRequest(raw:unknown){
 export function marketAction(raw:unknown,staff:boolean){
  if(!raw||typeof raw!=='object'||!('action' in raw))return invalid();
  const action=raw.action;
+ if(staff&&action==='propose_replacement'){
+  const b=object(raw,['action','expectedRevision','fromServiceId','toServiceId','note']);
+  if(typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();
+  const fromServiceId=uuid(b.fromServiceId),toServiceId=uuid(b.toServiceId);if(fromServiceId===toServiceId)return invalid();
+  return {action,expectedRevision:revision(b.expectedRevision),fromServiceId,toServiceId,note:b.note.trim()};
+ }
+ if(!staff&&action==='accept_proposal'){
+  const b=object(raw,['action','expectedRevision','expectedTotalMinor']);
+  if(typeof b.expectedTotalMinor!=='string'||!/^[1-9]\d{0,18}$/.test(b.expectedTotalMinor)||BigInt(b.expectedTotalMinor)>9223372036854775807n)return invalid();
+  return {action,expectedRevision:revision(b.expectedRevision),expectedTotalMinor:b.expectedTotalMinor};
+ }
+ if((staff&&action==='withdraw_proposal')||(!staff&&action==='decline_proposal')){
+  const b=object(raw,['action','expectedRevision']);return {action,expectedRevision:revision(b.expectedRevision)};
+ }
+
  if(!staff&&action==='replace_order'){
   const b=object(raw,['action','expectedRevision','lines','expectedTotalMinor']);
   return {action,expectedRevision:revision(b.expectedRevision),...basket(b)};

@@ -150,6 +150,53 @@ describe.sequential('V Market / real PostgreSQL',()=>{
   expect(outcomes.filter(r=>r.status==='fulfilled')).toHaveLength(1);
   expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('5');
  });
+ it('quotes a warehouse substitution without reserving it, then creates one guest-approved successor',async()=>{
+  const f=await fixture(),g=await fixture(undefined,'150'),old=await service.request(f.a.token,randomUUID(),f.body);
+  const catalog=await service.staffCatalog(actor(),'b1'.repeat(32),property);expect(catalog.items).toEqual(expect.arrayContaining([expect.objectContaining({id:g.s,priceMinor:'150'})]));
+  await expect(service.staffCatalog(actor(2),'b2'.repeat(32),property)).rejects.toThrow('SERVICE_FORBIDDEN');
+  const key=randomUUID(),body=command(old,'propose_replacement',{fromServiceId:f.s,toServiceId:g.s,note:'Alternative packaging'});
+  let o=await service.staffAct(actor(),'b1'.repeat(32),old.orderId,key,body);
+  expect((await service.staffAct(actor(),'b1'.repeat(32),old.orderId,key,body)).idempotentReplay).toBe(true);
+  expect(o).toMatchObject({totalMinor:'200',proposal:{status:'pending',totalMinor:'300'}});
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===g.s)).toMatchObject({availableQuantity:'5'});
+  await expect(act(o,'pick')).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  await expect(service.guestAct(g.a.token,o.orderId,randomUUID(),command(o,'accept_proposal',{expectedTotalMinor:'300'}))).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+  await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'accept_proposal',{expectedTotalMinor:'200'}))).rejects.toThrow('SERVICE_PRICE_CHANGED');
+  const accept=command(o,'accept_proposal',{expectedTotalMinor:'300'}),acceptKey=randomUUID();
+  const results=await Promise.all([service.guestAct(f.a.token,o.orderId,acceptKey,accept),service.guestAct(f.a.token,o.orderId,acceptKey,accept)]);
+  expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);expect(results[0]).toMatchObject({replacesOrderId:o.orderId,totalMinor:'300',stage:'reserved'});
+  expect((await service.guestList(f.a.token,f.r)).items).toEqual(expect.arrayContaining([expect.objectContaining({orderId:o.orderId,proposal:{status:'accepted',note:'Alternative packaging',totalMinor:'300',lines:expect.any(Array),expiresAt:expect.any(String)}})]));
+  expect((await run('SELECT * FROM folio_entries WHERE source_id=ANY($1::uuid[])',[[o.orderId,results[0].orderId]])).rowCount).toBe(0);
+ });
+ it('declines or withdraws proposals without changing the old reserve',async()=>{
+  const f=await fixture(),g=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);
+  const proposal={fromServiceId:f.s,toServiceId:g.s,note:'Packaging alternative'};
+  o=await act(o,'propose_replacement',proposal);o=await service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'decline_proposal'));
+  expect(o).toMatchObject({stage:'reserved',proposal:{status:'declined'}});
+  o=await act(o,'propose_replacement',proposal);o=await act(o,'withdraw_proposal');expect(o).toMatchObject({proposal:{status:'withdrawn'}});
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});
+  o=await act(o,'pick');expect(o.stage).toBe('picking');await expect(act(o,'propose_replacement',proposal)).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+ });
+ it('rolls back proposal acceptance when replacement stock or price changed',async()=>{
+  const f=await fixture(),g=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);
+  o=await act(o,'propose_replacement',{fromServiceId:f.s,toServiceId:g.s,note:'Alternative product'});
+  await supply.issue(actor(),randomUUID(),{propertyId:property,itemId:g.s,quantity:'4',reference:'Proposal does not reserve stock'});
+  await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'accept_proposal',{expectedTotalMinor:'200'}))).rejects.toThrow('SERVICE_STOCK_UNAVAILABLE');
+  await run('UPDATE service_catalog SET price_minor=150 WHERE id=$1',[g.s]);
+  await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'accept_proposal',{expectedTotalMinor:'200'}))).rejects.toThrow('SERVICE_PRICE_CHANGED');
+  expect((await service.guestList(f.a.token,f.r)).items).toEqual([expect.objectContaining({orderId:o.orderId,stage:'reserved',proposal:expect.objectContaining({status:'pending'})})]);
+ });
+ it('serializes guest consent with withdrawal and clears a proposal on order cancellation',async()=>{
+  const f=await fixture(),g=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);
+  o=await act(o,'propose_replacement',{fromServiceId:f.s,toServiceId:g.s,note:'Alternative product'});
+  const results=await Promise.allSettled([act(o,'withdraw_proposal'),service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'accept_proposal',{expectedTotalMinor:'200'}))]);
+  expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+  const other=await fixture();let cancelled=await service.request(other.a.token,randomUUID(),other.body);
+  cancelled=await act(cancelled,'propose_replacement',{fromServiceId:other.s,toServiceId:g.s,note:'Alternative product'});
+  cancelled=await service.guestAct(other.a.token,cancelled.orderId,randomUUID(),command(cancelled,'cancel'));
+  expect(cancelled).toMatchObject({stage:'cancelled',proposal:{status:'cancelled'}});
+ });
  it('is disabled by default and forbids receipt before handover',async()=>{
   const f=await fixture(),o=await service.request(f.a.token,randomUUID(),f.body);await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'confirm_receipt'))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
   vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','false');await expect(service.catalog(f.a.token,f.r)).rejects.toThrow('SERVICE_MARKET_DISABLED');

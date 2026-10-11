@@ -11,6 +11,7 @@ function projection(b){
    result.items=v.items===null?null:v.items.map(i=>({tag:i.tag,description:i.description,priceMinor:i.priceMinor}));
   }
   if(Object.hasOwn(v,'lines')){if(!Array.isArray(v.lines)||v.lines.length>20)throw Error('INVALID_RESPONSE');result.lines=v.lines.map(l=>({serviceId:l.serviceId,name:l.name,quantity:l.quantity,priceMinor:l.priceMinor}));}
+  if(v.proposal){const p=v.proposal;if(!Array.isArray(p.lines)||p.lines.length>20)throw Error('INVALID_RESPONSE');result.proposal={status:p.status,note:p.note,totalMinor:p.totalMinor,expiresAt:p.expiresAt,lines:p.lines.map(l=>({serviceId:l.serviceId,name:l.name,quantity:l.quantity,priceMinor:l.priceMinor}))};}
   if(v.issue)result.issue={status:v.issue.status,note:v.issue.note,answer:v.issue.answer};
   return result;
  };

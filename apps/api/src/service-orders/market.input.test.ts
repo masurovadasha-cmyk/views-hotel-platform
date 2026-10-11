@@ -6,6 +6,14 @@ describe('market input boundaries',()=>{
   expect(marketRequest(body)).toEqual(body);
   for(const b of [{...body,propertyId:id},{...body,expectedTotalMinor:100},{...body,lines:[{...body.lines[0],quantity:1.1}]},{...body,lines:[body.lines[0],body.lines[0]]}])expect(()=>marketRequest(b)).toThrow('SERVICE_INPUT_INVALID');
  });
+ it('separates warehouse proposals from guest consent and forbids invented totals',()=>{
+  const proposal={action:'propose_replacement',expectedRevision:1,fromServiceId:id,toServiceId:'12345678-1234-4123-8123-123456789013',note:'Alternative product'};
+  expect(marketAction(proposal,true)).toEqual(proposal);expect(()=>marketAction(proposal,false)).toThrow();
+  expect(()=>marketAction({...proposal,expectedTotalMinor:'100'},true)).toThrow();
+  expect(()=>marketAction({...proposal,toServiceId:id},true)).toThrow();
+  expect(()=>marketAction({action:'accept_proposal',expectedRevision:1,expectedTotalMinor:100},false)).toThrow();
+  expect(()=>marketAction({action:'accept_proposal',expectedRevision:1,expectedTotalMinor:'100'},true)).toThrow();
+ });
  it('requires guest consent fields for a complete replacement basket',()=>{
   const replacement={action:'replace_order',expectedRevision:1,lines:body.lines,expectedTotalMinor:'100'};
   expect(marketAction(replacement,false)).toEqual(replacement);
