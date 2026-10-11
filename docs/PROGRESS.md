@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## M0d.7 — UUID audit correction
+- Узкий override xcode3.0.1>uuid11.1.1; остальные зависимости сохранены, новых библиотек нет.
+- Критерии/решение: DECISIONS.md; запуск/риски: M0D_MOBILE.md; regression добавлен в CI.
+- На dirty6507d95: до исправления buffer regression FAIL; после profile/dependency tests3 PASS.
+- Frozen pnpm10.18.3 install, mobile typecheck, guest/staff Android exports и bytecode mode proof PASS.
+- Prod audit exit1:2 high/0 moderate; UUID finding устранён, node-forge/braces остаются без published fix.
+- Gate не ослаблен; upstream forge PR1152 и braces issue70 открыты. Выпуск заблокирован.
+- Git diff check PASS. Полные web/Core suites, iOS/native device не повторялись; APK не создавался.
+- Настройки установки среды прежние; публичные веб/APK и постоянная БД не менялись.
+- Далее: native adapter общих UI-токенов; high blockers перепроверить перед выпуском.
+
 ## 2026-10-12 — M0d.6 Expo shell, выпуск заблокирован audit
 - Добавлен apps/mobile Expo57/RN0.86/React19: guest/staff profiles с разными app IDs, ru/uz/en через shared, disconnected preview.
 - React18 прежних клиентов сохранён; generated lock/peer snapshots отдельно от малого ручного среза.

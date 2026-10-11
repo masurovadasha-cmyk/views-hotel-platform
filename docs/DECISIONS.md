@@ -153,3 +153,13 @@ M0 не считается завершённым до приёмки всех �
 - Обнаружено переиспользование guest mode в staff export при тёплом Metro cache. Build scripts используют --clear;
   regression proof проверяет Hermes App bytecode, а не только имена/хеши bundle.
 - Prod audit SDK chain2 high/1 moderate без опубликованного исправления: CI audit не подавляется, выпуск блокирован.
+
+## M0d.7 — narrow UUID security override
+Use `xcode@3.0.1>uuid=11.1.1`: xcode calls the compatible CommonJS v4 API.
+Acceptance: truncated v3/v5 buffers reject; valid offset writes preserve boundaries;
+Xcode IDs/project serialization work; guest/staff exports retain their own mode;
+audit removes GHSA-w5hq-g745-h8pq without suppressing remaining findings.
+Source: https://github.com/uuidjs/uuid/security/advisories/GHSA-w5hq-g745-h8pq .
+Do not patch cryptography speculatively or suppress the two remaining high findings.
+Forge fix remains open: https://github.com/digitalbazaar/forge/pull/1152 ; braces:
+https://github.com/micromatch/braces/issues/70 . Recheck released fixes before launch.

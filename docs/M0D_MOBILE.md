@@ -29,9 +29,17 @@ EAS profiles guest-preview/staff-preview подготовлены, но обла
 клавиатурная/экранная навигация. Native device/emulator acceptance отдельным срезом.
 Публичные веб/APK и постоянная БД не меняются. M0 ещё открыт.
 
-Известный блокер выпуска: prod audit текущего lock сообщает2 high +1 moderate.
+Известный блокер выпуска: prod audit текущего lock сообщает2 high; moderate устранён в M0d.7.
 High: node-forge (GHSA-86w9-cpqp-85rv) через Expo CLI и braces
 (GHSA-vfj7-8cjw-p6xm) через Metro. Реестр не указывает исправленные версии.
 Audit gate в CI сохранён и будет блокировать выпуск; это не production-ready SDK
 acceptance. Не добавлять audit ignore или неподтверждённый security patch ради зелёного CI.
 Следующий security-срез: проверить официальные исправления/совместимый SDK и повторить audit.
+
+## M0d.7 — UUID dependency correction
+Узкий override xcode3.0.1 → uuid11.1.1 исправляет GHSA-w5hq-g745-h8pq.
+`node --test scripts/mobile-config.acceptance.cjs scripts/mobile-dependencies.acceptance.cjs`
+проверяет профили, границы буфера UUID и совместимость записи/чтения Xcode-проекта.
+До обновления тест границ падал; после обновления проходит. Зависимости других
+пакетов не обновлялись. Audit gate не ослаблен; два high всё ещё блокируют выпуск.
+Ручная проверка на устройстве и iOS native build остаются отдельной задачей.
