@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0b.1 checksum и clean/upgrade proof
+- Добавлен db/migrations.sha256 для102 SQL; исходные SQL побайтно совпадают с6b0d67a.
+- Применение вынесено из cloud-local-rehearsal в migrations.cjs; ledger и внешний advisory lock сохранены.
+- Исправлена проверка BEGIN: комментарии в0079/0098 больше не блокируют запуск; hash исходников не меняется.
+- Manifest tests проверяют изменение/удаление SQL и отсутствие транзакции; CI запускает manifest + DB proof.
+- На dirty6b0d67a disposable PostgreSQL16: clean102 и upgrade46→102 дают одинаковую схему/ACL при views_app.
+- Synthetic organization сохранена; повторный запуск0 изменений и прежние timestamps истории сохранены.
+- Checksum mismatch/неизвестная история отвергаются; ошибочная0103 полностью откатывается без записи checksum.
+- Проверено: manifest test, DB proof, node syntax, CI YAML, git diff --check — exit0; контейнер удалён.
+- Постоянная views_local не затронута; app/UI не менялись, их предыдущие build/test результаты не перепроверялись.
+- Инструкция и ограничения: M0B_MIGRATIONS.md; один checkpoint/organization не доказывает все случаи миграции данных.
+- Далее M0b.2: перенос SQL в db/migrations и обновление всех путей; M0b в целом ещё открыт.
+
 ## 2026-10-12 — M0a.3c единый dependency lock
 - Удалены root/API npm locks; pnpm-lock остаётся единственным, его SHA256 и manifests не изменились.
 - Generated deletion9669 строк отдельно от ручного diff; прежние locks сохранены в Git до84da7d0.

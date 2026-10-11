@@ -98,3 +98,8 @@ M0 не считается завершённым до приёмки всех �
 - npm run scripts совместимы, npm ci/install для зависимостей проекта больше не поддержаны.
 - Generated deletion9669 строк учтён отдельно от малого ручного diff M0a.
 - Внешний Cloudflare install override не подтверждён; локальная готовность не равна публикации.
+
+## M0b.1 — checksum и upgrade до переноса SQL
+- Общая CJS-реализация извлечена из существующего launcher без смены ledger/lock.
+- Manifest фиксирует102 SQL; комментарии перед BEGIN допустимы без изменения hash.
+- Clean/upgrade46→102 проверяются в disposable DB с views_app; SQL переносится в M0b.2.

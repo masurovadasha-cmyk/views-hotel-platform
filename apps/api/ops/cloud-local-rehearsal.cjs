@@ -7,6 +7,7 @@ const { spawn, spawnSync } = require('node:child_process');
 const { createHash, randomBytes } = require('node:crypto');
 const { Client } = require('pg');
 const { localState } = require('./local-state.cjs');
+const {readMigrations,applyMigrations}=require('./migrations.cjs');
 
 const REPO = path.resolve(__dirname, '../../..');
 const API = path.join(REPO, 'apps/api');
@@ -109,24 +110,10 @@ async function database() {
       await client.query(q);
     }
     await client.query(fs.readFileSync(path.join(REPO, 'infra/postgres/init/001_extensions.sql'), 'utf8'));
-    await client.query('CREATE TABLE IF NOT EXISTS public.views_local_migrations(name text PRIMARY KEY, sha256 text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())');
-    const dir = path.join(API, 'db/migrations');
-    const files = fs.readdirSync(dir).filter(name => /^\d{4}_[a-z0-9_]+\.sql$/.test(name)).sort();
-    let applied = 0;
-    for (const name of files) {
-      const sql = fs.readFileSync(path.join(dir, name), 'utf8');
-      const hash = createHash('sha256').update(sql).digest('hex');
-      const prior = (await client.query('SELECT sha256 FROM views_local_migrations WHERE name=$1', [name])).rows[0];
-      if (prior) { if (prior.sha256 !== hash) throw Error('MIGRATION_CHECKSUM_CHANGED:' + name); continue; }
-      if (!sql.startsWith('BEGIN;') || !/COMMIT;\s*$/.test(sql)) throw Error('MIGRATION_TRANSACTION_REQUIRED:' + name);
-      // Add the checksum in the same transaction as the repository's migration.
-      await client.query(sql.replace(/COMMIT;\s*$/, ''));
-      await client.query('INSERT INTO views_local_migrations(name,sha256) VALUES($1,$2)', [name, hash]);
-      await client.query('COMMIT');
-      applied++;
-    }
+    const migrations=readMigrations(path.join(API,'db/migrations'),path.join(REPO,'db/migrations.sha256'));
+    const applied=await applyMigrations(client,migrations);
     await client.query('GRANT CONNECT ON DATABASE views_local TO views_app; GRANT USAGE ON SCHEMA public,app TO views_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO views_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO views_app; GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app; REVOKE INSERT,UPDATE,DELETE ON provider_egress_attempts,provider_egress_reconciliation_queue,views_local_migrations FROM views_app');
-    console.log(JSON.stringify({ databaseReady: true, migrations: files.length, newMigrations: applied }));
+    console.log(JSON.stringify({ databaseReady: true, migrations: migrations.length, newMigrations: applied }));
   } catch (error) { await client.query('ROLLBACK').catch(() => {}); throw error; }
   finally { await client.end(); }
 }
