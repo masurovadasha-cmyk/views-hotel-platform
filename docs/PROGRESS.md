@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.12 native storage linking
+- Повторные HTTPS probes Google repository/Gradle checksum503; APK остаётся BLOCKED.
+- Проверено независимое подключение хранения: Expo autolinking для guest/staff находит FileSystemLegacyModule57.0.7.
+- Prebuild proof сохраняет autolinking.json и проверяет Gradle useExpoModules, версию и единственность пакета.
+- На dirtyb9b3a2e: оба реальных native prebuild/linking PASS; mobile tests12 PASS; diff check PASS.
+- Негативные тесты: missing/duplicate/wrong version/missing legacy/disabled Gradle integration.
+- Приложение/зависимости/БД не менялись; новая JS сборка не нужна для diagnostic-only изменения.
+- Инструкция M0D_MOBILE.md; native compilation/runtime/APK не подтверждены,2 high audit blockers остаются.
+- Настройки среды не менялись; действующая команда prebuild автоматически включает новый proof.
+- Далее: SDK/Gradle после восстановления сети, native build/device acceptance. M0 открыт.
+
 ## 2026-10-12 — M0d.11 native generation, APK BLOCKED
 - Новый mobile-native-prebuild.cjs создаёт guest/staff Android projects только в /tmp.
 - На dirty0cded39: оба Expo prebuild PASS; generated IDs/names корректны и различаются.

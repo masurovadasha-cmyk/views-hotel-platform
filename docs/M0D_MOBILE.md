@@ -98,3 +98,14 @@ preflight. In the generated profile/android directory use ANDROID_HOME and a wri
 GRADLE_USER_HOME, then ./gradlew :app:assembleDebug --max-workers=2 --no-daemon
 -PreactNativeArchitectures=x86_64 for emulator-only debugging. That build command
 has NOT succeeded here. Do not distribute an x86_64 debug APK as a phone release.
+
+## M0d.12 — native storage linking proof
+mobile-native-prebuild.cjs now runs the installed Expo autolinking resolver for
+both generated projects. It verifies exactly one expo-file-system package with
+the declared version and FileSystemLegacyModule, plus useExpoModules in Gradle.
+Each temporary project retains autolinking.json; report.json includes nativeStorage.
+`node --test scripts/mobile-native-modules.acceptance.cjs` rejects missing/duplicate
+packages, wrong versions, absent legacy module and disabled Gradle linking.
+Both real generated profiles resolve57.0.7 successfully. This proves configuration
+resolution only, not Gradle compilation or runtime storage. Google/Gradle HTTPS
+probes still return503; APK/device acceptance remains blocked. No repeated downloads.

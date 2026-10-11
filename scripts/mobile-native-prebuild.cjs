@@ -1,5 +1,6 @@
 // Generates disposable native projects. Does not build, sign, install or launch APKs.
 const fs = require('node:fs');
+const {verifyNativeStorage} = require('./mobile-native-modules.cjs');
 const path = require('node:path');
 const os = require('node:os');
 const assert = require('node:assert/strict');
@@ -8,6 +9,10 @@ const {createRequire} = require('node:module');
 const source = path.resolve(__dirname, '../apps/mobile');
 const mobile = createRequire(path.join(source, 'package.json'));
 const cli = path.join(path.dirname(mobile.resolve('expo/package.json')), 'bin/cli');
+const expo = createRequire(mobile.resolve('expo/package.json'));
+const linkingPackage = expo.resolve('expo-modules-autolinking/package.json');
+const linkingCli = path.join(path.dirname(linkingPackage), require(linkingPackage).bin['expo-modules-autolinking']);
+const fileSystemVersion = require(path.join(source, 'package.json')).dependencies['expo-file-system'];
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'views-native-prebuild-'));
 const reports = [];
 for (const mode of ['guest', 'staff']) {
@@ -32,7 +37,13 @@ for (const mode of ['guest', 'staff']) {
     assert.equal(applicationId, `uz.views.preview.${mode}`);
     const resources = fs.readFileSync(path.join(target, 'android/app/src/main/res/values/strings.xml'), 'utf8');
     assert.ok(resources.includes(mode === 'guest' ? 'VIEWS Guest Preview' : 'VIEWS Staff Preview'));
-    reports.push({mode, applicationId, nativeProject: target, generated: true});
+    const linking = JSON.parse(execFileSync(process.execPath,
+      [linkingCli, 'resolve', '--platform', 'android', '--json'],
+      {cwd: target, encoding: 'utf8', timeout: 30000}));
+    const settings = fs.readFileSync(path.join(target, 'android/settings.gradle'), 'utf8');
+    const nativeStorage = verifyNativeStorage(linking, settings, fileSystemVersion);
+    fs.writeFileSync(path.join(target, 'autolinking.json'), JSON.stringify(linking, null, 2));
+    reports.push({mode, applicationId, nativeProject: target, generated: true, nativeStorage});
   } catch (error) {
     console.error(`Prebuild failed; inspect ${target}`);
     throw error;

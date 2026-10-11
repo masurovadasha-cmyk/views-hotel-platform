@@ -25,7 +25,7 @@ jobs:
       - name: Verify mobile build profile isolation
         run: |
           node scripts/generate-native-tokens.cjs --check
-          node --test scripts/mobile-config.acceptance.cjs scripts/mobile-dependencies.acceptance.cjs scripts/mobile-preferences.acceptance.cjs scripts/mobile-android-preflight.acceptance.cjs
+          node --test scripts/mobile-config.acceptance.cjs scripts/mobile-dependencies.acceptance.cjs scripts/mobile-preferences.acceptance.cjs scripts/mobile-android-preflight.acceptance.cjs scripts/mobile-native-modules.acceptance.cjs
       - run: pnpm workspace:check
         env:
           EXPO_NO_TELEMETRY: "1"
