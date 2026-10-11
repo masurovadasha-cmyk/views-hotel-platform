@@ -1,0 +1,22 @@
+import {Injectable,NotFoundException,UnauthorizedException} from '@nestjs/common';
+import {DatabaseService} from '../database/database.service';
+import {GuestEmailService} from '../guest-identity/guest-email.service';
+import {StaffAuthService} from '../staff-auth/staff-auth.service';
+import type {RequestActorContext} from '../identity/actor-context';
+import {enabled as servicesEnabled,hash,safe} from './service-order.service';
+import {uuid} from './service-order.input';
+import {marketRequest,marketAction} from './market.input';
+export type MarketReceipt={orderId:string;stage:string;revision:number;totalMinor:string;idempotentReplay:boolean};
+function enabled(){servicesEnabled();if(process.env.VIEWS_MARKET_PILOT_ENABLED!=='true')throw new NotFoundException('SERVICE_MARKET_DISABLED');}
+@Injectable()
+export class MarketService{
+ constructor(private readonly db:DatabaseService,private readonly guest:GuestEmailService,private readonly staff:StaffAuthService){}
+ async catalog(token:string,reservation:unknown,after?:unknown){enabled();await this.guest.session(token);const r=uuid(reservation),cursor=after===undefined?null:uuid(after);return safe(async()=>{const raw=(await this.db.query<{value:{items:{id:string;name:Record<string,string>;priceMinor:string;currency:string;revision:number}[]}}>('SELECT app.market_catalog($1,$2,$3) value',[hash(token),r,cursor])).rows[0].value;const items=raw.items.slice(0,50);return {items,nextCursor:raw.items.length>50?items.at(-1)!.id:null};});}
+ async request(token:string,key:unknown,raw:unknown){enabled();await this.guest.session(token);const body=marketRequest(raw),command=uuid(key);return safe(()=>this.db.withOrganization('',async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:MarketReceipt}>('SELECT app.market_request($1,$2,$3) value',[hash(token),command,body])).rows[0].value;}));}
+ async guestAct(token:string,id:unknown,key:unknown,raw:unknown){enabled();await this.guest.session(token);const oid=uuid(id),command=uuid(key),body=marketAction(raw,false);return safe(()=>this.db.withOrganization('',async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:MarketReceipt}>('SELECT app.market_guest_act($1,$2,$3,$4) value',[hash(token),oid,command,body])).rows[0].value;}));}
+ private async identity(actor:RequestActorContext,token:string){enabled();const who=await this.staff.resolve(token);if(who.organizationId!==actor.organizationId||who.userId!==actor.userId||who.membershipId!==actor.membershipId)throw new UnauthorizedException('STAFF_ACTOR_MISMATCH');}
+ async staffAct(actor:RequestActorContext,token:string,id:unknown,key:unknown,raw:unknown){await this.identity(actor,token);const oid=uuid(id),command=uuid(key),body=marketAction(raw,true);return safe(()=>this.db.withActor(actor,async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:MarketReceipt}>('SELECT app.market_staff_act($1,$2,$3,$4) value',[hash(token),oid,command,body])).rows[0].value;}));}
+ async guestList(token:string,reservation:unknown,after?:unknown){enabled();await this.guest.session(token);const r=uuid(reservation),cursor=after===undefined?null:uuid(after);return safe(async()=>this.page((await this.db.query<{value:{items:MarketReceipt[]}}>('SELECT app.market_guest_list($1,$2,$3) value',[hash(token),r,cursor])).rows[0].value));}
+ async staffList(actor:RequestActorContext,token:string,property:unknown,after?:unknown){await this.identity(actor,token);const p=uuid(property),cursor=after===undefined?null:uuid(after);return safe(()=>this.db.withActor(actor,async c=>this.page((await c.query<{value:{items:MarketReceipt[]}}>('SELECT app.market_staff_list($1,$2,$3) value',[hash(token),p,cursor])).rows[0].value)));}
+ private page(raw:{items:MarketReceipt[]}){const items=raw.items.slice(0,50);return {items,nextCursor:raw.items.length>50?items.at(-1)!.orderId:null};}
+}

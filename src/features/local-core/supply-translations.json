@@ -364,5 +364,24 @@
   "uz": "Sanash bo‘yicha tuzatish",
   "en": "Stock count adjustment"
  },
-  "V Market uses a separate demo shopping list. Warehouse quantities are not published to guests; retail orders, prices and stock reservations are not connected.": {"ru": "V Market использует отдельный демонстрационный список покупок. Остатки склада не публикуются гостям; розничные заказы, цены и резервирование товаров не подключены.", "uz": "V Market alohida demo xarid roʻyxatidan foydalanadi. Ombor qoldiqlari mehmonlarga koʻrsatilmaydi; chakana buyurtmalar, narxlar va tovarlarni band qilish ulanmagan."}
+ "V Market uses a separate demo shopping list. Warehouse quantities are not published to guests; retail orders, prices and stock reservations are not connected.": {
+  "ru": "V Market использует отдельный демонстрационный список покупок. Остатки склада не публикуются гостям; розничные заказы, цены и резервирование товаров не подключены.",
+  "uz": "V Market alohida demo xarid roʻyxatidan foydalanadi. Ombor qoldiqlari mehmonlarga koʻrsatilmaydi; chakana buyurtmalar, narxlar va tovarlarni band qilish ulanmagan."
+ },
+ "V Market stock reservations are available in the local pilot for explicitly published products. Supplier deliveries and external couriers are not connected.": {
+  "ru": "Резервы V Market доступны в локальном пилоте для явно опубликованных товаров. Доставка поставщиков и внешние курьеры не подключены.",
+  "uz": "V Market zaxiralari mahalliy sinovda e’lon qilingan tovarlar uchun mavjud. Yetkazib beruvchilar va tashqi kuryerlar ulanmagan."
+ },
+ "Reserved for V Market": {
+  "ru": "Зарезервировано для V Market",
+  "uz": "V Market uchun zaxira"
+ },
+ "Available to issue": {
+  "ru": "Доступно к выдаче",
+  "uz": "Berish uchun mavjud"
+ },
+ "Stock is reserved for V Market. Review the orders before issuing or counting below the reserve.": {
+  "ru": "Товар зарезервирован для V Market. Проверьте заказы перед выдачей или инвентаризацией ниже резерва.",
+  "uz": "Tovar V Market uchun zaxiralangan. Berish yoki zaxiradan kam hisoblashdan oldin buyurtmalarni tekshiring."
+ }
 }

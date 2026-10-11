@@ -42,7 +42,7 @@ export function SupplyWorkspace({staffCsrf,direction,permissions}:Props){
  if(!canRead)return <main className="localWorkspace"><p>{t('Supply access is not granted to this account.')}</p></main>;
  return <main className="localWorkspace supplyWorkspace" data-testid={'supply-'+direction} aria-busy={busy}>
   <h1>{t(isPurchase?'Procurement workspace':'Warehouse workspace')}</h1><p className="localWarning">{t('Local test workspace. Quantities only: supplier delivery, payments and inventory valuation are not connected.')}</p>
-  <details className="localPanel"><summary>V Market</summary><p>{t('V Market uses a separate demo shopping list. Warehouse quantities are not published to guests; retail orders, prices and stock reservations are not connected.')}</p></details>
+  <details className="localPanel"><summary>V Market</summary><p>{t('V Market stock reservations are available in the local pilot for explicitly published products. Supplier deliveries and external couriers are not connected.')}</p></details>
   {!canWrite&&<p>{t('Read-only access. Changes require separate permission.')}</p>}{!online&&<p role="status">{t('Offline. Reconnect and retry manually. Nothing is sent automatically.')}</p>}
   {error&&<p className="localError" role="alert">{t(error)}</p>}{notice&&<p className="localSuccess" role="status">{t(notice)}</p>}
   {attempt&&<button data-testid="supply-retry" disabled={busy||!online} onClick={()=>void execute(attempt)}>{t('Retry the same operation')}</button>}
@@ -61,7 +61,7 @@ export function SupplyWorkspace({staffCsrf,direction,permissions}:Props){
     {orders.nextCursor&&<button disabled={locked} onClick={()=>void load('orders',orders.nextCursor!)}>{t('Next orders')}</button>}
    </section>}
    {!isPurchase&&receipt&&<SupplyWorkspaceReceipt key={receipt.id} order={receipt} disabled={locked||!canWrite} submit={command=>void execute(command)} onClose={()=>setReceipt(null)}/>}
-   {!isPurchase&&stock&&<section className="localPanel"><h2>{t('Current stock')}</h2><ul className="supplyRows">{stock.items.map(item=><li key={item.itemId} data-testid="supply-stock">{item.sku} · {item.name} · <strong>{count(item.quantity)} {t(item.unit)}</strong></li>)}</ul>{!stock.items.length&&<p>{t('No stock items on this page.')}</p>}
+   {!isPurchase&&stock&&<section className="localPanel"><h2>{t('Current stock')}</h2><ul className="supplyRows">{stock.items.map(item=><li key={item.itemId} data-testid="supply-stock">{item.sku} · {item.name} · <strong>{count(item.quantity)} {t(item.unit)}</strong>{item.reservedQuantity!==undefined&&item.availableQuantity!==undefined&&<p>{t('Reserved for V Market')}: {count(item.reservedQuantity)} · {t('Available to issue')}: {count(item.availableQuantity)}</p>}</li>)}</ul>{!stock.items.length&&<p>{t('No stock items on this page.')}</p>}
     {stock.nextCursor&&<button disabled={locked} onClick={()=>void load('stock',stock.nextCursor!)}>{t('Next stock items')}</button>}
     {canWrite&&<><SupplyIssueForm key={'issue:'+revision} propertyId={propertyId} stock={stock.items} disabled={locked} submit={command=>void execute(command)}/><SupplyWorkspaceStocktake key={'stocktake:'+revision} propertyId={propertyId} staffCsrf={staffCsrf} stock={stock.items} disabled={locked} submit={command=>void execute(command)}/></>}
    </section>}

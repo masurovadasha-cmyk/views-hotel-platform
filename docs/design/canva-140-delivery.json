@@ -421,7 +421,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SG-MK-002",
@@ -437,7 +438,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only"
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SG-MK-003",
@@ -465,11 +467,12 @@
       },
       "runtimeParity": "not_verified",
       "area": "guest",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SG-CO-001",
@@ -1011,11 +1014,12 @@
       },
       "runtimeParity": "not_verified",
       "area": "dispatcher",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SD-MK-002",
@@ -1027,11 +1031,12 @@
       },
       "runtimeParity": "not_verified",
       "area": "dispatcher",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SD-CO-001",
@@ -1494,11 +1499,12 @@
       },
       "runtimeParity": "not_verified",
       "area": "staff",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SS-MK-002",
@@ -1510,11 +1516,12 @@
       },
       "runtimeParity": "not_verified",
       "area": "staff",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SS-CO-001",

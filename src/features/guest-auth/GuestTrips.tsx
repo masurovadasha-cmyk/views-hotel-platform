@@ -1,3 +1,4 @@
+import {GuestMarket} from '../market-core/GuestMarket';
 import {GuestLaundry} from '../laundry/GuestLaundry';
 import {GuestCleaning} from '../service-orders/GuestCleaning';
 import {useEffect,useRef,useState} from 'react';
@@ -13,7 +14,8 @@ export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:bo
  const [page,setPage]=useState<GuestTripPage|null>(null),[selected,setSelected]=useState<GuestTrip|null>(null);
  const [loading,setLoading]=useState(false),[error,setError]=useState(''),[cancellationPending,setCancellationPending]=useState(false);
  const [cleaningPending,setCleaningPending]=useState(false),[laundryPending,setLaundryPending]=useState(false);
- const mutationPending=cancellationPending||cleaningPending||laundryPending;
+ const [marketPending,setMarketPending]=useState(false);
+ const mutationPending=cancellationPending||cleaningPending||laundryPending||marketPending;
  const generation=useRef(0),busy=useRef(false),expired=useRef(onSessionExpired);expired.current=onSessionExpired;
  function failure(e:unknown){
   setPage(null);setSelected(null);
@@ -50,6 +52,7 @@ export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:bo
    <p>{t('Booking changes and payment are not connected here yet.')}</p>
    {['checked_in','checked_out'].includes(selected.status)&&<GuestCleaning canRequest={selected.status==='checked_in'} key={selected.id} reservationId={selected.id} csrf={csrf} online={online} onExpired={()=>expired.current()} onPending={setCleaningPending}/>}
    {['checked_in','checked_out'].includes(selected.status)&&<GuestLaundry key={'laundry:'+selected.id} reservationId={selected.id} csrf={csrf} online={online} canRequest={selected.status==='checked_in'} onExpired={()=>expired.current()} onPending={setLaundryPending}/>}
+   {['checked_in','checked_out'].includes(selected.status)&&<GuestMarket key={'market:'+selected.id} reservationId={selected.id} csrf={csrf} online={online} canRequest={selected.status==='checked_in'} onExpired={()=>expired.current()} onPending={setMarketPending}/>}
    <GuestCancellation key={selected.id} reservationId={selected.id} status={selected.status} csrf={csrf} online={online} onExpired={()=>expired.current()} onResolutionPending={setCancellationPending} onCancelled={()=>{setSelected(current=>current?{...current,status:'cancelled'}:null);setPage(current=>current?{...current,items:current.items.map(trip=>trip.id===selected.id?{...trip,status:'cancelled'}:trip)}:null);}}/>
    <button disabled={!online||mutationPending} onClick={()=>void load()}>{t('Back to trips')}</button></article>:!loading&&page&&<>
    {!page.items.length&&<p>{t('No bookings are linked to this account yet.')}</p>}

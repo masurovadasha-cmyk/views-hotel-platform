@@ -45,6 +45,7 @@ module.exports=async function guestEmailBrowserProof({coreOrigin,smtp,setLinkOri
   phase='guest_cancellation';await require('./guest-cancellation-browser-proof.cjs')({page,api,admin,identity:identity.body});
   phase='cleaning_orders';await require('./cleaning-browser-core-proof.cjs')({browser,page,api,admin,identity:identity.body,coreOrigin});
   phase='laundry';await require('./laundry-browser-core-proof.cjs')({browser,page,api,admin,identity:identity.body,coreOrigin});
+  phase='market';await require('./market-browser-core-proof.cjs')({browser,page,api,admin,identity:identity.body,coreOrigin});
   phase='staff_invitation_panel';await require('./guest-link-staff-browser-proof.cjs')({browser});
   phase='staff_role_entries';await require('./staff-role-entry.browser.cjs')({browser});
   phase='folio_workspace';await require('./folio-browser-core-proof.cjs')({browser,admin,coreOrigin});

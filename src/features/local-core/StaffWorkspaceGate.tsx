@@ -1,3 +1,4 @@
+import {StaffMarket} from '../market-core/StaffMarket';
 import {StaffLaundry} from '../laundry/StaffLaundry';
 import {StaffCleaning} from '../service-orders/StaffCleaning';
 import {HousekeepingWorkspace} from './HousekeepingWorkspace';
@@ -35,6 +36,7 @@ export function StaffWorkspaceGate(){
  const [session,setSession]=useState<Session>({authenticated:false}),[loading,setLoading]=useState(true),[mode,setMode]=useState<'login'|'activate'|'reset'>('login');
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[repeat,setRepeat]=useState(''),[token,setToken]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const [marketPending,setMarketPending]=useState(false);
  const [laundryPending,setLaundryPending]=useState(false);
  const [assurance,setAssurance]=useState(false),[changeNotice,setChangeNotice]=useState('');
  const [change,setChange]=useState(false),[current,setCurrent]=useState(''),[next,setNext]=useState('');
@@ -56,7 +58,7 @@ export function StaffWorkspaceGate(){
   finally{setPassword('');setRepeat('');setBusy(false);}
  }
  async function logout(all:boolean){
-  if(laundryPending)return;
+  if(laundryPending||marketPending)return;
   setBusy(true);setError('');try{await authCall('logout',{all},session.csrf);setSession({authenticated:false});setChange(false);setAssurance(false);setCurrent('');setNext('');setChangeNotice('');setNotice(all?'Все ваши сессии завершены.':'Вы вышли из системы.');}
   catch(e){setError(e instanceof Error?e.message:'Не удалось завершить сессию.');}finally{setBusy(false);}
  }
@@ -87,7 +89,7 @@ export function StaffWorkspaceGate(){
  if(session.authenticated&&session.identity&&session.csrf&&!staffRoleMatches(requested,session.identity.role))return <main className="localWorkspace staffRoleMismatch">
   <h1>{roleText(locale,'A different employee role is signed in.')}</h1><p>{roleText(locale,'This address does not grant access. Continue to your assigned workspace or sign out to use another account.')}</p>
   {actualRole&&<a href={staffEntryUrl(actualRole,true)}>{roleText(locale,'Open my workspace')}</a>}
-  <button disabled={busy||laundryPending} onClick={()=>void logout(false)}>{t('Выйти')}</button>{error&&<p role="alert">{t(error)}</p>}
+  <button disabled={busy||laundryPending||marketPending} onClick={()=>void logout(false)}>{t('Выйти')}</button>{error&&<p role="alert">{t(error)}</p>}
  </main>;
  if(session.authenticated&&session.identity&&session.csrf)return <>
   {actualRole&&<div className="localWorkspace"><StaffRoleHeading role={actualRole} locale={locale}/></div>}
@@ -100,8 +102,8 @@ export function StaffWorkspaceGate(){
   <section id="staff-account" tabIndex={-1} className="localWorkspace staffAccount" aria-label={t("Учётная запись сотрудника")}>
    <div><strong>{session.identity.displayName||session.identity.email}</strong><small>{session.identity.email} · {session.identity.role==='front_desk'?t("Ресепшен"):session.identity.role}</small>
    <small>{t("Сессия PostgreSQL ·")}{' '}{session.identity.emailVerified?t("Email подтверждён"):t("Локальная проверка приглашения, не подтверждение email")}</small></div>
-   <div className="staffAccountActions"><button disabled={busy||laundryPending} onClick={()=>{setChange(v=>!v);setCurrent('');setNext('');setAssurance(false);setChangeNotice('');setError('');}}>{t("Изменить пароль")}</button>
-    <button disabled={busy||laundryPending} onClick={()=>void logout(true)}>{t("Завершить все сессии")}</button><button disabled={busy||laundryPending} onClick={()=>void logout(false)}>{t("Выйти")}</button></div>
+   <div className="staffAccountActions"><button disabled={busy||laundryPending||marketPending} onClick={()=>{setChange(v=>!v);setCurrent('');setNext('');setAssurance(false);setChangeNotice('');setError('');}}>{t("Изменить пароль")}</button>
+    <button disabled={busy||laundryPending||marketPending} onClick={()=>void logout(true)}>{t("Завершить все сессии")}</button><button disabled={busy||laundryPending||marketPending} onClick={()=>void logout(false)}>{t("Выйти")}</button></div>
    {error&&<p className="localError" role="alert">{t(error)}</p>}
    {change&&<div className="staffPasswordChange">
     {changeNotice&&<p role="status">{t(changeNotice)}</p>}
@@ -113,6 +115,7 @@ export function StaffWorkspaceGate(){
   </section>
   {session.identity.permissions.some(p=>['reservation.manage','housekeeping.work'].includes(p))&&<StaffCleaning csrf={session.csrf} manager={session.identity.permissions.includes('reservation.manage')}/>}
   {reception&&<StaffLaundry csrf={session.csrf} onPending={setLaundryPending}/>}
+  {actualRole==='warehouse'&&session.identity.permissions.includes('stock.manage')&&<StaffMarket csrf={session.csrf} onPending={setMarketPending}/>}
   <div id="staff-security" tabIndex={-1}><StaffPasskeyPanel csrf={session.csrf}/></div>
   {!sections.length&&<StaffRoleUnavailable locale={locale} noPermission={actualRole!=='technician'&&actualRole!=='concierge'}/>}
   {sections.includes('supplies')&&(actualRole==='procurement'||actualRole==='warehouse')&&<div id="staff-supplies" tabIndex={-1}><SupplyWorkspace staffCsrf={session.csrf} direction={actualRole} permissions={session.identity.permissions}/></div>}

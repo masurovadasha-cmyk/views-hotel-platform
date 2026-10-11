@@ -4,7 +4,7 @@ export type SupplyProperty={id:string;name:Record<string,string>;timezone:string
 export type SupplyItem={id:string;sku:string;name:string;unit:SupplyUnit};
 export type SupplyLine={itemId:string;sku:string;name:string;unit:SupplyUnit;quantity:string;receivedQuantity:string;remainingQuantity:string};
 export type SupplyOrder={id:string;reference:string;status:'ordered'|'partially_received'|'received';createdAt:string;lines:SupplyLine[]};
-export type StockItem={itemId:string;sku:string;name:string;unit:SupplyUnit;quantity:string};
+export type StockItem={itemId:string;sku:string;name:string;unit:SupplyUnit;quantity:string;reservedQuantity?:string;availableQuantity?:string};
 export type StockMovement={id:string;itemId:string;sku:string;name:string;unit:SupplyUnit;kind:'receipt'|'issue'|'adjustment';quantity:string;reference:string;createdAt:string};
 export type SupplyPage<T>={items:T[];nextCursor:string|null};
 export type StocktakeInput={propertyId:string;itemId:string;countedQuantity:string;reason:string};
@@ -47,7 +47,7 @@ export const supplyApi={
  async properties(csrf:string,cursor?:string){return supplyPage<SupplyProperty>(await get('properties',csrf,undefined,cursor),item=>uuid(item.id)&&!!item.name&&typeof item.name==='object'&&Object.values(item.name).every(v=>typeof v==='string')&&timezone(item.timezone));},
  async items(csrf:string,propertyId:string,cursor?:string){return supplyPage<SupplyItem>(await get('items',csrf,propertyId,cursor),item=>uuid(item.id)&&named(item));},
  async orders(csrf:string,propertyId:string,cursor?:string){return supplyPage<SupplyOrder>(await get('orders',csrf,propertyId,cursor),orderValid);},
- async stock(csrf:string,propertyId:string,cursor?:string){return supplyPage<StockItem>(await get('stock',csrf,propertyId,cursor),item=>uuid(item.itemId)&&named(item)&&quantity(item.quantity));},
+ async stock(csrf:string,propertyId:string,cursor?:string){return supplyPage<StockItem>(await get('stock',csrf,propertyId,cursor),item=>uuid(item.itemId)&&named(item)&&quantity(item.quantity)&&(item.reservedQuantity===undefined&&item.availableQuantity===undefined||quantity(item.reservedQuantity)&&quantity(item.availableQuantity)&&BigInt(item.reservedQuantity!)+BigInt(item.availableQuantity!)===BigInt(item.quantity)));},
  async movements(csrf:string,propertyId:string,cursor?:string){return supplyPage<StockMovement>(await get('movements',csrf,propertyId,cursor),item=>uuid(item.id)&&uuid(item.itemId)&&named(item)&&['receipt','issue','adjustment'].includes(item.kind)&&quantity(item.quantity,true)&&(item.kind==='adjustment'||(item.kind==='receipt'?BigInt(item.quantity)>0n:BigInt(item.quantity)<0n))&&typeof item.reference==='string'&&Number.isFinite(Date.parse(item.createdAt)));},
  async stocktakePreview(csrf:string,input:StocktakeInput){return supplyStocktakePreview(await request('supply/stocktake/preview',csrf,input),input);},
  async execute(csrf:string,command:SupplyCommand){const route=command.kind==='item'?'items':command.kind==='order'?'orders':command.kind==='receive'?'orders/'+encodeURIComponent(command.orderId)+'/receive':command.kind==='stocktake'?'stocktake/confirm':'stock/issue';return supplyCommandResult(await request('supply/'+route,csrf,command.body,command.key),command);}

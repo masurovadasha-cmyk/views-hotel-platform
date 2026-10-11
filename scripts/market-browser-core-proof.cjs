@@ -1,0 +1,48 @@
+'use strict';
+const assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
+module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
+ page.setDefaultTimeout(15000);
+ const org='10000000-0000-4000-8000-000000000001',property='10000000-0000-4000-8000-000000000002';
+ const profile=randomUUID(),unit=randomUUID(),type=randomUUID(),reservation='ffffffff-ffff-4fff-8fff-'+randomUUID().slice(-12),water=randomUUID(),coffee=randomUUID();
+ await admin.query("INSERT INTO guest_profiles(id,user_id,organization_id,first_name,last_name) VALUES($1,$2,$3,'Synthetic','Market')",[profile,identity.profile.userId,org]);
+ await admin.query("INSERT INTO unit_types(id,property_id,name,max_guests) VALUES($1,$2,'{}',2)",[type,property]);
+ await admin.query("INSERT INTO units(id,property_id,unit_type_id,code) VALUES($1,$2,$3,'Market 201')",[unit,property,type]);
+ await admin.query("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) VALUES($1,$2,$3,$4,$5,'MARKET-BROWSER','checked_in',now()-interval '1 day',now()+interval '5 days','UZS',0,'{}')",[reservation,org,property,unit,profile]);
+ for(const [id,name,price,quantity] of [[water,'Water',1200000,3],[coffee,'Coffee',8500000,2]]){
+  await admin.query("INSERT INTO supply_items(id,organization_id,property_id,sku,name,unit) VALUES($1,$2,$3,$4,$5,'piece')",[id,org,property,'BROWSER-'+name.toUpperCase(),name]);
+  await admin.query('INSERT INTO supply_balances(organization_id,property_id,item_id,quantity) VALUES($1,$2,$3,$4)',[org,property,id,quantity]);
+  await admin.query("INSERT INTO service_catalog(id,organization_id,property_id,code,name,currency,price_minor,active,execution_kind) VALUES($1,$2,$3,$1::uuid::text,jsonb_build_object('en',$4::text,'ru',$4::text,'uz',$4::text),'UZS',$5,true,'market')",[id,org,property,name,price]);
+  await admin.query("INSERT INTO market_products(service_id,organization_id,property_id,currency,item_id) VALUES($1,$2,$3,'UZS',$1)",[id,org,property]);
+ }
+ await page.reload();await page.locator(`[data-reservation-id="${reservation}"]`).getByRole('button',{name:'View trip',exact:true}).click();
+ const guest=page.getByTestId('guest-market-core');await guest.getByRole('button',{name:'Open V Market',exact:true}).click();
+ const catalogue=await api('services/market/catalog?reservationId='+reservation);assert.equal(catalogue.status,200,JSON.stringify(catalogue.body));
+ await guest.locator(`[data-product-id="${water}"]`).getByLabel('Quantity',{exact:true}).fill('2');await guest.locator(`[data-product-id="${coffee}"]`).getByLabel('Quantity',{exact:true}).fill('1');
+ assert.equal(await guest.getByRole('button',{name:'Order and reserve',exact:true}).isDisabled(),true);
+ await guest.getByLabel('I accept the items, total and charge after receipt',{exact:true}).check();
+ assert.equal((await api('services/market','POST',{}, {'Idempotency-Key':randomUUID()})).status,403);
+ const keys=[];await page.route('**/guest-api/services/market',async r=>{keys.push(r.request().headers()['idempotency-key']);const response=await r.fetch();assert.equal(response.status(),200);await r.abort('failed');},{times:1});
+ await guest.getByRole('button',{name:'Order and reserve',exact:true}).click();await guest.getByText('No confirmation received. Retry the same operation to check its outcome.',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Back to trips',exact:true}).isDisabled(),true);
+ await page.context().setOffline(true);assert.equal(await guest.getByRole('button',{name:'Retry same operation',exact:true}).isDisabled(),true);await page.context().setOffline(false);
+ await page.route('**/guest-api/services/market',async r=>{keys.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();
+ await guest.getByTestId('market-stage').getByText('Stock reserved',{exact:true}).waitFor();assert.equal(keys[0],keys[1]);
+ const rows=(await admin.query('SELECT id,total_minor::text FROM service_orders WHERE reservation_id=$1',[reservation])).rows;assert.equal(rows.length,1);const oid=rows[0].id;assert.equal(rows[0].total_minor,'10900000');
+ const listed=(await api('services/market?reservationId='+reservation)).body.items[0];assert.equal(listed.lines.some(l=>'itemId' in l),false);
+ assert.equal((await api('services/market/catalog?reservationId='+reservation)).body.items.find(i=>i.id===water).availableQuantity,'1');
+ const gc=guest.locator(`[data-market-order="${oid}"]`),web=await require('./fixtures/folio-staff-web.cjs')({coreOrigin,organizationId:org,propertyId:property,internalKey:process.env.VIEWS_INTERNAL_API_KEY});
+ let context;
+ try{
+  context=await browser.newContext({viewport:{width:390,height:844}});await context.addCookies([{name:'views_staff_session',value:'b1'.repeat(32),domain:'127.0.0.1',path:'/local-api',httpOnly:true,sameSite:'Strict'}]);
+  const warehouse=await context.newPage();warehouse.setDefaultTimeout(15000);await warehouse.goto(web.origin+'/?staffRole=warehouse');await warehouse.locator('.staffLanguage select').selectOption('en');
+  const staff=warehouse.getByTestId('staff-market-core');await staff.getByRole('button',{name:'Open V Market',exact:true}).click();const sc=staff.locator(`[data-market-order="${oid}"]`);await sc.getByText('Unit: Market 201',{exact:true}).waitFor();
+  await sc.getByRole('button',{name:'Start picking',exact:true}).click();await sc.getByTestId('market-stage').getByText('Being picked',{exact:true}).waitFor();assert.equal(await sc.getByRole('button',{name:'Finish picking',exact:true}).isDisabled(),true);
+  for(const label of ['Items and quantities checked','Expiry dates checked','Packaging checked'])await sc.getByLabel(label,{exact:true}).check();
+  await sc.getByRole('button',{name:'Finish picking',exact:true}).click();await sc.getByLabel('Order physically handed to guest',{exact:true}).check();await sc.getByRole('button',{name:'Confirm handover',exact:true}).click();await sc.getByTestId('market-stage').getByText('Handed over — confirm receipt',{exact:true}).waitFor();
+  assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'1');assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
+  await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByLabel('All items received. I confirm the stated charge',{exact:true}).check();await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).click();await gc.getByTestId('market-stage').getByText('Received and charged',{exact:true}).waitFor();
+  assert.deepEqual((await admin.query('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[oid])).rows,[{amount_minor:'10900000'}]);
+  for(const language of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(language);await warehouse.locator('.staffLanguage select').selectOption(language);for(const p of [page,warehouse])assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
+  await guest.screenshot({path:'/tmp/views-market-guest.png'});await staff.screenshot({path:'/tmp/views-market-staff.png'});
+  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','warehouse_pick_checklist_handover','stock_issue','guest_receipt_single_folio','private_item_id_stripped','three_languages_mobile'],publicEnabled:false}));
+ }finally{if(context)await context.close();await web.close();}
+};
