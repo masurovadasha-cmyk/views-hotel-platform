@@ -24,3 +24,16 @@ describe('concierge cookie boundary',()=>{
   expect(staff.validSearch(new URL('http://local/local-api/service-orders/concierge?propertyId='+id),'GET')).toBe(false);
  });
 });
+
+describe('concierge support gateway',()=>{
+ it('scopes search and keeps profile query empty',async()=>{
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');
+  const ctx={u:new URL('http://local/local-api/service-orders/concierge/knowledge?search=quiet%20room'),req:{method:'GET',headers:{}},res:{},identity:{permissions:['concierge.work'],propertyIds:[id]},propertyId:id,token:'staff',fail:(_s,c)=>{throw Error(c);},json:vi.fn(),core:vi.fn(async()=>({items:[]}))};
+  await staff.handle(ctx);expect(ctx.core.mock.calls[0][0]).toContain('propertyId='+id);expect(ctx.core.mock.calls[0][0]).toContain('search=quiet%20room');
+  ctx.u=new URL('http://local/local-api/service-orders/concierge/'+id+'/profile');await staff.handle(ctx);expect(ctx.core.mock.calls[1][0]).toBe('/v1/service-orders/concierge/'+id+'/profile');
+  ctx.u=new URL('http://local/local-api/service-orders/concierge/knowledge');ctx.req.method='POST';await expect(staff.handle(ctx)).rejects.toThrow('STAFF_PERMISSION_DENIED');
+ });
+ it('projects preferences without private identities or arbitrary fields',()=>{
+  expect(guest.projection({reservationId:id,revision:1,consent:true,preferences:'Quiet',user_id:id,secret:'hidden'})).toEqual({reservationId:id,revision:1,consent:true,preferences:'Quiet'});
+ });
+});

@@ -3,6 +3,7 @@ const {timingSafeEqual}=require('node:crypto');
 function same(a,b){return typeof a==='string'&&Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));}
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 function projection(b){
+ if(UUID.test(b.reservationId)&&Number.isInteger(b.revision)&&typeof b.consent==='boolean')return {reservationId:b.reservationId,revision:b.revision,consent:b.consent,...(typeof b.preferences==='string'&&b.preferences.length<=500?{preferences:b.preferences}:{}),...(typeof b.idempotentReplay==='boolean'?{idempotentReplay:b.idempotentReplay}:{})};
  const fields=['category','partySize','budgetMinor','responseDueAt','answeredAt','assigned','id','name','currency','priceMinor','revision','durationMinutes','orderId','status','stage','requestedFor','totalMinor','idempotentReplay','feedback','rating','comment','intakeId','declaredCount','preferences','pickupAt','estimateMinor','returnBy','availableQuantity','creditedMinor','replacesOrderId','replacedByOrderId'];
  const pick=v=>{
   const result=Object.fromEntries(fields.filter(k=>Object.hasOwn(v,k)).map(k=>[k,v[k]]));
@@ -26,13 +27,13 @@ exports.handle=async function({route,req,res,token,csrf,upstream,reply,failed,js
  if(!route.startsWith('services'))return false;
  if(process.env.VIEWS_SERVICE_ORDER_PILOT_ENABLED!=='true'){reply(res,404,{error:'SERVICE_ORDERS_DISABLED'});return true;}
  if(route.startsWith('services/market')&&process.env.VIEWS_MARKET_PILOT_ENABLED!=='true'){reply(res,404,{error:'SERVICE_MARKET_DISABLED'});return true;}
- const u=new URL('/'+route,'http://local'),read=req.method==='GET'&&['/services/catalog','/services/orders','/services/concierge','/services/laundry','/services/laundry/catalog','/services/market','/services/market/catalog'].includes(u.pathname);
+ const u=new URL('/'+route,'http://local'),read=req.method==='GET'&&['/services/catalog','/services/orders','/services/concierge','/services/concierge/preferences','/services/laundry','/services/laundry/catalog','/services/market','/services/market/catalog'].includes(u.pathname);
  const action=u.pathname.match(/^\/services\/orders\/([^/]+)\/(?:actions|feedback)$/);
  const conciergeAction=u.pathname.match(/^\/services\/concierge\/([^/]+)\/actions$/);
  const laundryAction=u.pathname.match(/^\/services\/laundry\/([^/]+)\/actions$/);
  const marketAction=u.pathname.match(/^\/services\/market\/([^/]+)\/actions$/);
  const repeat=req.method==='GET'&&/^\/services\/orders\/[a-f0-9-]{36}\/repeat$/i.test(u.pathname)&&UUID.test(u.pathname.split('/')[3])&&!u.search;
- const write=req.method==='POST'&&(u.pathname==='/services/orders'||u.pathname==='/services/concierge'||conciergeAction&&UUID.test(conciergeAction[1])||u.pathname==='/services/laundry'||u.pathname==='/services/market'||marketAction&&UUID.test(marketAction[1])||laundryAction&&UUID.test(laundryAction[1])||action&&UUID.test(action[1]))&&!u.search;
+ const write=req.method==='POST'&&(u.pathname==='/services/orders'||u.pathname==='/services/concierge'||u.pathname==='/services/concierge/preferences'||conciergeAction&&UUID.test(conciergeAction[1])||u.pathname==='/services/laundry'||u.pathname==='/services/market'||marketAction&&UUID.test(marketAction[1])||laundryAction&&UUID.test(laundryAction[1])||action&&UUID.test(action[1]))&&!u.search;
  if((!read&&!write&&!repeat)||(read&&(!UUID.test(u.searchParams.get('reservationId')||'')||[...u.searchParams.keys()].some(k=>!['reservationId','cursor'].includes(k)||u.searchParams.getAll(k).length!==1)||(u.searchParams.has('cursor')&&!UUID.test(u.searchParams.get('cursor')))))){reply(res,400,{error:'SERVICE_INPUT_INVALID'});return true;}
  if(!token){reply(res,401,{error:'GUEST_EMAIL_SESSION_INVALID'});return true;}
  let body,key;

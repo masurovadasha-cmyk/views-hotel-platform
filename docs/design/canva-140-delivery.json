@@ -1080,11 +1080,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "dispatcher",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_14_CONCIERGE_SUPPORT.md; local Core workflow, PDF acceptance pending"
     },
     {
       "id": "SD-CO-004",
@@ -1096,11 +1096,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "dispatcher",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_14_CONCIERGE_SUPPORT.md; local Core workflow, PDF acceptance pending"
     },
     {
       "id": "SD-TX-001",
