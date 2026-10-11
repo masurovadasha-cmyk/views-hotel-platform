@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.11 native generation, APK BLOCKED
+- Новый mobile-native-prebuild.cjs создаёт guest/staff Android projects только в /tmp.
+- На dirty0cded39: оба Expo prebuild PASS; generated IDs/names корректны и различаются.
+- Preflight/preferences tests7 PASS, diff check PASS; исходники приложения не менялись.
+- SDK manager list PASS; install36/tools36/NDK27.1 завершился503, отдельный retry connection failure.
+- Gradle9.3.1 wrapper download connection refused; независимые Google/Gradle HTTPS probes503.
+- APK не собран, device/native IO не проверены; SDK preflight остаётся BLOCKED, KVM недоступен.
+- Документация: M0D_MOBILE.md; ни TLS bypass, ни платных cloud builds, ни production действий.
+- start_skill draft6acbfee482d48197bd74e4435d22391c сохранён; Save/Publish пользователем ещё не выполнены.
+- Далее после восстановления загрузок: SDK install → Gradle build → native acceptance. M0 открыт.
+
 ## 2026-10-12 — M0d.10 native preflight, приёмка BLOCKED
 - Добавлен mobile-android-preflight.cjs: версии из RN metadata, отсутствие SDK/components → exit1.
 - На dirty93b4010: mobile tests10 PASS; реальный preflight exit1 (ожидаемый BLOCKED), diff check PASS.

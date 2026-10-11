@@ -81,3 +81,20 @@ Next native runner needs matching SDK/NDK, writable adb user configuration and a
 usable device/emulator. Then build BOTH Expo profiles, test all6 locale/theme
 combinations through force-stop/relaunch, repeated writes and profile isolation.
 Do not substitute the legacy WebView APK for these Expo profile acceptance tests.
+
+## M0d.11 — disposable native generation
+`npm_config_cache=/tmp/views-m0-npm-cache node scripts/mobile-native-prebuild.cjs`
+generates BOTH profiles in fresh /tmp directories without modifying apps/mobile.
+It checks generated application IDs/names; report.json explicitly marks APK/device
+acceptance as NOT_RUN. Profiles guest/staff passed on dirty0cded39.
+SDK listing succeeded via sdkmanager with ANDROID_USER_HOME=/tmp/views-native-android;
+installing platform36/build-tools36/NDK27.1.12297006 failed on NDK HTTP503. Separate
+platform/build-tools retry could not connect. Preflight remains blocked.
+Generated Gradle9.3.1 wrapper failed downloading distribution (connection refused);
+independent HTTPS probes to Gradle checksum and Google repository returned503.
+No TLS/checksum bypass, alternate unverified downloads or paid builds used.
+After network recovery, retry SDK installation with official SDK manager and run
+preflight. In the generated profile/android directory use ANDROID_HOME and a writable
+GRADLE_USER_HOME, then ./gradlew :app:assembleDebug --max-workers=2 --no-daemon
+-PreactNativeArchitectures=x86_64 for emulator-only debugging. That build command
+has NOT succeeded here. Do not distribute an x86_64 debug APK as a phone release.
