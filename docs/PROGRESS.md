@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.3 Next guest/host shell
+- Создан apps/web Next15.5.27/React18 Pages Router:6 SSR страниц guest/host × ru/uz/en, noindex, явный disconnected status.
+- Критерии/запуск/ручной чек-лист: M0D_WEB.md; каталог, вход, бронь и тема здесь не реализованы.
+- Next нужен для SSR; lock generated493 строки отдельно от ручного среза; прежние клиенты/БД не переносились.
+- Prod audit выявил PostCSS: узкий override next>postcss8.5.29; повтор audit —0 известных уязвимостей.
+- На dirty52cfb62: frozen install в изолированном snapshot PASS; workspace:check9/9 задач, web353 tests PASS.
+- HTTP production и dev proofs:6 SSR маршрутов,3 ошибочных404, root307, локализованные ссылки/noindex — PASS.
+- Исправлен формат Next config на mjs; generated next-env исключён из Git, typecheck без next-env с framework-env PASS.
+- Network187, mail15, diff check PASS. Полный PostgreSQL suite/browser hydration отдельно не запускались.
+- start_skill draft6acbfee482d48197bd74e4435d22391c обновлён; Save/Publish не выполнены.
+- Публичные веб/APK и постоянная views_local не менялись. Далее shared/ui и Expo отдельными срезами; M0 открыт.
+
 ## 2026-10-12 — M0d.2 самостоятельный CRM shell
 - Создан apps/crm React/Vite workspace:9 направлений, ru/uz/en, светлая/тёмная темы, явный disconnected preview.
 - Роли/переводы/стили переиспользованы из src; нет API/логина/операционных данных, выбор роли не даёт прав.

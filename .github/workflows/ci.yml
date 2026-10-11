@@ -23,6 +23,8 @@ jobs:
           node --test scripts/migration-manifest.acceptance.cjs
           node scripts/migration-upgrade-proof.cjs
       - run: pnpm workspace:check
+      - name: Verify Next guest and host SSR shell
+        run: node scripts/web-shell.http.cjs
       - name: Build frozen production API image
         run: docker build -f apps/api/Dockerfile -t views-api:ci .
       - name: Verify non-root API container and disposable database readiness

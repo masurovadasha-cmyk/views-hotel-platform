@@ -14,3 +14,8 @@ diagnostic-evidence/
 .wrangler/
 
 .turbo/
+
+.next/
+*.tsbuildinfo
+
+apps/web/next-env.d.ts

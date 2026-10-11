@@ -2,7 +2,8 @@
   "$schema": "https://turbo.build/schema.json",
   "globalPassThroughEnv": [
     "GIT_DIR",
-    "GIT_WORK_TREE"
+    "GIT_WORK_TREE",
+    "NEXT_TELEMETRY_DISABLED"
   ],
   "tasks": {
     "typecheck": {
