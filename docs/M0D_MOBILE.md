@@ -109,3 +109,17 @@ packages, wrong versions, absent legacy module and disabled Gradle linking.
 Both real generated profiles resolve57.0.7 successfully. This proves configuration
 resolution only, not Gradle compilation or runtime storage. Google/Gradle HTTPS
 probes still return503; APK/device acceptance remains blocked. No repeated downloads.
+
+## M0d.13 — SDK installed, Maven blocks APK
+Official SDK manager installed platform36/build-tools36.0.0/NDK27.1.12297006.
+Preflight now exits0; aapt2 and NDK clang execute successfully. Existing SDK35 kept.
+Gradle9.3.1 downloaded over verified HTTPS and checked against official SHA256;
+local archive /tmp/views-gradle-9.3.1-bin.zip, cache /tmp/views-native-gradle.
+Environment helper `/workspace/android-tools/configure-views-gradle.py` configures
+injected proxy and public CA trust for Gradle; TLS validation remains enabled.
+The helper is environment-local, not repository source. Saved startup draft refers
+to it; a fresh machine must restore the snapshot, not assume Git contains tooling.
+Guest debug x86_64 build executed10 tasks and failed resolving Google Maven
+com.android.tools.build:gradle-api:8.5.0 (HTTP503); exact URL recheck also503.
+This supersedes missing SDK/Gradle blockers above. Native compile/APK/device gates
+remain open. Five prerequisite/autolinking tests passed; no app source changed.

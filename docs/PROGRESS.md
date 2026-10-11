@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.13 Android toolchain installed
+- Google/Gradle connectivity recovered initially; installed SDK36/build-tools36.0.0/NDK27.1.12297006.
+- Real Android preflight exit0; aapt2/clang execute; prerequisite/linking tests5 PASS on bb8795e.
+- Gradle9.3.1 official SHA256 verified; local wrapper uses verified archive, proxy/CA configured without TLS bypass.
+- Guest x86_64 debug build executed10 tasks then FAILED Google Maven gradle-api8.5.0 HTTP503; exact recheck503.
+- APK/native acceptance NOT done. Remaining blocker is Maven access, not missing SDK. KVM/adb issues remain.
+- Reusable environment helper /workspace/android-tools/configure-views-gradle.py; startup draft updated, not published.
+- Instructions M0D_MOBILE.md. Application/DB/lock untouched; about5GiB free, caches preserved.
+- No production/paid builds. Previous2 high audit blockers remain; fresh audit not run.
+- Next: resume cached Gradle build when Maven recovers; publish environment snapshot to retain toolchain.
+
 ## 2026-10-12 — M0d.12 native storage linking
 - Повторные HTTPS probes Google repository/Gradle checksum503; APK остаётся BLOCKED.
 - Проверено независимое подключение хранения: Expo autolinking для guest/staff находит FileSystemLegacyModule57.0.7.
