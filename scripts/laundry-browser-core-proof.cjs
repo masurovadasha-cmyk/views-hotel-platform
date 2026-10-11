@@ -26,14 +26,16 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   context=await browser.newContext({viewport:{width:390,height:844}});await context.addCookies([{name:'views_staff_session',value:'a1'.repeat(32),domain:'127.0.0.1',path:'/local-api',httpOnly:true,sameSite:'Strict'}]);
   const manager=await context.newPage();manager.setDefaultTimeout(15000);await manager.goto(web.origin+'/?staffRole=manager');await manager.locator('.staffLanguage select').selectOption('en');
   const staff=manager.getByTestId('staff-laundry');await staff.getByRole('button',{name:'Open laundry',exact:true}).click();const sc=staff.locator(`[data-intake-id="${iid}"]`);
+  async function findIntake(){await manager.waitForFunction(()=>[...document.querySelectorAll('[data-testid=staff-laundry] button')].find(b=>b.textContent==='Refresh')?.disabled===false);for(let n=0;n<100&&await sc.count()===0;n++){await staff.getByRole('button',{name:'Next page',exact:true}).click();await manager.waitForFunction(()=>[...document.querySelectorAll('[data-testid=staff-laundry] button')].find(b=>b.textContent==='Refresh')?.disabled===false);}assert.equal(await sc.count(),1);}
+  await findIntake();
   await sc.getByText('Unit: Laundry 101',{exact:true}).waitFor();
   const physical='Action physically completed; items checked against inventory where available';
-  async function staffAction(label,stage){await sc.getByLabel(physical,{exact:true}).check();await sc.getByRole('button',{name:label,exact:true}).click();await sc.getByTestId('laundry-stage').getByText(stage,{exact:true}).waitFor();}
+  async function staffAction(label,stage){await sc.getByLabel(physical,{exact:true}).check();await sc.getByRole('button',{name:label,exact:true}).click();await findIntake();await sc.getByTestId('laundry-stage').getByText(stage,{exact:true}).waitFor();}
   await staffAction('Confirm collection','Items received');
   await sc.getByLabel('Item description',{exact:true}).fill('White shirt');await sc.getByLabel('Item price (UZS)',{exact:true}).fill('40000');
   await sc.getByRole('button',{name:'Add item',exact:true}).click();await sc.getByLabel('Tag (A–Z, 0–9, hyphen)',{exact:true}).nth(1).fill('002');await sc.getByLabel('Item description',{exact:true}).nth(1).fill('Trousers');await sc.getByLabel('Item price (UZS)',{exact:true}).nth(1).fill('60000');
   await sc.getByLabel('Return by (device time zone)',{exact:true}).fill(new Date(Date.now()+48*3600000).toISOString().slice(0,16));
-  await sc.getByRole('button',{name:'Send inventory and price',exact:true}).click();await sc.getByTestId('laundry-stage').getByText('Inventory awaiting approval',{exact:true}).waitFor();
+  await sc.getByRole('button',{name:'Send inventory and price',exact:true}).click();await findIntake();await sc.getByTestId('laundry-stage').getByText('Inventory awaiting approval',{exact:true}).waitFor();
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByText('001 · White shirt · 40,000 UZS',{exact:true}).waitFor();
   assert.equal(await gc.getByRole('button',{name:'Approve inventory and price',exact:true}).isDisabled(),true);
   await gc.getByLabel('I approve the inventory, final price and charge after receipt',{exact:true}).check();
@@ -43,7 +45,15 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await page.context().setOffline(true);assert.equal(await guest.getByRole('button',{name:'Retry same operation',exact:true}).isDisabled(),true);await page.context().setOffline(false);
   await page.route(`**/guest-api/services/laundry/${iid}/actions`,async r=>{keys.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();await gc.getByTestId('laundry-stage').getByText('Inventory accepted',{exact:true}).waitFor();assert.equal(keys[0],keys[1]);
   const orders=(await admin.query('SELECT id,total_minor::text FROM service_orders WHERE reservation_id=$1',[reservation])).rows;assert.equal(orders.length,1);assert.equal(orders[0].total_minor,'10000000');
-  await staff.getByRole('button',{name:'Refresh',exact:true}).click();await staffAction('Start processing','Processing');await staffAction('Mark ready for return','Ready for return');await staffAction('Confirm handover to guest','Returned — confirm receipt');
+  await staff.getByRole('button',{name:'Refresh',exact:true}).click();await findIntake();await staffAction('Start processing','Processing');await staffAction('Mark ready for return','Ready for return');await staffAction('Confirm handover to guest','Returned — confirm receipt');
+  assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[orders[0].id])).rows[0].n,0);
+  await guest.getByRole('button',{name:'Refresh',exact:true}).click();const guestClaim=gc.getByTestId('laundry-claim');
+  await guestClaim.getByLabel('Item tag',{exact:true}).selectOption('001');await guestClaim.getByLabel('Problem type',{exact:true}).selectOption('damaged');await guestClaim.getByLabel('Describe the problem',{exact:true}).fill('The sleeve is torn');
+  await guestClaim.getByRole('button',{name:'Send concern',exact:true}).click();await guestClaim.getByText('Awaiting review',{exact:true}).waitFor();assert.equal(await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).count(),0);
+  await staff.getByRole('button',{name:'Refresh',exact:true}).click();await findIntake();const staffClaim=sc.getByTestId('laundry-claim');await staffClaim.getByLabel('Staff response',{exact:true}).fill('We reviewed the sleeve. Please contact reception.');await staffClaim.getByRole('checkbox').check();await staffClaim.getByRole('button',{name:'Send response',exact:true}).click();await findIntake();await staffClaim.getByText('Response received — awaiting your decision',{exact:true}).waitFor();
+  await guest.getByRole('button',{name:'Refresh',exact:true}).click();await guestClaim.getByText('Response received — awaiting your decision',{exact:true}).waitFor();assert.equal(await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).count(),0);
+  await guestClaim.screenshot({path:'/tmp/views-laundry-claim-guest.png'});await staffClaim.screenshot({path:'/tmp/views-laundry-claim-staff.png'});
+  await guestClaim.getByLabel('The issue is resolved or I withdraw this concern. This does not confirm receipt or a charge.',{exact:true}).check();await guestClaim.getByRole('button',{name:'Close concern',exact:true}).click();await guestClaim.getByRole('status').getByText('Closed by guest',{exact:true}).waitFor();
   assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[orders[0].id])).rows[0].n,0);
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByLabel('All items received. I confirm the stated charge',{exact:true}).check();await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).click();await gc.getByTestId('laundry-stage').getByText('Received and charged',{exact:true}).waitFor();
   assert.deepEqual((await admin.query('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[orders[0].id])).rows,[{amount_minor:'10000000'}]);
@@ -52,6 +62,6 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await page.getByRole('button',{name:'Dark',exact:true}).click();assert.ok(await page.locator('.app.dark').count());
   await page.screenshot({path:'/tmp/views-laundry-guest.png',fullPage:true});await manager.screenshot({path:'/tmp/views-laundry-staff.png',fullPage:true});
   await page.getByRole('button',{name:'Light',exact:true}).click(); // Restore shared harness theme for the remaining scenarios.
-  console.log(JSON.stringify({proof:'laundry_browser_core',result:'pass',checks:['guest_request','staff_inventory','exact_revised_price','guest_consent','lost_response_same_key','offline','navigation_guard','staff_location','processing_return','guest_receipt_one_folio_charge','mobile_390','three_languages','guest_dark'],publicEnabled:false}));
+  console.log(JSON.stringify({proof:'laundry_browser_core',result:'pass',checks:['guest_request','staff_inventory','exact_revised_price','guest_consent','lost_response_same_key','offline','navigation_guard','staff_location','processing_return','claim_tag_reply_guest_resolution_no_automatic_charge','guest_receipt_one_folio_charge','mobile_390','three_languages','guest_dark'],publicEnabled:false}));
  }finally{if(context)await context.close();await web.close();}
 };

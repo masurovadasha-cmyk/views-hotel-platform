@@ -16,6 +16,7 @@ function projection(b){
   if(v.credits){if(!Array.isArray(v.credits)||v.credits.length>20)throw Error('INVALID_RESPONSE');result.credits=v.credits.map(c=>({id:c.id,amountMinor:c.amountMinor,reason:c.reason,createdAt:c.createdAt}));}
   if(v.proposal){const p=v.proposal;if(!Array.isArray(p.lines)||p.lines.length>20)throw Error('INVALID_RESPONSE');result.proposal={status:p.status,note:p.note,totalMinor:p.totalMinor,expiresAt:p.expiresAt,lines:p.lines.map(l=>({serviceId:l.serviceId,name:l.name,quantity:l.quantity,priceMinor:l.priceMinor}))};}
   if(v.messages){if(!Array.isArray(v.messages)||v.messages.length>100)throw Error('INVALID_RESPONSE');result.messages=v.messages.map(m=>({id:m.id,author:m.author,text:m.text,createdAt:m.createdAt}));}
+  if(v.claim){const c=v.claim;if(!['open','answered','resolved'].includes(c.status)||!Array.isArray(c.history)||c.history.length>9)throw Error('INVALID_RESPONSE');result.claim={status:c.status,tag:c.tag,kind:c.kind,history:c.history.map(e=>({action:e.action,at:e.at,note:e.note,...(e.tag?{tag:e.tag,kind:e.kind}:{})}))};}
   if(v.issue)result.issue={status:v.issue.status,note:v.issue.note,answer:v.issue.answer};
   return result;
  };

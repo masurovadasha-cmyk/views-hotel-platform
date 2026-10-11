@@ -1,3 +1,4 @@
+import {LaundryClaim} from './LaundryClaim';
 import {useEffect,useState} from 'react';
 import {request} from '../local-core/LocalCoreWorkspace';
 import {useStaffLocale} from '../local-core/StaffLocale';
@@ -27,7 +28,7 @@ function LaundryWork({intake:o,disabled,onAction}:{intake:LaundryIntake;disabled
  const {locale}=useStaffLocale(),t=(k:string)=>laundryText(locale,k),[checked,setChecked]=useState(false);
  const action=({requested:'receive',accepted:'wash',washing:'ready',ready:'deliver'} as Record<string,string>)[o.stage];
  const returnable=['received','quoted','awaiting_return'].includes(o.stage);
- return <article className="localPanel" data-intake-id={o.intakeId}><LaundrySummary intake={o} locale={locale}/>
+ return <article className="localPanel" data-intake-id={o.intakeId}><LaundrySummary intake={o} locale={locale}/><LaundryClaim intake={o} locale={locale} staff disabled={disabled} onAction={onAction}/>
  {['received','quoted'].includes(o.stage)&&<LaundryQuoteForm intake={o} locale={locale} disabled={disabled} onQuote={fields=>onAction('quote',fields)}/>}
  {(action||returnable)&&<fieldset disabled={disabled}><label><input type="checkbox" checked={checked} onChange={e=>setChecked(e.target.checked)}/>{t('physical')}</label>
  {action&&<button disabled={!checked} onClick={()=>onAction(action)}>{t(action==='ready'?'readyAction':action)}</button>}

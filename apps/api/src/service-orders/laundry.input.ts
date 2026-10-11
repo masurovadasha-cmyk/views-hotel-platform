@@ -10,6 +10,13 @@ export function laundryRequest(raw:unknown){
 export function laundryAction(raw:unknown,staff:boolean){
  if(!raw||typeof raw!=='object'||!('action' in raw))return invalid();
  const action=raw.action;
+ if((!staff&&action==='report_claim')||(staff&&action==='answer_claim')){
+  const b=object(raw,action==='report_claim'?['action','expectedRevision','tag','kind','note']:['action','expectedRevision','note']);
+  const note=text(b.note,500);if(note.length<3)invalid();
+  if(action==='report_claim'&&(typeof b.tag!=='string'||!/^[A-Z0-9-]{1,24}$/.test(b.tag)||!['missing','damaged','quality'].includes(b.kind as string)))invalid();
+  return {action,expectedRevision:revision(b.expectedRevision),note,...(action==='report_claim'?{tag:b.tag,kind:b.kind}:{})};
+ }
+
  if(staff&&action==='quote'){
   const b=object(raw,['action','expectedRevision','items','returnBy']);if(!Array.isArray(b.items)||b.items.length<1||b.items.length>50)return invalid();
   const items=b.items.map(raw=>{const i=object(raw,['tag','description','priceMinor']);if(typeof i.tag!=='string'||!/^[A-Z0-9-]{1,24}$/.test(i.tag))return invalid();return {tag:i.tag,description:text(i.description,160),priceMinor:money(i.priceMinor)};});
@@ -17,6 +24,6 @@ export function laundryAction(raw:unknown,staff:boolean){
   return {action,expectedRevision:revision(b.expectedRevision),items,returnBy:requestedTime(b.returnBy)};
  }
  if(!staff&&action==='accept'){const b=object(raw,['action','expectedRevision','expectedTotalMinor']);return {action,expectedRevision:revision(b.expectedRevision),expectedTotalMinor:money(b.expectedTotalMinor)};}
- if(typeof action!=='string'||!(staff?['receive','wash','ready','deliver','return_unprocessed']:['reject','cancel','confirm_receipt']).includes(action))return invalid();
+ if(typeof action!=='string'||!(staff?['receive','wash','ready','deliver','return_unprocessed']:['reject','cancel','confirm_receipt','resolve_claim']).includes(action))return invalid();
  const b=object(raw,['action','expectedRevision']);return {action,expectedRevision:revision(b.expectedRevision)};
 }

@@ -6,7 +6,7 @@ import type {RequestActorContext} from '../identity/actor-context';
 import {enabled,hash,safe} from './service-order.service';
 import {uuid} from './service-order.input';
 import {laundryRequest,laundryAction} from './laundry.input';
-export type LaundryReceipt={intakeId:string;stage:string;revision:number;orderId:string|null;estimateMinor:string;totalMinor:string|null;items:{tag:string;description:string;priceMinor:string}[]|null;idempotentReplay:boolean};
+export type LaundryReceipt={claim?:{status:string;tag:string;kind:string;history:unknown[]}|null;intakeId:string;stage:string;revision:number;orderId:string|null;estimateMinor:string;totalMinor:string|null;items:{tag:string;description:string;priceMinor:string}[]|null;idempotentReplay:boolean};
 @Injectable()
 export class LaundryService{
  constructor(private readonly db:DatabaseService,private readonly guest:GuestEmailService,private readonly staff:StaffAuthService){}
@@ -17,5 +17,5 @@ export class LaundryService{
  async staffAct(actor:RequestActorContext,token:string,id:unknown,key:unknown,raw:unknown){await this.identity(actor,token);const iid=uuid(id),command=uuid(key),body=laundryAction(raw,true);return safe(()=>this.db.withActor(actor,async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:LaundryReceipt}>('SELECT app.laundry_staff_act($1,$2,$3,$4) value',[hash(token),iid,command,body])).rows[0].value;}));}
  async guestList(token:string,reservation:unknown,after?:unknown){enabled();await this.guest.session(token);const r=uuid(reservation),cursor=after===undefined?null:uuid(after);return safe(async()=>this.page((await this.db.query<{value:{items:LaundryReceipt[]}}>('SELECT app.laundry_guest_list($1,$2,$3) value',[hash(token),r,cursor])).rows[0].value));}
  async staffList(actor:RequestActorContext,token:string,property:unknown,after?:unknown){await this.identity(actor,token);const p=uuid(property),cursor=after===undefined?null:uuid(after);return safe(()=>this.db.withActor(actor,async c=>this.page((await c.query<{value:{items:LaundryReceipt[]}}>('SELECT app.laundry_staff_list($1,$2,$3) value',[hash(token),p,cursor])).rows[0].value)));}
- private page(raw:{items:LaundryReceipt[]}){const items=raw.items.slice(0,50);return {items,nextCursor:raw.items.length>50?items.at(-1)!.intakeId:null};}
+ private page(raw:{items:LaundryReceipt[]}){const items=raw.items.slice(0,2);return {items,nextCursor:raw.items.length>2?items.at(-1)!.intakeId:null};}
 }

@@ -30,3 +30,10 @@ describe('laundry browser boundary',()=>{
   expect(staff.validSearch(new URL('http://local/local-api/service-orders/laundry?propertyId='+id),'GET')).toBe(false);
  });
 });
+
+it('bounds claim history and excludes internal evidence and actor identities',()=>{
+ const history=[{action:'report_claim',at:'2026-10-12T00:00:00Z',note:'Missing item',tag:'001',kind:'missing',actorUserId:id}],claim={status:'open',tag:'001',kind:'missing',history,internalNote:'private'};
+ const result=guest.projection({intakeId:id,revision:2,idempotentReplay:false,claim});
+ expect(result.claim.internalNote).toBeUndefined();expect(result.claim.history[0].actorUserId).toBeUndefined();
+ expect(()=>guest.projection({intakeId:id,revision:2,idempotentReplay:false,claim:{...claim,history:Array(10).fill(history[0])}})).toThrow('INVALID_RESPONSE');
+});

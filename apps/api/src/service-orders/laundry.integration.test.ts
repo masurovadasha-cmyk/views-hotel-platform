@@ -85,3 +85,52 @@ describe.sequential('laundry consent and custody / real PostgreSQL',()=>{
   vi.stubEnv('NODE_ENV','production');await expect(service.guestList(f.a.token,f.r)).rejects.toThrow('SERVICE_ORDERS_DISABLED');
  });
 });
+
+describe('laundry claims / actual Core',()=>{
+ it('records one claim, blocks charging until guest closure, and does not charge for a reply',async()=>{
+  const {f,i}=await delivered(),key=randomUUID(),body=command(i,'report_claim',{tag:'001',kind:'damaged',note:'Torn sleeve after cleaning'});
+  const replies=await Promise.all([service.guestAct(f.a.token,i.intakeId,key,body),service.guestAct(f.a.token,i.intakeId,key,body)]);
+  expect(replies.filter(r=>!r.idempotentReplay)).toHaveLength(1);let c=replies[0];expect(c.claim?.history).toHaveLength(1);
+  await expect(service.guestAct(f.a.token,i.intakeId,randomUUID(),command(c,'confirm_receipt'))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  c=await staffAct(c,'answer_claim',{note:'We have reviewed the item; please contact reception.'});expect(c.claim?.status).toBe('answered');
+  await expect(service.guestAct(f.a.token,i.intakeId,randomUUID(),command(c,'confirm_receipt'))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  expect((await run('SELECT * FROM folio_entries WHERE source_id=$1',[i.orderId])).rowCount).toBe(0);
+  c=await service.guestAct(f.a.token,i.intakeId,randomUUID(),command(c,'resolve_claim'));expect(c.claim?.history).toHaveLength(3);
+  const final=await service.guestAct(f.a.token,i.intakeId,randomUUID(),command(c,'confirm_receipt'));expect(final.stage).toBe('closed');
+  expect((await run('SELECT * FROM folio_entries WHERE source_id=$1',[i.orderId])).rowCount).toBe(1);
+ });
+ it('denies foreign guests, wrong roles, unknown tags, early claims and stale competing writes',async()=>{
+  const p=await prepared(),other=await account();
+  await expect(service.guestAct(p.f.a.token,p.quoted.intakeId,randomUUID(),command(p.quoted,'report_claim',{tag:'001',kind:'missing',note:'Missing item'}))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  const {f,i}=await delivered(),body=command(i,'report_claim',{tag:'001',kind:'quality',note:'Stain remains'});
+  await expect(service.guestAct(other.token,i.intakeId,randomUUID(),body)).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+  await expect(service.guestAct(f.a.token,i.intakeId,randomUUID(),{...body,tag:'UNKNOWN'})).rejects.toThrow('SERVICE_INPUT_INVALID');
+  await expect(staffAct(i,'answer_claim',{note:'Invalid role'},2)).rejects.toThrow();
+  const writes=await Promise.allSettled([service.guestAct(f.a.token,i.intakeId,randomUUID(),body),service.guestAct(f.a.token,i.intakeId,randomUUID(),body)]);
+  expect(writes.filter(x=>x.status==='fulfilled')).toHaveLength(1);
+  expect(writes.find(x=>x.status==='rejected')).toMatchObject({reason:{message:'SERVICE_REVISION_CHANGED'}});
+ });
+ it('keeps post-receipt claims separate from existing folio charges and preserves reopened history',async()=>{
+  const {f,i}=await delivered();let c=await service.guestAct(f.a.token,i.intakeId,randomUUID(),command(i,'confirm_receipt'));
+  c=await service.guestAct(f.a.token,i.intakeId,randomUUID(),command(c,'report_claim',{tag:'002',kind:'missing',note:'Cannot find trousers'}));
+  c=await staffAct(c,'answer_claim',{note:'Please check the second bag.'});
+  c=await service.guestAct(f.a.token,i.intakeId,randomUUID(),command(c,'report_claim',{tag:'002',kind:'missing',note:'The second bag is empty.'}));
+  expect(c.claim?.history).toHaveLength(3);expect(c.claim?.status).toBe('open');expect(c.stage).toBe('closed');
+  expect((await run('SELECT * FROM folio_entries WHERE source_id=$1',[i.orderId])).rowCount).toBe(1);
+  expect((await service.guestList(f.a.token,f.r)).items[0].claim?.history).toHaveLength(3);
+ });
+});
+
+it('bounds claim history, still allows withdrawal, and rechecks ownership before replay',async()=>{
+ const {f,i}=await delivered();let c=i;const key=randomUUID(),body=command(c,'report_claim',{tag:'001',kind:'quality',note:'Please review this stain'});
+ c=await service.guestAct(f.a.token,c.intakeId,key,body);
+ for(let n=0;n<4;n++){
+  c=await staffAct(c,'answer_claim',{note:'Please discuss the findings at reception.'});
+  if(n<3)c=await service.guestAct(f.a.token,c.intakeId,randomUUID(),command(c,'report_claim',{tag:'001',kind:'quality',note:'The issue remains unresolved'}));
+ }
+ expect(c.claim?.history).toHaveLength(8);
+ await expect(service.guestAct(f.a.token,c.intakeId,randomUUID(),command(c,'report_claim',{tag:'001',kind:'quality',note:'More information'}))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+ c=await service.guestAct(f.a.token,c.intakeId,randomUUID(),command(c,'resolve_claim'));expect(c.claim?.history).toHaveLength(9);
+ const other=await account();await run('UPDATE guest_profiles SET user_id=$1 WHERE id=(SELECT primary_guest_id FROM reservations WHERE id=$2)',[other.userId,f.r]);
+ await expect(service.guestAct(f.a.token,c.intakeId,key,body)).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+});

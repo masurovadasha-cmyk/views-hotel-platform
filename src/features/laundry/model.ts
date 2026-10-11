@@ -1,5 +1,6 @@
+export type LaundryClaimState={status:'open'|'answered'|'resolved';tag:string;kind:'missing'|'damaged'|'quality';history:{action:'report_claim'|'answer_claim'|'resolve_claim';at:string;note:string;tag?:string;kind?:string}[]};
 export type LaundryItem={tag:string;description:string;priceMinor:string};
-export type LaundryIntake={intakeId:string;stage:string;revision:number;name:Record<string,string>;currency:string;declaredCount:number;preferences:string;pickupAt:string;estimateMinor:string;items:LaundryItem[]|null;totalMinor:string|null;returnBy:string|null;unitCode?:string};
+export type LaundryIntake={claim?:LaundryClaimState|null;intakeId:string;stage:string;revision:number;name:Record<string,string>;currency:string;declaredCount:number;preferences:string;pickupAt:string;estimateMinor:string;items:LaundryItem[]|null;totalMinor:string|null;returnBy:string|null;unitCode?:string};
 const MAX=9223372036854775807n;
 /** Major currency input -> exact minor units, never floating point. */
 export function priceMinor(value:string):string|null{
