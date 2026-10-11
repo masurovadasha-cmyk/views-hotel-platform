@@ -13,6 +13,15 @@ export function marketRequest(raw:unknown){
 export function marketAction(raw:unknown,staff:boolean){
  if(!raw||typeof raw!=='object'||!('action' in raw))return invalid();
  const action=raw.action;
+ if(staff&&['receive_return','restock_return','discard_return'].includes(String(action))){
+  const b=object(raw,action==='receive_return'?['action','expectedRevision','serviceId','quantity','note']:action==='restock_return'?['action','expectedRevision','returnId','checklist','note']:['action','expectedRevision','returnId','note']);
+  if(typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();
+  const base={action:action as string,expectedRevision:revision(b.expectedRevision),note:b.note.trim()};
+  if(action==='receive_return'){if(!Number.isInteger(b.quantity)||(b.quantity as number)<1||(b.quantity as number)>50)return invalid();return {...base,serviceId:uuid(b.serviceId),quantity:b.quantity as number};}
+  const returnId=uuid(b.returnId);if(action==='discard_return')return {...base,returnId};
+  const c=object(b.checklist,['sealed','expiry','quality']);if(c.sealed!==true||c.expiry!==true||c.quality!==true)return invalid();return {...base,returnId,checklist:{sealed:true,expiry:true,quality:true}};
+ }
+
  if(staff&&action==='propose_replacement'){
   const b=object(raw,['action','expectedRevision','fromServiceId','toServiceId','note']);
   if(typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();
@@ -43,4 +52,10 @@ export function marketAction(raw:unknown,staff:boolean){
  }
  if(typeof action!=='string'||!(staff?['pick','handover','cancel']:['cancel','confirm_receipt']).includes(action))return invalid();
  const b=object(raw,['action','expectedRevision']);return {action,expectedRevision:revision(b.expectedRevision)};
+}
+
+export function marketCredit(raw:unknown){
+ const b=object(raw,['expectedRevision','amountMinor','reason']);
+ if(typeof b.amountMinor!=='string'||!/^[1-9]\d{0,18}$/.test(b.amountMinor)||BigInt(b.amountMinor)>9223372036854775807n||typeof b.reason!=='string'||b.reason.trim().length<3||b.reason.trim().length>500)return invalid();
+ return {expectedRevision:revision(b.expectedRevision),amountMinor:b.amountMinor,reason:b.reason.trim()};
 }

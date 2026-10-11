@@ -99,8 +99,39 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'3');
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByText('The missing juice is available at reception',{exact:true}).waitFor();await gc.getByLabel('All items received. I confirm the stated charge',{exact:true}).check();await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).click();await gc.getByTestId('market-stage').getByText('Received and charged',{exact:true}).waitFor();
   assert.deepEqual((await admin.query('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[oid])).rows,[{amount_minor:'19000000'}]);
+  await staff.getByRole('button',{name:'Refresh',exact:true}).click();
+  const returns=sc.getByTestId('market-returns');await returns.getByLabel('Returned product',{exact:true}).selectOption(coffee);
+  await returns.getByLabel('Quantity',{exact:true}).fill('1');await returns.getByLabel('Return reason (3–500 characters)',{exact:true}).fill('Coffee physically returned');
+  await returns.getByLabel('Goods physically received from guest',{exact:true}).check();await returns.getByRole('button',{name:'Receive into quarantine',exact:true}).click();
+  await returns.getByText('Quarantined',{exact:false}).waitFor();
+  assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[coffee])).rows[0].quantity,'0');
+  const receipt=(await admin.query('SELECT id FROM market_returns WHERE order_id=$1',[oid])).rows[0].id,inspection=sc.locator(`[data-return-id="${receipt}"]`);
+  await inspection.getByLabel('Inspection or disposal note (3–500 characters)',{exact:true}).fill('Sealed package and storage checked');
+  assert.equal(await inspection.getByRole('button',{name:'Return to available stock',exact:true}).isDisabled(),true);
+  for(const label of ['Factory seal intact','Expiry checked','Quality and storage conditions checked'])await inspection.getByLabel(label,{exact:true}).check();
+  await inspection.getByRole('button',{name:'Return to available stock',exact:true}).click();await inspection.getByText('Restocked',{exact:false}).waitFor();
+  assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[coffee])).rows[0].quantity,'1');
+  assert.equal((await admin.query('SELECT count(*)::int n FROM market_credits WHERE order_id=$1',[oid])).rows[0].n,0);
+  const financeContext=await browser.newContext({viewport:{width:390,height:844}});
+  try{
+   await financeContext.addCookies([{name:'views_staff_session',value:'a4'.repeat(32),domain:'127.0.0.1',path:'/local-api',httpOnly:true,sameSite:'Strict'}]);
+   const accountant=await financeContext.newPage();await accountant.goto(web.origin+'/?staffRole=accountant');await accountant.locator('.staffLanguage select').selectOption('en');
+   const finance=accountant.getByTestId('market-finance');await finance.getByRole('button',{name:'Open charged orders',exact:true}).click();const fc=finance.locator(`[data-credit-order="${oid}"]`);
+   await fc.getByLabel('Credit amount, UZS',{exact:true}).fill('85000');await fc.getByLabel('Reason for guest (3–500 characters)',{exact:true}).fill('Credit for returned coffee');
+   await fc.getByLabel('I confirm reducing the charge by this amount',{exact:true}).check();
+   const creditKeys=[];await accountant.route(`**/local-api/service-orders/market/${oid}/credits`,async r=>{creditKeys.push(r.request().headers()['idempotency-key']);const response=await r.fetch();assert.equal(response.status(),200);await r.abort('failed');},{times:1});
+   await fc.getByRole('button',{name:'Record folio credit',exact:true}).click();await finance.getByText('No confirmation received. Retry the same operation to check its outcome.',{exact:true}).waitFor();
+   await accountant.route(`**/local-api/service-orders/market/${oid}/credits`,async r=>{creditKeys.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});
+   await finance.getByRole('button',{name:'Retry same operation',exact:true}).click();await fc.getByTestId('market-credit-summary').waitFor();assert.equal(creditKeys[0],creditKeys[1]);
+   assert.equal((await admin.query('SELECT count(*)::int n FROM market_credits WHERE order_id=$1',[oid])).rows[0].n,1);
+   assert.equal((await admin.query('SELECT sum(e.amount_minor)::text total FROM folio_entries e JOIN guest_folios f ON f.id=e.folio_id WHERE f.reservation_id=$1',[reservation])).rows[0].total,'10500000');
+   assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[coffee])).rows[0].quantity,'1');
+   await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByTestId('market-credit-summary').getByText('Credit for returned coffee',{exact:false}).waitFor();
+   for(const language of ['ru','uz','en']){await accountant.locator('.staffLanguage select').selectOption(language);assert.equal(await accountant.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
+   await finance.screenshot({path:'/tmp/views-market-finance.png'});
+  }finally{await financeContext.close();}
   for(const language of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(language);await warehouse.locator('.staffLanguage select').selectOption(language);for(const p of [page,warehouse])assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
   await guest.screenshot({path:'/tmp/views-market-guest.png'});await staff.screenshot({path:'/tmp/views-market-staff.png'});
-  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','replacement_consent_own_reserve_lost_reply_one_successor','warehouse_proposal_expiry_decline_and_guest_consent_same_key','warehouse_pick_checklist_handover','stock_issue','issue_blocks_receipt','warehouse_answer_no_financial_or_stock_change','guest_receipt_single_folio','private_item_id_stripped','three_languages_mobile'],publicEnabled:false}));
+  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','replacement_consent_own_reserve_lost_reply_one_successor','warehouse_proposal_expiry_decline_and_guest_consent_same_key','warehouse_pick_checklist_handover','stock_issue','issue_blocks_receipt','warehouse_answer_no_financial_or_stock_change','guest_receipt_single_folio','private_item_id_stripped','quarantine_inspection_restock_no_credit','accountant_credit_same_key_no_stock_or_payment','three_languages_mobile'],publicEnabled:false}));
  }finally{if(context)await context.close();await web.close();}
 };

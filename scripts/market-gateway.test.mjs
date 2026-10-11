@@ -24,6 +24,13 @@ describe('market cookie boundary',()=>{
   expect(staff.validSearch(new URL('http://local/local-api/service-orders/market/catalog?cursor='+id),'GET')).toBe(true);
   expect(staff.validSearch(new URL('http://local/local-api/service-orders/market/catalog?propertyId='+id),'GET')).toBe(false);
  });
+ it('separates accounting routes from stock permissions',async()=>{
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','true');
+  const ctx={u:new URL('http://local/local-api/service-orders/market/finance'),req:{method:'GET',headers:{}},res:{},identity:{permissions:['stock.manage'],propertyIds:[id]},propertyId:id,token:'staff',fail:(_s,c)=>{throw Error(c);},json:vi.fn(),core:vi.fn(async()=>({items:[]}))};
+  await expect(staff.handle(ctx)).rejects.toThrow('STAFF_PERMISSION_DENIED');ctx.identity.permissions=['finance.read'];await staff.handle(ctx);expect(ctx.core.mock.calls[0][0]).toBe('/v1/service-orders/market/finance?propertyId='+id);
+  ctx.u=new URL('http://local/local-api/service-orders/market/'+id+'/credits');ctx.req.method='POST';await expect(staff.handle(ctx)).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  expect(staff.validSearch(new URL('http://local/local-api/service-orders/market/finance?propertyId='+id),'GET')).toBe(false);
+ });
  it('requires stock rights, fixed property scope and exact query parameters',async()=>{
   vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','true');
   const ctx={u:new URL('http://local/local-api/service-orders/market'),req:{method:'GET'},res:{},identity:{permissions:['reservation.manage'],propertyIds:[id]},propertyId:id,token:'staff',fail:(_s,c)=>{throw Error(c);},json:vi.fn(),core:vi.fn(async()=>({items:[]}))};

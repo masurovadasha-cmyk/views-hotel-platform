@@ -1,3 +1,4 @@
+import {StaffMarketCredits} from '../market-core/StaffMarketCredits';
 import {StaffMarket} from '../market-core/StaffMarket';
 import {StaffLaundry} from '../laundry/StaffLaundry';
 import {StaffCleaning} from '../service-orders/StaffCleaning';
@@ -116,6 +117,7 @@ export function StaffWorkspaceGate(){
   {session.identity.permissions.some(p=>['reservation.manage','housekeeping.work'].includes(p))&&<StaffCleaning csrf={session.csrf} manager={session.identity.permissions.includes('reservation.manage')}/>}
   {reception&&<StaffLaundry csrf={session.csrf} onPending={setLaundryPending}/>}
   {actualRole==='warehouse'&&session.identity.permissions.includes('stock.manage')&&<StaffMarket csrf={session.csrf} onPending={setMarketPending}/>}
+  {actualRole==='accountant'&&session.identity.permissions.includes('finance.manage')&&<StaffMarketCredits csrf={session.csrf} onPending={setMarketPending}/>}
   <div id="staff-security" tabIndex={-1}><StaffPasskeyPanel csrf={session.csrf}/></div>
   {!sections.length&&<StaffRoleUnavailable locale={locale} noPermission={actualRole!=='technician'&&actualRole!=='concierge'}/>}
   {sections.includes('supplies')&&(actualRole==='procurement'||actualRole==='warehouse')&&<div id="staff-supplies" tabIndex={-1}><SupplyWorkspace staffCsrf={session.csrf} direction={actualRole} permissions={session.identity.permissions}/></div>}

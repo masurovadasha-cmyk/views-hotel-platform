@@ -3,7 +3,7 @@ const {timingSafeEqual}=require('node:crypto');
 function same(a,b){return typeof a==='string'&&Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));}
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 function projection(b){
- const fields=['id','name','currency','priceMinor','revision','durationMinutes','orderId','status','stage','requestedFor','totalMinor','idempotentReplay','feedback','rating','comment','intakeId','declaredCount','preferences','pickupAt','estimateMinor','returnBy','availableQuantity','replacesOrderId','replacedByOrderId'];
+ const fields=['id','name','currency','priceMinor','revision','durationMinutes','orderId','status','stage','requestedFor','totalMinor','idempotentReplay','feedback','rating','comment','intakeId','declaredCount','preferences','pickupAt','estimateMinor','returnBy','availableQuantity','creditedMinor','replacesOrderId','replacedByOrderId'];
  const pick=v=>{
   const result=Object.fromEntries(fields.filter(k=>Object.hasOwn(v,k)).map(k=>[k,v[k]]));
   if(Object.hasOwn(v,'intakeId')&&Object.hasOwn(v,'items')){
@@ -11,6 +11,8 @@ function projection(b){
    result.items=v.items===null?null:v.items.map(i=>({tag:i.tag,description:i.description,priceMinor:i.priceMinor}));
   }
   if(Object.hasOwn(v,'lines')){if(!Array.isArray(v.lines)||v.lines.length>20)throw Error('INVALID_RESPONSE');result.lines=v.lines.map(l=>({serviceId:l.serviceId,name:l.name,quantity:l.quantity,priceMinor:l.priceMinor}));}
+  if(v.returns){if(!Array.isArray(v.returns)||v.returns.length>20||!Array.isArray(v.returnedByService)||v.returnedByService.length>20)throw Error('INVALID_RESPONSE');result.returns=v.returns.map(r=>({id:r.id,serviceId:r.serviceId,quantity:r.quantity,status:r.status,reason:r.reason,resolutionNote:r.resolutionNote}));result.returnedByService=v.returnedByService.map(r=>({serviceId:r.serviceId,quantity:r.quantity}));}
+  if(v.credits){if(!Array.isArray(v.credits)||v.credits.length>20)throw Error('INVALID_RESPONSE');result.credits=v.credits.map(c=>({id:c.id,amountMinor:c.amountMinor,reason:c.reason,createdAt:c.createdAt}));}
   if(v.proposal){const p=v.proposal;if(!Array.isArray(p.lines)||p.lines.length>20)throw Error('INVALID_RESPONSE');result.proposal={status:p.status,note:p.note,totalMinor:p.totalMinor,expiresAt:p.expiresAt,lines:p.lines.map(l=>({serviceId:l.serviceId,name:l.name,quantity:l.quantity,priceMinor:l.priceMinor}))};}
   if(v.issue)result.issue={status:v.issue.status,note:v.issue.note,answer:v.issue.answer};
   return result;

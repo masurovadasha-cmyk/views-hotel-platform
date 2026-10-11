@@ -40,7 +40,9 @@ module.exports=async function({page,api,admin,identity}){
  await panel.getByTestId('guest-cancellation-confirm').click();
  await panel.getByText('The server did not confirm the result. Keep this trip open and retry the same cancellation request manually.',{exact:true}).waitFor();
  assert.equal(await page.getByRole('button',{name:'Refresh trips',exact:true}).isDisabled(),true);
- await page.context().setOffline(true);assert.equal(await panel.getByTestId('guest-cancellation-confirm').isDisabled(),true);await page.context().setOffline(false);
+ await page.context().setOffline(true);
+ await page.waitForFunction(()=>document.querySelector('[data-testid="guest-cancellation-confirm"]')?.disabled===true);
+ assert.equal(await panel.getByTestId('guest-cancellation-confirm').isDisabled(),true);await page.context().setOffline(false);
  await page.route('**/guest-api/'+route+'confirm',async r=>{writes.push({body:r.request().postDataJSON(),key:r.request().headers()['idempotency-key']});await r.continue();},{times:1});
  await panel.getByTestId('guest-cancellation-confirm').click();await panel.getByTestId('guest-cancellation-result').waitFor();
  assert.deepEqual(writes[0],writes[1]);

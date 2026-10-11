@@ -383,5 +383,10 @@
  "Stock is reserved for V Market. Review the orders before issuing or counting below the reserve.": {
   "ru": "Товар зарезервирован для V Market. Проверьте заказы перед выдачей или инвентаризацией ниже резерва.",
   "uz": "Tovar V Market uchun zaxiralangan. Berish yoki zaxiradan kam hisoblashdan oldin buyurtmalarni tekshiring."
+ },
+ "return": {
+  "en": "Stock return",
+  "ru": "Возврат на склад",
+  "uz": "Omborga qaytarish"
  }
 }

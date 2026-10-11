@@ -1,7 +1,8 @@
 export type MarketProduct={id:string;name:Record<string,string>;priceMinor:string;currency:string;revision:number;availableQuantity:string};
 export type MarketLine={serviceId:string;name:Record<string,string>;quantity:number;priceMinor:string};
 export type MarketProposal={status:'pending'|'accepted'|'declined'|'withdrawn'|'cancelled';note:string;totalMinor:string;expiresAt:string;lines:MarketLine[]};
-export type MarketOrder={orderId:string;stage:string;revision:number;currency:string;totalMinor:string;lines:MarketLine[];requestedFor:string;proposal?:MarketProposal|null;replacesOrderId?:string|null;replacedByOrderId?:string|null;issue?:{status:string;note:string;answer?:string}|null;unitCode?:string};
+export type MarketReturn={id:string;serviceId:string;quantity:number;status:'quarantined'|'restocked'|'discarded';reason:string;resolutionNote?:string};
+export type MarketOrder={orderId:string;stage:string;revision:number;currency:string;totalMinor:string;lines:MarketLine[];requestedFor:string;returns?:MarketReturn[];returnedByService?:{serviceId:string;quantity:number}[];creditedMinor?:string;credits?:{id:string;amountMinor:string;reason:string;createdAt:string}[];proposal?:MarketProposal|null;replacesOrderId?:string|null;replacedByOrderId?:string|null;issue?:{status:string;note:string;answer?:string}|null;unitCode?:string};
 export type CartLine={product:MarketProduct;quantity:number};
 export function cartTotal(lines:CartLine[]){return lines.reduce((sum,l)=>sum+BigInt(l.product.priceMinor)*BigInt(l.quantity),0n).toString();}
 export function validCart(lines:CartLine[]){return lines.length>0&&lines.length<=20&&new Set(lines.map(l=>l.product.id)).size===lines.length&&new Set(lines.map(l=>l.product.currency)).size===1&&lines.every(l=>Number.isInteger(l.quantity)&&l.quantity>=1&&l.quantity<=50&&BigInt(l.quantity)<=BigInt(l.product.availableQuantity))&&BigInt(cartTotal(lines))<=9223372036854775807n;}

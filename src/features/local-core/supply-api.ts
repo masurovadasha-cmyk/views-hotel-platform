@@ -5,7 +5,7 @@ export type SupplyItem={id:string;sku:string;name:string;unit:SupplyUnit};
 export type SupplyLine={itemId:string;sku:string;name:string;unit:SupplyUnit;quantity:string;receivedQuantity:string;remainingQuantity:string};
 export type SupplyOrder={id:string;reference:string;status:'ordered'|'partially_received'|'received';createdAt:string;lines:SupplyLine[]};
 export type StockItem={itemId:string;sku:string;name:string;unit:SupplyUnit;quantity:string;reservedQuantity?:string;availableQuantity?:string};
-export type StockMovement={id:string;itemId:string;sku:string;name:string;unit:SupplyUnit;kind:'receipt'|'issue'|'adjustment';quantity:string;reference:string;createdAt:string};
+export type StockMovement={id:string;itemId:string;sku:string;name:string;unit:SupplyUnit;kind:'receipt'|'issue'|'adjustment'|'return';quantity:string;reference:string;createdAt:string};
 export type SupplyPage<T>={items:T[];nextCursor:string|null};
 export type StocktakeInput={propertyId:string;itemId:string;countedQuantity:string;reason:string};
 export type StocktakePreview=StocktakeInput&{sku:string;name:string;unit:SupplyUnit;expectedQuantity:string;deltaQuantity:string;expectedRevision:string};
@@ -48,7 +48,7 @@ export const supplyApi={
  async items(csrf:string,propertyId:string,cursor?:string){return supplyPage<SupplyItem>(await get('items',csrf,propertyId,cursor),item=>uuid(item.id)&&named(item));},
  async orders(csrf:string,propertyId:string,cursor?:string){return supplyPage<SupplyOrder>(await get('orders',csrf,propertyId,cursor),orderValid);},
  async stock(csrf:string,propertyId:string,cursor?:string){return supplyPage<StockItem>(await get('stock',csrf,propertyId,cursor),item=>uuid(item.itemId)&&named(item)&&quantity(item.quantity)&&(item.reservedQuantity===undefined&&item.availableQuantity===undefined||quantity(item.reservedQuantity)&&quantity(item.availableQuantity)&&BigInt(item.reservedQuantity!)+BigInt(item.availableQuantity!)===BigInt(item.quantity)));},
- async movements(csrf:string,propertyId:string,cursor?:string){return supplyPage<StockMovement>(await get('movements',csrf,propertyId,cursor),item=>uuid(item.id)&&uuid(item.itemId)&&named(item)&&['receipt','issue','adjustment'].includes(item.kind)&&quantity(item.quantity,true)&&(item.kind==='adjustment'||(item.kind==='receipt'?BigInt(item.quantity)>0n:BigInt(item.quantity)<0n))&&typeof item.reference==='string'&&Number.isFinite(Date.parse(item.createdAt)));},
+ async movements(csrf:string,propertyId:string,cursor?:string){return supplyPage<StockMovement>(await get('movements',csrf,propertyId,cursor),item=>uuid(item.id)&&uuid(item.itemId)&&named(item)&&['receipt','issue','adjustment','return'].includes(item.kind)&&quantity(item.quantity,true)&&(item.kind==='adjustment'||(['receipt','return'].includes(item.kind)?BigInt(item.quantity)>0n:BigInt(item.quantity)<0n))&&typeof item.reference==='string'&&Number.isFinite(Date.parse(item.createdAt)));},
  async stocktakePreview(csrf:string,input:StocktakeInput){return supplyStocktakePreview(await request('supply/stocktake/preview',csrf,input),input);},
  async execute(csrf:string,command:SupplyCommand){const route=command.kind==='item'?'items':command.kind==='order'?'orders':command.kind==='receive'?'orders/'+encodeURIComponent(command.orderId)+'/receive':command.kind==='stocktake'?'stocktake/confirm':'stock/issue';return supplyCommandResult(await request('supply/'+route,csrf,command.body,command.key),command);}
 };

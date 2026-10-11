@@ -1,10 +1,19 @@
 import {describe,it,expect} from 'vitest';
-import {marketRequest,marketAction} from './market.input';
+import {marketRequest,marketAction,marketCredit} from './market.input';
 const id='12345678-1234-4123-8123-123456789012',body={reservationId:id,lines:[{serviceId:id,quantity:1,expectedRevision:1}],expectedTotalMinor:'100'};
 describe('market input boundaries',()=>{
  it('rejects spoofed scope, floating quantities, duplicate products and numeric money',()=>{
   expect(marketRequest(body)).toEqual(body);
   for(const b of [{...body,propertyId:id},{...body,expectedTotalMinor:100},{...body,lines:[{...body.lines[0],quantity:1.1}]},{...body,lines:[body.lines[0],body.lines[0]]}])expect(()=>marketRequest(b)).toThrow('SERVICE_INPUT_INVALID');
+ });
+ it('bounds physical returns and requires all inspection checks',()=>{
+  expect(marketAction({action:'receive_return',expectedRevision:1,serviceId:id,quantity:1,note:'Received physically'},true)).toMatchObject({quantity:1});
+  expect(()=>marketAction({action:'receive_return',expectedRevision:1,serviceId:id,quantity:1.5,note:'Received physically'},true)).toThrow();
+  expect(()=>marketAction({action:'restock_return',expectedRevision:1,returnId:id,note:'Inspected',checklist:{sealed:false,expiry:true,quality:true}},true)).toThrow();
+ });
+ it('requires a bounded exact credit amount and reason',()=>{
+  const b={expectedRevision:1,amountMinor:'9007199254740993',reason:'Missing item'};expect(marketCredit(b)).toEqual(b);
+  for(const bad of [{...b,amountMinor:100},{...b,amountMinor:'-1'},{...b,amountMinor:'0'},{...b,reason:' '},{...b,organizationId:id}])expect(()=>marketCredit(bad)).toThrow();
  });
  it('separates warehouse proposals from guest consent and forbids invented totals',()=>{
   const proposal={action:'propose_replacement',expectedRevision:1,fromServiceId:id,toServiceId:'12345678-1234-4123-8123-123456789013',note:'Alternative product'};

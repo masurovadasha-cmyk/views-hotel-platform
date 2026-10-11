@@ -319,5 +319,10 @@
   "en": "This entry cannot be reversed here. Reload the folio and review its history.",
   "ru": "Эту запись нельзя сторнировать здесь. Обновите фолио и проверьте его историю.",
   "uz": "Bu yozuvni bu yerda qaytarib bo‘lmaydi. Folioni yangilang va tarixini tekshiring."
+ },
+ "credit": {
+  "en": "Folio credit",
+  "ru": "Уменьшение начисления",
+  "uz": "Hisobni kamaytirish"
  }
 }
