@@ -46,6 +46,8 @@ jobs:
           bash -n scripts/stage7-egress-relay-proof.sh
       - name: Install browser for Canva interface regression
         run: pnpm exec playwright install --with-deps chromium
+      - name: Verify standalone CRM shell
+        run: node scripts/crm-shell.browser.mjs
       - name: Verify Canva navigation, themes, focus and sample contrast
         run: node scripts/canva-design.browser.cjs
       - name: Verify Canva Core surfaces with read-only HTTP fixtures

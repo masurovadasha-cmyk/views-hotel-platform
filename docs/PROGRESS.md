@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.2 самостоятельный CRM shell
+- Создан apps/crm React/Vite workspace:9 направлений, ru/uz/en, светлая/тёмная темы, явный disconnected preview.
+- Роли/переводы/стили переиспользованы из src; нет API/логина/операционных данных, выбор роли не даёт прав.
+- Lock добавляет CRM importer/peer snapshot без новых версий библиотек; старые приложения не перенесены.
+- На dirty37dbd0f: clean snapshot + frozen pnpm10.18.3 install PASS; workspace:check7/7 задач, web353 tests PASS.
+- CRM build/typecheck и HTTP dev loopback4174 PASS; browser9 ролей/3 языка/theme/mobile/noAPI/noJSerrors PASS.
+- Browser proof сначала выявил неоднозначные labels; добавлены локализованные aria-label, повтор PASS; proof добавлен в CI.
+- Network187, mail15, git diff --check PASS; PostgreSQL/Core556 отдельно не повторялся, серверная логика неизменна.
+- start_skill draft6acbfee482d48197bd74e4435d22391c обновлён; Save/Publish не выполнены, восстановление новой среды не проверено.
+- Инструкция/ручной чек-лист/риски: M0D_CRM.md. Постоянная БД и публичные веб/APK не менялись.
+- Далее: Next.js shell отдельным срезом; Expo и packages/shared/ui ещё впереди, M0 открыт.
+
 ## 2026-10-12 — M0d.1 одноразовый dev:local
 - Добавлена команда dev:local: сборка web/API, disposable PostgreSQL16, checksum migrations и synthetic seeds.
 - Core и guest BFF слушают случайные loopback порты; проверяются readiness, HTML, session=false и trips401.
