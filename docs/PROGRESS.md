@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.8 native shared palette
+- @views/ui/native генерируется из tokens.css:17 цветов, светлая/тёмная темы с наследованием.
+- Mobile использует общую палитру и переключатель темы ru/uz/en; default light, выбор только на сессию.
+- CI --check отвергает drift; намеренное расхождение воспроизведено, после восстановления PASS.
+- На dirtya06a26b: offline frozen install/typecheck PASS; profile/dependency tests3 PASS.
+- Финальные guest/staff Android exports и bytecode profile proof PASS; git diff check PASS.
+- Контраст fg на bg/surface обеих тем: минимум10.78:1; это не полный accessibility-аудит.
+- API/БД не затронуты; новых внешних зависимостей нет. Lock меняет только внутреннюю workspace-ссылку.
+- npm/GitHub503: pnpm запущен из проверенного локального кэша; отправка в GitHub недоступна.
+- Риски:2 high из предыдущего audit остаются блокерами; свежий сетевой audit не выполнен.
+- Инструкция/ручная проверка: M0D_MOBILE.md; native device/iOS/APK и публикация не выполнялись.
+- Далее: native device acceptance и сохранение выбранной темы; M0 остаётся открыт.
+
 ## M0d.7 — UUID audit correction
 - Узкий override xcode3.0.1>uuid11.1.1; остальные зависимости сохранены, новых библиотек нет.
 - Критерии/решение: DECISIONS.md; запуск/риски: M0D_MOBILE.md; regression добавлен в CI.

@@ -23,7 +23,7 @@ Android/iOS JS export не является APK/IPA или доказатель�
 EAS profiles guest-preview/staff-preview подготовлены, но облачные builds не запускать
 без отдельного разрешения на аккаунт/расходы/подпись. Expo Go не критерий готовности.
 Нет логина, API, платежей, push или настоящих данных. Mode не выдаёт права.
-Цвета native shell пока локальные; общий RN adapter дизайн-токенов не завершён.
+Цвета native shell объединены с веб в M0d.8; остальные native tokens ещё не объединены.
 
 Вручную на development build: оба профиля,3 языка, крупный шрифт, safe areas,
 клавиатурная/экранная навигация. Native device/emulator acceptance отдельным срезом.
@@ -43,3 +43,12 @@ acceptance. Не добавлять audit ignore или неподтверждё
 До обновления тест границ падал; после обновления проходит. Зависимости других
 пакетов не обновлялись. Audit gate не ослаблен; два high всё ещё блокируют выпуск.
 Ручная проверка на устройстве и iOS native build остаются отдельной задачей.
+
+## M0d.8 — shared native colors
+Mobile imports @views/ui/native, generated from packages/ui/tokens.css.
+After palette edits: `node scripts/generate-native-tokens.cjs`, then
+`node scripts/generate-native-tokens.cjs --check` (also enforced in CI).
+Light is the default; Light/Dark buttons select the theme for the current session.
+Automatic OS theme synchronization is outside this slice. Manual acceptance on device:
+choose both themes in guest/staff, check selected states and all three languages.
+Only colors are shared by this adapter; native font/spacing/shadows are not mapped.

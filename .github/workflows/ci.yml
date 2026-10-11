@@ -23,7 +23,9 @@ jobs:
           node --test scripts/migration-manifest.acceptance.cjs
           node scripts/migration-upgrade-proof.cjs
       - name: Verify mobile build profile isolation
-        run: node --test scripts/mobile-config.acceptance.cjs scripts/mobile-dependencies.acceptance.cjs
+        run: |
+          node scripts/generate-native-tokens.cjs --check
+          node --test scripts/mobile-config.acceptance.cjs scripts/mobile-dependencies.acceptance.cjs
       - run: pnpm workspace:check
         env:
           EXPO_NO_TELEMETRY: "1"

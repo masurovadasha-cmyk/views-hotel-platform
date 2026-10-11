@@ -163,3 +163,12 @@ Source: https://github.com/uuidjs/uuid/security/advisories/GHSA-w5hq-g745-h8pq .
 Do not patch cryptography speculatively or suppress the two remaining high findings.
 Forge fix remains open: https://github.com/digitalbazaar/forge/pull/1152 ; braces:
 https://github.com/micromatch/braces/issues/70 . Recheck released fixes before launch.
+
+## M0d.8 — native color adapter
+Keep web tokens.css as the palette source; generate @views/ui/native TypeScript
+with `node scripts/generate-native-tokens.cjs`. CI uses --check to reject drift.
+Scope: colors only; native typography, spacing and shadows remain explicit.
+Acceptance: both palettes match CSS including inherited dark values; no local hex
+colors in mobile App; light default with manual light/dark selection;
+ru/uz/en labels; typecheck and both Android profile exports remain valid.
+No new external dependencies. Manual theme choice is session-only in this shell.
