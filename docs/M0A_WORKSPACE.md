@@ -68,3 +68,26 @@ API `test` намеренно не зарегистрирован в Turbo: бе
 root npm production audit, security gates и три браузерные проверки. Добавлены
 Core suite/SMTP и mail acceptance. Другие workflows ещё используют npm: их
 перевод и единый workspace audit относятся к M0a.3. Новых зависимостей нет.
+
+## M0a.3a — остальные GitHub workflows
+
+Все15 jobs, устанавливающие зависимости, используют pnpm10.18.3, Node24.19.0
+и `pnpm install --frozen-lockfile`. Установка из apps/api также охватывает
+workspace: повторные root install в production-core/staff-email удалены.
+Ранее заданный `--ignore-scripts` сохранён. Jobs без установки не менялись.
+Три audit gates теперь используют `pnpm audit --prod --audit-level=high`:
+проверяются production dependencies всего workspace, а не только root npm lock.
+В path filters добавлены pnpm-lock.yaml/pnpm-workspace.yaml; ветки, permissions,
+environments, SQL fixtures и команды публикации сохранены.
+Эти изменения сами по себе не запускают публикацию из рабочей feature-ветки.
+
+M0a.3 разделён из-за размера/риска: этот срез — CI; следующий M0a.3b —
+Dockerfile API и его build context, затем устранение npm-lock совместимости.
+Старые npm-lockfiles пока сохранены: не считать миграцию всех install-путей
+законченной. Dockerfile ещё использует npm install без frozen lock, его нельзя
+перевести простой заменой команды при context=apps/api (workspace lock в корне).
+Внешние настройки Cloudflare Workers Builds этим diff не изменены/не проверены.
+Node24 меняет стандартный test reporter: для машинной проверки TAP формат
+задан явно в egress runner и двух почтовых CI-командах. При первом запуске
+71 тест прошёл, но evidence gate правильно отклонил непарсируемый отчёт;
+исправление проверено повторным запуском с явным TAP, без ослабления gate.

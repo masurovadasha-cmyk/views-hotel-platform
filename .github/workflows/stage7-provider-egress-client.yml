@@ -16,12 +16,16 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.19.0
+          cache: pnpm
       - name: Install existing API development dependencies
         working-directory: apps/api
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Typecheck the complete Core with the new client
         working-directory: apps/api
         run: npm run typecheck
@@ -54,11 +58,15 @@ jobs:
       VIEWS_EGRESS_PROOF_ACK: DISPOSABLE_DATABASE_ONLY
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.19.0
+          cache: pnpm
       - name: Install existing source-policy parser
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Generate short-lived fixture verification keys
         run: |
           node <<'NODE'

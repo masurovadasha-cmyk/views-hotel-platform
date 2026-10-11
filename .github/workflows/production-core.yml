@@ -3,6 +3,8 @@ on:
   push:
     branches: [main, "staging/**", "stage4/**", "stage5/**", "stage6/**", "stage7/**"]
     paths:
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "apps/api/**"
       - "infra/postgres/**"
       - "docker-compose.production-dev.yml"
@@ -14,6 +16,8 @@ on:
   pull_request:
     branches: [main, "staging/master-reference-v1"]
     paths:
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "apps/api/**"
       - "infra/postgres/**"
       - "docker-compose.core-tunnel.yml"
@@ -191,11 +195,14 @@ jobs:
           test "$SCOPED" = "t"
       - name: Use restricted runtime database role
         run: echo "DATABASE_URL=postgresql://views_app:views_app_test@localhost:5432/views" >> "$GITHUB_ENV"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
+        with: { node-version: 24.19.0, cache: pnpm }
       - name: Install API dependencies
         working-directory: apps/api
-        run: npm install
+        run: pnpm install --frozen-lockfile
       - name: Typecheck API
         working-directory: apps/api
         run: npm run typecheck
@@ -207,7 +214,6 @@ jobs:
         run: npm run build
       - name: Build guest browser and install isolated browser test runtime
         run: |
-          npm ci
           npm run build
           npx playwright install --with-deps chromium
       - name: Guest email browser, HTTP and local SMTP proof

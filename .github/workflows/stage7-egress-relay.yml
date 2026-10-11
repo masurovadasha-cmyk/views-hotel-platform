@@ -4,6 +4,8 @@ on:
   push:
     branches: ["stage7/core-egress-relay-v1"]
     paths:
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "docker-compose.core-tunnel.yml"
       - "docker-compose.egress-relay-proof.yml"
       - "infra/egress/**"
@@ -37,12 +39,16 @@ jobs:
       VIEWS_EGRESS_PROOF_ACK: DISPOSABLE_DATABASE_ONLY
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.19.0
+          cache: pnpm
 
       - name: Install policy/test dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Generate ephemeral Ed25519 verification key
         shell: bash

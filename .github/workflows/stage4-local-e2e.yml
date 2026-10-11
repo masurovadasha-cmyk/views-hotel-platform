@@ -4,6 +4,8 @@ on:
   push:
     branches: ["staging/**", "stage4/**", "stage5/**", "stage6/**"]
     paths:
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "functions/**"
       - "migrations/**"
       - "src/**"
@@ -15,6 +17,8 @@ on:
   pull_request:
     branches: [main, "staging/master-reference-v1"]
     paths:
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "functions/**"
       - "migrations/**"
       - "src/**"
@@ -36,15 +40,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.19.0
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: pnpm audit --prod --audit-level=high
 
       - name: Validate remote smoke shell
         run: bash -n scripts/stage4-remote-smoke.sh

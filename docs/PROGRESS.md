@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0a.3a остальные GitHub install jobs
+- M0a.3 разделён: CI сейчас; Docker/legacy locks в M0a.3b, чтобы сохранить небольшой проверяемый diff.
+- Все15 install jobs: pnpm10.18.3, Node24.19.0, frozen workspace; две повторные установки удалены.
+- Три audit gates проверяют весь workspace; path filters дополнены pnpm lock/config, права и ветки сохранены.
+- Исправлен Node24 reporter: явный TAP в egress runner и staff-email evidence командах, gate не ослаблен.
+- Чистый source snapshot8358a7e + diff: frozen --ignore-scripts из apps/api установил оба проекта;5 Turbo tasks pass.
+- Web350/68, Core555/93, HTTP laundry/email и loopback SMTP pass; постоянная БД не использовалась.
+- Egress71/71 и валидный machine report; evidence85/85, mail15/15, network186 без нарушений.
+- Workspace production audit:0 известных уязвимостей; YAML/фильтры/права/git diff --check pass.
+- Повторный browser suite не запускался: код/lock неизменны, предыдущая проверка M0a.2 сохранена.
+- Риски: Docker всё ещё npm без frozen lock; npm locks сохранены; внешние Cloudflare Build settings не проверены.
+- Далее M0a.3b: workspace Docker context, frozen container build/smoke, затем согласованное устранение legacy locks.
+- Публичной публикации нет; remote GitHub CI для этого diff ещё не подтверждён.
+
 ## 2026-10-12 — M0a.2 Turbo и основной CI
 - Добавлены turbo.json, workspace:check и workspace:test:core; scripts совместимы, новых зависимостей нет.
 - CI закрепляет Node24.19.0/pnpm10.18.3, frozen install; security/audit/browser checks сохранены.

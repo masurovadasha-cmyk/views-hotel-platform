@@ -73,3 +73,10 @@ M0 не считается завершённым до приёмки всех �
 - До описания всех environment/Git inputs отключаем task cache; parallelism=2.
 - Основной CI: Node24.19.0 + pnpm10.18.3 frozen; legacy workflows/npm audit
   остаются до M0a.3, без изменения версий и публичной публикации.
+
+## M0a.3a — единая установка в GitHub Actions
+- Установка из API выполняется для всего workspace, повторная root установка удалена.
+- Сохраняем --ignore-scripts там, где он был; frozen lock обязателен в15 install jobs.
+- Audit gates проверяют production зависимости всего pnpm workspace.
+- Docker build context и удаление legacy locks вынесены в M0a.3b: это отдельная
+  проверка контейнера; CI-миграция не объявляет весь M0a.3 завершённым.
