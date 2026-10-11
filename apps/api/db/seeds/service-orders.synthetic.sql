@@ -15,3 +15,9 @@ SELECT ('76800000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'scrypt-v1$13107
 INSERT INTO staff_private.sessions(token_hash,membership_id,credential_version,role_id)
 SELECT encode(digest(repeat('a'||n::text,32),'sha256'),'hex'),m.id,1,m.role_id
 FROM generate_series(1,5)n JOIN organization_memberships m ON m.id=('76800000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
+-- Additional nonprivileged concierge fixtures; same disposable marker above applies.
+INSERT INTO users(id,email,display_name) SELECT ('76800000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'concierge-fixture-'||n||'@views.invalid','Synthetic concierge '||n FROM generate_series(6,7)n;
+INSERT INTO organization_memberships(id,organization_id,user_id,role_id,status,joined_at) SELECT ('76800000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'10000000-0000-4000-8000-000000000001',('76800000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,r.id,'active',now() FROM generate_series(6,7)n JOIN roles r ON r.code='concierge';
+INSERT INTO membership_property_scopes(membership_id,property_id) SELECT ('76800000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'10000000-0000-4000-8000-000000000002' FROM generate_series(6,7)n;
+INSERT INTO staff_private.credentials(membership_id,password_hash,verification_channel) SELECT ('76800000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'scrypt-v1$131072$8$1$'||repeat('0',32)||'$'||repeat('0',128),'local_fixture' FROM generate_series(6,7)n;
+INSERT INTO staff_private.sessions(token_hash,membership_id,credential_version,role_id) SELECT encode(digest(repeat('a'||n::text,32),'sha256'),'hex'),m.id,1,m.role_id FROM generate_series(6,7)n JOIN organization_memberships m ON m.id=('76800000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;

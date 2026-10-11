@@ -484,11 +484,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "guest",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_13_CONCIERGE.md; local Core workflow, PDF acceptance pending"
     },
     {
       "id": "SG-CO-002",
@@ -500,11 +500,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "guest",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_13_CONCIERGE.md; local Core workflow, PDF acceptance pending"
     },
     {
       "id": "SG-CO-003",
@@ -516,11 +516,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "guest",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_13_CONCIERGE.md; local Core workflow, PDF acceptance pending"
     },
     {
       "id": "SG-TX-001",
@@ -1048,11 +1048,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "dispatcher",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_13_CONCIERGE.md; local Core workflow, PDF acceptance pending"
     },
     {
       "id": "SD-CO-002",
@@ -1064,11 +1064,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "dispatcher",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_13_CONCIERGE.md; local Core workflow, PDF acceptance pending"
     },
     {
       "id": "SD-CO-003",
@@ -1533,11 +1533,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "staff",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_13_CONCIERGE.md; local Core workflow, PDF acceptance pending"
     },
     {
       "id": "SS-GN-001",

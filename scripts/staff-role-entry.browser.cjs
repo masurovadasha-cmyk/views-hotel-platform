@@ -58,7 +58,9 @@ module.exports=async function staffRoleEntryProof({browser,dist=path.resolve('di
    sessionRole=role;allowed=allowedByRole[role];
    await page.goto(localOrigin+'/?api=local-core&staffRole='+role,{waitUntil:'networkidle'});
    assert.equal(await page.locator('[data-staff-role]').getAttribute('data-staff-role'),role);
-   if(role==='technician'||role==='concierge')await page.getByText('Work tools are not connected for this role yet.',{exact:true}).waitFor();
+   if(role==='technician')await page.getByText('Work tools are not connected for this role yet.',{exact:true}).waitFor();
+   if(role==='concierge')await page.getByTestId('staff-concierge').getByRole('button',{name:'Open requests',exact:true}).waitFor();
+   if(!['front_desk','manager','concierge'].includes(role))assert.equal(await page.getByTestId('staff-concierge').count(),0);
    if(role!=='front_desk'&&role!=='manager')assert.equal(await page.locator('#staff-reception').count(),0);
    if(role!=='housekeeper')assert.equal(await page.locator('#staff-housekeeping').count(),0);
    if(role==='procurement'||role==='warehouse')await page.locator('#staff-supplies').waitFor();
