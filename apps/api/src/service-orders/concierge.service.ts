@@ -18,5 +18,13 @@ export class ConciergeService{
  async staffAct(actor:RequestActorContext,token:string,id:unknown,key:unknown,raw:unknown){await this.identity(actor,token);const oid=uuid(id),command=uuid(key),body=conciergeAction(raw,true);return safe(()=>this.db.withActor(actor,async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:ConciergeReceipt}>('SELECT app.concierge_staff_act($1,$2,$3,$4) value',[hash(token),oid,command,body])).rows[0].value;}));}
  async guestList(token:string,reservation:unknown,after?:unknown){enabled();await this.guest.session(token);const r=uuid(reservation),cursor=after===undefined?null:uuid(after);return safe(async()=>this.page((await this.db.query<{value:{items:ConciergeReceipt[]}}>('SELECT app.concierge_guest_list($1,$2,$3) value',[hash(token),r,cursor])).rows[0].value));}
  async staffList(actor:RequestActorContext,token:string,property:unknown,after?:unknown){await this.identity(actor,token);const p=uuid(property),cursor=after===undefined?null:uuid(after);return safe(()=>this.db.withActor(actor,async c=>this.page((await c.query<{value:{items:ConciergeReceipt[]}}>('SELECT app.concierge_staff_list($1,$2,$3) value',[hash(token),p,cursor])).rows[0].value)));}
- private page(raw:{items:ConciergeReceipt[]}){const evaluatedAt=new Date();const items=raw.items.slice(0,2).map(item=>({...item,sla:conciergeSla(item,evaluatedAt)}));return {items,nextCursor:raw.items.length>2?items.at(-1)!.orderId:null};}
+ async staffOverdue(actor:RequestActorContext,token:string,property:unknown,after?:unknown){
+  await this.identity(actor,token);const p=uuid(property),cursor=after===undefined?null:uuid(after);
+  return safe(()=>this.db.withActor(actor,async c=>{
+   await c.query("SET LOCAL statement_timeout='10s'");
+   const raw=(await c.query<{value:{items:ConciergeReceipt[];evaluatedAt:string}}>('SELECT app.concierge_staff_overdue($1,$2,$3) value',[hash(token),p,cursor])).rows[0].value;
+   return this.page(raw,new Date(raw.evaluatedAt));
+  }));
+ }
+ private page(raw:{items:ConciergeReceipt[]},evaluatedAt=new Date()){const items=raw.items.slice(0,2).map(item=>({...item,sla:conciergeSla(item,evaluatedAt)}));return {items,nextCursor:raw.items.length>2?items.at(-1)!.orderId:null};}
 }

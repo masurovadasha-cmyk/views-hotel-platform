@@ -26,6 +26,13 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
  let gc=guest.locator(`[data-concierge-id="${oid}"]`);await gc.getByText('Within response target',{exact:true}).waitFor();
  await admin.query("UPDATE concierge_requests SET response_due_at=now()-interval '2 minutes' WHERE order_id=$1",[oid]);
  await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByText('Response target exceeded',{exact:true}).waitFor();
+ const queueIds=[],queueCsrf=(await api('session')).body.csrf,queueReservation=randomUUID();
+ await admin.query("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) SELECT $1::uuid,organization_id,property_id,unit_id,primary_guest_id,'QUEUE-'||($1::uuid)::text,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot FROM reservations WHERE id=$2",[queueReservation,reservation]);
+ for(let n=0;n<5;n++){const created=await api('services/concierge','POST',{reservationId:queueReservation,category:'help',partySize:1,budgetMinor:'0',requestedFor:new Date(Date.now()+3600000).toISOString(),message:'Queue fixture '+n},{'Idempotency-Key':randomUUID(),'X-Views-Guest-CSRF':queueCsrf});assert.equal(created.status,200);queueIds.push(created.body.orderId);}
+ await admin.query("UPDATE concierge_requests SET response_due_at=now()-interval '3 minutes' WHERE order_id=ANY($1::uuid[])",[queueIds.slice(0,3)]);
+ await admin.query("UPDATE concierge_requests SET response_due_at=now()-interval '3 minutes',stage='working',assigned_membership_id='76800000-0000-4000-8000-000000000001' WHERE order_id=$1",[queueIds[4]]);
+ const cancelled=queueIds[2];assert.equal((await api('services/concierge/'+cancelled+'/actions','POST',{action:'cancel',expectedRevision:1},{'Idempotency-Key':randomUUID(),'X-Views-Guest-CSRF':queueCsrf})).status,200);
+
  const web=await require('./fixtures/folio-staff-web.cjs')({coreOrigin,organizationId:org,propertyId:property,internalKey:process.env.VIEWS_INTERNAL_API_KEY});let context,managerContext;
  try{
   context=await browser.newContext({viewport:{width:390,height:844}});await context.addCookies([{name:'views_staff_session',value:'a6'.repeat(32),domain:'127.0.0.1',path:'/local-api',httpOnly:true,sameSite:'Strict'}]);
@@ -34,6 +41,12 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   async function ready(){await worker.waitForFunction(()=>[...document.querySelectorAll('[data-testid="staff-concierge"] button')].find(b=>b.textContent==='Refresh')?.disabled===false);}
   async function findOrder(){await ready();for(let n=0;n<50&&await sc.count()===0;n++){await staff.getByRole('button',{name:'Next page',exact:true}).click();await ready();}assert.equal(await sc.count(),1);}
   await findOrder();await sc.getByText('Response target exceeded',{exact:true}).waitFor();
+  const queueResponse=worker.waitForResponse(r=>new URL(r.url()).pathname==='/local-api/service-orders/concierge/overdue');await staff.getByTestId('concierge-queue-overdue').click();assert.equal((await queueResponse).status(),200,'OVERDUE_QUEUE_HTTP');await ready();
+  const seen=new Set();let pages=0;
+  while(true){for(const id of await staff.locator('[data-concierge-id]').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-concierge-id'))))seen.add(id);pages++;const next=staff.getByRole('button',{name:'Next page',exact:true});if(await next.count()===0)break;assert.ok(pages<50);await next.click();await ready();}
+  for(const id of [oid,...queueIds.slice(0,2)])assert.ok(seen.has(id));assert.ok(!seen.has(cancelled)&&!seen.has(queueIds[3])&&!seen.has(queueIds[4]));assert.ok(pages>=2);
+  await staff.getByTestId('concierge-queue-all').click();await findOrder();
+
   let releaseRead,markRead;const heldRead=new Promise(resolve=>{releaseRead=resolve;});const readArrived=new Promise(resolve=>{markRead=resolve;});
   await worker.route('**/local-api/service-orders/concierge',async route=>{const response=await route.fetch();markRead();await heldRead;await route.fulfill({response});},{times:1});
   await staff.getByRole('button',{name:'Refresh',exact:true}).click();await Promise.race([readArrived,new Promise((_,reject)=>setTimeout(()=>reject(Error('SLA_HELD_READ_NOT_REACHED')),15000))]);
@@ -65,6 +78,6 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await page.reload();await page.locator(`[data-reservation-id="${reservation}"]`).getByRole('button',{name:'View trip',exact:true}).click();await guest.getByRole('button',{name:'Open requests',exact:true}).click();await guest.locator('.conciergeStatus').getByText('Closed by guest',{exact:true}).waitFor();
   assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
   const projected=(await api('services/concierge?reservationId='+reservation)).body.items[0];assert.equal(projected.assigned_membership_id,undefined);assert.equal(projected.messages.length,2);
-  console.log(JSON.stringify({proof:'concierge_browser_core',result:'pass',checks:['guest_request_consent','csrf','lost_reply_same_key_one_request','offline_navigation_guard','knowledge_publish_search_insert','guest_consent_withdraw_profile','offline_profile_clear','no_preference_command_copy','actual_concierge_claim_answer','guest_result_close_reload','no_folio_charge','three_languages_mobile','server_sla_pending_overdue_late_answer','stale_get_cannot_restore_offline_conversation','offline_conversation_clear_refresh'],externalBookings:false}));
+  console.log(JSON.stringify({proof:'concierge_browser_core',result:'pass',checks:['guest_request_consent','csrf','lost_reply_same_key_one_request','offline_navigation_guard','knowledge_publish_search_insert','guest_consent_withdraw_profile','offline_profile_clear','no_preference_command_copy','actual_concierge_claim_answer','guest_result_close_reload','no_folio_charge','three_languages_mobile','server_sla_pending_overdue_late_answer','overdue_queue_database_pagination_terminal_and_future_excluded','stale_get_cannot_restore_offline_conversation','offline_conversation_clear_refresh'],externalBookings:false}));
  }finally{if(managerContext)await managerContext.close();if(context)await context.close();await web.close();}
 };

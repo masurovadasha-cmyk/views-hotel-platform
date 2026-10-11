@@ -1,5 +1,10 @@
 import type {Locale} from '../../i18n/messages';
 const messages:Record<string,[string,string,string]>={
+ queueLabel:['Request queue','Очередь поручений','Topshiriqlar navbati'],
+ queueAll:['All requests','Все поручения','Barcha topshiriqlar'],
+ queueOverdue:['Overdue requests','Просроченные поручения','Muddati o‘tgan topshiriqlar'],
+ queueEmpty:['No overdue requests at the last refresh.','На момент обновления просроченных поручений нет.','Oxirgi yangilashda muddati o‘tgan topshiriqlar yo‘q.'],
+ queueHint:['The server selects active overdue requests across this property. Refresh to update. No automatic escalation or reassignment.','Сервер выбирает активные просроченные поручения по всему объекту. Обновите список для актуального состояния. Автоматической эскалации и переназначения нет.','Server ushbu obyektdagi faol, muddati o‘tgan topshiriqlarni tanlaydi. Holat uchun ro‘yxatni yangilang. Avtomatik eskalatsiya va qayta tayinlash yo‘q.'],
  slaAnsweredLate:['Result sent after target','Результат отправлен позже срока','Natija muddatdan keyin yuborilgan'],
  slaAnsweredOnTime:['Result sent within target','Результат отправлен в срок','Natija muddatida yuborilgan'],
  slaSnapshot:['Server status as of','Статус сервера на','Server holati vaqti'],

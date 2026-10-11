@@ -70,6 +70,19 @@ describe('staff session enforcement on the trusted local gateway',()=>{
   for(const permissions of [['reservation.manage'],['housekeeping.work']]){const guard=new StaffSessionGuard({resolve:async()=>({...identity,permissions})} as never);expect(await guard.canActivate(context(request('/v1/service-orders')))).toBe(true);expect(await guard.canActivate(context(request('/v1/service-orders/'+identity.userId+'/actions','POST')))).toBe(true);}
   const reader=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['reservation.read']})} as never);await expect(reader.canActivate(context(request('/v1/service-orders')))).rejects.toThrow('STAFF_PERMISSION_DENIED');
  });
+ it('allows the overdue concierge GET only for concierge execution or reservation management',async()=>{
+  const path='/v1/service-orders/concierge/overdue';
+  for(const permissions of [['concierge.work'],['reservation.manage']]){
+   const guard=new StaffSessionGuard({resolve:async()=>({...identity,permissions})} as never);
+   expect(await guard.canActivate(context(request(path+'?propertyId='+identity.organizationId)))).toBe(true);
+   for(const method of ['POST','DELETE','PATCH'])await expect(guard.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_ROUTE_DENIED');
+   await expect(guard.canActivate(context(request(path+'/export')))).rejects.toThrow('STAFF_ROUTE_DENIED');
+  }
+  for(const permissions of [['reservation.read'],['housekeeping.work'],['stock.manage'],[]]){
+   const guard=new StaffSessionGuard({resolve:async()=>({...identity,permissions})} as never);
+   await expect(guard.canActivate(context(request(path)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  }
+ });
  it('default-off production boundary is not an implicit release',()=>{
   const old={...process.env};try{process.env.NODE_ENV='production';process.env.VIEWS_STAFF_AUTH_PILOT_ENABLED='true';process.env.VIEWS_LOCAL_REHEARSAL='true';
    expect(()=>new StaffAuthService({} as never).scope()).toThrow('STAFF_AUTH_NOT_ACTIVATED');

@@ -46,3 +46,16 @@ describe('concierge SLA guest projection',()=>{
   for(const patch of [{overdueSeconds:-1},{policy:'unknown'},{hypothesis:false},{evaluatedAt:'invalid'},{answeredLate:'yes'}])expect(()=>guest.projection({...raw,items:[{...raw.items[0],sla:{...sla,...patch}}]})).toThrow('INVALID_RESPONSE');
  });
 });
+
+describe('concierge overdue staff queue',()=>{
+ it('forwards only server-selected property and bounded cursor with existing role scope',async()=>{
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');
+  const url='http://local/local-api/service-orders/concierge/overdue';
+  expect(staff.validSearch(new URL(url+'?cursor='+id),'GET')).toBe(true);
+  for(const query of ['?propertyId='+id,'?now=2026-10-12','?cursor='+id+'&cursor='+id])expect(staff.validSearch(new URL(url+query),'GET')).toBe(false);
+  const ctx={u:new URL(url+'?cursor='+id),req:{method:'GET',headers:{}},res:{},identity:{permissions:['concierge.work'],propertyIds:[id]},propertyId:id,token:'staff',fail:(_s,c)=>{throw Error(c);},json:vi.fn(),core:vi.fn(async()=>({items:[],nextCursor:null}))};
+  await staff.handle(ctx);expect(ctx.core.mock.calls[0][0]).toBe('/v1/service-orders/concierge/overdue?propertyId='+id+'&cursor='+id);
+  ctx.identity.permissions=['stock.manage'];await expect(staff.handle(ctx)).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  ctx.identity.permissions=['reservation.manage'];ctx.identity.propertyIds=[];await expect(staff.handle(ctx)).rejects.toThrow('PROPERTY_FORBIDDEN');
+ });
+});

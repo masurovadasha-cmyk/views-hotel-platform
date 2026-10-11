@@ -65,6 +65,17 @@ describe('Concierge / scoped shared order engine',()=>{
   const rows=(await service.guestList(f.a.token,f.r)).items;expect(rows).toHaveLength(2);expect(new Set(rows.map(row=>row.sla!.evaluatedAt)).size).toBe(1);
   const queue=(await service.staffList(actor(6),token(6),property)).items;expect(queue.length).toBeGreaterThan(0);expect(queue.every(row=>row.sla?.policy==='concierge-response-15m-v1')).toBe(true);
  });
+ it('keeps the overdue endpoint staff-only and excludes future answer deadlines',async()=>{
+  const f=await fixture(),r=await service.request(f.a.token,randomUUID(),f.body);
+  const page=await service.staffOverdue(actor(6),token(6),property);
+  expect(page.items.some(item=>item.orderId===r.orderId)).toBe(false);
+  expect(page.items.every(item=>item.sla?.state==='overdue')).toBe(true);
+  await expect(service.staffOverdue(actor(2),token(2),property)).rejects.toThrow('SERVICE_FORBIDDEN');
+  await expect(service.staffOverdue({...actor(6),userId:id(7)},token(6),property)).rejects.toThrow('STAFF_ACTOR_MISMATCH');
+  await expect(service.staffOverdue(actor(6),token(6),randomUUID())).rejects.toThrow('SERVICE_FORBIDDEN');
+  await expect(service.staffOverdue(actor(6),f.a.token,property)).rejects.toThrow();
+  await expect(service.staffOverdue(actor(6),token(6),property,'not-a-cursor')).rejects.toThrow('SERVICE_INPUT_INVALID');
+ });
  it('serializes competing staff claims and prevents reading or answering another employee assignment',async()=>{
   const f=await fixture(),r=await service.request(f.a.token,randomUUID(),f.body);
   const claims=await Promise.allSettled([act(r,'claim',{},6),act(r,'claim',{},7)]);expect(claims.filter(x=>x.status==='fulfilled')).toHaveLength(1);

@@ -1,3 +1,4 @@
+import {conciergeQueueRoute} from './queue';
 import {KnowledgePanel} from './KnowledgePanel';
 import type {KnowledgeArticle} from './support-model';
 import {useEffect,useState} from 'react';
@@ -10,5 +11,5 @@ export function StaffConcierge({csrf,manager,onPending}:{csrf:string;manager:boo
  const {locale}=useStaffLocale(),[online,setOnline]=useState(navigator.onLine),route='service-orders/concierge';
  useEffect(()=>{const f=()=>setOnline(navigator.onLine);window.addEventListener('online',f);window.addEventListener('offline',f);return()=>{window.removeEventListener('online',f);window.removeEventListener('offline',f);};},[]);
  return <><KnowledgePanel csrf={csrf} locale={locale} manager={manager} online={online} onPending={setKnowledgePending} onSelect={setSnippet}/><ConciergeWorkspace staffCsrf={csrf} snippet={snippet} locale={locale} staff manager={manager} online={online} route={route} onPending={setConversationPending}
- load={cursor=>request(route+(cursor?'?cursor='+cursor:''),csrf)} send={a=>request(a.route,csrf,a.body,a.key)}/></>;
+ load={(cursor,overdue)=>request(conciergeQueueRoute(!!overdue,cursor),csrf)} send={a=>request(a.route,csrf,a.body,a.key)}/></>;
 }
