@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0a.1 импорт workspace завершён
+- После «следующий шаг» согласовано исключение для generated lock; архитектура M0–M8 принята.
+- Добавлены pnpm-workspace.yaml/pnpm-lock.yaml; pnpm10.18.3, Turbo2.5.8; root+apps/api.
+- Все26 прежних прямых версий сохранены; Express5.2.1 объявлен явно, API @types/node22.20.5 закреплён.
+- npm-lockfile синхронизированы для прежнего CI; существующие scripts не менялись.
+- Проверено в отдельном source snapshot поверх fe3565c: полный frozen install, web/API build/typecheck, exit0.
+- Web350/68 и Core555/93 прошли; HTTP laundry и guest-email/loopback SMTP прошли, внешних писем нет.
+- Network gate186 без нарушений, mail15/15; npm ci --dry-run для root/API успешен.
+- Описание/команды: M0A_WORKSPACE.md; generated lock5022 строки, остальной diff менее300 строк.
+- Working node_modules и persistent views_local не менялись; публикации нет.
+- M0 остаётся открыт. Следующий срез M0a.2: Turbo task graph+CI; затем M0a.3 убрать двойные install-пути.
+- Риски: браузер/UI на устройствах в этом срезе не проверялся; Next/Expo/codegen/dev:local ещё не реализованы.
+
 ## 2026-10-12 — M0a preflight после «ок»
 - Архитектура/план M0–M8 согласованы; M0 ещё не завершён.
 - План разбиения: M0A_WORKSPACE_PLAN.md; код/зависимости рабочего дерева не менялись.
