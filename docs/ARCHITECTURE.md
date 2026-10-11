@@ -26,3 +26,17 @@ Housekeeping: occupied → checkout_due → dirty → cleaning → inspection �
 Maintenance: open/reported → assigned/in_progress → waiting/blocked → resolved → inspection/verified → closed.
 
 Guest request: new → accepted → assigned → in_progress → fulfilled/completed/rejected/cancelled.
+
+## Implemented baseline and delivery boundary (2026-10-12)
+PostgreSQL is the operational source of truth; NestJS/TypeScript Core serves the
+shared React web/Android client through scoped gateways. The current Android
+preview uses a WebView wrapper; Flutter/React Native and a full Next.js guest
+frontend are not claimed as implemented. See PROGRESS.md for verified status.
+
+Public static preview and local operational Core are separate deployment modes.
+A published image/viewer or successful build does not enable Core integrations.
+New work preserves server permissions, RLS, audit, outbox, idempotency and
+migration compatibility. Shared schemas/contracts should drive generated types
+where an authoritative generation source exists; broad codegen migration is
+separate work. Sensitive identifiers stay masked/tokenized at application
+boundaries, with encrypted protected storage and no sensitive logging.
