@@ -10,6 +10,11 @@ export function marketRequest(raw:unknown){
 export function marketAction(raw:unknown,staff:boolean){
  if(!raw||typeof raw!=='object'||!('action' in raw))return invalid();
  const action=raw.action;
+ if ((!staff&&action==='report_issue')||(staff&&action==='answer_issue')) {
+  const b=object(raw,['action','expectedRevision','note']);
+  if(typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>1000)return invalid();
+  return {action,expectedRevision:revision(b.expectedRevision),note:b.note.trim()};
+ }
  if(staff&&action==='ready'){
   const b=object(raw,['action','expectedRevision','checklist']),c=object(b.checklist,['quantities','expiry','packaging']);
   if(c.quantities!==true||c.expiry!==true||c.packaging!==true)return invalid();return {action,expectedRevision:revision(b.expectedRevision),checklist:{quantities:true,expiry:true,packaging:true}};

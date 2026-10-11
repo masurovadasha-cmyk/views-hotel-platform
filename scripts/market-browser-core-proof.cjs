@@ -39,10 +39,19 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   for(const label of ['Items and quantities checked','Expiry dates checked','Packaging checked'])await sc.getByLabel(label,{exact:true}).check();
   await sc.getByRole('button',{name:'Finish picking',exact:true}).click();await sc.getByLabel('Order physically handed to guest',{exact:true}).check();await sc.getByRole('button',{name:'Confirm handover',exact:true}).click();await sc.getByTestId('market-stage').getByText('Handed over — confirm receipt',{exact:true}).waitFor();
   assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'1');assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
-  await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByLabel('All items received. I confirm the stated charge',{exact:true}).check();await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).click();await gc.getByTestId('market-stage').getByText('Received and charged',{exact:true}).waitFor();
+  await guest.getByRole('button',{name:'Refresh',exact:true}).click();
+  await gc.getByLabel('Describe missing or damaged goods (3–1000 characters)',{exact:true}).fill('One water bottle is missing');
+  await gc.getByRole('button',{name:'Report an issue',exact:true}).click();await gc.getByText('Awaiting warehouse response',{exact:true}).waitFor();
+  assert.equal(await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).count(),0);
+  await staff.getByRole('button',{name:'Refresh',exact:true}).click();
+  await sc.getByLabel('Reply to guest: findings and next steps',{exact:true}).fill('The missing bottle is available at reception');
+  await sc.getByRole('button',{name:'Send response',exact:true}).click();await sc.getByText('Warehouse responded',{exact:true}).waitFor();
+  assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
+  assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'1');
+  await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByText('The missing bottle is available at reception',{exact:true}).waitFor();await gc.getByLabel('All items received. I confirm the stated charge',{exact:true}).check();await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).click();await gc.getByTestId('market-stage').getByText('Received and charged',{exact:true}).waitFor();
   assert.deepEqual((await admin.query('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[oid])).rows,[{amount_minor:'10900000'}]);
   for(const language of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(language);await warehouse.locator('.staffLanguage select').selectOption(language);for(const p of [page,warehouse])assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
   await guest.screenshot({path:'/tmp/views-market-guest.png'});await staff.screenshot({path:'/tmp/views-market-staff.png'});
-  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','warehouse_pick_checklist_handover','stock_issue','guest_receipt_single_folio','private_item_id_stripped','three_languages_mobile'],publicEnabled:false}));
+  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','warehouse_pick_checklist_handover','stock_issue','issue_blocks_receipt','warehouse_answer_no_financial_or_stock_change','guest_receipt_single_folio','private_item_id_stripped','three_languages_mobile'],publicEnabled:false}));
  }finally{if(context)await context.close();await web.close();}
 };

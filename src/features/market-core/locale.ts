@@ -1,6 +1,9 @@
 import type {Locale} from '../../i18n/messages';
 import {cleaningText} from '../service-orders/locale';
 const rows:Record<string,[string,string,string]>={
+ issue:['Обращение по заказу','Order issue','Buyurtma muammosi'],issueOpen:['Ожидает ответа склада','Awaiting warehouse response','Ombor javobi kutilmoqda'],issueAnswered:['Склад ответил','Warehouse responded','Ombor javob berdi'],
+ issueNote:['Опишите недовоз или повреждение (3–1000 символов)','Describe missing or damaged goods (3–1000 characters)','Kam yoki shikastlangan tovarni yozing (3–1000 belgi)'],answerNote:['Ответ гостю: что проверено и что делать дальше','Reply to guest: findings and next steps','Mehmonga javob: tekshiruv va keyingi qadam'],
+ reportIssue:['Сообщить о проблеме','Report an issue','Muammo haqida xabar berish'],answerIssue:['Отправить ответ','Send response','Javob yuborish'],noRefund:['Обращение не меняет сумму и остатки. Возврат денег оформляется отдельно.','An issue does not change charges or stock. Refunds are handled separately.','Murojaat summa va qoldiqni o‘zgartirmaydi. Pul qaytarish alohida rasmiylashtiriladi.'],
  title:['V Market · заказы','V Market orders','V Market buyurtmalari'],open:['Открыть V Market','Open V Market','V Marketni ochish'],
  pilot:['Локальный пилот: упакованные товары своего склада. Выдача без платы за доставку; внешние курьеры и замены не подключены.','Local pilot: packaged goods from our stock. Collection with no delivery fee; external couriers and substitutions are not connected.','Mahalliy sinov: o‘z omborimizdagi qadoqlangan tovarlar. Yetkazish haqi yo‘q; tashqi kuryer va almashtirish ulanmagan.'],
  catalog:['Товары в наличии','Available products','Mavjud tovarlar'],available:['Доступно','Available','Mavjud'],quantity:['Количество','Quantity','Miqdor'],cart:['Корзина','Basket','Savat'],emptyCart:['Корзина пуста','Basket is empty','Savat bo‘sh'],total:['Итого','Total','Jami'],

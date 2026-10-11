@@ -14,6 +14,9 @@ describe('market cookie boundary',()=>{
   const body={orderId:id,revision:1,idempotentReplay:false,lines:[{serviceId:id,itemId:id,name:{en:'Water'},quantity:2,priceMinor:'1200000',costMinor:'4'}]};
   expect(guest.projection(body).lines).toEqual([{serviceId:id,name:{en:'Water'},quantity:2,priceMinor:'1200000'}]);
  });
+ it('projects only guest-safe issue fields',()=>{
+  expect(guest.projection({orderId:id,revision:2,idempotentReplay:false,issue:{status:'open',note:'Missing water',internalActorId:id}}).issue).toEqual({status:'open',note:'Missing water',answer:undefined});
+ });
  it('requires stock rights, fixed property scope and exact query parameters',async()=>{
   vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','true');
   const ctx={u:new URL('http://local/local-api/service-orders/market'),req:{method:'GET'},res:{},identity:{permissions:['reservation.manage'],propertyIds:[id]},propertyId:id,token:'staff',fail:(_s,c)=>{throw Error(c);},json:vi.fn(),core:vi.fn(async()=>({items:[]}))};

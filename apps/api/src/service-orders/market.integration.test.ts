@@ -89,6 +89,27 @@ describe.sequential('V Market / real PostgreSQL',()=>{
   const outcomes=await Promise.allSettled([act(o,'pick'),service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'cancel'))]);expect(outcomes.filter(r=>r.status==='fulfilled')).toHaveLength(1);
   expect((await run('SELECT * FROM folio_entries WHERE source_id=$1',[o.orderId])).rowCount).toBe(0);
  });
+ it('tracks missing goods without charging or restocking; authenticates and replays issue commands',async()=>{
+  const f=await fixture(),other=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);
+  await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'report_issue',{note:'Missing water'}))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  o=await act(o,'pick');o=await act(o,'ready',{checklist});o=await act(o,'handover');
+  const key=randomUUID(),body=command(o,'report_issue',{note:'Missing water'});
+  await expect(service.guestAct(other.a.token,o.orderId,key,body)).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+  const results=await Promise.all([service.guestAct(f.a.token,o.orderId,key,body),service.guestAct(f.a.token,o.orderId,key,body)]);
+  expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);o=results[0];expect(o).toMatchObject({issue:{status:'open',note:'Missing water'}});
+  await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'confirm_receipt'))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  await expect(service.staffAct(actor(2),'b2'.repeat(32),o.orderId,randomUUID(),command(o,'answer_issue',{note:'Checked'}))).rejects.toThrow('SERVICE_FORBIDDEN');
+  expect((await run('SELECT * FROM folio_entries WHERE source_id=$1',[o.orderId])).rowCount).toBe(0);
+  expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('3');
+  o=await act(o,'answer_issue',{note:'Please collect the missing water at reception'});
+  expect(o).toMatchObject({issue:{status:'answered',answer:'Please collect the missing water at reception'}});
+  expect((await service.guestList(f.a.token,f.r)).items[0]).toMatchObject({issue:{status:'answered'}});
+  const receiptKey=randomUUID(),receipt=command(o,'confirm_receipt');o=await service.guestAct(f.a.token,o.orderId,receiptKey,receipt);
+  expect((await service.guestAct(f.a.token,o.orderId,receiptKey,receipt)).idempotentReplay).toBe(true);
+  o=await service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'report_issue',{note:'Package was damaged'}));
+  expect(o).toMatchObject({stage:'completed',issue:{status:'open'}});
+  expect((await run('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[o.orderId])).rows).toEqual([{amount_minor:'200'}]);
+ });
  it('is disabled by default and forbids receipt before handover',async()=>{
   const f=await fixture(),o=await service.request(f.a.token,randomUUID(),f.body);await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'confirm_receipt'))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
   vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','false');await expect(service.catalog(f.a.token,f.r)).rejects.toThrow('SERVICE_MARKET_DISABLED');
