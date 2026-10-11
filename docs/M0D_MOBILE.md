@@ -123,3 +123,28 @@ Guest debug x86_64 build executed10 tasks and failed resolving Google Maven
 com.android.tools.build:gradle-api:8.5.0 (HTTP503); exact URL recheck also503.
 This supersedes missing SDK/Gradle blockers above. Native compile/APK/device gates
 remain open. Five prerequisite/autolinking tests passed; no app source changed.
+
+## M0d.14 — standalone ARM64 preview APKs built
+Network recovered. Guest x86_64 debug Gradle build PASS (160 tasks), then guest
+ARM64 release-mode build PASS (240 tasks) and staff ARM64 release-mode PASS (240).
+These use the Expo template TEST signing key, not an approved production signer.
+Release-mode packages contain Hermes JS and do not require a Metro server.
+Artifacts: /workspace/views-artifacts/views-{guest,staff}-preview-arm64.apk (~26MB).
+Application IDs uz.views.preview.guest/staff, version0.1.0/code1, minimum Android24.
+No public deployment, APK installation/device execution or production readiness.
+Verification command from repository root:
+`ANDROID_HOME=/workspace/android-tools/sdk node scripts/mobile-apk-proof.cjs /workspace/views-artifacts/views-guest-preview-arm64.apk /workspace/views-artifacts/views-staff-preview-arm64.apk`
+Checks signature, exact app ID, only ARM64, non-debuggable manifest, embedded Hermes
+App profile and SHA256; swapped APK inputs are rejected. Report stored alongside APKs.
+To reproduce after mobile-native-prebuild.cjs: configure Gradle proxy/CA using the
+environment helper; use verified Gradle9.3.1 archive/checksum as documented above.
+In each generated app/build.gradle react block set
+`extraPackagerArgs = ["--max-workers", "2", "--reset-cache"]` after bundleCommand.
+In generated android directory run NODE_ENV=production, EXPO_NO_TELEMETRY=1,
+EXPO_PUBLIC_APP_MODE=guest (or staff), ANDROID_HOME=/workspace/android-tools/sdk,
+ANDROID_USER_HOME=/tmp/views-native-android, GRADLE_USER_HOME=/tmp/views-native-gradle
+with `./gradlew :app:assembleRelease --max-workers=2 --no-daemon -PreactNativeArchitectures=arm64-v8a`.
+App source matched the checkout; generated native projects remain outside Git.
+Manual gate: install both on ARM64 Android7+, open without Metro, test all6 settings
+combinations, force-stop/reopen, verify profile isolation and large text. Interfaces
+remain disconnected shells. Two known high dependency findings still block release.

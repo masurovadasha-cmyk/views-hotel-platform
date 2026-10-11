@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.14 native APK builds PASS
+- Maven recovered; guest x86_64 debug PASS160 tasks; guest/staff ARM64 release-mode PASS240 tasks each.
+- Standalone preview APKs (~26MB each) in /workspace/views-artifacts; embedded Hermes, no Metro required.
+- TEST template signing only; guest/staff IDs distinct, Android24+, version0.1.0/code1. No production publish.
+- On dirtyf877b6f: mobile tests12 PASS; APK signatures/ARM64/non-debuggable/profile bytecode/SHA256 PASS.
+- Swapped-profile negative proof rejects; native source App matches checkout; diff check PASS.
+- Script mobile-apk-proof.cjs; reproducible commands/manual checklist in M0D_MOBILE.md; proof JSON beside APKs.
+- No device installation/runtime/persistence acceptance yet; existing KVM/adb restrictions remain.
+- Two known high audit findings still block production; no fresh audit/full Core suites this slice.
+- Next: install and test both profiles on ARM64 device; M0 remains open, mobile remains disconnected shell.
+
 ## 2026-10-12 — M0d.13 Android toolchain installed
 - Google/Gradle connectivity recovered initially; installed SDK36/build-tools36.0.0/NDK27.1.12297006.
 - Real Android preflight exit0; aapt2/clang execute; prerequisite/linking tests5 PASS on bb8795e.
