@@ -172,3 +172,13 @@ Acceptance: both palettes match CSS including inherited dark values; no local he
 colors in mobile App; light default with manual light/dark selection;
 ru/uz/en labels; typecheck and both Android profile exports remain valid.
 No new external dependencies. Manual theme choice is session-only in this shell.
+
+## M0d.9 — mobile preferences persistence
+Acceptance: all3 locales ×2 themes round-trip; malformed/unknown-version input
+falls back to ru/light; queued writes preserve order and recover after failure;
+controls wait for initial load; storage errors visible; both profiles build.
+Promote existing Expo transitive expo-file-system57.0.7 to a direct dependency:
+no new resolved package/version, needed for app-private on-device persistence.
+Store only version/locale/theme, separate filenames per profile; never credentials.
+Write temporary file then move; do not claim power-loss durability or native-device
+acceptance from mock IO tests. No API, migration or account preference sync needed.

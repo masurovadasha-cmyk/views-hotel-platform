@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.9 persisted mobile preferences
+- Theme/locale сохраняются в app-private JSON, guest/staff отдельно; до чтения выбор заблокирован.
+- Только version/locale/theme; повреждённые/неподдерживаемые данные → ru/light, IO ошибки видны пользователю.
+- Записи последовательные через temporary file/move; ошибка не блокирует последующие сохранения.
+- Expo-file-system57.0.7 уже был в lock, теперь direct dependency; новых версий/пакетов нет.
+- На dirty9384a69: offline frozen install/typecheck PASS; mobile tests7 PASS, palette drift check PASS.
+- Финальные guest/staff Android exports/bytecode proof и diff check PASS.
+- Критерии/запуск/ручной чек-лист: DECISIONS.md, M0D_MOBILE.md; native IO/device restart ещё проверить.
+- Public web/APK/БД не менялись; full Core/web suites и свежий audit не запускались.
+- Предыдущие2 high остаются блокерами выпуска; native device/iOS не проверены.
+- Далее: приёмка хранения/интерфейса на native build; M0 остаётся открыт.
+
 ## 2026-10-12 — M0d.8 native shared palette
 - @views/ui/native генерируется из tokens.css:17 цветов, светлая/тёмная темы с наследованием.
 - Mobile использует общую палитру и переключатель темы ru/uz/en; default light, выбор только на сессию.

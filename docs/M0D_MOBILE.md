@@ -48,7 +48,20 @@ acceptance. Не добавлять audit ignore или неподтверждё
 Mobile imports @views/ui/native, generated from packages/ui/tokens.css.
 After palette edits: `node scripts/generate-native-tokens.cjs`, then
 `node scripts/generate-native-tokens.cjs --check` (also enforced in CI).
-Light is the default; Light/Dark buttons select the theme for the current session.
+Light is the first-run default; M0d.9 persists theme and language after selection.
 Automatic OS theme synchronization is outside this slice. Manual acceptance on device:
 choose both themes in guest/staff, check selected states and all three languages.
 Only colors are shared by this adapter; native font/spacing/shadows are not mapped.
+
+## M0d.9 — persisted preferences
+Theme/language now persist through app-private expo-file-system/legacy storage.
+Run `node --test scripts/mobile-preferences.acceptance.cjs` for format validation,
+all6 combinations, serialized writes, failure recovery and read errors.
+Loading blocks selection until restoration completes. Failed storage leaves the
+current selection usable and displays a localized warning; next selection retries.
+No credentials/documents stored. Guest/staff files are separate. Unsupported
+versions or damaged JSON fall back to ru/light. No settings migration is required.
+On actual Android/iOS builds: select each combination, force-stop/reopen, check
+both profiles, repeat changes to an existing file, and verify read-only/full-disk
+errors show a warning. Native file replacement/device restart is not proven by
+JS export or injected-IO tests; APK/IPA release remains gated separately.
