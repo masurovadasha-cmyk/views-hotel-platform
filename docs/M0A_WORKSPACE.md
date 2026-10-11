@@ -129,3 +129,25 @@ Legacy npm locks пока сохранены; внешние настройки 
 Проверка остановки БД выявила unhandled idle Pool error. DatabaseService теперь
 обрабатывает это событие и логирует только DATABASE_IDLE_CONNECTION_ERROR;
 pg error/client не записываются. Регрессионный test воспроизводит прежний crash.
+
+## M0a.3c — единственный lockfile
+
+Актуальное правило: pnpm-lock.yaml — единственный lockfile зависимостей проекта.
+Исторические разделы выше описывают промежуточную совместимость с npm, она снята.
+Root/API package-lock.json удалены после перевода15 CI install jobs и Docker;
+их прежнее содержимое сохранено в Git до84da7d0 включительно. Generated deletion:
+9669 строк; ручные изменения этого среза отдельно от generated lock diff.
+Версии dependencies, pnpm-lock и работающие node_modules не менялись.
+
+README и cloud runbook устанавливают оба проекта одной frozen pnpm-командой.
+`npm run ...` остаётся допустимым запуском scripts: он не устанавливает пакеты.
+`npm install --global pnpm@10.18.3` в build stage только закрепляет инструмент;
+runtime-зависимости устанавливаются pnpm с frozen lock, нового npm lock не создают.
+Старые команды установки в датированных отчётах не являются актуальным runbook.
+
+Cloudflare GitHub workflow переведён на pnpm. Внешний Workers Builds dashboard
+из этой среды недоступен: его install override не проверен и не изменён.
+При наличии override он должен использовать
+`npx --yes --package=pnpm@10.18.3 pnpm install --frozen-lockfile`;
+Wrangler build command `npm run build:review` совместим. Удаление npm locks
+само по себе не доказывает успешный remote build или обновление публичного сайта.

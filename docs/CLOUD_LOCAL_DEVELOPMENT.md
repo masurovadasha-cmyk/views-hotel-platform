@@ -24,8 +24,8 @@ Run from `/workspace/views-hotel-platform`:
 
 ```sh
 export npm_config_cache=/workspace/.cache/npm
-npm ci --no-audit --no-fund
-npm --prefix apps/api ci --no-audit --no-fund
+export npm_config_store_dir=/workspace/.cache/pnpm
+npx --yes --package=pnpm@10.18.3 pnpm install --frozen-lockfile
 docker pull postgres@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
 npm run build
 npm --prefix apps/api run typecheck

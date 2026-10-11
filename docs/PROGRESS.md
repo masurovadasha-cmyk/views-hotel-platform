@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0a.3c единый dependency lock
+- Удалены root/API npm locks; pnpm-lock остаётся единственным, его SHA256 и manifests не изменились.
+- Generated deletion9669 строк отдельно от ручного diff; прежние locks сохранены в Git до84da7d0.
+- README, cloud runbook и устаревшее примечание AGENTS согласованы с pnpm frozen workspace install.
+- Проверено на чистом snapshot84da7d0 без npm locks: полный frozen install,5 Turbo tasks, web350/68 pass.
+- Профильные API tests20/3, mail15, network186, workspace audit0 известных уязвимостей — pass.
+- Docker build и smoke pass: non-root/read-only/prod deps, health/readiness, потеря БД503; постоянная БД не затронута.
+- Все executable install-пути проверены; npm global install закрепляет только pnpm, npm run остаётся совместим.
+- Full Core556/94 и browser suites не повторялись: API/UI/версии неизменны; прежние результаты сохранены.
+- install_script среды сохранён draft b74ec9de-e793-4fac-a736-09fd0d0b7686~cecfgdraft_6acbfee482d48197bd74e4435d22391c.
+- Активация draft через Environment settings Save→Publish ещё не выполнена; восстановление нового task не проверено.
+- Ограничения: внешний Cloudflare install override/remote CI не проверены; публичной публикации нет.
+- Репозиторный M0a завершён. Далее M0b: перенос миграций, clean+upgrade и сохранность прежних checksum.
+
 ## 2026-10-12 — M0a.3b Docker API и отказ БД
 - Docker использует workspace context, allowlist .dockerignore, pnpm10.18.3 frozen и отдельные prod deps.
 - Node24.19.0 Debian slim закреплён digest; non-root runtime сохраняет совместимый /app alias.

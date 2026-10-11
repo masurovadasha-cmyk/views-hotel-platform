@@ -24,12 +24,14 @@ Staff: role-scoped CRM, Inbox/My Tasks, Front Desk, Housekeeping, Maintenance, H
 
 ## Local
 ```bash
-npm ci
-npm run typecheck
-npm test
-npm run build
+npx --yes --package=pnpm@10.18.3 pnpm install --frozen-lockfile
+npx --yes --package=pnpm@10.18.3 pnpm workspace:check
 npm run dev
 ```
+
+Node24.19.0 and pnpm10.18.3 are the verified toolchain. `pnpm-lock.yaml` is the
+only dependency lock; do not use `npm ci`/`npm install` for project dependencies.
+Existing `npm run ...` commands remain supported. See [workspace setup](docs/M0A_WORKSPACE.md).
 
 ## Cloudflare
 Build command: `npm run build`, output: `dist`.

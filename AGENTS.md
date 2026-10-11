@@ -38,9 +38,10 @@ Do not read browser profiles or account/session stores. Never replace a user's
 password or convert a fixture role into an administrator.
 
 Do not `git reset --hard`, `git clean`, force-push, drop databases, remove persistent
-volumes or overwrite local uncommitted work. Root and apps/api package-lock.json
-were pre-existing untracked files; do not delete or silently stage them. Preserve
-snapshots and reconcile them explicitly. Applied migration checksums must never
+volumes or overwrite local uncommitted work. Legacy npm lockfiles were explicitly
+reconciled into pnpm-lock.yaml in M0a and retained in Git history. Use pinned pnpm
+with --frozen-lockfile; do not reintroduce competing npm locks. Preserve unrelated
+local dependency changes. Applied migration checksums must never
 be rewritten. Inspect `public.views_local_migrations` before changing migrations.
 New corrections belong in the next migration when an earlier one is applied.
 

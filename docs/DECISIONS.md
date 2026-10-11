@@ -91,3 +91,10 @@ M0 не считается завершённым до приёмки всех �
 - Smoke выявил unhandled idle pg Pool error при остановке БД. Listener сохраняет
   процесс и пишет только постоянный код ошибки, без pg client/секретов; readiness
   продолжает проверять БД. Регрессионный тест сначала воспроизвёл падение.
+
+## M0a.3c — устранение конкурирующих locks
+- Единственный lock проекта — pnpm-lock.yaml; root/API npm locks удалены после
+  проверок CI и container path. История Git сохраняет их; dependency versions не менялись.
+- npm run scripts совместимы, npm ci/install для зависимостей проекта больше не поддержаны.
+- Generated deletion9669 строк учтён отдельно от малого ручного diff M0a.
+- Внешний Cloudflare install override не подтверждён; локальная готовность не равна публикации.
