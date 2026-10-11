@@ -1,0 +1,19 @@
+# API build context is an allowlist: no credentials, local state or node_modules.
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!apps/
+!apps/api/
+!apps/api/package.json
+!apps/api/nest-cli.json
+!apps/api/tsconfig.json
+!apps/api/tsconfig.build.json
+!apps/api/src/
+!apps/api/src/**
+!apps/api/ops/
+!apps/api/ops/*.cjs
+!apps/api/ops/*.mjs
+**/.env*
+**/*.pem
+**/*.key

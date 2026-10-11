@@ -91,3 +91,41 @@ Node24 меняет стандартный test reporter: для машинно�
 задан явно в egress runner и двух почтовых CI-командах. При первом запуске
 71 тест прошёл, но evidence gate правильно отклонил непарсируемый отчёт;
 исправление проверено повторным запуском с явным TAP, без ослабления gate.
+
+## M0a.3b — production API container
+
+```sh
+docker build -f apps/api/Dockerfile -t views-api:local .
+node scripts/api-container-smoke.cjs views-api:local
+```
+
+Контекст теперь корень workspace; .dockerignore допускает только manifests,
+lock/config, исходники API и ops scripts. Node24.19.0-bookworm-slim закреплён
+по digest; Debian slim выбран для той же glibc-платформы, что проверяется в CI.
+pnpm10.18.3 устанавливает API с frozen lockfile и --ignore-scripts. Отдельный
+production-dependencies stage исключает dev tools из runtime. Workspace links
+сохранены; /app — совместимый alias для API/maintenance, процесс работает как node.
+Compose сохраняет прежние сети, порты, read_only, volumes и ограничения прав.
+
+В этой cloud-среде BuildKit cache directory должен быть writable, а npm идёт
+через существующий proxy/CA. Проверенная команда (значения секретов не выводить):
+```sh
+BUILDX_CONFIG=/tmp/views-m0b-buildx docker build --network=host \
+  --build-arg HTTP_PROXY --build-arg HTTPS_PROXY \
+  --secret id=npm_ca,src="$NODE_EXTRA_CA_CERTS" \
+  -f apps/api/Dockerfile -t views-api:local .
+```
+CA используется только как optional BuildKit secret, не копируется в слои;
+TLS/integrity не отключены. Обычный CI без proxy использует первую команду.
+
+Smoke создаёт свою internal Docker network и PostgreSQL без host ports,
+проверяет /health, /readiness, UID, отсутствие dev tools и совместимость /app/ops;
+после остановки БД требует503 readiness. Ресурсы удаляются по своим случайным
+именам; постоянная views_local не используется. Production auth конфигурируется
+одноразовым Ed25519 public key, реальные ключи не нужны. Это проверка образа,
+не применения миграций или бизнес-сценариев. Main CI включает build + smoke.
+Legacy npm locks пока сохранены; внешние настройки Workers Builds требуют
+отдельной сверки перед удалением compatibility lockfiles (M0a.3c).
+Проверка остановки БД выявила unhandled idle Pool error. DatabaseService теперь
+обрабатывает это событие и логирует только DATABASE_IDLE_CONNECTION_ERROR;
+pg error/client не записываются. Регрессионный test воспроизводит прежний crash.

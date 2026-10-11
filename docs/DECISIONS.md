@@ -80,3 +80,14 @@ M0 не считается завершённым до приёмки всех �
 - Audit gates проверяют production зависимости всего pnpm workspace.
 - Docker build context и удаление legacy locks вынесены в M0a.3b: это отдельная
   проверка контейнера; CI-миграция не объявляет весь M0a.3 завершённым.
+
+## M0a.3b — воспроизводимый Docker API
+- Контекст workspace + allowlist .dockerignore; frozen API install с pinned pnpm.
+- Base Node24.19.0 Debian slim закреплён digest; runtime содержит только prod deps.
+- Workspace links сохраняются, /app alias поддерживает существующий maintenance.
+- Доверенный CA — optional BuildKit secret; не отключать TLS ради cloud proxy.
+- Smoke проверяет production startup с одноразовой подписью и isolated PostgreSQL;
+  не заменяет миграционные/финансовые tests. Legacy npm locks пока не удалены.
+- Smoke выявил unhandled idle pg Pool error при остановке БД. Listener сохраняет
+  процесс и пишет только постоянный код ошибки, без pg client/секретов; readiness
+  продолжает проверять БД. Регрессионный тест сначала воспроизвёл падение.

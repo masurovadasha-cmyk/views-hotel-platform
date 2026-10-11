@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0a.3b Docker API и отказ БД
+- Docker использует workspace context, allowlist .dockerignore, pnpm10.18.3 frozen и отдельные prod deps.
+- Node24.19.0 Debian slim закреплён digest; non-root runtime сохраняет совместимый /app alias.
+- Добавлены api-container-smoke.cjs и build/smoke в основной CI; compose права/сети/volumes сохранены.
+- Проверено на43ebc7a + dirty diff: Docker build pass; API sources test snapshot совпадают с рабочими.
+- Image sha256:eba73a9ed82f482076d902e6a5e039a28dc20c4722d228b45a94ba386bbfb3de.
+- Smoke: UID non-root, read-only, no dev tools, /health200, /readiness200→503 после остановки БД, /app/ops pass.
+- Найден и исправлен crash от idle pg Pool error; regression сначала red, затем green; лог только постоянного кода.
+- API typecheck/build и Core556/94 pass; topology17, origin11, mail15, network186 без нарушений.
+- Compose render/YAML/git diff --check pass; временные smoke containers/network удалены, views_local не тронута.
+- Cloud build использует имеющиеся proxy и CA через BuildKit secret; TLS/integrity сохранены, CA не в образе.
+- Риски: remote CI/публикация не проверены; smoke не заменяет миграционные проверки; UI/APK не обновлялись.
+- Далее M0a.3c: сверить оставшиеся install-потребители и устранить legacy npm locks; полный M0 ещё открыт.
+
 ## 2026-10-12 — M0a.3a остальные GitHub install jobs
 - M0a.3 разделён: CI сейчас; Docker/legacy locks в M0a.3b, чтобы сохранить небольшой проверяемый diff.
 - Все15 install jobs: pnpm10.18.3, Node24.19.0, frozen workspace; две повторные установки удалены.
