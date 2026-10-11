@@ -9,13 +9,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - run: npm install
+          node-version: 24.19.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: npm audit --omit=dev --audit-level=high
-      - run: npm run typecheck
-      - run: npm test
+      - run: pnpm workspace:check
+      - name: Verify Core with disposable PostgreSQL and loopback SMTP
+        run: pnpm workspace:test:core
+        env:
+          VIEWS_GUEST_EMAIL_HTTP_PROOF: "true"
+      - run: node --test scripts/staff-mail.acceptance.cjs
       - name: Enforce Core network primitive boundary
         run: npm run security:core-network-primitives
       - name: Enforce production egress domain policy
@@ -28,9 +36,8 @@ jobs:
           bash -n scripts/stage7-external-synthetic-check.sh
           bash -n scripts/stage7-core-egress-proof.sh
           bash -n scripts/stage7-egress-relay-proof.sh
-      - run: npm run build
       - name: Install browser for Canva interface regression
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
       - name: Verify Canva navigation, themes, focus and sample contrast
         run: node scripts/canva-design.browser.cjs
       - name: Verify Canva Core surfaces with read-only HTTP fixtures

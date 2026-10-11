@@ -43,3 +43,28 @@ frozen install и web/API builds/typecheck — exit0; web350/68, Core555/93;
 HTTP laundry и guest-email с loopback SMTP — pass. Network gate186 без
 нарушений, mail15/15. npm ci --dry-run проверил root/API lock-согласованность;
 это не отдельная полная npm-установка. Браузерная приёмка не перезапускалась.
+
+## M0a.2 — общий граф проверок и CI
+
+```sh
+pnpm workspace:check
+pnpm workspace:test:core
+```
+
+Первая команда запускает Turbo2.5.8 с параллелизмом2: typecheck/build для
+root и @views/api, root test. Существующие scripts сохранены. Вторая сначала
+собирает API и запускает полный Core suite в одноразовой PostgreSQL16;
+нужен Docker. Для HTTP/email доказательств добавить
+`VIEWS_GUEST_EMAIL_HTTP_PROOF=true` перед второй командой (только loopback SMTP).
+API `test` намеренно не зарегистрирован в Turbo: без fixture DB его integration
+тесты могут пропускаться. Команда `workspace:check` не заменяет Core suite.
+
+Все Turbo tasks пока cache:false: root build содержит Git SHA/dirty metadata,
+тесты должны выполняться заново. Оптимизация кэша — отдельный срез после явного
+описания входов. Для source snapshot без .git можно передать GIT_DIR/GIT_WORK_TREE;
+в обычном checkout они не нужны. Зависимости в CI кэшируются средствами pnpm.
+
+Основной ci.yml использует Node24.19.0, pnpm10.18.3 и frozen lockfile; сохраняет
+root npm production audit, security gates и три браузерные проверки. Добавлены
+Core suite/SMTP и mail acceptance. Другие workflows ещё используют npm: их
+перевод и единый workspace audit относятся к M0a.3. Новых зависимостей нет.

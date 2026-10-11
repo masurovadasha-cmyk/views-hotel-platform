@@ -12,3 +12,5 @@ dist-android/
 dist-pages/
 diagnostic-evidence/
 .wrangler/
+
+.turbo/

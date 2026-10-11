@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0a.2 Turbo и основной CI
+- Добавлены turbo.json, workspace:check и workspace:test:core; scripts совместимы, новых зависимостей нет.
+- CI закрепляет Node24.19.0/pnpm10.18.3, frozen install; security/audit/browser checks сохранены.
+- Turbo выполняет5 задач, concurrency2, cache:false; Core отдельно в disposable PostgreSQL16.
+- Проверено на source snapshot addad67 + текущий dirty diff: frozen install и5/5 Turbo tasks exit0.
+- Web350/68, Core555/93, mail15/15; HTTP laundry и guest-email/loopback SMTP — pass.
+- Три browser suites — pass, pageErrors0; это synthetic/demo/HTTP fixtures, не проверка production.
+- Network gate186 без нарушений, egress policy pass, root prod audit0 vulnerabilities; shell syntax pass.
+- Команды/ограничения: M0A_WORKSPACE.md; cache и отдельный Core runner объяснены в DECISIONS.md.
+- Постоянная БД и рабочие node_modules сохранены; публичные веб/APK не обновлялись.
+- Риски: remote GitHub CI ещё не подтверждён; legacy workflows пока npm; M0 не завершён.
+- Следующее M0a.3: перевести оставшиеся install-пути/аудит на workspace без двойных lock-источников.
+
 ## 2026-10-12 — M0a.1 импорт workspace завершён
 - После «следующий шаг» согласовано исключение для generated lock; архитектура M0–M8 принята.
 - Добавлены pnpm-workspace.yaml/pnpm-lock.yaml; pnpm10.18.3, Turbo2.5.8; root+apps/api.

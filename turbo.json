@@ -1,0 +1,27 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "GIT_DIR",
+    "GIT_WORK_TREE"
+  ],
+  "tasks": {
+    "typecheck": {
+      "cache": false
+    },
+    "build": {
+      "dependsOn": [
+        "typecheck"
+      ],
+      "cache": false
+    },
+    "//#typecheck": {
+      "cache": false
+    },
+    "//#build": {
+      "cache": false
+    },
+    "//#test": {
+      "cache": false
+    }
+  }
+}

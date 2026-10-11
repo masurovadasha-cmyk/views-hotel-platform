@@ -65,3 +65,11 @@ M0 не считается завершённым до приёмки всех �
 изменения до300. pnpm10.18.3/Turbo2.5.8; Express5.2.1 объявлен явно из-за
 прямого runtime-импорта. npm-lock временно сохранены для старого CI;
 конкретный порядок удаления — M0A_WORKSPACE_PLAN.md, запуск — M0A_WORKSPACE.md.
+
+## M0a.2 — task graph и CI
+- Сохраняем текущие scripts; Turbo объединяет web/API typecheck/build и web test.
+- Core suite запускается отдельно через существующую одноразовую PostgreSQL16;
+  прямой API test без БД не является приёмкой.
+- До описания всех environment/Git inputs отключаем task cache; parallelism=2.
+- Основной CI: Node24.19.0 + pnpm10.18.3 frozen; legacy workflows/npm audit
+  остаются до M0a.3, без изменения версий и публичной публикации.
