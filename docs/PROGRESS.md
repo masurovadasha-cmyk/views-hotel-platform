@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.10 native preflight, приёмка BLOCKED
+- Добавлен mobile-android-preflight.cjs: версии из RN metadata, отсутствие SDK/components → exit1.
+- На dirty93b4010: mobile tests10 PASS; реальный preflight exit1 (ожидаемый BLOCKED), diff check PASS.
+- Обнаружен SDK в /workspace/android-tools/sdk; нет platform36/build-tools36.0.0/NDK27.1.12297006.
+- KVM accel-check: CPU без vmx/svm; adb не смог создать ~/.android, device connection не установлен.
+- Историческое software rendering failure учтено; native запуск/хранение/перезапуск НЕ проверены.
+- CI запускает unit tests gate; наличие SDK не выдаётся за native acceptance.
+- Инструкция/условия продолжения: M0D_MOBILE.md. Настройки установки среды не менялись.
+- App/API/БД не менялись; APK/новая JS сборка не нужны для изменения диагностического скрипта.
+- Далее: подходящий native runner и SDK36; прежние2 high по-прежнему блокируют выпуск.
+
 ## 2026-10-12 — M0d.9 persisted mobile preferences
 - Theme/locale сохраняются в app-private JSON, guest/staff отдельно; до чтения выбор заблокирован.
 - Только version/locale/theme; повреждённые/неподдерживаемые данные → ru/light, IO ошибки видны пользователю.

@@ -65,3 +65,19 @@ On actual Android/iOS builds: select each combination, force-stop/reopen, check
 both profiles, repeat changes to an existing file, and verify read-only/full-disk
 errors show a warning. Native file replacement/device restart is not proven by
 JS export or injected-IO tests; APK/IPA release remains gated separately.
+
+## M0d.10 — native acceptance prerequisites (BLOCKED)
+Run `ANDROID_HOME=/path/to/sdk node scripts/mobile-android-preflight.cjs`.
+It derives compileSdk/buildTools/NDK from the installed React Native version,
+reports missing components and exits1 if any are absent. Exit0 means files exist,
+not that Gradle, Java, licenses, emulator or the application have been verified.
+Cloud SDK at /workspace/android-tools/sdk has platform/build-tools35, but RN0.86
+requires platform36, build-tools36.0.0 and NDK27.1.12297006; all3 are missing.
+KVM acceleration check fails (CPU lacks vmx/svm). Historical software-emulator
+rendering failure: STAGE7_ANDROID_WEBVIEW_COMPATIBILITY.md. Current adb also cannot
+create /home/agent/.android on this read-only home; no device connection established.
+No new SDK packages downloaded, native projects generated or APKs built this slice.
+Next native runner needs matching SDK/NDK, writable adb user configuration and a
+usable device/emulator. Then build BOTH Expo profiles, test all6 locale/theme
+combinations through force-stop/relaunch, repeated writes and profile isolation.
+Do not substitute the legacy WebView APK for these Expo profile acceptance tests.

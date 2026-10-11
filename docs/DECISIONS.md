@@ -182,3 +182,10 @@ no new resolved package/version, needed for app-private on-device persistence.
 Store only version/locale/theme, separate filenames per profile; never credentials.
 Write temporary file then move; do not claim power-loss durability or native-device
 acceptance from mock IO tests. No API, migration or account preference sync needed.
+
+## M0d.10 — explicit native prerequisite gate
+Read Android SDK versions from installed RN metadata instead of hardcoding an old
+SDK. Tests cover unset/partial/complete SDK. Gate reports nativeAcceptance NOT_RUN
+in every case: tool files are not device/UI evidence. Native acceptance remains
+blocked on missing SDK36/build-tools36/NDK and a usable execution target; do not
+repeat known failing software emulation or start paid cloud builds implicitly.
