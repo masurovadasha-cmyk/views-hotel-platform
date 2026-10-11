@@ -104,7 +104,7 @@ started agent task. The current conversation is not automatically its history.
 
 Main files:
 
-- `apps/api/db/migrations/0040_staff_email_delivery.sql`
+- `db/migrations/0040_staff_email_delivery.sql`
 - `apps/api/ops/staff-mail.cjs`
 - `scripts/staff-mail.acceptance.cjs`
 - `scripts/staff-mail.integration.cjs`

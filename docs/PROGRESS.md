@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0b.2 перенос PostgreSQL migrations
+- Перенесены102 SQL из каталога API в db/migrations; Git распознаёт100% rename, байты/имена/manifest неизменны.
+- Обновлены Linux/Windows launcher, Core/mail/proof scripts, CI loops/filters, Compose read-only mount и ссылки docs.
+- Seeds/tests API и legacy D1 SQL остаются на прежних местах; существующий ledger не менялся.
+- На dirtye7ebaab: manifest tests и PostgreSQL16 clean102/upgrade46→102 proof прошли, schema/ACL совпали.
+- Nest build, Core556/94, HTTP laundry и guest-email/loopback SMTP — exit0; внешних писем нет.
+- Почтовые/evidence tests100/100, network gate186, Compose mount/YAML, node syntax и git diff --check — pass.
+- Проверены все102 SQL против исходных Git blobs; старых путей PostgreSQL в executable consumers не осталось.
+- Постоянная views_local не запускалась/не изменялась; публичные веб/APK не обновлялись.
+- Ограничения: Windows runtime и полный staff-mail DB proof отдельно не запускались; remote CI не подтверждён.
+- Инструкция: M0B_MIGRATIONS.md. Следующий M0b.3: повторяемый synthetic seed в одноразовой БД.
+
 ## 2026-10-12 — M0b.1 checksum и clean/upgrade proof
 - Добавлен db/migrations.sha256 для102 SQL; исходные SQL побайтно совпадают с6b0d67a.
 - Применение вынесено из cloud-local-rehearsal в migrations.cjs; ledger и внешний advisory lock сохранены.

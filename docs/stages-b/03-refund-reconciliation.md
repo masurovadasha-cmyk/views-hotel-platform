@@ -14,7 +14,7 @@
 
 ## Схема и API
 
-Добавочная миграция [0057](../../apps/api/db/migrations/0057_refund_reconciliation_reviews.sql): `payment_refund_reviews`, FK, unique organization/idempotency key, индексы очереди/истории, FORCE RLS, привязка организации/объекта/состояния заявки и автора, append-only trigger. Применённые0001–0056 не менялись. Перед работой прочитан persistent ledger:56 миграций.
+Добавочная миграция [0057](../../db/migrations/0057_refund_reconciliation_reviews.sql): `payment_refund_reviews`, FK, unique organization/idempotency key, индексы очереди/истории, FORCE RLS, привязка организации/объекта/состояния заявки и автора, append-only trigger. Применённые0001–0056 не менялись. Перед работой прочитан persistent ledger:56 миграций.
 
 Ревизия SHA256 включает состояние доставки, ID, сумму, попытку, lease; API сравнивает её под блокировкой заявки. Точная повторная команда возвращает прежний результат даже после последующего callback. Изменённый payload/автор под тем же ключом конфликтует. Review, audit и outbox записываются одной транзакцией. SQL RLS повторяет права и привязку автора; без актёра доступа к review-реестру нет.
 

@@ -1,6 +1,6 @@
-# M0b.1 — неизменность и совместимость миграций
+# M0b — неизменность и совместимость миграций
 
-SQL пока в apps/api/db/migrations; db/migrations.sha256 фиксирует102 исходных
+SQL теперь в db/migrations; db/migrations.sha256 фиксирует102 исходных
 checksum. Ни один SQL не изменён. Для новой миграции добавлять новую строку
 manifest, не переписывать применённые SQL/checksum.
 
@@ -17,4 +17,8 @@ Proof создаёт только собственную PostgreSQL16: clean102 
 при повторном запуске; проверяет checksum mismatch, неизвестную историю и rollback.
 Это один исторический checkpoint, не доказательство сохранности всех бизнес-данных.
 Постоянная views_local не запускается/не изменяется. Main CI выполняет эти проверки.
-Далее M0b.2: физический перенос SQL и обновление потребителей с теми же checksum.
+M0b.2: SQL перенесены без изменения102 checksum; обновлены Linux/Windows paths,
+Core/mail proofs, CI loops/filters и Compose mount. Исторические ссылки в docs
+переведены на новый путь. Seeds/tests пока остаются в apps/api/db; legacy D1 SQL остаётся в migrations/.
+Windows проверен только синтаксически: запуск на Windows не заявляется.
+Далее: повторяемый synthetic seed в одноразовой БД (M0b.3).

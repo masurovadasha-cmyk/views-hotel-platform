@@ -34,7 +34,7 @@ npm run cloud:start
 npm run cloud:status
 ```
 
-`cloud:start` initializes the local database once, applies all 46 current
+`cloud:start` initializes the local database once, applies all current ordered
 migrations with checksum tracking, prepares the existing synthetic workspace,
 issues an invitation if needed, and starts Core plus the staff web gateway.
 Repeated starts retain database rows, credentials, invitations and running

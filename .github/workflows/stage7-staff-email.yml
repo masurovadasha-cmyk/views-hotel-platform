@@ -67,7 +67,7 @@ jobs:
           set -euo pipefail
           psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -f infra/postgres/init/001_extensions.sql
           psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE views_local IS 'VIEWS_DISPOSABLE_STAFF_MAIL'"
-          for file in apps/api/db/migrations/*.sql; do
+          for file in db/migrations/*.sql; do
             psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -f "$file"
           done
       - name: Mail policy and token binding unit checks

@@ -129,7 +129,7 @@ PostgreSQL is the durable source of truth. Redis/BullMQ may later trigger worker
 ## Database
 
 Migration:
-apps/api/db/migrations/0008_payments_ledger.sql
+db/migrations/0008_payments_ledger.sql
 
 Main tables:
 - payment_intents

@@ -5,6 +5,7 @@ on:
     branches: ["stage7/core-origin-isolation-v1"]
     paths:
       - "apps/api/**"
+      - "db/**"
       - "infra/postgres/**"
       - "docker-compose.core-tunnel.yml"
       - "docker-compose.core-tunnel-proof.yml"

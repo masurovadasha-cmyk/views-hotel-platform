@@ -39,7 +39,7 @@ const run = args => {
     if (!admin) throw Error('CI_POSTGRES_NOT_READY');
     await admin.query("COMMENT ON DATABASE views IS 'VIEWS_DISPOSABLE_CORE_TEST'");
     await admin.query(fs.readFileSync(path.join(REPO, 'infra/postgres/init/001_extensions.sql'), 'utf8'));
-    const migrations = path.join(REPO, 'apps/api/db/migrations');
+    const migrations = path.join(REPO, 'db/migrations');
     for (const file of fs.readdirSync(migrations).filter(f => /^\d{4}_.*\.sql$/.test(f)).sort()) {
       await admin.query(fs.readFileSync(path.join(migrations, file), 'utf8'));
     }

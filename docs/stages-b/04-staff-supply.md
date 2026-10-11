@@ -53,7 +53,7 @@
 
 ## Схема и права
 
-Миграция `apps/api/db/migrations/0064_supply_and_stock.sql` добавляет:
+Миграция `db/migrations/0064_supply_and_stock.sql` добавляет:
 
 - Роли `procurement` и `warehouse`; разрешения `supply.read`, `purchase.manage`
   и `stock.manage`. Закупщик получает чтение и управление закупками, склад —

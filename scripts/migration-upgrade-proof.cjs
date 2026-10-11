@@ -14,7 +14,7 @@ function docker(args){
 }
 (async()=>{
  try{
-  const migrations=readMigrations(path.join(REPO,'apps/api/db/migrations'),path.join(REPO,'db/migrations.sha256'));
+  const migrations=readMigrations(path.join(REPO,'db/migrations'),path.join(REPO,'db/migrations.sha256'));
   assert.equal(migrations.length,102,'Update the checkpoint deliberately when adding migrations');
   docker(['run','-d','--name',name,'--publish','127.0.0.1::5432','--env','POSTGRES_PASSWORD',
    'postgres@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4']);created=true;

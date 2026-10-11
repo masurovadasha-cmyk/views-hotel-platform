@@ -85,8 +85,8 @@ This table is an operational compliance record. It does not itself perform a gov
 
 ## Production schema
 
-- apps/api/db/migrations/0009_uzbekistan_compliance.sql
-- apps/api/db/migrations/0010_identity_rls_role_helpers.sql
+- db/migrations/0009_uzbekistan_compliance.sql
+- db/migrations/0010_identity_rls_role_helpers.sql
 
 Main tables:
 - compliance_policy_versions
