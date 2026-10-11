@@ -37,3 +37,12 @@ describe('concierge support gateway',()=>{
   expect(guest.projection({reservationId:id,revision:1,consent:true,preferences:'Quiet',user_id:id,secret:'hidden'})).toEqual({reservationId:id,revision:1,consent:true,preferences:'Quiet'});
  });
 });
+
+describe('concierge SLA guest projection',()=>{
+ it('keeps the bounded deadline snapshot but strips nested staff identity',()=>{
+  const due='2026-10-12T08:15:00Z',sla={policy:'concierge-response-15m-v1',hypothesis:true,evaluatedAt:due,responseDueAt:due,state:'pending',overdueSeconds:0,answeredLate:null};
+  const raw={items:[{orderId:id,responseDueAt:due,sla:{...sla,staffMembershipId:id,privateNote:'hidden'}}],nextCursor:null};
+  expect(guest.projection(raw).items[0].sla).toEqual(sla);
+  for(const patch of [{overdueSeconds:-1},{policy:'unknown'},{hypothesis:false},{evaluatedAt:'invalid'},{answeredLate:'yes'}])expect(()=>guest.projection({...raw,items:[{...raw.items[0],sla:{...sla,...patch}}]})).toThrow('INVALID_RESPONSE');
+ });
+});

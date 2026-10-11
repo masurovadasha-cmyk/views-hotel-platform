@@ -71,9 +71,9 @@ const run = args => {
     assert.equal((await runtime.query("SELECT count(*)::int n FROM properties WHERE id='00000000-0000-0000-0000-000000000002'")).rows[0].n, 1);
     assert.equal((await runtime.query("SELECT count(*)::int n FROM properties WHERE id='10000000-0000-4000-8000-000000000002'")).rows[0].n, 0);
     await runtime.query('ROLLBACK');
-    console.log('PostgreSQL 16: migrations, no-overbooking and tenant isolation PASS; starting complete Core suite.');
+    console.log('PostgreSQL 16: migrations, no-overbooking and tenant isolation PASS; starting '+(process.argv.length>2?'selected':'complete')+' Core suite.');
     const exitCode = await new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, [path.join(REPO, 'apps/api/node_modules/vitest/vitest.mjs'), 'run'], {
+      const child = spawn(process.execPath, [path.join(REPO, 'apps/api/node_modules/vitest/vitest.mjs'), 'run', ...process.argv.slice(2)], {
         cwd: path.join(REPO, 'apps/api'), stdio: 'inherit',
         env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: `postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views` }
       });

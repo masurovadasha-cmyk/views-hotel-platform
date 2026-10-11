@@ -11,10 +11,13 @@ export function ConciergeConversation({order:r,locale,staff,staffCsrf,snippet,ma
  const t=(k:string)=>conciergeText(locale,k),[message,setMessage]=useState(''),[checked,setChecked]=useState(false),[cancel,setCancel]=useState(false);
  const live=!['closed','cancelled'].includes(r.stage),canReply=live&&(!staff||r.mine)&&r.messages.length<100;
  const bytes=r.messages.reduce((n,m)=>n+new TextEncoder().encode(m.text).length,0),messageFits=!!message.trim()&&bytes+new TextEncoder().encode(message.trim()).length<=16000;
- const when=(v:string)=>new Intl.DateTimeFormat(localeTags[locale],{dateStyle:'medium',timeStyle:'short'}).format(new Date(v));
+ const when=(v:string)=>new Intl.DateTimeFormat(localeTags[locale],{dateStyle:'medium',timeStyle:'medium'}).format(new Date(v));
  return <article className="localPanel conciergeCard" data-concierge-id={r.orderId}><header><h4>{t(r.category)} · #{r.orderId.slice(0,8)}{r.unitCode&&' · '+r.unitCode}</h4><strong className="conciergeStatus">{t(r.stage)}</strong></header>
  <p>{t('partySize')}: {r.partySize} · {when(r.requestedFor)}</p><p>{t('budget')}: {marketMoney(r.budgetMinor,r.currency,locale)}</p>
- <p>{t(r.assigned?'assigned':'unassigned')}</p>{live&&r.stage!=='answered'&&<p>{t('due')}: {when(r.responseDueAt)}{Date.parse(r.responseDueAt)<Date.now()&&<strong> · {t('overdue')}</strong>}</p>}
+ <p>{t(r.assigned?'assigned':'unassigned')}</p><div className={'conciergeSla '+(r.sla?.state==='overdue'?'conciergeSlaOverdue':'')} data-testid="concierge-sla">
+ <p>{t('due')}: <time dateTime={r.responseDueAt}>{when(r.responseDueAt)}</time></p>
+ {r.sla?<><p><strong>{t(r.sla.state==='pending'?'slaPending':r.sla.state)}</strong>{r.sla.answeredLate!==null&&<> · {t(r.sla.answeredLate?'slaAnsweredLate':'slaAnsweredOnTime')}</>}{r.sla.state==='overdue'&&<> · {t('slaLateSeconds')}: {new Intl.NumberFormat(localeTags[locale]).format(r.sla.overdueSeconds)}</>}</p><p>{t('slaSnapshot')}: <time dateTime={r.sla.evaluatedAt}>{when(r.sla.evaluatedAt)}</time></p></>:<p>{t('slaUnavailable')}</p>}
+ <p>{t('slaManual')}</p><p>{t('slaTimezone')}</p></div>
  <ol className="conciergeMessages">{r.messages.map(m=><li key={m.id} className={'conciergeMessage '+m.author}><small>{t(m.author)} · {when(m.createdAt)}</small><p>{m.text}</p></li>)}</ol>
  {staff&&staffCsrf&&(manager||r.mine)&&<ConciergeGuestContext orderId={r.orderId} csrf={staffCsrf} locale={locale} disabled={disabled}/>}
  <fieldset disabled={disabled}>

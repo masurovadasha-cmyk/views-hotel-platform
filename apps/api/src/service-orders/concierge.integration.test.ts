@@ -48,6 +48,23 @@ describe('Concierge / scoped shared order engine',()=>{
   expect((await run('SELECT * FROM folio_entries WHERE source_id=$1',[r.orderId])).rowCount).toBe(0);
   await expect(act(r,'message',{message:'Too late'})).rejects.toThrow('SERVICE_TRANSITION_INVALID');
  });
+ it('projects answer deadlines on scoped lists without mutating command receipts or resetting release deadlines',async()=>{
+  const f=await fixture(),key=randomUUID();let r=await service.request(f.a.token,key,f.body);
+  const initialDue=r.responseDueAt;expect(r.sla).toBeUndefined();
+  const guestRow=(await service.guestList(f.a.token,f.r)).items[0];
+  expect(guestRow.sla).toMatchObject({policy:'concierge-response-15m-v1',hypothesis:true,responseDueAt:initialDue,state:'pending',overdueSeconds:0,answeredLate:null});
+  r=await act(r,'claim');r=await act(r,'release');expect(r.responseDueAt).toBe(initialDue);
+  r=await act(r,'claim');r=await act(r,'message',{message:'Investigating'});expect(r.responseDueAt).toBe(initialDue);
+  r=await act(r,'answer',{message:'Resolved'});
+  expect((await service.guestList(f.a.token,f.r)).items[0].sla).toMatchObject({state:'answered',overdueSeconds:0,answeredLate:false});
+  r=await service.guestAct(f.a.token,r.orderId,randomUUID(),command(r,'message',{message:'Follow-up question'}));
+  expect(r.answeredAt).toBeNull();expect(Date.parse(r.responseDueAt)).toBeGreaterThan(Date.parse(initialDue));
+  expect((await service.guestList(f.a.token,f.r)).items[0].sla).toMatchObject({state:'pending',answeredLate:null,responseDueAt:r.responseDueAt});
+  const replay=await service.request(f.a.token,key,f.body);expect(replay.sla).toBeUndefined();expect(replay.responseDueAt).toBe(initialDue);expect(replay.idempotentReplay).toBe(true);
+  await service.request(f.a.token,randomUUID(),f.body);
+  const rows=(await service.guestList(f.a.token,f.r)).items;expect(rows).toHaveLength(2);expect(new Set(rows.map(row=>row.sla!.evaluatedAt)).size).toBe(1);
+  const queue=(await service.staffList(actor(6),token(6),property)).items;expect(queue.length).toBeGreaterThan(0);expect(queue.every(row=>row.sla?.policy==='concierge-response-15m-v1')).toBe(true);
+ });
  it('serializes competing staff claims and prevents reading or answering another employee assignment',async()=>{
   const f=await fixture(),r=await service.request(f.a.token,randomUUID(),f.body);
   const claims=await Promise.allSettled([act(r,'claim',{},6),act(r,'claim',{},7)]);expect(claims.filter(x=>x.status==='fulfilled')).toHaveLength(1);
