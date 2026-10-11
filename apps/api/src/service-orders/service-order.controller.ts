@@ -1,3 +1,4 @@
+import {LaundryService} from './laundry.service';
 import {Controller,Get,Post,Headers,Header,HttpCode,Body,Param,Query,UnauthorizedException} from '@nestjs/common';
 import {randomUUID} from 'node:crypto';
 import {ServiceOrderService} from './service-order.service';
@@ -7,7 +8,11 @@ function actor(h:Record<string,string>){return {organizationId:uuid(h['x-organiz
 function query(q:Record<string,unknown>,keys:string[]){if(Object.keys(q).some(k=>!keys.includes(k)))invalid();}
 @Controller('v1/guest-identity/email/services')
 export class GuestServiceOrderController{
- constructor(private readonly service:ServiceOrderService){}
+ constructor(private readonly service:ServiceOrderService,private readonly laundry: LaundryService){}
+ @Get('laundry/catalog') @Header('Cache-Control','no-store') laundryCatalog(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['reservationId','cursor']);return this.laundry.catalog(bearer(h),q.reservationId,q.cursor);}
+ @Get('laundry') @Header('Cache-Control','no-store') laundryList(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['reservationId','cursor']);return this.laundry.guestList(bearer(h),q.reservationId,q.cursor);}
+ @Post('laundry') @HttpCode(200) @Header('Cache-Control','no-store') laundryRequest(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>,@Body() b:unknown){query(q,[]);return this.laundry.request(bearer(h),h['idempotency-key'],b);}
+ @Post('laundry/:id/actions') @HttpCode(200) @Header('Cache-Control','no-store') laundryAct(@Headers() h:Record<string,string>,@Param('id') id:string,@Query() q:Record<string,unknown>,@Body() b:unknown){query(q,[]);return this.laundry.guestAct(bearer(h),id,h['idempotency-key'],b);}
  @Get('catalog') @Header('Cache-Control','no-store') catalog(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['reservationId','cursor']);return this.service.catalog(bearer(h),q.reservationId,q.cursor);}
  @Get('orders') @Header('Cache-Control','no-store') list(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['reservationId','cursor']);return this.service.orders(bearer(h),q.reservationId,q.cursor);}
  @Get('orders/:id/repeat') @Header('Cache-Control','no-store') repeat(@Headers() h:Record<string,string>,@Param('id') id:string,@Query() q:Record<string,unknown>){query(q,[]);return this.service.repeat(bearer(h),id);}
@@ -17,7 +22,9 @@ export class GuestServiceOrderController{
 }
 @Controller('v1/service-orders')
 export class StaffServiceOrderController{
- constructor(private readonly service:ServiceOrderService){}
+ constructor(private readonly service:ServiceOrderService,private readonly laundry: LaundryService){}
+ @Get('laundry') @Header('Cache-Control','no-store') laundryList(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['propertyId','cursor']);return this.laundry.staffList(actor(h),h['x-views-staff-session'],q.propertyId,q.cursor);}
+ @Post('laundry/:id/actions') @HttpCode(200) @Header('Cache-Control','no-store') laundryAct(@Headers() h:Record<string,string>,@Param('id') id:string,@Query() q:Record<string,unknown>,@Body() b:unknown){query(q,[]);return this.laundry.staffAct(actor(h),h['x-views-staff-session'],id,h['idempotency-key'],b);}
  @Get('assignees') @Header('Cache-Control','no-store') assignees(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['propertyId']);return this.service.assignees(actor(h),h['x-views-staff-session'],q.propertyId);}
  @Get() @Header('Cache-Control','no-store') queue(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['propertyId','cursor']);return this.service.queue(actor(h),h['x-views-staff-session'],q.propertyId,q.cursor);}
  @Post(':id/actions') @HttpCode(200) @Header('Cache-Control','no-store') act(@Headers() h:Record<string,string>,@Param('id') id:string,@Query() q:Record<string,unknown>,@Body() b:unknown){query(q,[]);return this.service.act(actor(h),h['x-views-staff-session'],id,h['idempotency-key'],b);}

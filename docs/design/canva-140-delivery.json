@@ -337,7 +337,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_5_LAUNDRY_CORE.md; backend only, screen implementation still pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SG-LA-002",
@@ -353,7 +354,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_5_LAUNDRY_CORE.md; backend only, screen implementation still pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SG-LA-003",
@@ -369,7 +371,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_5_LAUNDRY_CORE.md; backend only, screen implementation still pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SG-LA-004",
@@ -385,7 +388,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_5_LAUNDRY_CORE.md; backend only, screen implementation still pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SG-LA-005",
@@ -961,7 +965,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_5_LAUNDRY_CORE.md; backend only, screen implementation still pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SD-LA-002",
@@ -977,7 +982,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_5_LAUNDRY_CORE.md; backend only, screen implementation still pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SD-LA-003",
@@ -1441,7 +1447,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_5_LAUNDRY_CORE.md; backend only, screen implementation still pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SS-LA-002",
@@ -1457,7 +1464,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_5_LAUNDRY_CORE.md; backend only, screen implementation still pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SS-LA-003",
@@ -1473,7 +1481,8 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/design/CANVA_140_BLOCK_5_LAUNDRY_CORE.md; backend only, screen implementation still pending",
+      "backendImplementation": "local_core_api"
     },
     {
       "id": "SS-MK-001",

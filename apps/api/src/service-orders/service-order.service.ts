@@ -27,3 +27,5 @@ export class ServiceOrderService{
  async queue(actor:RequestActorContext,token:string,property:unknown,after?:unknown){await this.staffActor(actor,token);const p=uuid(property),cursor=after===undefined?null:uuid(after);return safe(()=>this.db.withActor(actor,async c=>page((await c.query('SELECT app.staff_cleaning_queue($1,$2,$3) value',[hash(token),p,cursor])).rows[0].value)));}
  async act(actor:RequestActorContext,token:string,order:unknown,key:unknown,raw:unknown){await this.staffActor(actor,token);const id=uuid(order),command=uuid(key),body=actionInput(raw);return safe(()=>this.db.withActor(actor,async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:ServiceReceipt}>('SELECT app.staff_cleaning_act($1,$2,$3,$4) value',[hash(token),id,command,body])).rows[0].value;}));}
 }
+
+export {enabled,hash,safe};
