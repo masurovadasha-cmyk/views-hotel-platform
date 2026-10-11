@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.4 shared i18n
+- Добавлен @views/shared/i18n: locales/Locale/translate и типы; прежний messages.ts совместимо реэкспортирует пакет.
+- Root/CRM/Next объявляют workspace dependency; Next transpilePackages включён, без новых библиотек/версий.
+- Сначала тест отсутствующего пакета падал; затем3 проверки совместимости/fallback/placeholder/prototype PASS.
+- На dirty45335cb: frozen install в чистом snapshot и основном checkout PASS; workspace:check10/10, web356 tests PASS.
+- Next HTTP6 routes+404/redirect и CRM browser9 ролей/3 языка/theme/mobile/noAPI PASS.
+- Docker build/smoke PASS: non-root/read-only/prod deps, health/readiness, потеря БД503; shared manifest в context.
+- Network187, mail15, generation drift и diff check PASS; полный PostgreSQL suite не повторялся.
+- Инструкция: M0D_SHARED.md; start_skill/install_script не менялись, прежний frozen install подходит.
+- Публичные веб/APK и постоянная БД не затронуты. Следующий срез packages/ui; затем Expo, M0 открыт.
+
 ## 2026-10-12 — M0d.3 Next guest/host shell
 - Создан apps/web Next15.5.27/React18 Pages Router:6 SSR страниц guest/host × ru/uz/en, noindex, явный disconnected status.
 - Критерии/запуск/ручной чек-лист: M0D_WEB.md; каталог, вход, бронь и тема здесь не реализованы.

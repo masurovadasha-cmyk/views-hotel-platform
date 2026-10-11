@@ -7,6 +7,7 @@ RUN --mount=type=secret,id=npm_ca \
   npm install --global pnpm@10.18.3 --ignore-scripts --no-audit --no-fund
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
+COPY packages/shared/package.json ./packages/shared/package.json
 
 FROM dependencies AS build
 RUN --mount=type=secret,id=npm_ca \

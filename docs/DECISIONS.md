@@ -131,3 +131,9 @@ M0 не считается завершённым до приёмки всех �
 - Guest/host × ru/uz/en — серверные страницы с явным disconnected status, без публичной индексации или выдачи прав.
 - Audit выявил PostCSS advisories: только next@15.5.27>postcss закреплён на8.5.29; итоговый prod audit без известных находок.
 - Generated lock отдельно от ручного diff; shared CSS пока импортируется из legacy src, без дублирования.
+
+## M0d.4 — общий i18n без переноса каталогов
+- @views/shared/i18n — TS source export для клиентов; Next transpilePackages включён явно.
+- Старый messages.ts остаётся re-export, чтобы не менять десятки потребителей одновременно.
+- Семантика translate сохранена; общий locales задаёт набор ru/uz/en. Runtime зависимостей нет.
+- Docker получает только manifest shared для разрешения workspace links; Core не импортирует shared.

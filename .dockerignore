@@ -17,3 +17,7 @@
 **/.env*
 **/*.pem
 **/*.key
+
+!packages/
+!packages/shared/
+!packages/shared/package.json

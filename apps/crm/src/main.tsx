@@ -2,7 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {StaffRoleHeading,StaffRoleUnavailable,roleText} from '../../../src/features/staff-entry/StaffRoleEntry';
 import {staffRoles,roleInfo,type StaffRole} from '../../../src/features/staff-entry/staff-roles';
-import {translate,type Locale} from '../../../src/i18n/messages';
+import {translate,type Locale} from '@views/shared/i18n';
 import '../../../src/design-system/foundation.css';
 import './shell.css';
 const messages={
