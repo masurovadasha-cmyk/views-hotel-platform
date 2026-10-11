@@ -17,6 +17,9 @@ importers:
       '@views/shared':
         specifier: workspace:*
         version: link:packages/shared
+      '@views/ui':
+        specifier: workspace:*
+        version: link:packages/ui
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@18.3.1)
@@ -109,6 +112,9 @@ importers:
       '@views/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@views/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -137,6 +143,9 @@ importers:
       '@views/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@views/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       next:
         specifier: 15.5.27
         version: 15.5.27(@babel/core@7.29.7)(@types/node@22.19.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -165,6 +174,8 @@ importers:
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
+
+  packages/ui: {}
 
 packages:
 

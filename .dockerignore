@@ -21,3 +21,5 @@
 !packages/
 !packages/shared/
 !packages/shared/package.json
+!packages/ui/
+!packages/ui/package.json

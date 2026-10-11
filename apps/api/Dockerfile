@@ -8,6 +8,7 @@ RUN --mount=type=secret,id=npm_ca \
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY packages/shared/package.json ./packages/shared/package.json
+COPY packages/ui/package.json ./packages/ui/package.json
 
 FROM dependencies AS build
 RUN --mount=type=secret,id=npm_ca \

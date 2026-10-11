@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@views/ui": "workspace:*",
     "@views/shared": "workspace:*",
     "next": "15.5.27",
     "react": "18.3.1",

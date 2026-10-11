@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.5 shared UI CSS
+- Добавлен @views/ui: tokens.css и foundation.css; объединённые правила побайтно совпали с исходным foundation.
+- Legacy CSS сохранил совместимый @import; root/CRM/Next объявляют workspace package, новые клиенты импортируют напрямую.
+- CSS-only/sideEffects, без новых библиотек; manifest UI добавлен в Docker context для frozen workspace resolution.
+- На dirty108e4e7: pnpm10.18.3 frozen install PASS; workspace:check10/10, web356 tests PASS.
+- CRM browser9 ролей/3 языка/theme/mobile и Next HTTP6 routes/404/redirect PASS.
+- Canva browser PASS:232 layout/126 contrast, минимум6.02:1,0 JS/API/external requests; не полный WCAG-аудит.
+- Docker build/smoke PASS: non-root/read-only/prod deps, readiness, потеря БД503, без публичных портов.
+- Network187, mail15, generator drift и diff check PASS; полный PostgreSQL suite не повторялся.
+- Инструкция/ручной чек-лист/ограничения: M0D_UI.md; RN адаптер токенов ещё не реализован.
+- Конфигурация среды не менялась: прежний frozen install подходит; публичные веб/APK и постоянная БД не затронуты.
+- Далее Expo shell отдельным срезом; M0 открыт.
+
 ## 2026-10-12 — M0d.4 shared i18n
 - Добавлен @views/shared/i18n: locales/Locale/translate и типы; прежний messages.ts совместимо реэкспортирует пакет.
 - Root/CRM/Next объявляют workspace dependency; Next transpilePackages включён, без новых библиотек/версий.

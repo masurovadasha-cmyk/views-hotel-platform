@@ -137,3 +137,9 @@ M0 не считается завершённым до приёмки всех �
 - Старый messages.ts остаётся re-export, чтобы не менять десятки потребителей одновременно.
 - Семантика translate сохранена; общий locales задаёт набор ru/uz/en. Runtime зависимостей нет.
 - Docker получает только manifest shared для разрешения workspace links; Core не импортирует shared.
+
+## M0d.5 — UI tokens без смены оформления
+- CSS исходного foundation разделён на tokens и foundation в @views/ui, порядок и значения не изменены.
+- Legacy CSS — совместимый @import; CRM/Next импортируют workspace пакет напрямую.
+- Пакет CSS-only, sideEffects сохранён; отдельная TS/build задача не нужна, клиентские сборки проверяют CSS.
+- React Native адаптер токенов не заявляется готовым; перенос компонентов вне этого среза.
