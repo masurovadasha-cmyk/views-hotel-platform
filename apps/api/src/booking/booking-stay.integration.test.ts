@@ -1,0 +1,188 @@
+import {GuestRegistrationService} from '../compliance/guest-registration.service';
+import {ComplianceProviderRegistry} from '../compliance/provider.registry';
+import {sealSyntheticDocument,SYNTHETIC_VAULT,readReviewReceipt,issueReviewReceipt} from '../compliance/synthetic-document-vault';
+import {afterAll,beforeAll,describe,expect,it} from 'vitest';
+import {randomUUID,randomBytes,createHash} from 'node:crypto';
+import {DatabaseService} from '../database/database.service';
+import {BookingWorkspaceController} from './booking-workspace.controller';
+import {BookingStayService} from './booking-stay.service';
+const org='10000000-0000-4000-8000-000000000001',property='10000000-0000-4000-8000-000000000002';
+const actor={organizationId:org,userId:'20000000-0000-4000-8000-000000000001',membershipId:'73100000-0000-4000-8000-000000000001',requestId:'stay-proof'};
+const db=new DatabaseService(),service=new BookingStayService(db),previous={...process.env};
+let token:string;const type=randomUUID();
+const query=(sql:string,args:unknown[]=[])=>db.withActor(actor,c=>c.query(sql,args));
+async function session(){const raw=randomBytes(32).toString('hex');const result=await db.query('SELECT app.staff_auth_start($1,1,$2) ok',[actor.membershipId,createHash('sha256').update(raw).digest('hex')]);expect(result.rows[0].ok).toBe(true);return raw;}
+async function fixture({marker=true,total='0',guest=true,future=false,today=false}={}){
+ const id=randomUUID(),unit=randomUUID();
+ await query("INSERT INTO units(id,property_id,unit_type_id,code) VALUES($1,$2,$3,$4)",[unit,property,type,'STAY-'+unit]);
+ await query(`INSERT INTO reservations(id,organization_id,property_id,unit_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot,quote_snapshot)
+ SELECT $1,$2,$3,$4,$5,'confirmed',
+ CASE WHEN $9::boolean THEN date_trunc('day',clock_timestamp() AT TIME ZONE p.timezone) AT TIME ZONE p.timezone
+ ELSE clock_timestamp()+$6::interval END,clock_timestamp()+interval '2 days','UZS',$7,'{}',$8
+ FROM properties p WHERE p.id=$3`,[id,org,property,unit,'STAY-'+id,future?'1 day':'-1 hour',total,{localStayPilot:marker},today]);
+ await query("INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,reservation_id,stay_period) SELECT organization_id,property_id,unit_id,'reservation',id,tstzrange(check_in_at,check_out_at,'[)') FROM reservations WHERE id=$1",[id]);
+ if(guest)await query("INSERT INTO reservation_guests(organization_id,reservation_id,is_primary,first_name,last_name,date_of_birth,nationality_country_code) VALUES($1,$2,true,'Synthetic','Stay','2000-01-01','UZ')",[org,id]);
+ return id;
+}
+const act=(id:string,action:'check-in'|'check-out',key=randomUUID(),sessionToken=token)=>service.transition(actor,sessionToken,id,key,action);
+beforeAll(async()=>{
+ Object.assign(process.env,{NODE_ENV:'test',VIEWS_LOCAL_REHEARSAL:'true',VIEWS_STAFF_AUTH_PILOT_ENABLED:'true',VIEWS_STAFF_STAY_PILOT_ENABLED:'true',VIEWS_STAFF_AUTH_ORGANIZATION_ID:org});
+ token=await session();await query("INSERT INTO unit_types(id,property_id,name,max_guests) VALUES($1,$2,'{\"en\":\"Synthetic stay\"}',2)",[type,property]);
+});
+afterAll(async()=>{for(const k of Object.keys(process.env))if(!(k in previous))delete process.env[k];Object.assign(process.env,previous);await db.onModuleDestroy();});
+describe.sequential('local synthetic stay transitions',()=>{
+ it('requires pilot, live session and authorized property',async()=>{
+  process.env.VIEWS_STAFF_STAY_PILOT_ENABLED='false';await expect(act(randomUUID(),'check-in')).rejects.toThrow('STAY_PILOT_DISABLED');process.env.VIEWS_STAFF_STAY_PILOT_ENABLED='true';
+  process.env.NODE_ENV='production';await expect(act(randomUUID(),'check-in')).rejects.toThrow('STAY_PILOT_DISABLED');process.env.NODE_ENV='test';
+  await expect(act(randomUUID(),'check-in',randomUUID(),'0'.repeat(64))).rejects.toThrow('STAFF_SESSION_REQUIRED');
+  await expect(act(randomUUID(),'check-in')).rejects.toThrow('PROPERTY_FORBIDDEN');
+ });
+ it('rejects ordinary or priced reservations, absent guest and early arrival',async()=>{
+  await expect(act(await fixture({marker:false}),'check-in')).rejects.toThrow('STAY_FIXTURE_REQUIRED');
+  await expect(act(await fixture({total:'100'}),'check-in')).rejects.toThrow('STAY_FIXTURE_REQUIRED');
+  await expect(act(await fixture({guest:false}),'check-in')).rejects.toThrow('STAY_GUEST_REQUIRED');
+  await expect(act(await fixture({future:true}),'check-in')).rejects.toThrow('STAY_OUTSIDE_ARRIVAL_WINDOW');
+ });
+ it('concurrent repeats commit once; checkout preserves history and frees future inventory',async()=>{
+  const id=await fixture(),key=randomUUID();const results=await Promise.all([act(id,'check-in',key),act(id,'check-in',key)]);
+  expect(results.filter(r=>r.idempotentReplay)).toHaveLength(1);
+  expect((await query('SELECT version,status FROM reservations WHERE id=$1',[id])).rows[0]).toEqual({version:2,status:'checked_in'});
+  await expect(act(id,'check-in')).rejects.toThrow('STAY_STATE_CHANGED');
+  const outKey=randomUUID();await act(id,'check-out',outKey);expect((await act(id,'check-out',outKey)).idempotentReplay).toBe(true);
+  const period=(await query('SELECT lower(stay_period)<upper(stay_period) history,upper(stay_period)<=clock_timestamp() released FROM inventory_periods WHERE reservation_id=$1',[id])).rows[0];expect(period).toEqual({history:true,released:true});
+  expect((await query("SELECT count(*)::int n FROM booking_state_events WHERE reservation_id=$1 AND event_type IN ('booking.checked_in','booking.checked_out')",[id])).rows[0].n).toBe(2);
+  expect((await query("SELECT count(*)::int n FROM audit_log WHERE entity_id=$1 AND action LIKE 'staff.local_checked%'",[id])).rows[0].n).toBe(2);
+  await expect(act(await fixture(),'check-in',key)).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+ });
+ it('outbox failure rolls back status, inventory, command and audit',async()=>{
+  const id=await fixture(),key=randomUUID();await act(id,'check-in');
+  await query("INSERT INTO outbox_events(organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload) VALUES($1,'reservation',$2,'fixture.collision',$3,'{}')",[org,id,'stay:'+org+':local_check-out:'+key]);
+  await expect(act(id,'check-out',key)).rejects.toThrow();
+  expect((await query('SELECT status,version FROM reservations WHERE id=$1',[id])).rows[0]).toEqual({status:'checked_in',version:2});
+  expect((await query('SELECT upper(stay_period)>clock_timestamp() retained FROM inventory_periods WHERE reservation_id=$1',[id])).rows[0].retained).toBe(true);
+  expect((await query("SELECT count(*)::int n FROM booking_commands WHERE reservation_id=$1 AND command_type='local_check-out'",[id])).rows[0].n).toBe(0);
+ });
+ it('projects guest and blockers only for eligible synthetic stays',async()=>{
+  const controller=new BookingWorkspaceController(db);
+  const headers={'x-organization-id':org,'x-user-id':actor.userId,'x-membership-id':actor.membershipId};
+  // A today-board fixture must remain on the property's date even just after midnight.
+  const ready=await fixture({today:true}),missing=await fixture({guest:false,today:true}),normal=await fixture({marker:false,today:true});
+  const board=await controller.read(headers,property,'today');if(!('arrivals' in board))throw Error('MISSING_BOARD');
+  const get=(id:string)=>board.arrivals.items.find((r:{reservationId:string})=>r.reservationId===id);
+  expect(get(ready).readiness).toEqual({primaryGuest:'Synthetic Stay',unitActive:true,inventoryValid:true,paymentFree:true,timeAllowed:true,unitVacant:true,cleaningReady:true});
+  expect(get(missing).readiness.primaryGuest).toBeNull();expect(get(normal).readiness).toBeNull();
+  await query('DELETE FROM inventory_periods WHERE reservation_id=$1',[ready]);
+  const next=await controller.read(headers,property,'today');if(!('arrivals' in next))throw Error('MISSING_BOARD');
+  expect(next.arrivals.items.find((r:{reservationId:string})=>r.reservationId===ready).readiness.inventoryValid).toBe(false);
+  await expect(act(ready,'check-in')).rejects.toThrow('STAY_INVENTORY_INVALID');
+ });
+ it('projects bounded document statuses without file identifiers or personal data',async()=>{
+  const id=await fixture({today:true}),normal=await fixture({marker:false,today:true});
+  await query("INSERT INTO guest_document_records(organization_id,reservation_guest_id,document_type,object_key,storage_region,vault_id,expires_on,verification_status,object_checksum_sha256) SELECT g.organization_id,g.id,'passport','private-hidden-path','UZ','synthetic','2000-01-01','verified',repeat('a',64) FROM reservation_guests g CROSS JOIN generate_series(1,12) WHERE g.reservation_id=$1",[id]);
+  const board=await new BookingWorkspaceController(db).read({'x-organization-id':org,'x-user-id':actor.userId,'x-membership-id':actor.membershipId},property,'today');
+  if(!('arrivals' in board))throw Error('MISSING_BOARD');
+  const row=board.arrivals.items.find((r:{reservationId:string})=>r.reservationId===id);
+  expect(row.documents.total).toBe(12);expect(row.documents.items).toHaveLength(10);
+  expect(row.documents.items[0]).toEqual({previewId:null,type:'passport',status:'verified',expired:true,uploadFinalized:true});
+  expect(JSON.stringify(row.documents)).not.toContain('private-hidden-path');
+  expect(board.arrivals.items.find((r:{reservationId:string})=>r.reservationId===normal).documents).toBeNull();
+ });
+ it('saves primary guest atomically, replays once and rejects stale or changed requests',async()=>{
+  const id=await fixture({guest:false}),key=randomUUID();
+  const guest={firstName:'Test',lastName:'Guest',dateOfBirth:'2000-02-29',nationality:'UZ',expectedVersion:1};
+  const save=(body=guest,k=key)=>service.transition(actor,token,id,k,'guest',body);
+  const results=await Promise.all([save(),save()]);expect(results.filter(r=>r.idempotentReplay)).toHaveLength(1);
+  expect((await query('SELECT first_name FROM reservation_guests WHERE reservation_id=$1',[id])).rows).toEqual([{first_name:'Test'}]);
+  await expect(save({...guest,firstName:'Changed'})).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+  await expect(save(guest,randomUUID())).rejects.toThrow('GUEST_VERSION_CHANGED');
+  await expect(save({...guest,dateOfBirth:'2001-02-29'},randomUUID())).rejects.toThrow('INVALID_GUEST');
+  await expect(service.transition(actor,token,await fixture({marker:false}),randomUUID(),'guest',guest)).rejects.toThrow('STAY_FIXTURE_REQUIRED');
+  const failKey=randomUUID();await query("INSERT INTO outbox_events(organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload) VALUES($1,'reservation',$2,'fixture.collision',$3,'{}')",[org,id,'stay:'+org+':local_guest:'+failKey]);
+  await expect(save({...guest,firstName:'Rollback',expectedVersion:2},failKey)).rejects.toThrow();
+  expect((await query('SELECT first_name FROM reservation_guests WHERE reservation_id=$1',[id])).rows[0].first_name).toBe('Test');
+  expect((await query('SELECT version FROM reservations WHERE id=$1',[id])).rows[0].version).toBe(2);
+  await save({...guest,lastName:'Updated',expectedVersion:2},randomUUID());
+  expect((await query('SELECT last_name FROM reservation_guests WHERE reservation_id=$1',[id])).rows[0].last_name).toBe('Updated');
+  const audit=(await query("SELECT after_state FROM audit_log WHERE entity_id=$1 AND action='staff.local_guest_updated'",[id])).rows;expect(audit).toHaveLength(2);expect(JSON.stringify(audit)).not.toContain('Updated');
+  await act(id,'check-in');await expect(save({...guest,expectedVersion:4},randomUUID())).rejects.toThrow('STAY_STATE_CHANGED');
+ });
+ it('refuses changes to a guest with document records',async()=>{
+  const id=await fixture();
+  await query("INSERT INTO guest_document_records(organization_id,reservation_guest_id,document_type,storage_region,vault_id,object_key) SELECT organization_id,id,'passport','UZ','synthetic','synthetic/not-an-upload' FROM reservation_guests WHERE reservation_id=$1",[id]);
+  await expect(service.transition(actor,token,id,randomUUID(),'guest',{firstName:'Test',lastName:'Guest',dateOfBirth:'2000-01-01',nationality:'UZ',expectedVersion:1})).rejects.toThrow('GUEST_DOCUMENT_REVIEW_REQUIRED');
+  expect((await query('SELECT version FROM reservations WHERE id=$1',[id])).rows[0].version).toBe(1);
+ });
+ it('decrypts only scoped synthetic files, audits reads and denies tampering or revoked sessions',async()=>{
+  const id=await fixture(),doc=randomUUID(),guest=(await query('SELECT id FROM reservation_guests WHERE reservation_id=$1',[id])).rows[0].id;
+  const secret=randomBytes(32).toString('hex');process.env.VIEWS_LOCAL_DOCUMENT_KEY=secret;process.env.VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED='true';
+  const binding={organizationId:org,reservationId:id,guestId:guest,documentId:doc},sealed=sealSyntheticDocument(binding,secret);
+  await query("INSERT INTO guest_document_records(id,organization_id,reservation_guest_id,document_type,encrypted_fields,object_checksum_sha256,storage_region,vault_id) VALUES($1,$2,$3,'other',$4,$5,'LOCAL_SYNTHETIC',$6)",[doc,org,guest,sealed.encrypted,sealed.checksum,SYNTHETIC_VAULT]);
+  const view=(res=id,t=token)=>service.transition(actor,t,res,randomUUID(),'document-view',{documentId:doc});
+  await expect(service.transition(actor,token,id,randomUUID(),'document-view',{documentId:'-'.repeat(36)})).rejects.toThrow('INVALID_DOCUMENT_REQUEST');
+  const result=await view();expect(result.text).toContain('Not an identity document');
+  expect(JSON.stringify((await query("SELECT after_state FROM audit_log WHERE entity_id=$1 AND action='staff.synthetic_document_viewed'",[doc])).rows)).not.toContain('Not an identity document');
+  expect((await query("SELECT count(*)::int n FROM booking_commands WHERE reservation_id=$1 AND command_type='local_document-view'",[id])).rows[0].n).toBe(0);
+  await expect(view(await fixture())).rejects.toThrow('SYNTHETIC_DOCUMENT_UNAVAILABLE');
+  const revoked=await session();await db.query('SELECT app.staff_auth_logout($1,false)',[createHash('sha256').update(revoked).digest('hex')]);
+  await expect(view(id,revoked)).rejects.toThrow('STAFF_SESSION_REQUIRED');
+  process.env.VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED='false';await expect(view()).rejects.toThrow('DOCUMENT_PREVIEW_DISABLED');process.env.VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED='true';
+  const damaged=Buffer.from(sealed.encrypted);damaged[30]^=1;
+  await query('UPDATE guest_document_records SET encrypted_fields=$2 WHERE id=$1',[doc,damaged]);await expect(view()).rejects.toThrow('SYNTHETIC_DOCUMENT_UNAVAILABLE');
+  expect((await query("SELECT count(*)::int n FROM audit_log WHERE entity_id=$1 AND action='staff.synthetic_document_viewed'",[doc])).rows[0].n).toBe(1);
+ });
+ it('binds review to the viewed file and session, commits once and rolls back failed events',async()=>{
+  process.env.VIEWS_LOCAL_DOCUMENT_PILOT_ENABLED='true';const secret=randomBytes(32).toString('hex');process.env.VIEWS_LOCAL_DOCUMENT_KEY=secret;
+  async function document(){
+   const id=await fixture(),doc=randomUUID(),guest=(await query('SELECT id FROM reservation_guests WHERE reservation_id=$1',[id])).rows[0].id;
+   const sealed=sealSyntheticDocument({organizationId:org,reservationId:id,guestId:guest,documentId:doc},secret);
+   await query("INSERT INTO guest_document_records(id,organization_id,reservation_guest_id,document_type,encrypted_fields,object_checksum_sha256,storage_region,vault_id) VALUES($1,$2,$3,'other',$4,$5,'LOCAL_SYNTHETIC',$6)",[doc,org,guest,sealed.encrypted,sealed.checksum,SYNTHETIC_VAULT]);
+   const viewed=await service.transition(actor,token,id,randomUUID(),'document-view',{documentId:doc});
+   return {id,doc,receipt:viewed.reviewToken as string};
+  }
+  const d=await document(),key=randomUUID();
+  const review=(decision='verified',k=key,t=token,receipt=d.receipt)=>service.transition(actor,t,d.id,k,'document-review',{documentId:d.doc,decision,reviewToken:receipt});
+  await expect(review('verified',randomUUID(),token,'forged')).rejects.toThrow('DOCUMENT_REVIEW_RECEIPT_INVALID');
+  await expect(review('verified',randomUUID(),await session())).rejects.toThrow('DOCUMENT_REVIEW_RECEIPT_INVALID');
+  const expired=issueReviewReceipt({...readReviewReceipt(d.receipt,secret),expiresAt:Date.now()-1},secret);
+  await expect(review('verified',randomUUID(),token,expired)).rejects.toThrow('DOCUMENT_REVIEW_STALE');
+  const both=await Promise.all([review(),review()]);expect(both.filter(r=>r.idempotentReplay)).toHaveLength(1);
+  await expect(review('rejected')).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+  await expect(review('rejected',randomUUID())).rejects.toThrow('DOCUMENT_REVIEW_STALE');
+  const audits=(await query("SELECT after_state FROM audit_log WHERE entity_id=$1 AND action='staff.synthetic_document_reviewed'",[d.doc])).rows;
+  expect(audits).toHaveLength(1);expect(JSON.stringify(audits)).not.toContain(d.receipt);
+  const rejected=await document(),failKey=randomUUID();
+  await query("INSERT INTO outbox_events(organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload) VALUES($1,'guest_document',$2,'fixture.collision',$3,'{}')",[org,rejected.doc,'synthetic-review:'+org+':'+failKey]);
+  const reject=(k:string)=>service.transition(actor,token,rejected.id,k,'document-review',{documentId:rejected.doc,decision:'rejected',reviewToken:rejected.receipt});
+  await expect(reject(failKey)).rejects.toThrow();
+  expect((await query('SELECT verification_status FROM guest_document_records WHERE id=$1',[rejected.doc])).rows[0].verification_status).toBe('pending');
+  await reject(randomUUID());expect((await query('SELECT verification_status,verified_at FROM guest_document_records WHERE id=$1',[rejected.doc])).rows[0]).toEqual({verification_status:'rejected',verified_at:null});
+ });
+ it('creates a turnover on checkout and blocks the next arrival until completion',async()=>{
+  const id=await fixture();await act(id,'check-in');await act(id,'check-out');
+  expect((await query('SELECT status FROM local_stay_turnovers WHERE reservation_id=$1',[id])).rows[0].status).toBe('pending');
+  await expect(query('UPDATE local_stay_turnovers SET unit_id=$2 WHERE reservation_id=$1',[id,randomUUID()])).rejects.toMatchObject({code:'42501'});
+  const outside=await db.withActor({...actor,organizationId:'00000000-0000-0000-0000-000000000001'},c=>c.query('SELECT reservation_id FROM local_stay_turnovers WHERE reservation_id=$1',[id]));expect(outside.rows).toHaveLength(0);
+  const next=randomUUID();
+  await query("INSERT INTO reservations(id,organization_id,property_id,unit_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot,quote_snapshot) SELECT $2::uuid,organization_id,property_id,unit_id,$2::uuid::text,'confirmed',clock_timestamp(),clock_timestamp()+interval '1 day','UZS',0,'{}',quote_snapshot FROM reservations WHERE id=$1",[id,next]);
+  await query("INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,reservation_id,stay_period) SELECT organization_id,property_id,unit_id,'reservation',id,tstzrange(check_in_at,check_out_at,'[)') FROM reservations WHERE id=$1",[next]);
+  await query("INSERT INTO reservation_guests(organization_id,reservation_id,is_primary,first_name,last_name,date_of_birth,nationality_country_code) VALUES($1,$2,true,'Synthetic','Next','2000-01-01','UZ')",[org,next]);
+  await expect(act(next,'check-in')).rejects.toThrow('STAY_CLEANING_REQUIRED');
+  const failKey=randomUUID();await query("INSERT INTO outbox_events(organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload) VALUES($1,'reservation',$2,'fixture.collision',$3,'{}')",[org,id,'turnover:'+org+':'+failKey]);
+  await expect(service.transition(actor,token,id,failKey,'cleaning-complete')).rejects.toThrow();
+  expect((await query('SELECT status FROM local_stay_turnovers WHERE reservation_id=$1',[id])).rows[0].status).toBe('pending');
+  const key=randomUUID();const results=await Promise.all([service.transition(actor,token,id,key,'cleaning-complete'),service.transition(actor,token,id,key,'cleaning-complete')]);
+  expect(results.filter(r=>r.idempotentReplay)).toHaveLength(1);await act(next,'check-in');
+ });
+ it('cannot prepare or submit a synthetic stay to registration providers',async()=>{
+  const registration=new GuestRegistrationService(db,new ComplianceProviderRegistry()),id=await fixture();
+  await expect(registration.prepareReservation(actor,id)).rejects.toThrow('SYNTHETIC_REGISTRATION_FORBIDDEN');
+  const caseId=randomUUID();
+  await query("INSERT INTO guest_registration_cases(id,organization_id,property_id,reservation_id,reservation_guest_id,country_code,provider,status,due_at,policy_snapshot) SELECT $1,$2,$3,$4,id,'UZ','not-connected','ready',clock_timestamp(),'{}' FROM reservation_guests WHERE reservation_id=$4",[caseId,org,property,id]);
+  await expect(registration.submitNow(actor,caseId)).rejects.toThrow('SYNTHETIC_REGISTRATION_FORBIDDEN');
+  expect((await query('SELECT status,attempt_count FROM guest_registration_cases WHERE id=$1',[caseId])).rows[0]).toEqual({status:'ready',attempt_count:0});
+ });
+ it('revocation blocks later transitions even with a previously valid session',async()=>{
+  const old=await session(),id=await fixture();await db.query('SELECT app.staff_auth_logout($1,false)',[createHash('sha256').update(old).digest('hex')]);
+  await expect(act(id,'check-in',randomUUID(),old)).rejects.toThrow('STAFF_SESSION_REQUIRED');
+ });
+});

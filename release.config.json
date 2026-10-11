@@ -1,0 +1,25 @@
+{
+  "version": "0.15.0-preview",
+  "androidVersionCode": 1500001,
+  "androidApplicationId": "uz.views.preview",
+  "androidLabel": "VIEWS Preview",
+  "mode": "static-demo",
+  "designReference": "https://www.canva.com/d/gbOv6FX5RExR_JN",
+  "designSources": {
+    "exportDate": "2026-10-09",
+    "reviewedPages": 32,
+    "guest": "DAHW8ckAcO4",
+    "staff": "DAHW8X4U68A",
+    "system": "DAHW8X09Gpg",
+    "fullDesignPackReviewed": false,
+    "services140": {
+      "file": "VIEWS_Canva_All_140_Screens_Light_Dark_RU.pdf",
+      "pages": 280,
+      "uniqueScreens": 140,
+      "sha256": "e25bf1f219f348b07ce6672ad57c55f7e3aa94f001f7aac25238b9d2fb590447",
+      "implementedScope": "56 partial local Core/UI screens; 84 pending workflows; all 140 Light/Dark PDF references available in a clearly labelled design viewer, not runtime implementations",
+      "referenceViewerScreens": 140,
+      "referenceViewerImages": 280
+    }
+  }
+}

@@ -1,0 +1,40 @@
+name: Stage 7.15 Tunnel Replica SLO
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage7-15-tunnel-replica-slo
+  cancel-in-progress: true
+
+jobs:
+  observe:
+    if: ${{ vars.VIEWS_TUNNEL_OBSERVABILITY_ENABLED == 'true' }}
+    runs-on: [self-hosted, views-staging-core]
+    environment: staging
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check connector replica SLO
+        env:
+          VIEWS_TUNNEL_MIN_HA_CONNECTIONS: "4"
+        run: bash scripts/stage7-tunnel-slo-check.sh
+
+      - name: Publish replica health
+        if: always()
+        shell: bash
+        run: |
+          echo "### Stage 7.15 tunnel replica SLO" >> "$GITHUB_STEP_SUMMARY"
+          if [ -s /tmp/stage7.15-tunnel-slo.json ]; then
+            echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/stage7.15-tunnel-slo.json >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Replica SLO evidence was not produced. Inspect job logs." >> "$GITHUB_STEP_SUMMARY"
+          fi

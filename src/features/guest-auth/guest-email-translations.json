@@ -1,0 +1,118 @@
+{
+  "Guest account": {
+    "ru": "Кабинет гостя",
+    "uz": "Mehmon kabineti"
+  },
+  "Local email sign-in test": {
+    "ru": "Локальная проверка входа по email",
+    "uz": "Email orqali kirishning mahalliy sinovi"
+  },
+  "This test uses captured email. Real email delivery and booking access are not connected.": {
+    "ru": "На стенде письма перехватываются для проверки. Реальная доставка писем и доступ к бронированиям не подключены.",
+    "uz": "Bu sinovda xatlar tekshirish uchun ushlab qolinadi. Haqiqiy xat yetkazish va bronlarga kirish ulanmagan."
+  },
+  "Continue with email": {
+    "ru": "Войти по email",
+    "uz": "Email orqali kirish"
+  },
+  "We will send a single-use link. It expires in 15 minutes.": {
+    "ru": "Отправим одноразовую ссылку. Она действует 15 минут.",
+    "uz": "Bir martalik havola yuboramiz. U 15 daqiqa amal qiladi."
+  },
+  "Email address": {
+    "ru": "Адрес email",
+    "uz": "Email manzili"
+  },
+  "Send sign-in link": {
+    "ru": "Отправить ссылку для входа",
+    "uz": "Kirish havolasini yuborish"
+  },
+  "Please wait…": {
+    "ru": "Подождите…",
+    "uz": "Kuting…"
+  },
+  "Checking session…": {
+    "ru": "Проверяем сессию…",
+    "uz": "Sessiya tekshirilmoqda…"
+  },
+  "Check session again": {
+    "ru": "Проверить сессию ещё раз",
+    "uz": "Sessiyani qayta tekshirish"
+  },
+  "Link accepted by test delivery. Open the captured message to continue.": {
+    "ru": "Тестовая доставка приняла ссылку. Для продолжения откройте перехваченное письмо.",
+    "uz": "Sinov yetkazish tizimi havolani qabul qildi. Davom etish uchun ushlangan xatni oching."
+  },
+  "You can request another link in {seconds} s.": {
+    "ru": "Повторный запрос через {seconds} с.",
+    "uz": "Yangi havolani {seconds} soniyadan keyin so‘rashingiz mumkin."
+  },
+  "Confirm sign-in": {
+    "ru": "Подтвердить вход",
+    "uz": "Kirishni tasdiqlash"
+  },
+  "The link was removed from the address bar. Opening this page does not sign you in. Confirm only if you requested this link.": {
+    "ru": "Ссылка удалена из адресной строки. Открытие страницы не выполняет вход. Подтверждайте только ссылку, которую запросили сами.",
+    "uz": "Havola manzil satridan olib tashlandi. Sahifani ochish hisobga kiritmaydi. Faqat o‘zingiz so‘ragan havolani tasdiqlang."
+  },
+  "Request a new link": {
+    "ru": "Запросить новую ссылку",
+    "uz": "Yangi havola so‘rash"
+  },
+  "Signed in as guest": {
+    "ru": "Вход выполнен: гость",
+    "uz": "Mehmon sifatida kirildi"
+  },
+  "Your guest session is active. Bookings and employee workspaces are not available through this sign-in yet.": {
+    "ru": "Гостевая сессия активна. Бронирования и рабочие кабинеты сотрудников через этот вход пока недоступны.",
+    "uz": "Mehmon sessiyasi faol. Bu kirish orqali bronlar va xodimlar kabinetlari hali mavjud emas."
+  },
+  "Sign out": {
+    "ru": "Выйти",
+    "uz": "Chiqish"
+  },
+  "Signed out on this browser.": {
+    "ru": "В этом браузере выполнен выход.",
+    "uz": "Ushbu brauzerda hisobdan chiqildi."
+  },
+  "Sign out before using a link for another account.": {
+    "ru": "Выйдите перед использованием ссылки для другого аккаунта.",
+    "uz": "Boshqa hisob havolasini ishlatishdan oldin hisobdan chiqing."
+  },
+  "You are offline. Restore the connection and retry manually.": {
+    "ru": "Нет сети. Восстановите соединение и повторите вручную.",
+    "uz": "Internet yo‘q. Ulanishni tiklab, qo‘lda qayta urinib ko‘ring."
+  },
+  "This link is invalid, expired or already used. Request a new one.": {
+    "ru": "Ссылка недействительна, истекла или уже использована. Запросите новую.",
+    "uz": "Havola yaroqsiz, muddati tugagan yoki ishlatilgan. Yangisini so‘rang."
+  },
+  "Too many requests. Wait before trying again.": {
+    "ru": "Слишком много запросов. Подождите перед повторной попыткой.",
+    "uz": "So‘rovlar juda ko‘p. Qayta urinishdan oldin kuting."
+  },
+  "Email sign-in is not connected on this server.": {
+    "ru": "Вход по email на этом сервере не подключён.",
+    "uz": "Bu serverda email orqali kirish ulanmagan."
+  },
+  "Delivery could not be confirmed. No automatic resend will occur. Wait before requesting a new link.": {
+    "ru": "Доставку подтвердить не удалось. Автоматической повторной отправки не будет. Подождите перед запросом новой ссылки.",
+    "uz": "Yetkazish tasdiqlanmadi. Avtomatik qayta yuborilmaydi. Yangi havola so‘rashdan oldin kuting."
+  },
+  "The server did not confirm the operation. Check your session before retrying; no request is retried automatically.": {
+    "ru": "Сервер не подтвердил операцию. Перед повтором проверьте сессию; запросы не повторяются автоматически.",
+    "uz": "Server amalni tasdiqlamadi. Qayta urinishdan oldin sessiyani tekshiring; so‘rovlar avtomatik takrorlanmaydi."
+  },
+  "Your guest session is saved on this browser.": {
+    "ru": "Гостевая сессия сохранена в этом браузере.",
+    "uz": "Mehmon sessiyasi ushbu brauzerda saqlangan."
+  },
+  "Your guest session is active. Employee workspaces require separate access.": {
+    "ru": "Гостевая сессия активна. Для рабочих кабинетов сотрудников нужен отдельный доступ.",
+    "uz": "Mehmon sessiyasi faol. Xodimlar kabinetlari uchun alohida kirish kerak."
+  },
+  "This test uses captured email. Real email delivery and payments are not connected.": {
+    "ru": "На стенде письма перехватываются для проверки. Реальная доставка писем и платежи не подключены.",
+    "uz": "Bu sinovda xatlar tekshirish uchun ushlab qolinadi. Haqiqiy xat yetkazish va to‘lovlar ulanmagan."
+  }
+}

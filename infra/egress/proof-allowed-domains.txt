@@ -1,0 +1,2 @@
+# CI-only positive control for Stage 7.17.
+.example.com

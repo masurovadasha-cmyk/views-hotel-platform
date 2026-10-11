@@ -1,0 +1,17 @@
+name = "views-hotel-platform"
+main = "workers/review.ts"
+compatibility_date = "2026-10-04"
+
+# Existing Workers Builds invokes `wrangler deploy`. Only an interface preview.
+[build]
+command = "npm run build:review"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+# Connected Cloudflare Builds uses `wrangler preview` for this project.
+# Preview assets, compatibility and build settings inherit the root config.
+[previews]

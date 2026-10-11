@@ -1,0 +1,51 @@
+name: Stage 7.15 Named Tunnel Failover Proof
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage7-15-named-tunnel-failover
+  cancel-in-progress: false
+
+jobs:
+  prove:
+    if: ${{ vars.VIEWS_NAMED_TUNNEL_PROOF_ENABLED == 'true' }}
+    runs-on: [self-hosted, views-staging-core]
+    environment: staging
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+      VIEWS_STAGING_CORE_URL: ${{ vars.VIEWS_STAGING_CORE_URL }}
+      VIEWS_NAMED_TUNNEL_PROOF_ACK: I_UNDERSTAND_STAGING_CONNECTORS_WILL_BE_RESTARTED
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      GUEST_AUTH_RATE_LIMIT_SECRET: ${{ secrets.GUEST_AUTH_RATE_LIMIT_SECRET }}
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON: ${{ vars.VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON }}
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON: ${{ vars.VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON }}
+      VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY: ${{ vars.VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY }}
+      VIEWS_INTERNAL_ANALYTICS_CRON_PUBLIC_KEY: ${{ vars.VIEWS_INTERNAL_ANALYTICS_CRON_PUBLIC_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run stable-hostname failover proof
+        run: bash scripts/stage7-named-tunnel-failover-proof.sh
+
+      - name: Publish failover evidence
+        if: always()
+        shell: bash
+        run: |
+          echo "### Stage 7.15 named-tunnel failover proof" >> "$GITHUB_STEP_SUMMARY"
+          if [ -s /tmp/stage7.15-named-tunnel-proof.json ]; then
+            echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/stage7.15-named-tunnel-proof.json >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Named-tunnel proof did not reach the evidence step." >> "$GITHUB_STEP_SUMMARY"
+          fi

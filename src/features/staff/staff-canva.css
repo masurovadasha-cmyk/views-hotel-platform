@@ -1,0 +1,85 @@
+/* Staff CRM layout with the shared neutral/gold 140-screen Canva tokens.
+   Presentation only; Core permissions are unchanged. */
+.staffLayout.canvaStaff{--staff-accent:var(--gold);--staff-tint:var(--surface);--staff-danger:var(--danger);--staff-danger-bg:var(--danger-surface);--staff-good:var(--good);--staff-good-bg:var(--success-surface);background:var(--bg);color:var(--fg);grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 64px);font-size:14px;line-height:1.5}
+.canvaStaff .sidebar{background:var(--card);border-right:1px solid var(--line);padding:30px 16px;box-shadow:none}
+.canvaStaff .sideBrand{font-size:25px;letter-spacing:.2em;color:var(--fg);padding:0 12px 24px}
+.canvaStaff .sideBrand small{font-size:9px;letter-spacing:.19em;color:var(--muted);margin-top:5px}
+.canvaStaff .sidebar nav{display:grid;gap:5px}
+.canvaStaff .sidebar nav button{min-height:44px;gap:12px;padding:11px 13px;border-radius:10px;color:var(--muted);font-size:13px;text-align:left;line-height:1.3}
+.canvaStaff .sidebar nav button.active{background:var(--action-bg);color:var(--action-fg);border-color:transparent;box-shadow:none}
+.canvaStaff .sidebar nav button:hover{background:var(--surface);color:var(--fg)}
+.canvaStaff .sidebar nav button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.canvaStaff .staffMain{padding:28px clamp(16px,3vw,44px) 48px;min-width:0;max-width:1800px;width:100%}
+.canvaStaff .staffHead{align-items:center;gap:16px;margin-bottom:16px}
+.canvaStaff .staffHead h1{font-family:inherit;letter-spacing:-.035em;font-size:clamp(26px,3vw,38px);line-height:1.2;margin:5px 0}
+.canvaStaff .staffHead small,.canvaStaff .panel>header small,.canvaStaff .staffWelcome small{color:var(--muted);font-size:10px;letter-spacing:.14em;font-weight:650}
+.canvaStaff .staffHead select,.canvaStaff .roleLock{font-size:13px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;max-width:100%}
+.canvaStaff .staffMode{display:flex;align-items:center;gap:8px;background:var(--surface);color:var(--muted);border:1px solid var(--line);border-radius:8px;font-size:12px;padding:10px 12px;margin-bottom:22px}
+.canvaStaff .staffMode>span{width:7px;height:7px;flex:none;background:var(--staff-accent);border-radius:50%}
+.canvaStaff .staffWelcome{display:flex;justify-content:space-between;align-items:center;gap:16px;margin:25px 0 20px}
+.canvaStaff .staffWelcome h2{font-size:24px;line-height:1.3;letter-spacing:-.025em;margin:4px 0}
+.canvaStaff .staffWelcome p,.canvaStaff .staffMuted{font-size:13px;color:var(--muted);margin:6px 0 16px}
+.canvaStaff .kpis{gap:14px;margin-bottom:24px}
+.canvaStaff .kpis article{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:20px;min-height:106px;box-shadow:0 3px 14px #14234a05}
+.canvaStaff .kpis span{font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0}
+.canvaStaff .kpis b{font-family:inherit;font-size:32px;font-variant-numeric:tabular-nums;font-weight:650;line-height:1.3;margin-top:7px;color:var(--fg)}
+.canvaStaff .staffBoard,.canvaStaff .handoverGrid,.canvaStaff .guest360Grid,.canvaStaff .stayGrid{gap:20px;align-items:start}
+.canvaStaff .panel{border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 3px 14px #14234a05;overflow:hidden;margin-bottom:20px}
+.canvaStaff .panel>header{padding:18px 20px;border-bottom:1px solid var(--line);margin:0}
+.canvaStaff .panel>header h2{font-size:18px;line-height:1.35;margin:4px 0 0;letter-spacing:-.02em}
+.canvaStaff .compactRows>div,.canvaStaff .staffTaskPreview{padding:15px 18px;gap:6px;font-size:13px;border-bottom:1px solid var(--line)}
+.canvaStaff .compactRows b{font-size:14px}.canvaStaff .compactRows small,.canvaStaff .compactRows span{font-size:12px;color:var(--muted)}
+.canvaStaff .staffTaskPreview{display:grid;grid-template-columns:1fr auto;width:100%;text-align:left;background:transparent;color:var(--fg);border-radius:0;border-top:0;border-left:0;border-right:0}
+.canvaStaff .staffTaskPreview b{grid-column:1;grid-row:2}.canvaStaff .staffTaskPreview small{grid-column:1;grid-row:3}.canvaStaff .staffTaskPreview .status{grid-column:2;grid-row:2/4;align-self:center}
+.canvaStaff .staffTaskPreview:hover{background:var(--surface)}
+.canvaStaff .status{font-size:11px;line-height:1.4;padding:5px 9px;border-radius:6px;background:var(--surface);color:var(--fg);border:1px solid var(--line);font-style:normal;white-space:normal;text-align:center}
+.canvaStaff .status.accepted,.canvaStaff .status.assigned,.canvaStaff .status.in_progress{background:var(--staff-tint);color:var(--staff-accent);border-color:transparent}
+.canvaStaff .status.done,.canvaStaff .status.closed,.canvaStaff .status.ready,.canvaStaff .status.confirmed{background:var(--staff-good-bg);color:var(--staff-good);border-color:transparent}
+.canvaStaff .dangerRow,.canvaStaff .orderPriority.urgent,.canvaStaff .orderPriority.high{color:var(--staff-danger)}
+.canvaStaff .dangerRow{background:var(--staff-danger-bg)}
+.canvaStaff .orderPriority{font-size:11px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.canvaStaff .order{padding:18px 20px;grid-template-columns:minmax(160px,1fr) auto minmax(0,auto);gap:18px;align-items:center;border-color:var(--line)}
+.canvaStaff .orderSummary{display:grid;gap:6px;min-width:0}
+.canvaStaff .orderSummary>span{font-size:12px;color:var(--muted)}
+.canvaStaff .orderSummary>b,.canvaStaff .orderOpen{font-size:15px;font-weight:650;color:var(--fg);line-height:1.4}
+.canvaStaff .orderOpen{border:0;padding:0;text-align:left;background:transparent;width:fit-content;border-radius:3px;min-height:32px;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:4px}
+.canvaStaff .orderOpen:hover{text-decoration-color:var(--staff-accent);color:var(--staff-accent)}
+.canvaStaff .orderActions{display:flex;flex-wrap:wrap;gap:7px}
+.canvaStaff .orderActions button,.canvaStaff .staffQueueSummary button,.canvaStaff .staffSheetClose{min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font-size:12px;font-weight:600}
+.canvaStaff button.primary{background:var(--action-bg);border-color:var(--action-bg);color:var(--action-fg);box-shadow:none}
+.canvaStaff button:disabled{opacity:.55;cursor:not-allowed}
+.canvaStaff :is(button,input,select,textarea):focus-visible{outline:3px solid var(--staff-accent);outline-offset:3px}
+.canvaStaff .inboxTabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 18px;border:0;background:transparent;padding:0}
+.canvaStaff .inboxTabs button{min-height:44px;font-size:13px;padding:10px 16px;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:9px;display:flex;align-items:center;gap:10px}
+.canvaStaff .inboxTabs button.active{color:var(--staff-accent);background:var(--staff-tint);border-color:var(--staff-accent)}
+.canvaStaff .inboxTabs b{font-variant-numeric:tabular-nums;font-size:12px}
+.canvaStaff .staffQueueFilters{display:grid;grid-template-columns:minmax(220px,2fr) repeat(3,minmax(120px,1fr));gap:12px;padding:18px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.canvaStaff .staffQueueFilters label,.canvaStaff .mobileCreate label{display:grid;gap:6px;color:var(--muted);font-size:12px;min-width:0}
+.canvaStaff .staffQueueFilters input,.canvaStaff .staffQueueFilters select,.canvaStaff .mobileCreate :is(input,select,textarea){width:100%;min-width:0;min-height:44px;padding:10px 11px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:14px}
+.canvaStaff .staffQueueSummary{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:60px;color:var(--muted);font-size:12px}
+.canvaStaff .emptyLine{padding:32px 20px;font-size:14px;color:var(--muted)}
+.canvaStaff .notice{font-size:13px;line-height:1.6;background:var(--surface);color:var(--muted);border:1px solid var(--line);padding:14px;border-radius:9px;overflow-wrap:anywhere}
+.canvaStaff .riskList article,.canvaStaff .detailRows>span{font-size:13px;padding:14px 18px;gap:12px}.canvaStaff .riskList span{font-size:12px;color:var(--muted)}
+.canvaStaff .timelineBoard{padding:18px;overflow-x:auto}.canvaStaff .timelineHeader,.canvaStaff .timelineRow{font-size:12px}.canvaStaff .bar{background:var(--staff-tint);color:var(--staff-accent);font-size:11px}
+.canvaStaff .staffMobileSheet{display:block;position:fixed;inset:0 0 0 auto;margin:0;width:min(560px,100%);max-width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;box-sizing:border-box;border:0;border-left:1px solid var(--line);border-radius:0;background:var(--card);color:var(--fg);padding:24px;overflow:auto;box-shadow:-12px 0 50px #080e2929;z-index:100}
+.canvaStaff .staffMobileSheet::backdrop{background:#0b132766;backdrop-filter:blur(3px)}
+.canvaStaff .staffSheetClose{display:block;margin:0 0 24px auto;min-height:44px;font-size:13px}
+.canvaStaff .staffMobileSheet h3{font-size:25px;margin:8px 0 20px;letter-spacing:-.025em}
+.canvaStaff .staffMobileSheet h2{font-size:23px;line-height:1.35;margin:14px 0}
+.canvaStaff .mobileDetail{display:block;padding:0;background:transparent;border:0}
+.canvaStaff .mobileDetail>.status{display:inline-block}
+.canvaStaff .staffOrderFacts{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0;padding:20px;background:var(--surface);border-radius:12px}
+.canvaStaff .staffOrderFacts dt{font-size:11px;color:var(--muted);margin-bottom:5px}.canvaStaff .staffOrderFacts dd{font-size:14px;margin:0;overflow-wrap:anywhere}
+.canvaStaff .staffOrderActivity{margin:28px 0;border-top:1px solid var(--line);padding-top:18px}.canvaStaff .staffOrderActivity h4{font-size:15px;margin:0 0 12px}.canvaStaff .staffOrderActivity p{font-size:13px;color:var(--muted)}
+.canvaStaff .staffOrderActivity ol{padding-left:22px;font-size:14px}.canvaStaff .staffOrderActivity li{padding:6px}
+.canvaStaff .mobileTask{width:100%;display:flex;justify-content:space-between;gap:16px;text-align:left;align-items:center;padding:16px 8px;min-height:64px;color:var(--fg);background:transparent;border:0;border-bottom:1px solid var(--line);font-size:14px}
+.canvaStaff .mobileCreate{display:grid;gap:16px}.canvaStaff .mobileCreate button{min-height:44px}.canvaStaff .mobileProof button{color:var(--muted);background:var(--surface);border:1px dashed var(--line)}
+@media(min-width:761px) and (max-width:1100px){.staffLayout.canvaStaff{grid-template-columns:80px minmax(0,1fr)}.canvaStaff .sidebar{padding:22px 10px}.canvaStaff .sideBrand{font-size:12px;padding:0 2px 24px}.canvaStaff .sideBrand small,.canvaStaff .sidebar nav button span{display:none}.canvaStaff .sidebar nav button{justify-content:center}.canvaStaff .staffQueueFilters{grid-template-columns:1fr 1fr}.canvaStaff .order{grid-template-columns:minmax(0,1fr) auto}.canvaStaff .orderActions{grid-column:1/-1}}
+@media(max-width:760px){.staffLayout.canvaStaff{display:block}.canvaStaff .sidebar{position:static;padding:12px 12px 8px;width:auto}.canvaStaff .sideBrand{font-size:18px;padding:0 4px 12px}.canvaStaff .sideBrand small{display:inline;margin-left:8px}.canvaStaff .sidebar nav{display:flex;overflow-x:auto;gap:6px;padding-bottom:4px}.canvaStaff .sidebar nav button{min-width:96px;min-height:52px;display:flex;flex-direction:column;gap:4px;padding:8px;font-size:10px;text-align:center}.canvaStaff .sidebar nav button span{display:block}.canvaStaff .staffMain{padding:20px 14px 100px}.canvaStaff .staffHead{flex-wrap:wrap}.canvaStaff .staffHead h1{font-size:28px}.canvaStaff .staffHead select{min-height:44px;max-width:100%}.canvaStaff .staffWelcome{align-items:start;flex-direction:column}.canvaStaff .staffWelcome h2{font-size:22px}.canvaStaff .staffWelcome>.roleLock{display:none}.canvaStaff .kpis{grid-template-columns:1fr 1fr;gap:10px}.canvaStaff .kpis article{padding:16px;min-height:100px}.canvaStaff .kpis b{font-size:28px}.canvaStaff .staffBoard{grid-template-columns:1fr}.canvaStaff .staffQueueFilters{grid-template-columns:1fr 1fr;padding:14px;gap:12px}.canvaStaff .staffQueueSearch{grid-column:1/-1}.canvaStaff .inboxTabs{gap:6px}.canvaStaff .inboxTabs button{font-size:12px;padding:8px 10px}.canvaStaff .order{grid-template-columns:minmax(0,1fr) auto;padding:16px;gap:12px}.canvaStaff .orderActions{grid-column:1/-1}.canvaStaff .orderActions button{min-height:44px}.canvaStaff .staffMobileDock{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:85;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);box-shadow:0 -5px 20px #0000000a}.canvaStaff .staffMobileDock button{flex:1;min-width:0;min-height:48px;font-size:10px;color:var(--muted);background:transparent;border:0;border-radius:8px}.canvaStaff .staffMobileDock button.active{background:var(--staff-tint);color:var(--staff-accent)}.canvaStaff .staffMobileSheet{inset:auto 0 0;height:auto;max-height:92vh;max-height:92dvh;width:100%;padding:20px 18px calc(24px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0;border:1px solid var(--line)}.canvaStaff .staffOrderFacts{gap:16px;padding:16px}.canvaStaff .staffMobileSheet .orderActions{display:flex}.canvaStaff .staffMobileSheet h3{font-size:23px}}
+@media(prefers-reduced-motion:reduce){.canvaStaff *{scroll-behavior:auto;transition:none;animation:none}}
+
+.canvaStaff .staffDialogToolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}.canvaStaff .staffDialogToolbar .staffSheetClose{margin:0;flex:none}.canvaStaff .staffDialogToolbar .staffLanguage{display:flex;align-items:center;gap:8px;min-width:0;color:var(--muted);font-size:12px}.canvaStaff .staffDialogToolbar .staffLanguage select{min-height:44px;min-width:0;max-width:150px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--card);color:var(--fg);font-size:14px}@media(max-width:420px){.canvaStaff .staffDialogToolbar .staffLanguage>span{display:none}}
+/* Calendar sample bars keep dark labels on their pastel semantic backgrounds in both themes. */
+.canvaStaff .timelineBoard .bar{color:#25314a;font-size:11px;line-height:1.4}
+.canvaStaff .timelineBoard .timelineRow>b{font-size:11px;line-height:1.4}
+.canvaStaff .timelineBoard .timelineHeader>span{font-size:11px}

@@ -1,0 +1,39 @@
+name: VIEWS CI
+on:
+  push:
+    branches: [main, "staging/**", "stage4/**", "stage5/**", "stage6/**", "stage7/**"]
+  pull_request:
+    branches: [main, "staging/master-reference-v1"]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run typecheck
+      - run: npm test
+      - name: Enforce Core network primitive boundary
+        run: npm run security:core-network-primitives
+      - name: Enforce production egress domain policy
+        run: npm run security:egress-domain-policy
+      - name: Validate Stage 7 shell proofs
+        run: |
+          bash -n scripts/stage7-tunnel-proof.sh
+          bash -n scripts/stage7-named-tunnel-failover-proof.sh
+          bash -n scripts/stage7-tunnel-slo-check.sh
+          bash -n scripts/stage7-external-synthetic-check.sh
+          bash -n scripts/stage7-core-egress-proof.sh
+          bash -n scripts/stage7-egress-relay-proof.sh
+      - run: npm run build
+      - name: Install browser for Canva interface regression
+        run: npx playwright install --with-deps chromium
+      - name: Verify Canva navigation, themes, focus and sample contrast
+        run: node scripts/canva-design.browser.cjs
+      - name: Verify Canva Core surfaces with read-only HTTP fixtures
+        run: node scripts/canva-core-surfaces.browser.cjs
+      - name: Verify service catalogue compatibility and disconnected directions
+        run: node scripts/service-catalog.browser.cjs

@@ -1,0 +1,74 @@
+name: Stage 7.17 Controlled Egress Relay
+
+on:
+  push:
+    branches: ["stage7/core-egress-relay-v1"]
+    paths:
+      - "docker-compose.core-tunnel.yml"
+      - "docker-compose.egress-relay-proof.yml"
+      - "infra/egress/**"
+      - "scripts/core-egress-relay-gate.mjs"
+      - "scripts/core-egress-relay-gate.test.mjs"
+      - "scripts/egress-domain-policy-gate.mjs"
+      - "scripts/egress-domain-policy-gate.test.mjs"
+      - "scripts/egress-relay-probe.mjs"
+      - "scripts/stage7-egress-relay-proof.sh"
+      - ".github/workflows/stage7-egress-relay.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage7-17-egress-relay
+  cancel-in-progress: true
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      POSTGRES_PASSWORD: proof_owner_password_2026
+      DATABASE_URL: postgresql://views_app:views_app_proof_2026@postgres:5432/views
+      GUEST_AUTH_RATE_LIMIT_SECRET: stage7-17-proof-rate-limit-secret-material-2026
+      VIEWS_INTERNAL_SERVICE_AUTH_MODES_JSON: '{"pages-bff":"signed_only"}'
+      VIEWS_INTERNAL_SERVICE_PUBLIC_KEY_REFS_JSON: '{"pages-bff":[{"kid":"stage7-17-proof","ref":"VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY","activatedAt":"2026-10-06T00:00:00.000Z","rotateBy":"2027-01-04T00:00:00.000Z"}]}'
+      CLOUDFLARE_TUNNEL_TOKEN: proof-unused
+      VIEWS_EGRESS_PROOF_ACK: DISPOSABLE_DATABASE_ONLY
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install policy/test dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Generate ephemeral Ed25519 verification key
+        shell: bash
+        run: |
+          node <<'NODE'
+          const {generateKeyPairSync}=require("node:crypto");
+          const {publicKey}=generateKeyPairSync("ed25519");
+          const pem=publicKey.export({format:"pem",type:"spki"}).toString().trim();
+          require("node:fs").appendFileSync(
+            process.env.GITHUB_ENV,
+            "VIEWS_INTERNAL_PAGES_BFF_PUBLIC_KEY<<KEY\n"+pem+"\nKEY\n"
+          );
+          NODE
+
+      - name: Run controlled relay proof
+        run: bash scripts/stage7-egress-relay-proof.sh
+
+      - name: Publish relay evidence
+        if: always()
+        shell: bash
+        run: |
+          echo "### Stage 7.17 controlled egress relay" >> "$GITHUB_STEP_SUMMARY"
+          if [ -s /tmp/stage7.17-egress-relay-proof.json ]; then
+            echo '~~~json' >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/stage7.17-egress-relay-proof.json >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Relay proof did not reach final evidence." >> "$GITHUB_STEP_SUMMARY"
+          fi

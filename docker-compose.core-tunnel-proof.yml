@@ -1,0 +1,57 @@
+services:
+  migrate:
+    image: postgres:16-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - ./infra/postgres/init:/proof/init:ro
+      - ./apps/api/db/migrations:/proof/migrations:ro
+    networks:
+      - core_data
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -f /proof/init/001_extensions.sql
+        for file in /proof/migrations/*.sql; do
+          echo "Applying $$file"
+          psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -f "$$file"
+        done
+
+        if ! psql -h postgres -U views -d views -Atc "SELECT 1 FROM pg_roles WHERE rolname='views_app'" | grep -qx 1; then
+          psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "CREATE ROLE views_app LOGIN PASSWORD 'views_app_proof_2026' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS"
+        fi
+        psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "ALTER ROLE views_app PASSWORD 'views_app_proof_2026'"
+        psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT CONNECT ON DATABASE views TO views_app"
+        psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT USAGE ON SCHEMA public,app TO views_app"
+        psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO views_app"
+        psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "REVOKE INSERT,UPDATE,DELETE ON provider_egress_attempts,provider_egress_reconciliation_queue FROM views_app"
+        psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO views_app"
+        psql -h postgres -U views -d views -v ON_ERROR_STOP=1 -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app"
+
+  cloudflared-a:
+    pull_policy: missing
+    environment:
+      TUNNEL_TOKEN: ""
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --metrics
+      - 0.0.0.0:2000
+      - --url
+      - http://core:3001
+
+  cloudflared-b:
+    pull_policy: missing
+    environment:
+      TUNNEL_TOKEN: ""
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --metrics
+      - 0.0.0.0:2000
+      - --url
+      - http://core:3001

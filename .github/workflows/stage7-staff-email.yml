@@ -1,0 +1,114 @@
+name: Stage 7.26–7.30 Staff Email and Passkey Pilot
+on:
+  push:
+    branches: ['stage7/staff-email-delivery-v1']
+  pull_request:
+    branches: ['stage7/staff-auth-pilot-v1']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stage726-mail-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  mail:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: views_local
+          POSTGRES_USER: views_owner
+          POSTGRES_PASSWORD: fixture-owner
+          # A single health-cmd argument avoids runner/shell quoting ambiguity.
+          PGUSER: views_owner
+          PGDATABASE: views_local
+        ports: ['55432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      PGPASSWORD: fixture-owner
+      VIEWS_PASSKEY_PROOF: "true"
+      VIEWS_MAIL_PROOF_ACK: DISPOSABLE_MAIL_ONLY
+      STAFF_MAIL_PROOF_OWNER_URL: postgresql://views_owner:fixture-owner@127.0.0.1:55432/views_local
+    steps:
+      - uses: actions/checkout@v4
+        id: checkout
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test fail-closed evidence validation and workflow contract
+        id: gate_tests
+        run: |
+          set -euo pipefail
+          mkdir -p mail-evidence
+          node --test scripts/staff-ci-evidence.acceptance.cjs | tee mail-evidence/gate.tap
+      - name: Install existing Core plus pinned SMTP library
+        working-directory: apps/api
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build web and install isolated browser
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Compile actual Core
+        working-directory: apps/api
+        run: |
+          npm run typecheck
+          npm run build
+      - name: Apply every ordered migration to disposable database
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -f infra/postgres/init/001_extensions.sql
+          psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -c "COMMENT ON DATABASE views_local IS 'VIEWS_DISPOSABLE_STAFF_MAIL'"
+          for file in apps/api/db/migrations/*.sql; do
+            psql -h 127.0.0.1 -p 55432 -U views_owner -d views_local -v ON_ERROR_STOP=1 -f "$file"
+          done
+      - name: Mail policy and token binding unit checks
+        id: units
+        run: |
+          set -euo pipefail
+          node --test scripts/staff-mail.acceptance.cjs | tee mail-evidence/unit.tap
+      - name: Real loopback SMTP, Core HTTP and restricted PostgreSQL proof
+        id: integration
+        env:
+          VIEWS_MAIL_TEST_CONTAINER: ${{ job.services.postgres.id }}
+        run: node scripts/staff-mail.integration.cjs
+      - name: Validate exact-source mail, browser, passkey, recovery and restore evidence
+        id: verify_evidence
+        if: ${{ success() && steps.integration.outcome == 'success' && steps.units.outcome == 'success' && steps.gate_tests.outcome == 'success' }}
+        run: node scripts/staff-ci-evidence.cjs mail-evidence
+      - name: Archive only a verified successful checkout
+        id: archive
+        if: ${{ success() && steps.checkout.outcome == 'success' && steps.verify_evidence.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          git archive --format=zip HEAD -o mail-evidence/views-stage726-source.zip
+          test -s mail-evidence/views-stage726-source.zip
+          cd mail-evidence
+          sha256sum integration.json unit.tap gate.tap validated.json views-stage726-source.zip > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: ${{ success() && steps.verify_evidence.outcome == 'success' && steps.archive.outcome == 'success' }}
+        with:
+          name: staff-email-delivery-evidence
+          path: |
+            mail-evidence/integration.json
+            mail-evidence/unit.tap
+            mail-evidence/gate.tap
+            mail-evidence/validated.json
+            mail-evidence/views-stage726-source.zip
+            mail-evidence/SHA256SUMS
+          if-no-files-found: error
+      - name: Preserve available failure diagnostics, never label them proof
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() && steps.checkout.outcome == 'success' && (hashFiles('mail-evidence/integration.json') != '' || hashFiles('mail-evidence/unit.tap') != '' || hashFiles('mail-evidence/gate.tap') != '') }}
+        with:
+          name: staff-email-delivery-diagnostics
+          path: |
+            mail-evidence/integration.json
+            mail-evidence/unit.tap
+            mail-evidence/gate.tap
+          if-no-files-found: error

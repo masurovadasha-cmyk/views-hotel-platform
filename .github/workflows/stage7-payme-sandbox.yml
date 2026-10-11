@@ -1,0 +1,56 @@
+name: Stage 7.20 Payme Sandbox Adapter
+on:
+  push:
+    branches: ['stage7/payme-sandbox-adapter-v1']
+  pull_request:
+    branches: ['stage7/provider-egress-audit-v1']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stage7-20-payme-sandbox-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  payme:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      POSTGRES_PASSWORD: proof_owner_password_2026
+      DATABASE_URL: postgresql://views_app:views_app_proof_2026@postgres:5432/views
+      GUEST_AUTH_RATE_LIMIT_SECRET: stage7-20-proof-rate-limit-secret-material
+      CLOUDFLARE_TUNNEL_TOKEN: proof-unused
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install API development dependencies
+        working-directory: apps/api
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Typecheck complete Core
+        working-directory: apps/api
+        run: npm run typecheck
+      - name: Run Payme adapter and identity unit tests
+        working-directory: apps/api
+        run: npx vitest run src/payments/payme-sandbox-payment-provider.test.ts src/payments/payme-merchant-api.controller.test.ts
+      - name: Validate proof scripts
+        run: |
+          bash -n scripts/stage7-payme-sandbox-proof.sh
+          node --check scripts/payme-lifecycle.integration.cjs
+      - name: Run real HTTP, parallel replay, rollback and database assertions
+        run: bash scripts/stage7-payme-sandbox-proof.sh
+      - name: Preserve the exact source and evidence
+        if: always()
+        run: |
+          git archive --format=zip HEAD -o /tmp/views-payme-source.zip
+          if [ -f /tmp/stage7.20-payme-sandbox-proof.json ]; then
+            cat /tmp/stage7.20-payme-sandbox-proof.json
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: payme-sandbox-adapter-evidence
+          path: |
+            /tmp/stage7.20-payme-sandbox-proof.json
+            /tmp/views-payme-source.zip
+          if-no-files-found: error
