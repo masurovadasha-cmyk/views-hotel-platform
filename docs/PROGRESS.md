@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0c.1 OpenAPI → клиент → «Мои поездки»
+- Добавлен contracts/guest-trips.openapi.json для существующих Core list/detail; схема БД неизменна.
+- Генерируются типы и методы; существующий GuestTrips подключён через прежний wrapper/защищённый BFF transport.
+- Runtime validation, точные строковые суммы, session errors и no-store сохранены; зависимостей нет.
+- Тест сначала падал без генератора; затем drift/transport/money/error checks3/3 PASS.
+- На dirty1a1b506: web353 tests PASS; web/API build, network gate187, mail15 и diff check — exit0.
+- Disposable PostgreSQL проверяет реальные ответы GuestTripsService по OpenAPI; guest trips7/7 и полный Core556/94 PASS, exit0.
+- Генератор намеренно ограничен текущим GET-подмножеством; это первый контракт, не весь API.
+- Browser/HTTP отдельно не повторялись; постоянная БД, публичные веб и APK не изменены.
+- Инструкция/ручной чек-лист: M0C_OPENAPI.md. Далее M0d: dev:local и минимальные каркасы приложений.
+
 ## 2026-10-12 — M0b.3 повторяемые synthetic seeds
 - Core runner применяет7 seed-блоков через checksum ledger в закрытой seed_private.
 - Каждый блок и запись истории атомарны; advisory lock сериализует параллельные подключения.

@@ -1,3 +1,4 @@
+import {assertTripContract} from './guest-trips.contract';
 import {beforeAll,beforeEach,afterAll,afterEach,describe,it,expect,vi} from 'vitest';
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {DatabaseService} from '../database/database.service';
@@ -52,6 +53,8 @@ describe.sequential('account-owned guest trips / PostgreSQL',()=>{
  });
  it('projects exact minor money and excludes private guest, property and reservation fields',async()=>{
   const a=await account(),id=await book(await profile(a.userId)),result=await trips.detail(a.token,id);
+  assertTripContract(result,'GuestTripDetail');
+  assertTripContract(await trips.list(a.token),'GuestTripPage');
   expect(result.trip.totalMinor).toBe('9007199254740993');
   expect(Object.keys(result.trip).sort()).toEqual(['id','confirmationCode','status','checkInAt','checkOutAt','currency','totalMinor','property'].sort());
   expect(JSON.stringify(result)).not.toMatch(/secret|private-|userId|guestId|organizationId|quoteSnapshot|cancellationPolicy/);
