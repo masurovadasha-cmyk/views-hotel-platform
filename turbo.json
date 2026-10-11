@@ -3,7 +3,9 @@
   "globalPassThroughEnv": [
     "GIT_DIR",
     "GIT_WORK_TREE",
-    "NEXT_TELEMETRY_DISABLED"
+    "NEXT_TELEMETRY_DISABLED",
+    "EXPO_NO_TELEMETRY",
+    "EXPO_PUBLIC_APP_MODE"
   ],
   "tasks": {
     "typecheck": {

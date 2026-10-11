@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.6 Expo shell, выпуск заблокирован audit
+- Добавлен apps/mobile Expo57/RN0.86/React19: guest/staff profiles с разными app IDs, ru/uz/en через shared, disconnected preview.
+- React18 прежних клиентов сохранён; generated lock/peer snapshots отдельно от малого ручного среза.
+- На dirty544ad7a: frozen install, workspace:check12/12, web356 tests, profile test1 PASS.
+- Guest/staff Android Hermes exports PASS; APK/IPA, device/emulator, iOS и interactive Metro не проверялись.
+- Найден stale guest mode в staff bundle; --clear исправляет, bytecode proof воспроизводит ошибку старого artifact и проходит для новых.
+- CRM browser/Next HTTP, network187, mail15, diff check PASS; full PostgreSQL/Docker suites не повторялись.
+- BLOCKER: prod audit FAIL (2 high/1 moderate), node-forge/braces в Expo CLI/Metro без patched version; CI gate сохранён.
+- Инструкция/риски: M0D_MOBILE.md. Нет логина/API/платежей, native shared tokens пока не реализованы.
+- start_skill draft6acbfee482d48197bd74e4435d22391c обновлён; Save/Publish не выполнены.
+- Публичные веб/APK, постоянная БД и EAS cloud builds не затронуты. M0 открыт; далее устранение SDK audit blockers.
+
 ## 2026-10-12 — M0d.5 shared UI CSS
 - Добавлен @views/ui: tokens.css и foundation.css; объединённые правила побайтно совпали с исходным foundation.
 - Legacy CSS сохранил совместимый @import; root/CRM/Next объявляют workspace package, новые клиенты импортируют напрямую.

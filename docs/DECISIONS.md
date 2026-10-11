@@ -143,3 +143,13 @@ M0 не считается завершённым до приёмки всех �
 - Legacy CSS — совместимый @import; CRM/Next импортируют workspace пакет напрямую.
 - Пакет CSS-only, sideEffects сохранён; отдельная TS/build задача не нужна, клиентские сборки проверяют CSS.
 - React Native адаптер токенов не заявляется готовым; перенос компонентов вне этого среза.
+
+## M0d.6 — Expo profiles
+- Expo57.0.27/RN0.86.3/React19.2.3 выбраны по bundledNativeModules официального Expo npm tarball; React18 других клиентов не меняется.
+- react-dom19.2.3 объявлен в mobile для согласования optional Expo peer, чтобы pnpm не подставлял root ReactDOM18.
+- Guest/staff отличаются app IDs и EXPO_PUBLIC_APP_MODE; это preview-навигация, не аутентификация или разрешения.
+- EAS только конфигурация: облачные builds/подпись не выполняются. Metro export не считается APK/IPA.
+- Generated dependency lock отдельно от малого ручного среза; новые native/toolchain зависимости обоснованы Expo.
+- Обнаружено переиспользование guest mode в staff export при тёплом Metro cache. Build scripts используют --clear;
+  regression proof проверяет Hermes App bytecode, а не только имена/хеши bundle.
+- Prod audit SDK chain2 high/1 moderate без опубликованного исправления: CI audit не подавляется, выпуск блокирован.

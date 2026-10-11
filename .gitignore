@@ -19,3 +19,5 @@ diagnostic-evidence/
 *.tsbuildinfo
 
 apps/web/next-env.d.ts
+
+.expo/
