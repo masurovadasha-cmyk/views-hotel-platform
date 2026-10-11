@@ -22,3 +22,22 @@ Core/mail proofs, CI loops/filters и Compose mount. Исторические с
 переведены на новый путь. Seeds/tests пока остаются в apps/api/db; legacy D1 SQL остаётся в migrations/.
 Windows проверен только синтаксически: запуск на Windows не заявляется.
 Далее: повторяемый synthetic seed в одноразовой БД (M0b.3).
+
+## M0b.3 — повторяемые synthetic seeds
+`node scripts/cloud-core-tests.cjs` (Docker и установленные API dependencies) создаёт
+собственный PostgreSQL16, применяет102 миграции, затем7 seed-блоков через
+`apps/api/ops/synthetic-seed.cjs`. Повтор каждого блока с тем же SHA256 ничего не
+меняет; другой checksum отклоняется. Каждый блок и ledger коммитятся атомарно.
+Два подключения сериализуются transaction advisory lock. Ledger находится в
+seed_private, без USAGE для views_app. Разрешена только БД views с маркером
+VIEWS_DISPOSABLE_CORE_TEST; функция не создаёт этот маркер.
+
+Встроенный `scripts/synthetic-seed-proof.cjs` проверяет replay всех7 блоков,
+изменение checksum, отказ без маркера, rollback ошибочного SQL и конкурентное
+применение одного блока ровно один раз. Затем runner выполняет полный Core suite
+и удаляет только собственный контейнер. Не направлять его на постоянную БД.
+
+Ограничения: только доверенные SQL репозитория; это не SQL sandbox. Атомарность
+на блок, а не на всю последовательность. Legacy/persistent seed пути не менялись.
+Новых зависимостей нет. Вручную при изменении fixtures проверить, что их данные
+остаются синтетическими и CI запускает этот runner. Следующий этап — M0c.

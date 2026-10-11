@@ -8,6 +8,7 @@ const assert = require('node:assert/strict');
 const { randomBytes } = require('node:crypto');
 const { spawn, spawnSync } = require('node:child_process');
 const REPO = path.resolve(__dirname, '..');
+const {applySyntheticSeed}=require('../apps/api/ops/synthetic-seed.cjs');
 const { Client } = require(path.join(REPO, 'apps/api/node_modules/pg'));
 const IMAGE = 'postgres@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4';
 const name = 'views-core-ci-' + randomBytes(8).toString('hex');
@@ -47,10 +48,15 @@ const run = args => {
     const workflow = fs.readFileSync(path.join(REPO, '.github/workflows/production-core.yml'), 'utf8');
     const blocks = [...workflow.matchAll(/<<'SQL'\r?\n([\s\S]*?)\r?\n\s+SQL(?:\r?\n|$)/g)].map(m => m[1]);
     assert.equal(blocks.length, 3, 'Review this runner when the CI seed contract changes');
-    for (const sql of blocks) await admin.query(sql.replaceAll("'views_app_test'", "'" + runtimePassword + "'"));
-    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/stage-b1.synthetic.sql'), 'utf8'));
-    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/service-orders.synthetic.sql'), 'utf8'));
-    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/market.synthetic.sql'), 'utf8'));
+    const seedBlocks=[];
+    async function seed(name,sql){
+      assert.equal(await applySyntheticSeed(admin,name,sql),true);
+      seedBlocks.push({name,sql});
+    }
+    for (const [index,sql] of blocks.entries()) await seed('workflow-'+index,sql.replaceAll("'views_app_test'", "'" + runtimePassword + "'"));
+    await seed('stage-b1.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/stage-b1.synthetic.sql'), 'utf8'));
+    await seed('service-orders.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/service-orders.synthetic.sql'), 'utf8'));
+    await seed('market.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/market.synthetic.sql'), 'utf8'));
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b1.constraints.sql'), 'utf8'));
     console.log('B1 administrative constraint proofs: 7 groups PASS (rolled back).');
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b2.sms.sql'), 'utf8'));
@@ -59,7 +65,13 @@ const run = args => {
     console.log('B2 email expiry, supersession and role separation proofs PASS (rolled back).');
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b4.supply-auth.sql'), 'utf8'));
     console.log('Supply staff invitation, mail, assurance and restricted role proofs PASS (rolled back).');
-    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/supply-auth.synthetic.sql'), 'utf8'));
+    await seed('supply-auth.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/supply-auth.synthetic.sql'), 'utf8'));
+    const seedHistory=(await admin.query('SELECT * FROM seed_private.applied ORDER BY name')).rows;
+    for(const block of seedBlocks)assert.equal(await applySyntheticSeed(admin,block.name,block.sql),false);
+    assert.deepEqual((await admin.query('SELECT * FROM seed_private.applied ORDER BY name')).rows,seedHistory);
+    const seedPeer=new Client({host:'127.0.0.1',port,database:'views',user:'views',password:ownerPassword});
+    try{await seedPeer.connect();await require('./synthetic-seed-proof.cjs')(admin,seedPeer);}
+    finally{await seedPeer.end();}
     await assert.rejects(admin.query(`INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,source_ref,stay_period)
       VALUES('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',
       '00000000-0000-0000-0000-000000000004','maintenance','cloud-ci-overlap',tstzrange('2026-10-11T12:00:00+05','2026-10-13T12:00:00+05','[)'))`), { code: '23P01' });

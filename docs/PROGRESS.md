@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0b.3 повторяемые synthetic seeds
+- Core runner применяет7 seed-блоков через checksum ledger в закрытой seed_private.
+- Каждый блок и запись истории атомарны; advisory lock сериализует параллельные подключения.
+- Replay пропускает неизменённый блок; изменение checksum отклоняется, прежняя история сохраняется.
+- Допускается только views с маркером VIEWS_DISPOSABLE_CORE_TEST; функция не выставляет маркер сама.
+- На dirty614b26d: disposable PostgreSQL16 proof —7 replay, checksum, guard, rollback, concurrent exactly-once и private schema PASS.
+- node scripts/cloud-core-tests.cjs:556 tests/94 files PASS; SQL administrative proofs PASS, exit0.
+- Mail acceptance15/15, network gate186, node syntax и git diff --check PASS.
+- SQL миграций/seed-файлы не изменены; постоянная views_local и публичные веб/APK не затронуты.
+- Граница: только disposable Core runner; legacy/persistent seed paths не переведены, Windows не проверялся.
+- API/UI build не повторён: исходники приложения неизменны; HTTP/SMTP proof отдельно не запускался.
+- Инструкция: M0B_MIGRATIONS.md. Далее M0c: OpenAPI → generated client → экран и contract test.
+
 ## 2026-10-12 — M0b.2 перенос PostgreSQL migrations
 - Перенесены102 SQL из каталога API в db/migrations; Git распознаёт100% rename, байты/имена/manifest неизменны.
 - Обновлены Linux/Windows launcher, Core/mail/proof scripts, CI loops/filters, Compose read-only mount и ссылки docs.

@@ -103,3 +103,9 @@ M0 не считается завершённым до приёмки всех �
 - Общая CJS-реализация извлечена из существующего launcher без смены ledger/lock.
 - Manifest фиксирует102 SQL; комментарии перед BEGIN допустимы без изменения hash.
 - Clean/upgrade46→102 проверяются в disposable DB с views_app; SQL переносится в M0b.2.
+
+## M0b.3 — повторяемое заполнение disposable Core
+- Seed API принимает только доверенный SQL репозитория и подключение к маркированной disposable views.
+- Private checksum ledger и transaction advisory lock обеспечивают exactly-once применение каждого блока.
+- Ошибка откатывает текущий блок; ранее успешные блоки сохраняются и пропускаются при повторе.
+- Это тестовый bootstrap, не миграция production-данных; существующие persistent seed пути не меняются.
