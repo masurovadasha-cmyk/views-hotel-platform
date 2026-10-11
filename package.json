@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:local": "npm run build && npm --prefix apps/api run build && node scripts/cloud-core-tests.cjs --dev-local",
     "build": "npm run typecheck && vite build",
     "build:pages": "npm run typecheck && vite build --mode review --base=/views-hotel-platform/",
     "build:review": "npm run typecheck && vite build --mode review",

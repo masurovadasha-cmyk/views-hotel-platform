@@ -11,6 +11,9 @@ const REPO = path.resolve(__dirname, '..');
 const {applySyntheticSeed}=require('../apps/api/ops/synthetic-seed.cjs');
 const { Client } = require(path.join(REPO, 'apps/api/node_modules/pg'));
 const IMAGE = 'postgres@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4';
+const dev=process.argv.includes('--dev-local');
+let stopping=false;
+if(dev)for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{stopping=true;});
 const name = 'views-core-ci-' + randomBytes(8).toString('hex');
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'views-core-ci-'));
 const ownerPassword = randomBytes(32).toString('hex');
@@ -41,7 +44,10 @@ const run = args => {
     await admin.query("COMMENT ON DATABASE views IS 'VIEWS_DISPOSABLE_CORE_TEST'");
     await admin.query(fs.readFileSync(path.join(REPO, 'infra/postgres/init/001_extensions.sql'), 'utf8'));
     const migrations = path.join(REPO, 'db/migrations');
-    for (const file of fs.readdirSync(migrations).filter(f => /^\d{4}_.*\.sql$/.test(f)).sort()) {
+    if(dev){
+      const {readMigrations,applyMigrations}=require('../apps/api/ops/migrations.cjs');
+      await applyMigrations(admin,readMigrations(migrations,path.join(REPO,'db/migrations.sha256')));
+    }else for (const file of fs.readdirSync(migrations).filter(f => /^\d{4}_.*\.sql$/.test(f)).sort()) {
       await admin.query(fs.readFileSync(path.join(migrations, file), 'utf8'));
     }
     // Use the authoritative workflow fixture SQL, including its scoped identities.
@@ -83,6 +89,10 @@ const run = args => {
     assert.equal((await runtime.query("SELECT count(*)::int n FROM properties WHERE id='00000000-0000-0000-0000-000000000002'")).rows[0].n, 1);
     assert.equal((await runtime.query("SELECT count(*)::int n FROM properties WHERE id='10000000-0000-4000-8000-000000000002'")).rows[0].n, 0);
     await runtime.query('ROLLBACK');
+    if(dev){
+      if(!stopping)await require('./dev-local-runtime.cjs')({runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`,smoke:process.argv.includes('--smoke'),stopping:()=>stopping});
+      return;
+    }
     console.log('PostgreSQL 16: migrations, no-overbooking and tenant isolation PASS; starting '+(process.argv.length>2?'selected':'complete')+' Core suite.');
     const exitCode = await new Promise((resolve, reject) => {
       const child = spawn(process.execPath, [path.join(REPO, 'apps/api/node_modules/vitest/vitest.mjs'), 'run', ...process.argv.slice(2)], {

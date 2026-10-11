@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.1 одноразовый dev:local
+- Добавлена команда dev:local: сборка web/API, disposable PostgreSQL16, checksum migrations и synthetic seeds.
+- Core и guest BFF слушают случайные loopback порты; проверяются readiness, HTML, session=false и trips401.
+- Runtime без superuser/BYPASSRLS, прежние seed/изоляция/overbooking proofs выполняются при запуске.
+- Email delivery adapter отсутствует явно: вход через письмо пока недоступен, внешних отправок нет.
+- На dirty601562a: npm run dev:local -- --smoke и повторный smoke с checksum applier — exit0; обе сборки PASS.
+- Network gate187, mail15, generator drift check, syntax и diff check PASS; полный API/UI suite не повторялся.
+- Lifecycle proof PASS: readiness, trips401, SIGTERM, нет утечки контейнера; Docker --rm ожидается до5 секунд.
+- start_skill сохранён в draft6acbfee482d48197bd74e4435d22391c; Save/Publish среды ещё не выполнены.
+- Постоянные views_local и её state не использовались; публичного веб/APK деплоя нет.
+- Инструкция/риски/ручной чек-лист: M0D_LOCAL.md; это первый M0d срез, без hot reload и оболочек Next/Expo.
+- Далее: минимальные каркасы приложений отдельным срезом; M0 целиком открыт.
+
 ## 2026-10-12 — M0c.1 OpenAPI → клиент → «Мои поездки»
 - Добавлен contracts/guest-trips.openapi.json для существующих Core list/detail; схема БД неизменна.
 - Генерируются типы и методы; существующий GuestTrips подключён через прежний wrapper/защищённый BFF transport.

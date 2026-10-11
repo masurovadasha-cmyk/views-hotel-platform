@@ -114,3 +114,9 @@ M0 не считается завершённым до приёмки всех �
 - Контракт guest trips описывает существующие Core GET; browser использует прежний same-origin BFF через injected transport.
 - Генератор без новых зависимостей поддерживает только используемое read-only подмножество; это не универсальный OpenAPI SDK.
 - Runtime validation остаётся в API wrapper; типы не заменяют проверку недоверенного JSON. БД и права не меняются.
+
+## M0d.1 — dev:local без постоянной БД
+- Переиспользуем disposable Core bootstrap и guest BFF; каждый запуск создаёт новую БД со случайными портами.
+- Миграции dev используют общий checksum applier; runtime роль без superuser/BYPASSRLS.
+- Первый срез — сборка, readiness, гостевой экран и graceful stop. Email adapter отсутствует явно; оболочки приложений далее.
+- Не использовать cloud:start для этого сценария: он обслуживает другую, постоянную views_local.
