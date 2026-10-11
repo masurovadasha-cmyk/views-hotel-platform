@@ -110,6 +110,46 @@ describe.sequential('V Market / real PostgreSQL',()=>{
   expect(o).toMatchObject({stage:'completed',issue:{status:'open'}});
   expect((await run('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[o.orderId])).rows).toEqual([{amount_minor:'200'}]);
  });
+ it('atomically replaces a basket, reuses its own reserve and preserves accepted history',async()=>{
+  const f=await fixture(),g=await fixture(),old=await service.request(f.a.token,randomUUID(),f.body);
+  const body=command(old,'replace_order',{lines:[{...f.body.lines[0],quantity:5},g.body.lines[0]],expectedTotalMinor:'700'}),key=randomUUID();
+  const results=await Promise.all([service.guestAct(f.a.token,old.orderId,key,body),service.guestAct(f.a.token,old.orderId,key,body)]);
+  expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);const next=results[0];expect(next.orderId).not.toBe(old.orderId);
+  expect(next).toMatchObject({stage:'reserved',totalMinor:'700',replacesOrderId:old.orderId});
+  expect((await service.guestList(f.a.token,f.r)).items).toEqual(expect.arrayContaining([expect.objectContaining({orderId:old.orderId,stage:'cancelled',totalMinor:'200',replacedByOrderId:next.orderId})]));
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'0'});
+  expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('5');
+  expect((await stock('SELECT * FROM supply_movements WHERE item_id=ANY($1::uuid[])',[[f.s,g.s]])).rowCount).toBe(0);
+  expect((await run('SELECT * FROM folio_entries WHERE source_id=ANY($1::uuid[])',[[old.orderId,next.orderId]])).rowCount).toBe(0);
+  await expect(service.guestAct(f.a.token,old.orderId,key,{...body,expectedTotalMinor:'800'})).rejects.toThrow('SERVICE_COMMAND_CONFLICT');
+ });
+ it('keeps the original reserve after failed replacement and denies foreign or staff consent',async()=>{
+  const f=await fixture(),other=await fixture(),o=await service.request(f.a.token,randomUUID(),f.body);
+  const body=command(o,'replace_order',{lines:f.body.lines,expectedTotalMinor:'200'});
+  await expect(service.guestAct(other.a.token,o.orderId,randomUUID(),body)).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+  await expect(service.staffAct(actor(),'b1'.repeat(32),o.orderId,randomUUID(),body)).rejects.toThrow('SERVICE_INPUT_INVALID');
+  await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),{...body,lines:[{...f.body.lines[0],quantity:6}],expectedTotalMinor:'600'})).rejects.toThrow('SERVICE_STOCK_UNAVAILABLE');
+  await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),{...body,expectedTotalMinor:'201'})).rejects.toThrow('SERVICE_PRICE_CHANGED');
+  await run('UPDATE service_catalog SET price_minor=200 WHERE id=$1',[f.s]);
+  await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),body)).rejects.toThrow('SERVICE_PRICE_CHANGED');
+  expect((await service.guestList(f.a.token,f.r)).items).toEqual([expect.objectContaining({orderId:o.orderId,stage:'reserved',revision:1,totalMinor:'200'})]);
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});
+ });
+ it('serializes replacement against warehouse picking',async()=>{
+  const f=await fixture(),o=await service.request(f.a.token,randomUUID(),f.body);
+  const results=await Promise.allSettled([act(o,'pick'),service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'replace_order',{lines:f.body.lines,expectedTotalMinor:'200'}))]);
+  expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});
+ });
+ it('serializes a replacement reserve against another guest basket',async()=>{
+  const f=await fixture(),other=await fixture(f.s),o=await service.request(f.a.token,randomUUID(),f.body);
+  const outcomes=await Promise.allSettled([
+   service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'replace_order',{lines:[{...f.body.lines[0],quantity:5}],expectedTotalMinor:'500'})),
+   service.request(other.a.token,randomUUID(),{...other.body,lines:[{...other.body.lines[0],quantity:1}],expectedTotalMinor:'100'})
+  ]);
+  expect(outcomes.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+  expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('5');
+ });
  it('is disabled by default and forbids receipt before handover',async()=>{
   const f=await fixture(),o=await service.request(f.a.token,randomUUID(),f.body);await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'confirm_receipt'))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
   vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','false');await expect(service.catalog(f.a.token,f.r)).rejects.toThrow('SERVICE_MARKET_DISABLED');

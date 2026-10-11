@@ -6,6 +6,12 @@ describe('market input boundaries',()=>{
   expect(marketRequest(body)).toEqual(body);
   for(const b of [{...body,propertyId:id},{...body,expectedTotalMinor:100},{...body,lines:[{...body.lines[0],quantity:1.1}]},{...body,lines:[body.lines[0],body.lines[0]]}])expect(()=>marketRequest(b)).toThrow('SERVICE_INPUT_INVALID');
  });
+ it('requires guest consent fields for a complete replacement basket',()=>{
+  const replacement={action:'replace_order',expectedRevision:1,lines:body.lines,expectedTotalMinor:'100'};
+  expect(marketAction(replacement,false)).toEqual(replacement);
+  for(const b of [{...replacement,reservationId:id},{...replacement,lines:[]},{...replacement,expectedTotalMinor:100},{...replacement,expectedRevision:0}])expect(()=>marketAction(b,false)).toThrow();
+  expect(()=>marketAction(replacement,true)).toThrow();
+ });
  it('bounds issue notes and separates reporting from staff responses',()=>{
   expect(marketAction({action:'report_issue',expectedRevision:2,note:'  Missing water  '},false)).toMatchObject({note:'Missing water'});
   for(const note of ['', 'a', 'x'.repeat(1001),42])expect(()=>marketAction({action:'report_issue',expectedRevision:2,note},false)).toThrow();

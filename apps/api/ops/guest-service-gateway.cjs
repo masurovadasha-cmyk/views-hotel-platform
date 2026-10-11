@@ -3,7 +3,7 @@ const {timingSafeEqual}=require('node:crypto');
 function same(a,b){return typeof a==='string'&&Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));}
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 function projection(b){
- const fields=['id','name','currency','priceMinor','revision','durationMinutes','orderId','status','stage','requestedFor','totalMinor','idempotentReplay','feedback','rating','comment','intakeId','declaredCount','preferences','pickupAt','estimateMinor','returnBy','availableQuantity'];
+ const fields=['id','name','currency','priceMinor','revision','durationMinutes','orderId','status','stage','requestedFor','totalMinor','idempotentReplay','feedback','rating','comment','intakeId','declaredCount','preferences','pickupAt','estimateMinor','returnBy','availableQuantity','replacesOrderId','replacedByOrderId'];
  const pick=v=>{
   const result=Object.fromEntries(fields.filter(k=>Object.hasOwn(v,k)).map(k=>[k,v[k]]));
   if(Object.hasOwn(v,'intakeId')&&Object.hasOwn(v,'items')){

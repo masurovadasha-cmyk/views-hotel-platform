@@ -26,9 +26,30 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
  await page.context().setOffline(true);assert.equal(await guest.getByRole('button',{name:'Retry same operation',exact:true}).isDisabled(),true);await page.context().setOffline(false);
  await page.route('**/guest-api/services/market',async r=>{keys.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();
  await guest.getByTestId('market-stage').getByText('Stock reserved',{exact:true}).waitFor();assert.equal(keys[0],keys[1]);
- const rows=(await admin.query('SELECT id,total_minor::text FROM service_orders WHERE reservation_id=$1',[reservation])).rows;assert.equal(rows.length,1);const oid=rows[0].id;assert.equal(rows[0].total_minor,'10900000');
+ const rows=(await admin.query('SELECT id,total_minor::text FROM service_orders WHERE reservation_id=$1',[reservation])).rows;assert.equal(rows.length,1);let oid=rows[0].id;assert.equal(rows[0].total_minor,'10900000');
  const listed=(await api('services/market?reservationId='+reservation)).body.items[0];assert.equal(listed.lines.some(l=>'itemId' in l),false);
  assert.equal((await api('services/market/catalog?reservationId='+reservation)).body.items.find(i=>i.id===water).availableQuantity,'1');
+ const originalId=oid;
+ await guest.locator(`[data-market-order="${oid}"]`).getByRole('button',{name:'Change order items',exact:true}).click();
+ await guest.getByTestId('market-replacement').waitFor();
+ assert.equal(await guest.locator(`[data-product-id="${coffee}"]`).getByLabel('Quantity',{exact:true}).getAttribute('max'),'2');
+ await guest.locator(`[data-product-id="${water}"]`).getByLabel('Quantity',{exact:true}).fill('1');
+ await guest.locator(`[data-product-id="${coffee}"]`).getByLabel('Quantity',{exact:true}).fill('2');
+ assert.equal(await guest.getByRole('button',{name:'Confirm new items and total',exact:true}).isDisabled(),true);
+ assert.equal((await admin.query('SELECT stage FROM market_orders WHERE order_id=$1',[originalId])).rows[0].stage,'reserved');
+ await guest.getByLabel('I accept the items, total and charge after receipt',{exact:true}).check();
+ const replacementKeys=[];
+ await page.route(`**/guest-api/services/market/${originalId}/actions`,async r=>{replacementKeys.push(r.request().headers()['idempotency-key']);const response=await r.fetch();assert.equal(response.status(),200);await r.abort('failed');},{times:1});
+ await guest.getByRole('button',{name:'Confirm new items and total',exact:true}).click();
+ await guest.getByText('No confirmation received. Retry the same operation to check its outcome.',{exact:true}).waitFor();
+ assert.equal(await guest.getByRole('button',{name:'Keep original order',exact:true}).isDisabled(),true);
+ await page.route(`**/guest-api/services/market/${originalId}/actions`,async r=>{replacementKeys.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});
+ await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();
+ await guest.getByText('Replaced by order:',{exact:false}).waitFor();assert.equal(replacementKeys[0],replacementKeys[1]);
+ const replacementRows=(await admin.query('SELECT o.id,o.total_minor::text FROM service_orders o JOIN market_orders m ON m.order_id=o.id WHERE m.replaces_order_id=$1',[originalId])).rows;
+ assert.equal(replacementRows.length,1);oid=replacementRows[0].id;assert.equal(replacementRows[0].total_minor,'18200000');
+ assert.equal((await admin.query('SELECT count(*)::int n FROM service_orders WHERE reservation_id=$1',[reservation])).rows[0].n,2);
+ assert.equal((await admin.query('SELECT total_minor::text FROM service_orders WHERE id=$1',[originalId])).rows[0].total_minor,'10900000');
  const gc=guest.locator(`[data-market-order="${oid}"]`),web=await require('./fixtures/folio-staff-web.cjs')({coreOrigin,organizationId:org,propertyId:property,internalKey:process.env.VIEWS_INTERNAL_API_KEY});
  let context;
  try{
@@ -38,7 +59,7 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await sc.getByRole('button',{name:'Start picking',exact:true}).click();await sc.getByTestId('market-stage').getByText('Being picked',{exact:true}).waitFor();assert.equal(await sc.getByRole('button',{name:'Finish picking',exact:true}).isDisabled(),true);
   for(const label of ['Items and quantities checked','Expiry dates checked','Packaging checked'])await sc.getByLabel(label,{exact:true}).check();
   await sc.getByRole('button',{name:'Finish picking',exact:true}).click();await sc.getByLabel('Order physically handed to guest',{exact:true}).check();await sc.getByRole('button',{name:'Confirm handover',exact:true}).click();await sc.getByTestId('market-stage').getByText('Handed over — confirm receipt',{exact:true}).waitFor();
-  assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'1');assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
+  assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'2');assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();
   await gc.getByLabel('Describe missing or damaged goods (3–1000 characters)',{exact:true}).fill('One water bottle is missing');
   await gc.getByRole('button',{name:'Report an issue',exact:true}).click();await gc.getByText('Awaiting warehouse response',{exact:true}).waitFor();
@@ -47,11 +68,11 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await sc.getByLabel('Reply to guest: findings and next steps',{exact:true}).fill('The missing bottle is available at reception');
   await sc.getByRole('button',{name:'Send response',exact:true}).click();await sc.getByText('Warehouse responded',{exact:true}).waitFor();
   assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
-  assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'1');
+  assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'2');
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByText('The missing bottle is available at reception',{exact:true}).waitFor();await gc.getByLabel('All items received. I confirm the stated charge',{exact:true}).check();await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).click();await gc.getByTestId('market-stage').getByText('Received and charged',{exact:true}).waitFor();
-  assert.deepEqual((await admin.query('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[oid])).rows,[{amount_minor:'10900000'}]);
+  assert.deepEqual((await admin.query('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[oid])).rows,[{amount_minor:'18200000'}]);
   for(const language of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(language);await warehouse.locator('.staffLanguage select').selectOption(language);for(const p of [page,warehouse])assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
   await guest.screenshot({path:'/tmp/views-market-guest.png'});await staff.screenshot({path:'/tmp/views-market-staff.png'});
-  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','warehouse_pick_checklist_handover','stock_issue','issue_blocks_receipt','warehouse_answer_no_financial_or_stock_change','guest_receipt_single_folio','private_item_id_stripped','three_languages_mobile'],publicEnabled:false}));
+  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','replacement_consent_own_reserve_lost_reply_one_successor','warehouse_pick_checklist_handover','stock_issue','issue_blocks_receipt','warehouse_answer_no_financial_or_stock_change','guest_receipt_single_folio','private_item_id_stripped','three_languages_mobile'],publicEnabled:false}));
  }finally{if(context)await context.close();await web.close();}
 };
