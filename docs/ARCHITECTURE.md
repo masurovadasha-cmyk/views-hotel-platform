@@ -40,3 +40,9 @@ migration compatibility. Shared schemas/contracts should drive generated types
 where an authoritative generation source exists; broad codegen migration is
 separate work. Sensitive identifiers stay masked/tokenized at application
 boundaries, with encrypted protected storage and no sensitive logging.
+
+## Proposed M0 target (awaiting owner approval)
+The pnpm/Turborepo, Next.js, Expo, generated-contract and migration-location
+plan is specified in [DECISIONS.md](DECISIONS.md). This target does not describe
+the current filesystem. Milestone acceptance and the explicit pre-code approval
+pause are tracked in [PROGRESS.md](PROGRESS.md).
