@@ -3,7 +3,7 @@ import {Injectable} from "@nestjs/common";
 import {DatabaseService} from "../database/database.service";
 import {validateCancellationPolicy,type CancellationPolicySnapshot} from "./cancellation";
 import {normalizeBookingAttribution,type NormalizedBookingAttribution} from "./booking-attribution";
-import {enumerateStayDates} from "./local-date";
+import {enumerateStayDates,validateStayInstants} from "./local-date";
 import {priceStay} from "./pricing.engine";
 import type {AdjustmentRule,ChargeRule,DayOverride,WeekdayRule} from "./pricing.types";
 import type {CreateQuoteInput,QuoteResult} from "./quote.types";
@@ -30,6 +30,7 @@ export class QuoteService{
       if(!guest||!Number.isInteger(guest.age)||guest.age<0||guest.age>130)throw new Error("INVALID_GUEST_AGE");
       if(!["resident","nonresident"].includes(guest.residency))throw new Error("INVALID_GUEST_RESIDENCY");
     }
+    validateStayInstants(input.checkInAt,input.checkOutAt);
     const attribution=normalizeBookingAttribution(input.attribution);
 
     return this.db.withActor(input.actor,async client=>{

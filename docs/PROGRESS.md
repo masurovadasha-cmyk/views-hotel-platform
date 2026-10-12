@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M1.1 строгие даты расчёта проживания
+- Исправлены local-date.ts и quote.service.ts: реальная дата, обязательный offset, checkout позже checkin до SQL.
+- Тесты local-date.test.ts: ошибочные даты/400/no-DB, високосный год, эквивалентные offsets, DST.
+- До исправления9 проверок падали; после23 новых проверок PASS.
+- На dirty212b773: rates+booking PostgreSQL16 suite93 PASS,102 миграции/seed replay/isolation PASS.
+- Web typecheck/test356/build PASS; API typecheck/build PASS; network gate187 файлов PASS; mail15 PASS; exit0.
+- Контракт: DECISIONS.md; запуск/ручная проверка/риски: M1_BOOKING_DATES.md.
+- Миграция и зависимости не нужны; старые клиенты с датами без offset теперь получают400.
+- Браузерная и native-приёмка не заявлены; прежние M0 device/audit gates открыты; production не изменён.
+- Далее: проверить покрытие гонок hold expiry/late payment и реализовать недостающий сценарий M1.
+
 ## 2026-10-12 — M0d.15 emulator acceptance blocked by Android OS
 - Guest standalone x86_64 release APK built PASS3m57s from10e1e73; ARM64 APKs unchanged, artifact proof PASS.
 - Isolated Android29 software AVD+loopback ADB5049 in disposable container; no PostgreSQL service/data mounted.

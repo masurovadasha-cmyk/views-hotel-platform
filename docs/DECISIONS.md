@@ -196,3 +196,6 @@ VIEWS launch. Native acceptance stays open; require an operational device or
 accelerated runner before repeating it. Keep ARM64 artifact proof separate from
 x86_64 emulator results. Continue independent software slices without representing
 native acceptance as complete; no paid/emulator service enabled implicitly.
+
+## M1.1 — explicit booking instants (2026-10-12)
+Quote timestamps require a real Gregorian date (years0001–9999), uppercase T and explicit Z or ±HH:MM offset; seconds are optional, fractional seconds allow1–3digits. Reject impossible dates, hour24 and naive local timestamps with INVALID_INSTANT (HTTP400) before SQL access. Checkout must be strictly later than check-in in absolute time (INVALID_STAY_PERIOD). Nights remain calendar dates in the property's timezone, not elapsed24-hour blocks. No schema change; callers relying on permissive JavaScript parsing must supply explicit offsets.
