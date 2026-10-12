@@ -199,3 +199,6 @@ native acceptance as complete; no paid/emulator service enabled implicitly.
 
 ## M1.1 — explicit booking instants (2026-10-12)
 Quote timestamps require a real Gregorian date (years0001–9999), uppercase T and explicit Z or ±HH:MM offset; seconds are optional, fractional seconds allow1–3digits. Reject impossible dates, hour24 and naive local timestamps with INVALID_INSTANT (HTTP400) before SQL access. Checkout must be strictly later than check-in in absolute time (INVALID_STAY_PERIOD). Nights remain calendar dates in the property's timezone, not elapsed24-hour blocks. No schema change; callers relying on permissive JavaScript parsing must supply explicit offsets.
+
+## Canva18 — return chronology
+Market return inspection timestamps start with migration0103; never backfill historical completion with migration time. Display explicit UTC until property timezone is supplied by this read contract. Photo/lot evidence is separate; a timestamp is not inspection evidence. User steering returns current work to Canva/V Market; M1 hold-expiry audit remains in backlog.

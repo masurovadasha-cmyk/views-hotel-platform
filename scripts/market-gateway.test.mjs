@@ -14,7 +14,13 @@ describe('market cookie boundary',()=>{
   const body={orderId:id,revision:1,idempotentReplay:false,lines:[{serviceId:id,itemId:id,name:{en:'Water'},quantity:2,priceMinor:'1200000',costMinor:'4'}]};
   expect(guest.projection(body).lines).toEqual([{serviceId:id,name:{en:'Water'},quantity:2,priceMinor:'1200000'}]);
  });
- it('projects only guest-safe issue fields',()=>{
+ it('preserves return times while stripping warehouse internals',()=>{
+  const r={id,serviceId:id,quantity:1,status:'restocked',reason:'Return',resolutionNote:'Checked',receivedAt:'2026-10-12T10:00:00Z',resolvedAt:'2026-10-12T10:05:00Z',internalActorId:id,itemId:id};
+  const projected=guest.projection({orderId:id,revision:2,idempotentReplay:false,returns:[r],returnedByService:[]}).returns[0];
+  expect(projected.receivedAt).toBe(r.receivedAt);expect(projected.resolvedAt).toBe(r.resolvedAt);
+  expect(projected.internalActorId).toBeUndefined();expect(projected.itemId).toBeUndefined();
+ });
+ it('projects only guest-safe issue fields' ,()=>{
   expect(guest.projection({orderId:id,revision:2,idempotentReplay:false,issue:{status:'open',note:'Missing water',internalActorId:id}}).issue).toEqual({status:'open',note:'Missing water',answer:undefined});
  });
  it('strips internal proposal fields and allows only fixed-scope staff catalogues',()=>{

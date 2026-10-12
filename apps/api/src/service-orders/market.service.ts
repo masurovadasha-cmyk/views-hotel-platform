@@ -6,7 +6,7 @@ import type {RequestActorContext} from '../identity/actor-context';
 import {enabled as servicesEnabled,hash,safe} from './service-order.service';
 import {uuid} from './service-order.input';
 import {marketRequest,marketAction,marketCredit} from './market.input';
-export type MarketReceipt={orderId:string;stage:string;revision:number;totalMinor:string;idempotentReplay:boolean;creditedMinor?:string;returns?:{id:string;serviceId:string;quantity:number;status:string}[]};
+export type MarketReceipt={orderId:string;stage:string;revision:number;totalMinor:string;idempotentReplay:boolean;creditedMinor?:string;returns?:{id:string;serviceId:string;quantity:number;status:string;receivedAt:string;resolvedAt:string|null}[]};
 function enabled(){servicesEnabled();if(process.env.VIEWS_MARKET_PILOT_ENABLED!=='true')throw new NotFoundException('SERVICE_MARKET_DISABLED');}
 @Injectable()
 export class MarketService{

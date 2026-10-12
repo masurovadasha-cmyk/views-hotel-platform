@@ -82,6 +82,26 @@ describe.sequential('V Market adjustments / real PostgreSQL',()=>{
   expect((await run('SELECT sum(amount_minor)::text amount FROM folio_entries WHERE folio_id=(SELECT id FROM guest_folios WHERE reservation_id=$1)',[f.r])).rows[0].amount).toBe(initial.totalMinor);
   o=await credit(o,'100');expect(o.creditedMinor).toBe('100');expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('4');
  });
+ it('records server return times and preserves them on replay for guest and warehouse',async()=>{
+  let {f,o}=await completed();
+  o=await act(o,'receive_return',{serviceId:f.s,quantity:1,note:'Timeline receipt'});
+  const rid=o.returns![0].id;
+  expect(o.returns![0]).toMatchObject({receivedAt:expect.any(String),resolvedAt:null});
+  const key=randomUUID(),body=command(o,'discard_return',{returnId:rid,note:'Damaged packaging'});
+  o=await service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body);
+  const replay=await service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body);
+  expect(replay.returns).toEqual(o.returns);
+  const row=(await stock('SELECT created_at,resolved_at FROM market_returns WHERE id=$1',[rid])).rows[0];
+  expect(row.resolved_at.getTime()).toBeGreaterThanOrEqual(row.created_at.getTime());
+  const expected={id:rid,receivedAt:row.created_at.toISOString(),resolvedAt:row.resolved_at.toISOString()};
+  for(const result of [await service.guestList(f.a.token,f.r),await service.staffList(actor(),'b1'.repeat(32),property)]){
+   const order=result.items.find(x=>x.orderId===o.orderId)!;
+   expect(order.returns).toEqual(expect.arrayContaining([expect.objectContaining({id:rid})]));
+   const returned=order.returns!.find(x=>x.id===rid)! as unknown as {receivedAt:string;resolvedAt:string};
+   expect(new Date(returned.receivedAt).toISOString()).toBe(expected.receivedAt);
+   expect(new Date(returned.resolvedAt).toISOString()).toBe(expected.resolvedAt);
+  }
+ });
  it('requires warehouse authority and rejects returns before receipt or for another product',async()=>{
   const f=await fixture(),early=await service.request(f.a.token,randomUUID(),f.body);
   await expect(act(early,'receive_return',{serviceId:f.s,quantity:1,note:'Too early return'})).rejects.toThrow('SERVICE_RETURN_INVALID');

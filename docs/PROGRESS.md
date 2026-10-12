@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — Canva18: история возврата V Market
+- SG-MK-004/SD-MK-002/SS-MK-001: даты приёмки и инспекции у гостя и склада; RU/UZ/EN, явный UTC.
+- Migration0103: nullable resolved_at, серверный trigger, без вымышленного historical backfill; существующие RLS/scope сохранены.
+- API и гостевая проекция передают receivedAt/resolvedAt; replay не меняет время, внутренние ID скрыты.
+- На dirtyb36be22: PostgreSQL16 V Market22 PASS; web363 PASS; API/web typecheck/build PASS.
+- Network gate187 файлов и mail15 PASS; сквозной V Market browser PASS, Light/Dark390px guest+warehouse.
+- Red→green: отсутствующие даты и потеря полей гостевым шлюзом; исправлено ожидание offline-состояния в тесте.
+- Руководство/ручные проверки: design/CANVA_140_BLOCK_18_RETURN_TIMELINE.md; screenshots /tmp/views-return-*.png.
+- Реестр:56 partial/84 pending, полной PDF-приёмки нет. Фото/партии/частичная выдача остаются открыты.
+- Public web/APK не опубликованы. Далее Canva: частичная выдача с согласованием гостя и точным начислением.
+
 ## 2026-10-12 — M1.1 строгие даты расчёта проживания
 - Исправлены local-date.ts и quote.service.ts: реальная дата, обязательный offset, checkout позже checkin до SQL.
 - Тесты local-date.test.ts: ошибочные даты/400/no-DB, високосный год, эквивалентные offsets, DST.

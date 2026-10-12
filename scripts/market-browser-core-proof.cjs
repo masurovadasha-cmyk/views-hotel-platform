@@ -23,7 +23,7 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
  assert.equal((await api('services/market','POST',{}, {'Idempotency-Key':randomUUID()})).status,403);
  const keys=[];await page.route('**/guest-api/services/market',async r=>{keys.push(r.request().headers()['idempotency-key']);const response=await r.fetch();assert.equal(response.status(),200);await r.abort('failed');},{times:1});
  await guest.getByRole('button',{name:'Order and reserve',exact:true}).click();await guest.getByText('No confirmation received. Retry the same operation to check its outcome.',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Back to trips',exact:true}).isDisabled(),true);
- await page.context().setOffline(true);assert.equal(await guest.getByRole('button',{name:'Retry same operation',exact:true}).isDisabled(),true);await page.context().setOffline(false);
+ await page.context().setOffline(true);await guest.locator('button:disabled').filter({hasText:/^Retry same operation$/}).waitFor();assert.equal(await guest.getByRole('button',{name:'Retry same operation',exact:true}).isDisabled(),true);await page.context().setOffline(false);
  await page.route('**/guest-api/services/market',async r=>{keys.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();
  await guest.getByTestId('market-stage').getByText('Stock reserved',{exact:true}).waitFor();assert.equal(keys[0],keys[1]);
  const rows=(await admin.query('SELECT id,total_minor::text FROM service_orders WHERE reservation_id=$1',[reservation])).rows;assert.equal(rows.length,1);let oid=rows[0].id;assert.equal(rows[0].total_minor,'10900000');
@@ -110,8 +110,27 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   assert.equal(await inspection.getByRole('button',{name:'Return to available stock',exact:true}).isDisabled(),true);
   for(const label of ['Factory seal intact','Expiry checked','Quality and storage conditions checked'])await inspection.getByLabel(label,{exact:true}).check();
   await inspection.getByRole('button',{name:'Return to available stock',exact:true}).click();await inspection.getByText('Restocked',{exact:false}).waitFor();
+  await inspection.getByText('Inspection completed',{exact:true}).waitFor();
+  assert.equal(await inspection.getByTestId('return-timeline').locator('time').count(),2);
+  await guest.getByRole('button',{name:'Refresh',exact:true}).click();
+  const guestTimeline=gc.locator(`[data-return-id="${receipt}"]`).getByTestId('return-timeline');
+  await guestTimeline.getByText('Inspection completed',{exact:true}).waitFor();
+  const guestTimes=await guestTimeline.locator('time').evaluateAll(nodes=>nodes.map(n=>n.dateTime)),staffTimes=await inspection.getByTestId('return-timeline').locator('time').evaluateAll(nodes=>nodes.map(n=>n.dateTime));
+  if(JSON.stringify(guestTimes)!==JSON.stringify(staffTimes))console.log(JSON.stringify({proof:'return_timeline_mismatch',guestTimes,staffTimes}));
+  assert.deepEqual(guestTimes,staffTimes);
   assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[coffee])).rows[0].quantity,'1');
   assert.equal((await admin.query('SELECT count(*)::int n FROM market_credits WHERE order_id=$1',[oid])).rows[0].n,0);
+  for(const [view,timeline,role] of [[page,guestTimeline,'guest'],[warehouse,inspection.getByTestId('return-timeline'),'warehouse']]){
+   await view.setViewportSize({width:390,height:844});
+   for(const dark of [true,false]){
+    if(Boolean(await view.locator('.app.dark').count())!==dark)await view.locator('[data-theme-toggle]').click();
+    assert.equal(Boolean(await view.locator('.app.dark').count()),dark);
+    assert.equal(await timeline.locator('time').count(),2);
+    assert.equal(await view.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await timeline.screenshot({path:`/tmp/views-return-${role}-${dark?'dark':'light'}.png`});
+   }
+  }
+
   const financeContext=await browser.newContext({viewport:{width:390,height:844}});
   try{
    await financeContext.addCookies([{name:'views_staff_session',value:'a4'.repeat(32),domain:'127.0.0.1',path:'/local-api',httpOnly:true,sameSite:'Strict'}]);
