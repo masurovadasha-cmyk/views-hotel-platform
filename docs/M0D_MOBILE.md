@@ -148,3 +148,23 @@ App source matched the checkout; generated native projects remain outside Git.
 Manual gate: install both on ARM64 Android7+, open without Metro, test all6 settings
 combinations, force-stop/reopen, verify profile isolation and large text. Interfaces
 remain disconnected shells. Two known high dependency findings still block release.
+
+## M0d.15 — emulator runtime attempt: ENVIRONMENT BLOCKED
+Built standalone guest x86_64 release-mode APK from10e1e73 (3m57s). This is a
+separate emulator build; the two delivered ARM64 APKs remain unchanged and pass
+artifact proof. No physical ARM64 device is connected.
+Created isolated Android29 AVD under /tmp/views-native15-avd, port5584,2 cores,
+2048MB, software acceleration, swiftshader_indirect, no snapshots/audio/window.
+ADB workaround works: disposable postgres:16-bookworm container, no database
+service or volume, SDK/APK read-only mounts, tmpfs /root/.android and /tmp,
+host network with `adb -L tcp:5049 server nodaemon`. Confirmed listener127.0.0.1.
+Do not use `-L tcp:127.0.0.1:5049`: this adb version rejects the hostname syntax.
+ADB transport became online, but sys.boot_completed never confirmed. Screenshot
+shows System UI isn't responding. Install returned224: package service Broken pipe32.
+VIEWS was NOT launched; settings/runtime acceptance NOT_RUN. This is Android OS
+failure before app acceptance, not evidence that VIEWS itself crashed.
+Owned emulator, ADB container and boot observer stopped. Evidence:
+/workspace/views-artifacts/native15/{result.json,install.log,system-ui-anr.png}.
+Do not repeat software-emulator acceptance without a changed prerequisite. Native
+acceptance now requires a working physical device or accelerated Android runner.
+Independent backend/UI slices may proceed; do not mark M0/M5 native gates complete.

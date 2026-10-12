@@ -189,3 +189,10 @@ SDK. Tests cover unset/partial/complete SDK. Gate reports nativeAcceptance NOT_R
 in every case: tool files are not device/UI evidence. Native acceptance remains
 blocked on missing SDK36/build-tools36/NDK and a usable execution target; do not
 repeat known failing software emulation or start paid cloud builds implicitly.
+
+## M0d.15 — stop repeated software-emulator attempts
+A fresh Android29 software emulator fails at System UI/package service before
+VIEWS launch. Native acceptance stays open; require an operational device or
+accelerated runner before repeating it. Keep ARM64 artifact proof separate from
+x86_64 emulator results. Continue independent software slices without representing
+native acceptance as complete; no paid/emulator service enabled implicitly.

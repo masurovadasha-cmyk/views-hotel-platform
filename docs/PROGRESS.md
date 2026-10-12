@@ -1,5 +1,15 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-12 — M0d.15 emulator acceptance blocked by Android OS
+- Guest standalone x86_64 release APK built PASS3m57s from10e1e73; ARM64 APKs unchanged, artifact proof PASS.
+- Isolated Android29 software AVD+loopback ADB5049 in disposable container; no PostgreSQL service/data mounted.
+- ADB device online; boot completion not confirmed; screenshot shows System UI isn't responding.
+- Install exit224: package service Broken pipe32. VIEWS launch/settings restart tests NOT_RUN.
+- Evidence /workspace/views-artifacts/native15; owned emulator/ADB/observer stopped. No production changes.
+- Reproduction/result M0D_MOBILE.md; DECISIONS forbids repeating unchanged failing emulator setup.
+- Physical Android or accelerated runner needed for native acceptance;2 high audit blockers remain.
+- Next independent slice: inspect M1 existing auth/catalog/booking tests and implement a missing scenario; native gates remain open.
+
 ## 2026-10-12 — M0d.14 native APK builds PASS
 - Maven recovered; guest x86_64 debug PASS160 tasks; guest/staff ARM64 release-mode PASS240 tasks each.
 - Standalone preview APKs (~26MB each) in /workspace/views-artifacts; embedded Hermes, no Metro required.
