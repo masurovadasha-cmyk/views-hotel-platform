@@ -7,7 +7,7 @@ export function quantity(v:unknown){if(typeof v!=='string'||!/^[1-9]\d{0,18}$/.t
 export function item(v:unknown){const b=exact(v,['propertyId','sku','name','unit']);if(typeof b.sku!=='string'||!/^[A-Z0-9_-]{1,40}$/.test(b.sku)||!['piece','gram','millilitre'].includes(b.unit as string))return invalid();return {propertyId:id(b.propertyId),sku:b.sku,name:text(b.name,120),unit:b.unit as string};}
 export function order(v:unknown){const b=exact(v,['propertyId','reference','lines']);if(!Array.isArray(b.lines)||!b.lines.length||b.lines.length>20)return invalid();const lines=b.lines.map(value=>{const l=exact(value,['itemId','quantity']);return {itemId:id(l.itemId),quantity:quantity(l.quantity)};}).sort((a,b)=>a.itemId.localeCompare(b.itemId));if(new Set(lines.map(l=>l.itemId)).size!==lines.length)return invalid();return {propertyId:id(b.propertyId),reference:text(b.reference,160),lines};}
 export function issue(v:unknown){const b=exact(v,['propertyId','itemId','quantity','reference']);return {propertyId:id(b.propertyId),itemId:id(b.itemId),quantity:quantity(b.quantity),reference:text(b.reference,160)};}
-function expiryDate(value:unknown){
+export function expiryDate(value:unknown){
  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value)||value.startsWith('0000'))return invalid();
  const date=new Date(value+'T00:00:00Z');if(!Number.isFinite(date.getTime())||date.toISOString().slice(0,10)!==value)return invalid();return value;
 }

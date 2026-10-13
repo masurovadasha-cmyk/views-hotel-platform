@@ -408,5 +408,37 @@
  "One lot per item per receipt. Enter lot code and expiry together. Lot-based issuing and expiry blocking are not connected yet.": {
   "ru": "Одна партия на позицию приёмки. Укажите номер и срок вместе. Списание по партиям и блокировка просрочки ещё не подключены.",
   "uz": "Har qabul pozitsiyasiga bitta partiya. Raqam va muddatni birga kiriting. Partiya bo‘yicha chiqarish va muddati o‘tgan tovarlarni bloklash hali ulanmagan."
- }
+ },
+  "Record lot count snapshot": {
+    "ru": "Записать сверку партий",
+    "uz": "Partiyalar sanog‘ini qayd etish"
+  },
+  "Unknown lot": {
+    "ru": "Неизвестная партия",
+    "uz": "Noma’lum partiya"
+  },
+  "Remove lot": {
+    "ru": "Удалить партию",
+    "uz": "Partiyani o‘chirish"
+  },
+  "Add lot": {
+    "ru": "Добавить партию",
+    "uz": "Partiya qo‘shish"
+  },
+  "Lot count snapshot": {
+    "ru": "Снимок сверки партий",
+    "uz": "Partiyalar sanog‘i qaydi"
+  },
+  "Current at last check": {
+    "ru": "Актуально на момент проверки",
+    "uz": "Oxirgi tekshiruvda dolzarb"
+  },
+  "Stale: recount lots": {
+    "ru": "Устарело: пересчитайте партии",
+    "uz": "Eskirgan: partiyalarni qayta sanang"
+  },
+  "Count every lot, including unknown origin. The sum must match recorded stock. This is a snapshot, not live lot stock.": {
+    "ru": "Пересчитайте все партии, включая неизвестные. Сумма должна совпадать с учётным остатком. Это снимок сверки, не текущий остаток партий.",
+    "uz": "Barcha partiyalarni, noma’lumlarini ham sanang. Jami hisobdagi qoldiqqa teng bo‘lsin. Bu sanoq qaydi, joriy partiya qoldig‘i emas."
+  }
 }

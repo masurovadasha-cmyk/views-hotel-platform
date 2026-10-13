@@ -97,11 +97,18 @@ module.exports=async function({browser,admin,coreOrigin}){
   assert.equal((await admin.query("SELECT count(*)::int n FROM supply_movements WHERE item_id=$1 AND kind='adjustment'",[item.id])).rows[0].n,1);assert.equal((await admin.query('SELECT quantity::text quantity FROM supply_balances WHERE item_id=$1',[item.id])).rows[0].quantity,'5');
   const countReplay=await call(storing.page,'supply/stocktake/confirm','POST',countWrites[0].body,{...warehouseHeaders,'Idempotency-Key':countWrites[0].key});assert.equal(countReplay.status,200);assert.equal(countReplay.body.idempotentReplay,true);
   checks.push('stocktake_explicit_count_reason_stale_after_issue_repreview_lost_reply_exactly_one_adjustment');
+  phase='lot-snapshot';await countPreview();const lotForm=storing.panel.getByTestId('supply-stocktake-form');
+  await lotForm.getByLabel('Record lot count snapshot',{exact:true}).check();await lotForm.getByTestId('supply-lot-count-fields').getByLabel('Physical quantity counted',{exact:true}).fill('5');
+  await lotForm.getByTestId('supply-stocktake-preview-button').click();await storing.panel.getByTestId('supply-stocktake-preview').waitFor();
+  await storing.panel.getByTestId('supply-stocktake-confirm').click();await storing.panel.getByTestId('supply-lot-snapshot').getByText('Current at last check',{exact:false}).waitFor();
+  assert.equal((await admin.query('SELECT quantity::text quantity FROM supply_balances WHERE item_id=$1',[item.id])).rows[0].quantity,'5');
   // Existing empty-body receipt callers retain full-remaining semantics.
   phase='legacy-receipt';const legacyOrder=await call(buying.page,'supply/orders','POST',{propertyId:property,reference:'Synthetic legacy full receipt',lines:[{itemId:item.id,quantity:'2'}]},{...buyerHeaders,'Idempotency-Key':randomUUID()});assert.equal(legacyOrder.status,200);
   const legacyKey=randomUUID(),legacyReceipt=await call(storing.page,'supply/orders/'+legacyOrder.body.orderId+'/receive','POST',{}, {...warehouseHeaders,'Idempotency-Key':legacyKey});assert.equal(legacyReceipt.status,200);assert.equal(legacyReceipt.body.status,'received');
   assert.equal((await call(storing.page,'supply/orders/'+legacyOrder.body.orderId+'/receive','POST',{}, {...warehouseHeaders,'Idempotency-Key':legacyKey})).body.idempotentReplay,true);
   assert.equal((await admin.query('SELECT quantity::text quantity FROM supply_balances WHERE item_id=$1',[item.id])).rows[0].quantity,'7');checks.push('legacy_empty_receipt_body_full_remaining_and_same_command_replay');
+  await storing.panel.getByRole('button',{name:'Load supply data',exact:true}).click();await storing.panel.getByTestId('supply-lot-snapshot').getByText('Stale: recount lots',{exact:false}).waitFor();
+  checks.push('lot_snapshot_unknown_origin_zero_adjustment_then_stale_after_receipt');
   phase='isolation';await buying.page.goto(web.origin+'/?staffRole=warehouse',{waitUntil:'networkidle'});await buying.page.locator('.staffRoleMismatch').waitFor();assert.equal(await buying.page.getByTestId('supply-warehouse').count(),0);
   const saved=process.env.VIEWS_SUPPLY_PILOT_ENABLED;process.env.VIEWS_SUPPLY_PILOT_ENABLED='false';try{assert.equal((await call(storing.page,'supply/properties','GET',undefined,warehouseHeaders)).body.error,'SUPPLY_DISABLED');}finally{if(saved===undefined)delete process.env.VIEWS_SUPPLY_PILOT_ENABLED;else process.env.VIEWS_SUPPLY_PILOT_ENABLED=saved;}
   await admin.query('DELETE FROM membership_property_scopes WHERE membership_id=$1 AND property_id=$2',[warehouse.member,property]);

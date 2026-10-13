@@ -1,6 +1,7 @@
 import {afterAll,afterEach,beforeAll,beforeEach,describe,expect,it,vi} from 'vitest';
 import {randomUUID} from 'node:crypto';
 import {DatabaseService} from '../database/database.service';
+import {SupplyReadService} from './supply-read.service';
 import {SupplyService} from './supply.service';
 import {SupplyStocktakeService} from './supply-stocktake.service';
 import type {Actor} from './supply.store';
@@ -17,6 +18,31 @@ async function receive(itemId:string,quantity:string){const order=await supply.c
 beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker).toBe('VIEWS_DISPOSABLE_CORE_TEST'));
 beforeEach(()=>{vi.stubEnv('NODE_ENV','test');vi.stubEnv('VIEWS_LOCAL_REHEARSAL','true');vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');});afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('physical stocktake / actual PostgreSQL',()=>{
+ it('saves a scoped immutable lot snapshot once, then marks it stale after an issue',async()=>{
+  const itemId=await item();await receive(itemId,'10');const lots=[{lotCode:'A',expiresOn:'2028-02-29',quantity:'7'},{lotCode:null,expiresOn:null,quantity:'3'}];
+  const p={...await preview(itemId,'10'),lots},key=randomUUID();
+  const replies=await Promise.all([counts.confirm(keeper,key,p),counts.confirm(keeper,key,p)]);expect(replies.filter(r=>!r.idempotentReplay)).toHaveLength(1);
+  const read=new SupplyReadService(db),snapshot=async()=>{let cursor:string|undefined;do{const page=await read.list(keeper,'stock',property,cursor),found=page.items.find(r=>r.itemId===itemId);if(found)return found.lotSnapshot;cursor=page.nextCursor??undefined;}while(cursor);throw Error('ITEM_NOT_FOUND');};
+  expect(await snapshot()).toMatchObject({lots,current:true});expect((await balance(itemId)).quantity).toBe('10');
+  await expect(counts.confirm(keeper,key,{...p,lots:[{...lots[0],quantity:'6'},{...lots[1],quantity:'4'}]})).rejects.toThrow('SUPPLY_COMMAND_CONFLICT');
+  await expect(counts.confirm(buyer,randomUUID(),p)).rejects.toThrow('PROPERTY_FORBIDDEN');
+  expect((await query('SELECT lot_counts FROM supply_stocktakes WHERE item_id=$1',[itemId],foreign)).rows).toHaveLength(0);
+  expect((await query('UPDATE supply_stocktakes SET lot_counts=NULL WHERE item_id=$1',[itemId])).rowCount).toBe(0);
+  await supply.issue(keeper,randomUUID(),{propertyId:property,itemId,quantity:'1',reference:'After lot count'});
+  expect(await snapshot()).toMatchObject({lots,current:false});await expect(counts.confirm(keeper,randomUUID(),p)).rejects.toThrow('STOCKTAKE_STALE');
+ });
+ it('serializes competing lot counts and validates direct SQL lot metadata',async()=>{
+  const itemId=await item();await receive(itemId,'10');const p={...await preview(itemId,'10'),lots:[{lotCode:null,expiresOn:null,quantity:'10'}]};
+  const results=await Promise.allSettled([counts.confirm(keeper,randomUUID(),p),counts.confirm(keeper,randomUUID(),p)]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+  expect((await query('SELECT app.valid_lot_count_snapshot($1::jsonb,10) ok',[JSON.stringify([{lotCode:'A',expiresOn:'2027-02-29',quantity:'10'}])])).rows[0].ok).toBe(false);
+  const fresh={...await preview(itemId,'10'),lots:p.lots};const raced=await Promise.allSettled([counts.confirm(keeper,randomUUID(),fresh),supply.issue(keeper,randomUUID(),{propertyId:property,itemId,quantity:'1',reference:'Race'})]);
+  expect(raced[1].status).toBe('fulfilled');expect((await balance(itemId)).quantity).toBe('9');if(raced[0].status==='rejected')expect(raced[0].reason.message).toBe('STOCKTAKE_STALE');
+ });
+ it('rejects invalid lot sums, dates and changing physical stock with a lot snapshot',async()=>{
+  const itemId=await item();await receive(itemId,'10');const p=await preview(itemId,'10');
+  for(const lots of [[],[{lotCode:'A',expiresOn:'2027-02-29',quantity:'10'}],[{lotCode:null,expiresOn:null,quantity:'9'}]])await expect(counts.confirm(keeper,randomUUID(),{...p,lots})).rejects.toThrow('SUPPLY_INPUT_INVALID');
+  await expect(counts.confirm(keeper,randomUUID(),{...p,countedQuantity:'9',lots:[{lotCode:null,expiresOn:null,quantity:'9'}]})).rejects.toThrow('SUPPLY_INPUT_INVALID');
+ });
  it('records exact positive, negative and zero adjustments atomically without money',async()=>{
   const itemId=await item();expect((await preview(itemId,'9007199254740993')).expectedQuantity).toBe('0');expect(await balance(itemId)).toBeUndefined();
   const positive=await counts.confirm(keeper,randomUUID(),await preview(itemId,'9007199254740993'));expect(positive).toMatchObject({deltaQuantity:'9007199254740993',remainingQuantity:'9007199254740993'});

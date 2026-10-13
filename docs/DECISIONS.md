@@ -220,3 +220,6 @@ Record optional paired lot code/date on immutable receipt lines; retain legacy N
 
 ## Guest trip revocation acceptance (2026-10-14)
 Browser actions must await rendered detail before asserting absent controls. Exercise in-flight ownership revocation with an explicit network barrier and real Core404, then manual recovery. Do not change authorization or add arbitrary delays to repair a test race. Build static assets before starting browser fixtures, never concurrently with their reloads.
+
+## L1 lot count snapshots (2026-10-14)
+Reuse stocktake lots as an optional immutable distribution, requiring zero quantity delta. Keep the existing adjustment0 movement/revision so independent counts cannot both confirm the same version. Unknown origin is explicit; no historical lot allocation is inferred. Snapshot currentness is checked against movement revision at read time, not a claim of live per-lot stock. Existing RLS, audit, replay and scoped stocktake workflow apply unchanged.

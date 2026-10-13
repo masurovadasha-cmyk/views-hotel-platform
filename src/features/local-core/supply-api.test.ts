@@ -5,6 +5,12 @@ const propertyId='10000000-0000-4000-8000-000000000001',itemId='10000000-0000-40
 afterEach(()=>vi.unstubAllGlobals());
 const answer=(body:unknown)=>new Response(JSON.stringify(body),{status:200});
 describe('supply UI command and stock boundary',()=>{
+ it('rejects malformed lot snapshots and altered preview distributions',async()=>{
+  const base={itemId,sku:'A',name:'A',unit:'piece',quantity:'1'},fetch=vi.fn();vi.stubGlobal('fetch',fetch);
+  for(const lotSnapshot of [{current:true,createdAt:'2026-10-14',lots:[{quantity:'2',lotCode:null,expiresOn:null}]},{current:'yes',createdAt:'2026-10-14',lots:[]},{current:true,createdAt:'2026-10-14',lots:[{quantity:'1',lotCode:'A',expiresOn:'2027-02-29'}]}]){fetch.mockResolvedValueOnce(answer({items:[{...base,lotSnapshot}],nextCursor:null}));await expect(supplyApi.stock('csrf',propertyId)).rejects.toThrow('SUPPLY_INVALID_RESPONSE');}
+  const input={propertyId,itemId,countedQuantity:'1',reason:'Count',lots:[{lotCode:null,expiresOn:null,quantity:'1'}]};
+  expect(()=>supplyStocktakePreview({...input,sku:'A',name:'A',unit:'piece',expectedQuantity:'1',expectedRevision:'0',deltaQuantity:'0',lots:[]},input)).toThrow('SUPPLY_INVALID_RESPONSE');
+ });
  it('accepts paired lot fields and rejects malformed movement metadata',async()=>{
   const base={id:key,itemId,sku:'LOT',name:'Water',unit:'piece',kind:'receipt',quantity:'4',reference:'Receipt',createdAt:'2026-10-13T00:00:00Z',lotCode:'LOT-A',expiresOn:'2028-02-29'};
   const fetch=vi.fn();vi.stubGlobal('fetch',fetch);
