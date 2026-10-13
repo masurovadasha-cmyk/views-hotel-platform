@@ -18,6 +18,11 @@ async function receive(itemId:string,quantity:string){const order=await supply.c
 beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker).toBe('VIEWS_DISPOSABLE_CORE_TEST'));
 beforeEach(()=>{vi.stubEnv('NODE_ENV','test');vi.stubEnv('VIEWS_LOCAL_REHEARSAL','true');vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');});afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('physical stocktake / actual PostgreSQL',()=>{
+ it('honours property end-of-day expiry and atomically rejects an expired selected lot',async()=>{
+  const dates=(await query("SELECT app.lot_date_allowed('2026-10-14','Asia/Tashkent','2026-10-14T18:59:59Z') before,app.lot_date_allowed('2026-10-14','Asia/Tashkent','2026-10-14T19:00:00Z') after,app.lot_date_allowed(NULL,'Asia/Tashkent','2026-10-14T18:00:00Z') unknown")).rows[0];expect(dates).toEqual({before:true,after:false,unknown:false});
+  const itemId=await item();await receive(itemId,'4');const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'4'),lots:[{lotCode:'EXPIRED',expiresOn:'2000-01-01',quantity:'4'}]});
+  const before=await balance(itemId);await expect(supply.issue(keeper,randomUUID(),{propertyId:property,itemId,quantity:'1',reference:'Expired item',lotAllocation:{snapshotId:snap.stocktakeId,lotCode:'EXPIRED',expiresOn:'2000-01-01'}})).rejects.toThrow('SERVICE_STOCK_UNAVAILABLE');expect(await balance(itemId)).toEqual(before);
+ });
  it('issues a selected counted lot once and rejects stale or insufficient lot provenance',async()=>{
   const itemId=await item();await receive(itemId,'10');const lots=[{lotCode:'A',expiresOn:'2028-02-29',quantity:'7'},{lotCode:null,expiresOn:null,quantity:'3'}];
   const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'10'),lots});

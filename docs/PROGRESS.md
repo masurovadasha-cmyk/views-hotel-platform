@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-14 — L2e / L3a: история возврата и годность
+- История склада показывает подтверждённую партию возврата/исходную выдачу; unknown/legacy не переименованы в известные.
+- Frontend проверяет структуру provenance и запрещает её на issue; scoped read/RLS сохранены.
+- Владелец согласовал конец дня объекта и ручную проверку неизвестного срока; решение записано в DECISIONS.md.
+- Migration0114: helper календарной даты + guard выбранной партии при issue/return; откат не меняет остаток/revision.
+- Red: UI1 failed/10 passed, Core1 failed/13 passed; dirty688d03f web384/Core157 PASS, web/API build, network187/mail15 PASS.
+- Connected browser chain PASS, exit0: выдача/возврат и отображение исходной партии в истории;114 checksum/diff check PASS.
+- Запуск/ручная проверка: MARKET_LOT_HISTORY_EXPIRY.md; полный остаток задач: MARKET_REMAINING.md.
+- Следующий блок L2f: живые остатки всех движений; затем FEFO/резервы, фото и переданные заказы. Весь маркет ещё открыт.
+- Canva56 partial/84 pending; public web/APK без обновления. Новых зависимостей/прав нет.
+
 ## 2026-10-14 — L2d: возврат в партию исходной выдачи
 - Migration0113: immutable return_source_issue_id FK и guard заказа/товара/организации/объекта.
 - Инспекция RU/UZ/EN показывает исходную партию; сотрудник явно подтверждает совпадение маркировки.

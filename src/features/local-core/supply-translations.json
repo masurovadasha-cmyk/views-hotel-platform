@@ -480,5 +480,9 @@
   "Automatic lot allocation is not enabled. Manual counted-lot issues are recorded separately; these are not live lot balances.": {
     "ru": "Автоматическое распределение партий не включено. Ручная выдача из сверенных партий записывается отдельно; это не текущие остатки партий.",
     "uz": "Partiyalar avtomatik taqsimlanmaydi. Sanalgan partiyadan qo‘lda berish alohida qayd etiladi; bu joriy partiya qoldig‘i emas."
-  }
+  },
+  "Returned to the confirmed issued lot": {"ru":"Возвращено в подтверждённую партию выдачи","uz":"Tasdiqlangan berilgan partiyaga qaytarildi"},
+  "Source issue": {"ru":"Исходная выдача","uz":"Dastlabki berish"},
+  "The selected lot is expired or unavailable. Check its label and refresh stock.": {"ru":"Выбранная партия просрочена или недоступна. Проверьте маркировку и обновите склад.","uz":"Tanlangan partiya muddati o‘tgan yoki mavjud emas. Yorliqni tekshiring va omborni yangilang."},
+  "Known expiry dates are checked through the end of the property day. Unknown expiry requires manual verification; no automatic lot allocation.": {"ru":"Срок действует до конца дня по часовому поясу объекта. Неизвестный срок требует ручной проверки; автоматического выбора партии нет.","uz":"Muddat obyekt vaqt zonasida kun oxirigacha amal qiladi. Noma’lum muddat qo‘lda tekshiriladi; partiya avtomatik tanlanmaydi."}
 }

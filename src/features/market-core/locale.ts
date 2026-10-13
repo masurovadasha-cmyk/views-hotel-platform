@@ -5,7 +5,7 @@ const rows:Record<string,[string,string,string]>={
  useCountedLots:['Выдать из сверенных партий','Use counted lots','Sanalgan partiyalardan berish'],
  chooseCountedLot:['Выберите партию из свежей сверки','Choose a current counted lot','Yangi sanoqdan partiyani tanlang'],
  unknownLot:['Неизвестная партия','Unknown lot','Noma’lum partiya'],
- countedLotsTerms:['Необязательно: одна партия на каждую позицию. Нужна свежая сверка склада; после выдачи она устареет. Блокировка просрочки не включена.','Optional: one lot for every item. A fresh warehouse count is required and becomes stale after handover. Expiry blocking is not enabled.','Ixtiyoriy: har mahsulot uchun bitta partiya. Yangi ombor sanog‘i kerak; berilgach eskiradi. Muddati o‘tgan mahsulotlar bloklanmaydi.'],
+ countedLotsTerms:['Необязательно: одна партия на каждую позицию. Нужна свежая сверка склада; после выдачи она устареет. Известный срок действует до конца дня объекта; неизвестный срок проверьте вручную.','Optional: one lot for every item. A fresh warehouse count is required and becomes stale after handover. Known expiry is valid through the property day; verify unknown expiry manually.','Ixtiyoriy: har mahsulot uchun bitta partiya. Yangi ombor sanog‘i kerak; berilgach eskiradi. Ma’lum muddat obyekt kuni oxirigacha amal qiladi; noma’lum muddatni qo‘lda tekshiring.'],
  reopenHistory:['Возвраты на согласование','Reopening history','Kelishuvga qaytarish tarixi'],
  reopenHistoryScope:['Последние 20 записей после включения журнала; новые сверху.','Latest 20 entries since history was enabled; newest first.','Jurnal yoqilganidan beri oxirgi 20 yozuv; yangilari yuqorida.'],
 

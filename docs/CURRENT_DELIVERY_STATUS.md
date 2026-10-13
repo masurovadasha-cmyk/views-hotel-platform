@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 12 October 2026 (Tashkent)
 
+L2e/L3a: история партий возврата и проверка согласованной годности в feature-ветке; см. MARKET_LOT_HISTORY_EXPIRY.md и MARKET_REMAINING.md.
+
 L2d: [возврат в партию выдачи](MARKET_RETURN_LOT_L2D.md) в feature-ветке; публичные веб/APK без изменений.
 
 L2c: [выдача V Market из сверенных партий](MARKET_COUNTED_LOT_HANDOVER_L2C.md) в feature-ветке; публичные веб/APK без изменений.

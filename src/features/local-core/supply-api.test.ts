@@ -5,6 +5,11 @@ const propertyId='10000000-0000-4000-8000-000000000001',itemId='10000000-0000-40
 afterEach(()=>vi.unstubAllGlobals());
 const answer=(body:unknown)=>new Response(JSON.stringify(body),{status:200});
 describe('supply UI command and stock boundary',()=>{
+ it('validates returned lot provenance without accepting it on an issue',async()=>{
+  const base={id:key,itemId,sku:'A',name:'A',unit:'piece',kind:'return',quantity:'1',reference:'Return',createdAt:'2026-10-14T00:00:00Z',lotTrackingStatus:'lot_returned',returnLot:{sourceIssueId:propertyId,snapshotId:key,lotCode:'A',expiresOn:'2028-01-01'}},fetch=vi.fn();vi.stubGlobal('fetch',fetch);
+  fetch.mockResolvedValueOnce(answer({items:[base],nextCursor:null}));expect((await supplyApi.movements('csrf',propertyId)).items[0].returnLot).toEqual(base.returnLot);
+  for(const patch of [{kind:'issue',quantity:'-1'},{returnLot:null},{returnLot:{...base.returnLot,sourceIssueId:'bad'}},{returnLot:{...base.returnLot,expiresOn:'2027-02-29'}}]){fetch.mockResolvedValueOnce(answer({items:[{...base,...patch}],nextCursor:null}));await expect(supplyApi.movements('csrf',propertyId)).rejects.toThrow('SUPPLY_INVALID_RESPONSE');}
+ });
  it('rejects malformed lot snapshots and altered preview distributions',async()=>{
   const base={itemId,sku:'A',name:'A',unit:'piece',quantity:'1'},fetch=vi.fn();vi.stubGlobal('fetch',fetch);
   for(const lotSnapshot of [{current:true,createdAt:'2026-10-14',lots:[{quantity:'2',lotCode:null,expiresOn:null}]},{current:'yes',createdAt:'2026-10-14',lots:[]},{current:true,createdAt:'2026-10-14',lots:[{quantity:'1',lotCode:'A',expiresOn:'2027-02-29'}]}]){fetch.mockResolvedValueOnce(answer({items:[{...base,lotSnapshot}],nextCursor:null}));await expect(supplyApi.stock('csrf',propertyId)).rejects.toThrow('SUPPLY_INVALID_RESPONSE');}

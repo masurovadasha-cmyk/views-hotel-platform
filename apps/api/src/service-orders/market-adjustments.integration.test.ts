@@ -54,6 +54,7 @@ describe.sequential('V Market adjustments / real PostgreSQL',()=>{
   const cmd=command(o,'restock_return',{returnId:rid,note:'Same label inspected',checklist:{sealed:true,expiry:true,quality:true},sameIssuedLot:true}),key=randomUUID();
   const both=await Promise.all([service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,cmd),service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,cmd)]);expect(both.filter(x=>!x.idempotentReplay)).toHaveLength(1);
   const movements=(await stock('SELECT m.return_source_issue_id,i.lot_allocation FROM supply_movements m JOIN supply_movements i ON i.id=m.return_source_issue_id WHERE m.market_return_id=$1',[rid])).rows;expect(movements).toHaveLength(1);expect(movements[0].lot_allocation.lotCode).toBe('RETURN-LOT');
+  const history=await new SupplyReadService(db).list(actor(),'movements',property);expect(history.items.find(x=>x.returnLot?.sourceIssueId===movements[0].return_source_issue_id)).toMatchObject({kind:'return',lotTrackingStatus:'lot_returned',returnLot:{lotCode:'RETURN-LOT'}});
   expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('4');expect(both[0].totalMinor).toBe('200');
   const legacy=await completed();let old=await act(legacy.o,'receive_return',{serviceId:legacy.f.s,quantity:1,note:'Legacy return'});
   await expect(act(old,'restock_return',{returnId:old.returns![0].id,note:'No source lot',checklist:{sealed:true,expiry:true,quality:true},sameIssuedLot:true})).rejects.toThrow('SERVICE_RETURN_INVALID');

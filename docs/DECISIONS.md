@@ -235,3 +235,6 @@ Optional selection must cover every frozen order line with one counted lot. Reus
 
 ## L2d returned lot provenance (2026-10-14)
 An explicit inspected label match may link a restock movement to the immutable original marketplace issue. The server derives the source from order/item/scope; never accept a client-selected source UUID or infer provenance from receipts. The original count may be stale: the link records historic issuance, not new stock availability. Legacy unallocated restocking remains available and no financial credit is automatic.
+
+## Approved lot expiry boundary (2026-10-14)
+Owner explicitly approved: the printed expiry date remains valid until the end of that calendar day in the property timezone. Unknown dates require manual verification and are not eligible for automatic issue. Implement the known-date guard first; current manual stock issue and marketplace inspection remain explicit, and no automatic FEFO/issue is enabled. Never infer an unknown date from another receipt.

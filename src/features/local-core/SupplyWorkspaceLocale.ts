@@ -12,9 +12,10 @@ export function supplyError(error:unknown){
  if(code==='RECEIPT_QUANTITY_EXCEEDED')return 'The received quantity exceeds the outstanding order quantity. Reload the order and check the receipt.';
  if(code==='ORDER_ALREADY_RECEIVED')return 'This order was already received. Reload orders and stock.';
  if(code==='SERVICE_STOCK_RESERVED')return 'Stock is reserved for V Market. Review the orders before issuing or counting below the reserve.';
+ if(code==='SERVICE_STOCK_UNAVAILABLE')return 'The selected lot is expired or unavailable. Check its label and refresh stock.';
  if(code==='INSUFFICIENT_STOCK')return 'Not enough stock. Reload stock and check the quantity.';
  if(code==='STOCK_LIMIT_EXCEEDED')return 'The quantity exceeds the supported stock limit.';
  if(code==='SUPPLY_COMMAND_CONFLICT')return 'The command conflicts with an existing operation. Check the history before a new operation.';
  return 'The server did not confirm the result. Retry the same request manually. Do not create a new operation.';
 }
-export function supplyDefinitive(error:unknown){return error instanceof Error&&['SERVICE_STOCK_RESERVED','SUPPLY_DISABLED','PROPERTY_FORBIDDEN','STAFF_PERMISSION_DENIED','SUPPLY_NOT_FOUND','SUPPLY_INPUT_INVALID','ORDER_ALREADY_RECEIVED','INSUFFICIENT_STOCK','STOCK_LIMIT_EXCEEDED','SUPPLY_COMMAND_CONFLICT','SUPPLY_ORDER_EMPTY','STOCKTAKE_STALE','RECEIPT_QUANTITY_EXCEEDED'].includes(error.message);}
+export function supplyDefinitive(error:unknown){return error instanceof Error&&['SERVICE_STOCK_UNAVAILABLE','SERVICE_STOCK_RESERVED','SUPPLY_DISABLED','PROPERTY_FORBIDDEN','STAFF_PERMISSION_DENIED','SUPPLY_NOT_FOUND','SUPPLY_INPUT_INVALID','ORDER_ALREADY_RECEIVED','INSUFFICIENT_STOCK','STOCK_LIMIT_EXCEEDED','SUPPLY_COMMAND_CONFLICT','SUPPLY_ORDER_EMPTY','STOCKTAKE_STALE','RECEIPT_QUANTITY_EXCEEDED'].includes(error.message);}
