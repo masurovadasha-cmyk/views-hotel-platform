@@ -127,8 +127,9 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await sc.getByLabel('Use counted lots',{exact:true}).check();
   await sc.getByLabel('Use current lot versions',{exact:true}).check();
   assert.equal(await sc.getByRole('button',{name:'Confirm handover',exact:true}).isDisabled(),true);
+  await sc.getByText('Nearest expiry first. Expired lots are hidden; unknown expiry requires manual verification. Select a lot yourself.',{exact:true}).waitFor();
   const lotSelectors=sc.getByTestId('market-counted-lot');assert.equal(await lotSelectors.count(),countedItems.length);
-  for(const select of await lotSelectors.all())await select.selectOption({index:1});
+  for(const select of await lotSelectors.all()){assert.equal(await select.inputValue(),'');await select.selectOption({index:1});}
   await sc.getByLabel('Order physically handed to guest',{exact:true}).check();
   await lotSelectors.first().selectOption('');assert.equal(await sc.getByRole('button',{name:'Confirm handover',exact:true}).isDisabled(),true);await lotSelectors.first().selectOption({index:1});
   await countItem(countedItems[0]);

@@ -2,6 +2,7 @@ import type {Locale} from '../../i18n/messages';
 import {cleaningText} from '../service-orders/locale';
 const rows:Record<string,[string,string,string]>={
  useTrackedLots:['Использовать актуальные версии партий','Use current lot versions','Partiyalarning joriy versiyalaridan foydalanish'],
+ lotChoiceOrder:['Сначала ближайший срок годности. Просроченные партии скрыты; неизвестный срок — только после ручной проверки. Выберите партию самостоятельно.','Nearest expiry first. Expired lots are hidden; unknown expiry requires manual verification. Select a lot yourself.','Eng yaqin yaroqlilik muddati birinchi. Muddati o‘tgan partiyalar yashirilgan; noma’lum muddat qo‘lda tekshiriladi. Partiyani o‘zingiz tanlang.'],
  trackedLotsTerms:['Выберите партию для каждой позиции. Изменение склада потребует обновить выбор; при нарушенном учёте нужна сверка. Срок действует до конца дня объекта, неизвестный срок проверьте вручную.','Choose a lot for every item. Stock changes require refreshing the selection; uncertain tracking needs a count. Expiry is valid through the property day; verify unknown expiry manually.','Har mahsulot uchun partiyani tanlang. Ombor o‘zgarsa tanlovni yangilang; hisob noaniq bo‘lsa sanoq kerak. Muddat obyekt kuni oxirigacha amal qiladi; noma’lum muddatni qo‘lda tekshiring.'],
  sameIssuedLot:['Маркировка возвращённого товара совпадает с партией выдачи','Returned label matches the issued lot','Qaytarilgan yorliq berilgan partiyaga mos'],
  useCountedLots:['Выдать из сверенных партий','Use counted lots','Sanalgan partiyalardan berish'],

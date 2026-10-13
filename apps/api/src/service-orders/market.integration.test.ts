@@ -37,6 +37,20 @@ const command=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>(
 const act=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>service.staffAct(actor(),'b1'.repeat(32),o.orderId,randomUUID(),command(o,action,extra));
 const checklist={quantities:true,expiry:true,packaging:true};
 describe.sequential('V Market / real PostgreSQL',()=>{
+ it('offers positive nonexpired lots in FEFO order with unknown expiry last',async()=>{
+  await run('UPDATE service_catalog SET active=true WHERE id=$1',[item(56)]);const f=await fixture(item(56));
+  let o=await service.request(f.a.token,randomUUID(),f.body);o=await act(o,'pick');o=await act(o,'ready',{checklist});
+  const dates=(await stock("SELECT (clock_timestamp() AT TIME ZONE timezone)::date::text today,((clock_timestamp() AT TIME ZONE timezone)::date+1)::text tomorrow,((clock_timestamp() AT TIME ZONE timezone)::date-1)::text yesterday FROM properties WHERE id=$1",[property])).rows[0];
+  const b=(await stock('SELECT quantity::text,revision::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0];
+  await new SupplyStocktakeService(db).confirm(actor(),randomUUID(),{propertyId:property,itemId:f.s,countedQuantity:b.quantity,expectedQuantity:b.quantity,expectedRevision:b.revision,reason:'Expiry choice test',lots:[
+   {lotCode:'EXPIRED',expiresOn:dates.yesterday,quantity:'1'},{lotCode:'Z-TODAY',expiresOn:dates.today,quantity:'1'},
+   {lotCode:'A-TOMORROW',expiresOn:dates.tomorrow,quantity:'1'},{lotCode:null,expiresOn:null,quantity:'1'},{lotCode:'B-TODAY',expiresOn:dates.today,quantity:'1'},
+   {lotCode:'EMPTY',expiresOn:dates.today,quantity:'0'}]});
+  const page=await service.staffList(actor(),'b1'.repeat(32),property),row=page.items.find(x=>x.orderId===o.orderId)!;
+  for(const options of [row.trackedLots,row.countedLots])expect(options?.map(l=>l.lotCode)).toEqual(['B-TODAY','Z-TODAY','A-TOMORROW',null]);
+  expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe(b.quantity);
+ });
+
  it('hands over current lot versions after stock moves and rolls back stale multi-item selections',async()=>{
   await run('UPDATE service_catalog SET active=true WHERE id=ANY($1::uuid[])',[[item(57),item(58)]]);const f=await fixture(item(57)),g=await fixture(item(58));
   let o=await service.request(f.a.token,randomUUID(),{...f.body,lines:[...f.body.lines,...g.body.lines],expectedTotalMinor:'400'});o=await act(o,'pick');o=await act(o,'ready',{checklist});

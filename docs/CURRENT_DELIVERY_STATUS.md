@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 12 October 2026 (Tashkent)
 
+L3b: [годные партии и порядок ручного выбора](MARKET_LOT_ELIGIBILITY_L3B.md); резерв по партиям ещё не включён, public web/APK без изменений.
+
 L2f.3: [выдача V Market по актуальным версиям партий](MARKET_CURRENT_LOTS_L2F3.md), feature-ветка; public web/APK без изменений.
 
 L2f.2: [журнал версий партий и актуальная ручная выдача](SUPPLY_LOT_LEDGER_L2F2.md) в feature-ветке; public web/APK без изменений.
