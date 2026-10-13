@@ -488,5 +488,6 @@
   "Tracked lot quantities": {"ru":"Расчёт остатков партий","uz":"Partiya qoldiqlari hisobi"},
   "Matches stock at last check": {"ru":"Совпадает с общим остатком на момент проверки","uz":"Tekshiruv paytida umumiy qoldiqqa mos"},
   "Lot tracking needs a new physical count": {"ru":"Нужна новая физическая сверка партий","uz":"Partiyalarni qayta jismoniy sanash kerak"},
-  "Read-only tracking; this does not reserve lots or enable automatic issue.": {"ru":"Только проверочный расчёт: резервирования партий и автоматической выдачи нет.","uz":"Faqat tekshiruv hisobi: partiyalar band qilinmaydi va avtomatik berilmaydi."}
+  "Read-only tracking; this does not reserve lots or enable automatic issue.": {"ru":"Только проверочный расчёт: резервирования партий и автоматической выдачи нет.","uz":"Faqat tekshiruv hisobi: partiyalar band qilinmaydi va avtomatik berilmaydi."},
+  "Use current tracked lot quantities": {"ru":"Выдать по актуальному остатку партии","uz":"Partiyaning joriy qoldig‘i bo‘yicha berish"}
 }

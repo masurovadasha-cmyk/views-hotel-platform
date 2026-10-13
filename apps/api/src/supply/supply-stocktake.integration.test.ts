@@ -18,6 +18,17 @@ async function receive(itemId:string,quantity:string){const order=await supply.c
 beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker).toBe('VIEWS_DISPOSABLE_CORE_TEST'));
 beforeEach(()=>{vi.stubEnv('NODE_ENV','test');vi.stubEnv('VIEWS_LOCAL_REHEARSAL','true');vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');});afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('physical stocktake / actual PostgreSQL',()=>{
+ it('issues tracked quantities against one immutable ledger version and rejects a stale race',async()=>{
+  const itemId=await item();await receive(itemId,'5');const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'5'),lots:[{lotCode:'LIVE',expiresOn:'2028-01-01',quantity:'5'}]});
+  const current=async()=>(await new SupplyReadService(db).list(keeper,'stock',property)).items.find(x=>x.itemId===itemId)!.lotProjection;
+  let p=await current();expect(p.ledgerReady).toBe(true);const body={propertyId:property,itemId,quantity:'2',reference:'Tracked issue',lotAllocation:{snapshotId:snap.stocktakeId,movementId:p.movementId,lotCode:'LIVE',expiresOn:'2028-01-01'}};
+  const race=await Promise.allSettled([supply.issue(keeper,randomUUID(),body),supply.issue(keeper,randomUUID(),body)]);expect(race.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(race.find(r=>r.status==='rejected')).toMatchObject({reason:{message:'STOCKTAKE_STALE'}});
+  p=await current();expect(p.totalQuantity).toBe('3');const key=randomUUID(),next={...body,lotAllocation:{...body.lotAllocation,movementId:p.movementId}};await supply.issue(keeper,key,next);expect((await supply.issue(keeper,key,next)).idempotentReplay).toBe(true);p=await current();expect(p.totalQuantity).toBe('1');
+  expect((await query('SELECT sum(quantity_after)::text total FROM supply_lot_ledger_lines WHERE movement_id=$1',[p.movementId])).rows[0].total).toBe('1');
+  expect((await query('SELECT * FROM supply_lot_ledger WHERE item_id=$1',[itemId],foreign)).rows).toHaveLength(0);
+  expect((await query('UPDATE supply_lot_ledger SET total_quantity=0 WHERE movement_id=$1',[p.movementId])).rowCount).toBe(0);
+  await supply.issue(keeper,randomUUID(),{propertyId:property,itemId,quantity:'1',reference:'Unallocated'});p=await current();expect(p.ledgerReady).toBe(false);await expect(supply.issue(keeper,randomUUID(),{...body,quantity:'1',lotAllocation:{...body.lotAllocation,movementId:p.movementId}})).rejects.toThrow('STOCKTAKE_STALE');
+ });
  it('projects counted lots through known moves and fails closed on unallocated issues',async()=>{
   const itemId=await item();await receive(itemId,'10');const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'10'),lots:[{lotCode:'PROJECTION',expiresOn:'2028-01-01',quantity:'10'}]});
   const projection=async()=>(await new SupplyReadService(db).list(keeper,'stock',property)).items.find(x=>x.itemId===itemId)!.lotProjection;

@@ -8,7 +8,7 @@ describe('supply UI command and stock boundary',()=>{
  it('accepts reconciled projections only when their lots equal the stock total',async()=>{
   const base={itemId,sku:'A',name:'A',unit:'piece',quantity:'4'},projection={status:'reconciled',totalQuantity:'4',updatedAt:'2026-10-14T00:00:00Z',lots:[{lotCode:null,expiresOn:null,quantity:'4'}]},fetch=vi.fn();vi.stubGlobal('fetch',fetch);
   fetch.mockResolvedValueOnce(answer({items:[{...base,lotProjection:projection}],nextCursor:null}));expect((await supplyApi.stock('csrf',propertyId)).items[0].lotProjection).toEqual(projection);
-  for(const patch of [{totalQuantity:'5'},{status:'recount_required'},{lots:[{lotCode:null,expiresOn:null,quantity:'3'}]}]){fetch.mockResolvedValueOnce(answer({items:[{...base,lotProjection:{...projection,...patch}}],nextCursor:null}));await expect(supplyApi.stock('csrf',propertyId)).rejects.toThrow('SUPPLY_INVALID_RESPONSE');}
+  for(const patch of [{ledgerReady:true},{ledgerReady:'yes'},{totalQuantity:'5'},{status:'recount_required'},{lots:[{lotCode:null,expiresOn:null,quantity:'3'}]}]){fetch.mockResolvedValueOnce(answer({items:[{...base,lotProjection:{...projection,...patch}}],nextCursor:null}));await expect(supplyApi.stock('csrf',propertyId)).rejects.toThrow('SUPPLY_INVALID_RESPONSE');}
  });
  it('validates returned lot provenance without accepting it on an issue',async()=>{
   const base={id:key,itemId,sku:'A',name:'A',unit:'piece',kind:'return',quantity:'1',reference:'Return',createdAt:'2026-10-14T00:00:00Z',lotTrackingStatus:'lot_returned',returnLot:{sourceIssueId:propertyId,snapshotId:key,lotCode:'A',expiresOn:'2028-01-01'}},fetch=vi.fn();vi.stubGlobal('fetch',fetch);

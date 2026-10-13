@@ -241,3 +241,6 @@ Owner explicitly approved: the printed expiry date remains valid until the end o
 
 ## L2f.1 verification projection (2026-10-14)
 Before operational live-lot allocation, maintain a read-only projection anchored to a new physical count. Known movements update quantities; unallocated issues and undistributed corrections invalidate the whole breakdown instead of guessing a lot. Positive unlabelled receipts/returns explicitly enter unknown provenance. Never let this read model authorize operations or replace immutable movement evidence; existing commands and fresh-count guard remain unchanged.
+
+## L2f.2 current ledger version issue (2026-10-14)
+Persist immutable normalized after-movement lot distribution checkpoints, including explicit uninitialized/recount states. An optional movementId binds a manual issue to the current checkpoint under the stable item lock; authorize quantity from ledger lines, not client data or mutable projection quantities. Preserve the old fresh-count contract when the token is absent. No historic journal backfill, automatic allocation or lot reservation.

@@ -4,7 +4,7 @@ const line={itemId:'12345678-1234-4123-8123-123456789012',quantity:'2',lotCode:'
 describe('receipt lot metadata',()=>{
  it('validates optional single-lot issue provenance without accepting caller allocations',()=>{
   const body={propertyId:line.itemId,itemId:line.itemId,quantity:'1',reference:'Physical issue'},lotAllocation={snapshotId:line.itemId,lotCode:'A',expiresOn:'2028-02-29'};
-  expect(issue({...body,lotAllocation}).lotAllocation).toEqual(lotAllocation);expect(issue(body).lotAllocation).toBeUndefined();
+  expect(issue({...body,lotAllocation}).lotAllocation).toEqual(lotAllocation);expect(issue(body).lotAllocation).toBeUndefined();expect(issue({...body,lotAllocation:{...lotAllocation,movementId:line.itemId}}).lotAllocation).toMatchObject({movementId:line.itemId});expect(()=>issue({...body,lotAllocation:{...lotAllocation,movementId:'bad'}})).toThrow();
   for(const changed of [{...lotAllocation,snapshotId:'bad'},{...lotAllocation,expiresOn:'2027-02-29'},{...lotAllocation,quantity:'99'},{...lotAllocation,lotCode:null}])expect(()=>issue({...body,lotAllocation:changed})).toThrow();
  });
  it('accepts real dates and preserves legacy receipt bodies',()=>{
