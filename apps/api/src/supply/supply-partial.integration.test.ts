@@ -15,6 +15,21 @@ const stock=async(itemId:string)=>(await query('SELECT COALESCE((SELECT quantity
 beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker).toBe('VIEWS_DISPOSABLE_CORE_TEST'));
 beforeEach(()=>{vi.stubEnv('NODE_ENV','test');vi.stubEnv('VIEWS_LOCAL_REHEARSAL','true');vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');});afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('partial warehouse receipts / actual PostgreSQL',()=>{
+ it('captures receipt and issue lot intake atomically with immutable scoped provenance',async()=>{
+  const f=await fixture(['4']),key=randomUUID();await supply.receive(keeper,f.orderId,key,{lines:[{...f.lines[0],lotCode:'INTAKE',expiresOn:'2028-01-01'}]});
+  await supply.receive(keeper,f.orderId,key,{lines:[{...f.lines[0],lotCode:'INTAKE',expiresOn:'2028-01-01'}]});
+  const issue=await supply.issue(keeper,randomUUID(),{propertyId:property,itemId:f.lines[0].itemId,quantity:'1',reference:'Intake proof'});
+  const rows=(await query('SELECT m.kind,j.status FROM supply_lot_movement_intake j JOIN supply_movements m ON m.id=j.movement_id WHERE m.item_id=$1 ORDER BY m.kind',[f.lines[0].itemId])).rows;
+  expect(rows).toEqual([{kind:'issue',status:'allocation_pending'},{kind:'receipt',status:'receipt_lot_recorded'}]);expect(await stock(f.lines[0].itemId)).toBe('3');
+  expect((await query("UPDATE supply_lot_movement_intake SET status='snapshot_recorded' WHERE movement_id=$1",[issue.movementId])).rowCount).toBe(0);
+  await expect(query("INSERT INTO supply_lot_movement_intake(movement_id,organization_id,property_id,status) VALUES($1,$2,$3,'allocation_pending')",[randomUUID(),org,property])).rejects.toThrow();
+  const foreign={...keeper,organizationId:'10000000-0000-4000-8000-000000000001',userId:'76600000-0000-4000-8000-000000000003',membershipId:'76600000-0000-4000-8000-000000000013'};
+  expect((await db.withActor(foreign,c=>c.query('SELECT * FROM supply_lot_movement_intake WHERE movement_id=$1',[issue.movementId]))).rows).toHaveLength(0);
+  const before=(await query('SELECT count(*)::int n FROM supply_lot_movement_intake')).rows[0].n;
+  const broken={withActor:(a:Actor,work:Parameters<DatabaseService['withActor']>[1])=>db.withActor(a,c=>work(new Proxy(c,{get(target,k){if(k==='query')return(sql:string,args:unknown[])=>{if(sql.startsWith('INSERT INTO audit_log'))throw Error('ROLLBACK_PROOF');return target.query(sql,args);};return Reflect.get(target,k);}})))} as DatabaseService;
+  await expect(new SupplyService(broken).issue(keeper,randomUUID(),{propertyId:property,itemId:f.lines[0].itemId,quantity:'1',reference:'Rollback'})).rejects.toThrow('ROLLBACK_PROOF');
+  expect((await query('SELECT count(*)::int n FROM supply_lot_movement_intake')).rows[0].n).toBe(before);expect(await stock(f.lines[0].itemId)).toBe('3');
+ });
  it('records lot metadata once per shipment without duplicating stock',async()=>{
   const f=await fixture(['10']),key=randomUUID(),body={lines:[{...f.lines[0],quantity:'4',lotCode:'LOT-A',expiresOn:'2028-02-29'}]};
   const results=await Promise.all([supply.receive(keeper,f.orderId,key,body),supply.receive(keeper,f.orderId,key,body)]);

@@ -23,6 +23,7 @@ describe.sequential('physical stocktake / actual PostgreSQL',()=>{
   const p={...await preview(itemId,'10'),lots},key=randomUUID();
   const replies=await Promise.all([counts.confirm(keeper,key,p),counts.confirm(keeper,key,p)]);expect(replies.filter(r=>!r.idempotentReplay)).toHaveLength(1);
   const read=new SupplyReadService(db),snapshot=async()=>{let cursor:string|undefined;do{const page=await read.list(keeper,'stock',property,cursor),found=page.items.find(r=>r.itemId===itemId);if(found)return found.lotSnapshot;cursor=page.nextCursor??undefined;}while(cursor);throw Error('ITEM_NOT_FOUND');};
+  expect((await query('SELECT j.status FROM supply_lot_movement_intake j JOIN supply_movements m ON m.id=j.movement_id WHERE m.stocktake_id=$1',[replies[0].stocktakeId])).rows).toEqual([{status:'snapshot_recorded'}]);
   expect(await snapshot()).toMatchObject({lots,current:true});expect((await balance(itemId)).quantity).toBe('10');
   await expect(counts.confirm(keeper,key,{...p,lots:[{...lots[0],quantity:'6'},{...lots[1],quantity:'4'}]})).rejects.toThrow('SUPPLY_COMMAND_CONFLICT');
   await expect(counts.confirm(buyer,randomUUID(),p)).rejects.toThrow('PROPERTY_FORBIDDEN');
@@ -47,7 +48,7 @@ describe.sequential('physical stocktake / actual PostgreSQL',()=>{
   const itemId=await item();expect((await preview(itemId,'9007199254740993')).expectedQuantity).toBe('0');expect(await balance(itemId)).toBeUndefined();
   const positive=await counts.confirm(keeper,randomUUID(),await preview(itemId,'9007199254740993'));expect(positive).toMatchObject({deltaQuantity:'9007199254740993',remainingQuantity:'9007199254740993'});
   const negative=await counts.confirm(keeper,randomUUID(),await preview(itemId,'0'));expect(negative.deltaQuantity).toBe('-9007199254740993');
-  const zero=await counts.confirm(keeper,randomUUID(),await preview(itemId,'0'));expect(zero.deltaQuantity).toBe('0');expect(zero.movementId).toMatch(/^[a-f0-9-]{36}$/);
+  const zero=await counts.confirm(keeper,randomUUID(),await preview(itemId,'0'));expect(zero.deltaQuantity).toBe('0');expect((await query('SELECT status FROM supply_lot_movement_intake WHERE movement_id=$1',[zero.movementId])).rows).toEqual([{status:'allocation_pending'}]);expect(zero.movementId).toMatch(/^[a-f0-9-]{36}$/);
   expect(await balance(itemId)).toEqual({quantity:'0',revision:'3'});
   expect((await query("SELECT quantity::text,kind FROM supply_movements WHERE stocktake_id=$1",[zero.stocktakeId])).rows).toEqual([{quantity:'0',kind:'adjustment'}]);
   expect((await query('SELECT * FROM ledger_journals WHERE reference_id=ANY($1::uuid[])',[[positive.stocktakeId,negative.stocktakeId,zero.stocktakeId]])).rows).toHaveLength(0);

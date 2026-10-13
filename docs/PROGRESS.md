@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-14 — L2a: журнал подготовки движений по партиям
+- Migration0110: каждое новое supply_movement атомарно попадает в read-only intake; PK movement_id исключает дубли.
+- Охвачены приход, ручная/маркет-выдача, корректировка, сверка L1 и возврат; откат audit откатывает intake.
+- FORCE RLS по supply.read/object; runtime не может вставить/переписать журнал, чужой scope скрыт.
+- API/история склада RU/UZ/EN показывают сведения прихода/сверки или ожидание распределения; старые движения not_tracked.
+- На dirty8cd3065: web383, Core supply/services/staff-auth150 PASS; API/web typecheck/build, network187/mail15 PASS.
+- Целевой connected supply browser PASS, exit0; общий гостевой browser chain в этом срезе не запускался.
+- Red до migration0110:2 failed/39 passed;110 checksum и git diff --check PASS.
+- Запуск/риски/ручная проверка: SUPPLY_LOT_MOVEMENT_L2A.md; новые зависимости и роли не добавлены.
+- L2 ещё не завершён: intake не распределяет товар и не считает живые остатки партий; FEFO/просрочка отключены.
+- Далее L2b — фактическое распределение всех движений; Canva56 partial/84 pending, public web/APK без обновления.
+
+
 ## 2026-10-14 — L1: физическая сверка партий
 - Форма инвентаризации принимает1–20 партий (код/годность/количество) или явно неизвестную партию; RU/UZ/EN.
 - Migration0109: immutable lot_counts + CHECK структуры/дат/суммы/дубликатов и индекс последнего снимка.

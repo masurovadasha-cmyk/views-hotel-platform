@@ -440,5 +440,25 @@
   "Count every lot, including unknown origin. The sum must match recorded stock. This is a snapshot, not live lot stock.": {
     "ru": "Пересчитайте все партии, включая неизвестные. Сумма должна совпадать с учётным остатком. Это снимок сверки, не текущий остаток партий.",
     "uz": "Barcha partiyalarni, noma’lumlarini ham sanang. Jami hisobdagi qoldiqqa teng bo‘lsin. Bu sanoq qaydi, joriy partiya qoldig‘i emas."
+  },
+  "Receipt lot recorded": {
+    "ru": "Партия поступления записана",
+    "uz": "Kirim partiyasi qayd etildi"
+  },
+  "Lot count snapshot recorded": {
+    "ru": "Сверка партий записана",
+    "uz": "Partiyalar sanog‘i qayd etildi"
+  },
+  "Lot allocation pending": {
+    "ru": "Распределение по партиям ожидается",
+    "uz": "Partiyalarga taqsimlash kutilmoqda"
+  },
+  "Movement predates lot tracking": {
+    "ru": "Движение до начала журнала партий",
+    "uz": "Harakat partiyalar jurnalidan oldin"
+  },
+  "Lot allocation is not enabled. These statuses describe recorded evidence, not live lot balances.": {
+    "ru": "Распределение по партиям не включено. Статусы показывают сохранённые сведения, а не текущие остатки партий.",
+    "uz": "Partiyalarga taqsimlash yoqilmagan. Holatlar qayd etilgan ma’lumotlarni ko‘rsatadi, joriy partiya qoldiqlarini emas."
   }
 }

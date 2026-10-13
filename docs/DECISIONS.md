@@ -223,3 +223,6 @@ Browser actions must await rendered detail before asserting absent controls. Exe
 
 ## L1 lot count snapshots (2026-10-14)
 Reuse stocktake lots as an optional immutable distribution, requiring zero quantity delta. Keep the existing adjustment0 movement/revision so independent counts cannot both confirm the same version. Unknown origin is explicit; no historical lot allocation is inferred. Snapshot currentness is checked against movement revision at read time, not a claim of live per-lot stock. Existing RLS, audit, replay and scoped stocktake workflow apply unchanged.
+
+## L2a lot movement intake (2026-10-14)
+Capture all new physical movements transactionally at the database boundary before enabling lot allocation. Reuse immutable source records rather than infer historic allocations or return provenance. Intake classification is evidence, not an allocation or balance. Runtime has scoped read-only access; actual allocation remains disabled until all movement paths and totals are covered.

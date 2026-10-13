@@ -60,6 +60,7 @@ module.exports=async function({browser,admin,coreOrigin}){
   assert.equal((await admin.query('SELECT status FROM supply_orders WHERE id=$1',[order.id])).rows[0].status,'partially_received');
   assert.deepEqual(writes[0].body,{lines:[{itemId:item.id,quantity:'4',lotCode:'BROWSER-LOT-A',expiresOn:'2028-02-29'}]});
   await storing.panel.getByTestId('supply-lot-details').getByText('Lot: BROWSER-LOT-A · Expiry date: 2028-02-29',{exact:true}).waitFor();
+  await storing.panel.getByTestId('supply-lot-tracking').getByText('Receipt lot recorded',{exact:true}).waitFor();
   const partial=await call(storing.page,'supply/orders?propertyId='+property,'GET',undefined,warehouseHeaders);assert.equal(partial.status,200);assert.equal(partial.body.items.find(o=>o.id===order.id).lines[0].remainingQuantity,'6');
   const exceeded=await call(storing.page,'supply/orders/'+order.id+'/receive','POST',{lines:[{itemId:item.id,quantity:'7'}]},{...warehouseHeaders,'Idempotency-Key':randomUUID()});assert.equal(exceeded.status,409);assert.equal(exceeded.body.error,'RECEIPT_QUANTITY_EXCEEDED');
   const replay=await call(storing.page,'supply/orders/'+order.id+'/receive','POST',writes[0].body,{...warehouseHeaders,'Idempotency-Key':writes[0].key});assert.equal(replay.status,200);assert.equal(replay.body.idempotentReplay,true);
@@ -109,6 +110,7 @@ module.exports=async function({browser,admin,coreOrigin}){
   assert.equal((await admin.query('SELECT quantity::text quantity FROM supply_balances WHERE item_id=$1',[item.id])).rows[0].quantity,'7');checks.push('legacy_empty_receipt_body_full_remaining_and_same_command_replay');
   await storing.panel.getByRole('button',{name:'Load supply data',exact:true}).click();await storing.panel.getByTestId('supply-lot-snapshot').getByText('Stale: recount lots',{exact:false}).waitFor();
   checks.push('lot_snapshot_unknown_origin_zero_adjustment_then_stale_after_receipt');
+  await storing.panel.getByTestId('supply-lot-tracking').getByText('Lot count snapshot recorded',{exact:true}).waitFor();await storing.panel.getByTestId('supply-lot-tracking').getByText('Lot allocation pending',{exact:true}).first().waitFor();checks.push('lot_movement_intake_receipt_snapshot_and_pending_no_live_allocation');
   phase='isolation';await buying.page.goto(web.origin+'/?staffRole=warehouse',{waitUntil:'networkidle'});await buying.page.locator('.staffRoleMismatch').waitFor();assert.equal(await buying.page.getByTestId('supply-warehouse').count(),0);
   const saved=process.env.VIEWS_SUPPLY_PILOT_ENABLED;process.env.VIEWS_SUPPLY_PILOT_ENABLED='false';try{assert.equal((await call(storing.page,'supply/properties','GET',undefined,warehouseHeaders)).body.error,'SUPPLY_DISABLED');}finally{if(saved===undefined)delete process.env.VIEWS_SUPPLY_PILOT_ENABLED;else process.env.VIEWS_SUPPLY_PILOT_ENABLED=saved;}
   await admin.query('DELETE FROM membership_property_scopes WHERE membership_id=$1 AND property_id=$2',[warehouse.member,property]);

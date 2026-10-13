@@ -67,7 +67,7 @@ describe.sequential('V Market adjustments / real PostgreSQL',()=>{
   await expect(credit(o,'10')).rejects.toThrow('FOLIO_NOT_OPEN');
  });
  it('quarantines returns, restocks inspected goods once and keeps credits separate',async()=>{
-  let {f,o}=await completed();const initial=o,key=randomUUID(),body=command(o,'receive_return',{serviceId:f.s,quantity:1,note:'Sealed item returned'});
+  let {f,o}=await completed();expect((await stock("SELECT j.status FROM supply_lot_movement_intake j JOIN supply_movements m ON m.id=j.movement_id WHERE m.item_id=$1 AND m.kind='issue'",[f.s])).rows).toEqual([{status:'allocation_pending'}]);const initial=o,key=randomUUID(),body=command(o,'receive_return',{serviceId:f.s,quantity:1,note:'Sealed item returned'});
   const results=await Promise.all([service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body),service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body)]);expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);o=results[0];const rid=o.returns![0].id;
   expect(o).toMatchObject({creditedMinor:'0',returns:[{status:'quarantined',quantity:1}]});expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('3');
   await expect(act(o,'restock_return',{returnId:rid,note:'Inspected',checklist:{sealed:false,expiry:true,quality:true}})).rejects.toThrow('SERVICE_INPUT_INVALID');
@@ -75,6 +75,7 @@ describe.sequential('V Market adjustments / real PostgreSQL',()=>{
   o=await service.staffAct(actor(),'b1'.repeat(32),o.orderId,restockKey,restockBody);expect((await service.staffAct(actor(),'b1'.repeat(32),o.orderId,restockKey,restockBody)).idempotentReplay).toBe(true);
   expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('4');
   expect((await stock("SELECT * FROM supply_movements WHERE market_return_id=$1",[rid])).rowCount).toBe(1);
+  expect((await stock('SELECT j.status FROM supply_lot_movement_intake j JOIN supply_movements m ON m.id=j.movement_id WHERE m.market_return_id=$1',[rid])).rows).toEqual([{status:'allocation_pending'}]);
   await expect(act(o,'receive_return',{serviceId:f.s,quantity:2,note:'Too many units'})).rejects.toThrow('SERVICE_RETURN_LIMIT');
   o=await act(o,'receive_return',{serviceId:f.s,quantity:1,note:'Opened item returned'});const second=o.returns!.find(r=>r.status==='quarantined')!.id;
   o=await act(o,'discard_return',{returnId:second,note:'Opened packaging disposed'});expect(o.returns!.find(r=>r.id===second)!.status).toBe('discarded');
