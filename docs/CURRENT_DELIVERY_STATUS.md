@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 12 October 2026 (Tashkent)
 
+L2f.1: [проверочный расчёт остатков партий](SUPPLY_LOT_PROJECTION_L2F1.md), только feature-ветка. Выдача/резервы не используют projection как разрешение.
+
 L2e/L3a: история партий возврата и проверка согласованной годности в feature-ветке; см. MARKET_LOT_HISTORY_EXPIRY.md и MARKET_REMAINING.md.
 
 L2d: [возврат в партию выдачи](MARKET_RETURN_LOT_L2D.md) в feature-ветке; публичные веб/APK без изменений.

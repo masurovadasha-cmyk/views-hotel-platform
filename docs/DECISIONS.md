@@ -238,3 +238,6 @@ An explicit inspected label match may link a restock movement to the immutable o
 
 ## Approved lot expiry boundary (2026-10-14)
 Owner explicitly approved: the printed expiry date remains valid until the end of that calendar day in the property timezone. Unknown dates require manual verification and are not eligible for automatic issue. Implement the known-date guard first; current manual stock issue and marketplace inspection remain explicit, and no automatic FEFO/issue is enabled. Never infer an unknown date from another receipt.
+
+## L2f.1 verification projection (2026-10-14)
+Before operational live-lot allocation, maintain a read-only projection anchored to a new physical count. Known movements update quantities; unallocated issues and undistributed corrections invalidate the whole breakdown instead of guessing a lot. Positive unlabelled receipts/returns explicitly enter unknown provenance. Never let this read model authorize operations or replace immutable movement evidence; existing commands and fresh-count guard remain unchanged.

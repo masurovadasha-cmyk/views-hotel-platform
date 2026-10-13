@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-14 — L2f.1: проверочный расчёт остатков партий
+- Migration0115: read-only projection от новой физической сверки; scoped RLS, общий item lock и атомарное обновление.
+- Приход/подтверждённая выдача/связанный возврат пересчитывают партии; сумма равна SKU, неизвестное происхождение явно null/null.
+- Нераспределённая выдача/корректировка скрывает lots до новой сверки; последующий приход не восстанавливает разбивку предположительно.
+- API/экран RU/UZ/EN показывают статус и расчёт; frontend отвергает несовпадающие суммы.
+- Red: Core1 failed/14 passed, UI1 failed/11 passed. Dirty77ae465: web385/Core158 PASS; API/web build/typecheck PASS.
+- Network187/mail15,115 checksum и diff check PASS; targeted connected supply browser PASS, exit0.
+- Проверены конкурентные поступления, replay, откат после обновления projection, RLS, ручной issue и market return.
+- Запуск/ручная проверка/риски: SUPPLY_LOT_PROJECTION_L2F1.md. Новых зависимостей и прав нет.
+- Это проверочный read model, не операционный ledger; выдача всё ещё требует свежей сверки, резерв/FEFO не включены.
+- Далее L2f.2: операционный ledger и выбор по актуальному revision. Canva56 partial/84 pending; public web/APK без изменений.
+
 ## 2026-10-14 — L2e / L3a: история возврата и годность
 - История склада показывает подтверждённую партию возврата/исходную выдачу; unknown/legacy не переименованы в известные.
 - Frontend проверяет структуру provenance и запрещает её на issue; scoped read/RLS сохранены.

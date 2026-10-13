@@ -484,5 +484,9 @@
   "Returned to the confirmed issued lot": {"ru":"Возвращено в подтверждённую партию выдачи","uz":"Tasdiqlangan berilgan partiyaga qaytarildi"},
   "Source issue": {"ru":"Исходная выдача","uz":"Dastlabki berish"},
   "The selected lot is expired or unavailable. Check its label and refresh stock.": {"ru":"Выбранная партия просрочена или недоступна. Проверьте маркировку и обновите склад.","uz":"Tanlangan partiya muddati o‘tgan yoki mavjud emas. Yorliqni tekshiring va omborni yangilang."},
-  "Known expiry dates are checked through the end of the property day. Unknown expiry requires manual verification; no automatic lot allocation.": {"ru":"Срок действует до конца дня по часовому поясу объекта. Неизвестный срок требует ручной проверки; автоматического выбора партии нет.","uz":"Muddat obyekt vaqt zonasida kun oxirigacha amal qiladi. Noma’lum muddat qo‘lda tekshiriladi; partiya avtomatik tanlanmaydi."}
+  "Known expiry dates are checked through the end of the property day. Unknown expiry requires manual verification; no automatic lot allocation.": {"ru":"Срок действует до конца дня по часовому поясу объекта. Неизвестный срок требует ручной проверки; автоматического выбора партии нет.","uz":"Muddat obyekt vaqt zonasida kun oxirigacha amal qiladi. Noma’lum muddat qo‘lda tekshiriladi; partiya avtomatik tanlanmaydi."},
+  "Tracked lot quantities": {"ru":"Расчёт остатков партий","uz":"Partiya qoldiqlari hisobi"},
+  "Matches stock at last check": {"ru":"Совпадает с общим остатком на момент проверки","uz":"Tekshiruv paytida umumiy qoldiqqa mos"},
+  "Lot tracking needs a new physical count": {"ru":"Нужна новая физическая сверка партий","uz":"Partiyalarni qayta jismoniy sanash kerak"},
+  "Read-only tracking; this does not reserve lots or enable automatic issue.": {"ru":"Только проверочный расчёт: резервирования партий и автоматической выдачи нет.","uz":"Faqat tekshiruv hisobi: partiyalar band qilinmaydi va avtomatik berilmaydi."}
 }

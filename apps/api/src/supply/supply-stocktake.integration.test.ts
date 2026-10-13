@@ -18,6 +18,22 @@ async function receive(itemId:string,quantity:string){const order=await supply.c
 beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker).toBe('VIEWS_DISPOSABLE_CORE_TEST'));
 beforeEach(()=>{vi.stubEnv('NODE_ENV','test');vi.stubEnv('VIEWS_LOCAL_REHEARSAL','true');vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');});afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('physical stocktake / actual PostgreSQL',()=>{
+ it('projects counted lots through known moves and fails closed on unallocated issues',async()=>{
+  const itemId=await item();await receive(itemId,'10');const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'10'),lots:[{lotCode:'PROJECTION',expiresOn:'2028-01-01',quantity:'10'}]});
+  const projection=async()=>(await new SupplyReadService(db).list(keeper,'stock',property)).items.find(x=>x.itemId===itemId)!.lotProjection;
+  expect(await projection()).toMatchObject({status:'reconciled',totalQuantity:'10',lots:[{lotCode:'PROJECTION',quantity:'10'}]});
+  const key=randomUUID(),body={propertyId:property,itemId,quantity:'2',reference:'Projection issue',lotAllocation:{snapshotId:snap.stocktakeId,lotCode:'PROJECTION',expiresOn:'2028-01-01'}};await supply.issue(keeper,key,body);await supply.issue(keeper,key,body);
+  expect(await projection()).toMatchObject({status:'reconciled',totalQuantity:'8',lots:[{quantity:'8'}]});
+  await Promise.all([receive(itemId,'2'),receive(itemId,'3')]);const current=await projection();expect(current.totalQuantity).toBe('13');expect(current.lots).toEqual(expect.arrayContaining([{lotCode:null,expiresOn:null,quantity:'5'},{lotCode:'PROJECTION',expiresOn:'2028-01-01',quantity:'8'}]));
+  await expect(supply.issue(keeper,randomUUID(),{propertyId:property,itemId,quantity:'99',reference:'Rejected'})).rejects.toThrow();expect(await projection()).toEqual(current);
+  await supply.issue(keeper,randomUUID(),{propertyId:property,itemId,quantity:'1',reference:'Unallocated issue'});expect(await projection()).toMatchObject({status:'recount_required',totalQuantity:'12',lots:null});
+  await receive(itemId,'1');expect(await projection()).toMatchObject({status:'recount_required',totalQuantity:'13',lots:null});
+  await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'13'),lots:[{lotCode:null,expiresOn:null,quantity:'13'}]});expect(await projection()).toMatchObject({status:'reconciled',totalQuantity:'13'});
+  const restored=await projection();await expect(db.withActor(keeper,async c=>{await c.query("INSERT INTO supply_movements(organization_id,property_id,item_id,kind,quantity,reference,actor_user_id,actor_membership_id) VALUES($1,$2,$3,'issue',-1,'Rollback projection',$4,$5)",[org,property,itemId,keeper.userId,keeper.membershipId]);throw Error('ROLLBACK_PROJECTION');})).rejects.toThrow('ROLLBACK_PROJECTION');expect(await projection()).toEqual(restored);
+  const order=await supply.createOrder(buyer,randomUUID(),{propertyId:property,reference:'Known lot receipt',lines:[{itemId,quantity:'2'}]});await supply.receive(keeper,order.orderId,randomUUID(),{lines:[{itemId,quantity:'2',lotCode:'NEW',expiresOn:'2028-01-01'}]});expect(await projection()).toMatchObject({status:'reconciled',totalQuantity:'15',lots:expect.arrayContaining([{lotCode:'NEW',expiresOn:'2028-01-01',quantity:'2'}])});
+  expect((await query('SELECT * FROM supply_lot_projections WHERE item_id=$1',[itemId],foreign)).rows).toHaveLength(0);
+  expect((await query("UPDATE supply_lot_projections SET status='recount_required' WHERE item_id=$1",[itemId])).rowCount).toBe(0);
+ });
  it('honours property end-of-day expiry and atomically rejects an expired selected lot',async()=>{
   const dates=(await query("SELECT app.lot_date_allowed('2026-10-14','Asia/Tashkent','2026-10-14T18:59:59Z') before,app.lot_date_allowed('2026-10-14','Asia/Tashkent','2026-10-14T19:00:00Z') after,app.lot_date_allowed(NULL,'Asia/Tashkent','2026-10-14T18:00:00Z') unknown")).rows[0];expect(dates).toEqual({before:true,after:false,unknown:false});
   const itemId=await item();await receive(itemId,'4');const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'4'),lots:[{lotCode:'EXPIRED',expiresOn:'2000-01-01',quantity:'4'}]});
