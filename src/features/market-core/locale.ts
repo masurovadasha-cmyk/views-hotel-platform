@@ -1,9 +1,12 @@
 import type {Locale} from '../../i18n/messages';
 import {cleaningText} from '../service-orders/locale';
 const rows:Record<string,[string,string,string]>={
+ reopenHistory:['Возвраты на согласование','Reopening history','Kelishuvga qaytarish tarixi'],
+ reopenHistoryScope:['Последние 20 записей после включения журнала; новые сверху.','Latest 20 entries since history was enabled; newest first.','Jurnal yoqilganidan beri oxirgi 20 yozuv; yangilari yuqorida.'],
+
  reopen:['Вернуть на согласование','Reopen for agreement','Kelishuvga qaytarish'],
  reopenTerms:['До передачи гостю верните все собранные товары в зону хранения. Резерв сохранится; прежний чек-лист сборки сбросится. Затем можно предложить новый состав.','Before guest handover, return all picked goods to storage. The reserve stays; the picking checklist is cleared. You can then propose a new basket.','Mehmonga topshirishdan oldin barcha yig‘ilgan tovarlarni saqlash joyiga qaytaring. Zaxira saqlanadi; tekshiruv ro‘yxati tozalanadi. Keyin yangi tarkib taklif qilish mumkin.'],
- reopenNote:['Причина возврата на согласование','Reason for reopening','Kelishuvga qaytarish sababi'],
+ reopenNote:['Причина для гостя','Reason for reopening (visible to guest)','Qaytarish sababi (mehmonga ko‘rinadi)'],
  reopenConfirm:['Все товары возвращены в зону хранения и не переданы гостю','All goods are back in storage and have not been handed to the guest','Barcha tovarlar saqlash joyiga qaytarildi va mehmonga topshirilmadi'],
 
  removeLineTerms:['Укажите 0, чтобы предложить исключить позицию. В заказе должна остаться хотя бы одна позиция.','Enter 0 to propose removing this item. At least one item must remain in the order.','Tovarni chiqarishni taklif qilish uchun 0 kiriting. Buyurtmada kamida bitta tovar qolishi kerak.'],

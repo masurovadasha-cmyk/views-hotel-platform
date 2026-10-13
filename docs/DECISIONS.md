@@ -211,3 +211,6 @@ Supersedes Canva19's no-zero restriction: propose_quantity quantity0 removes a l
 
 ## Canva21 — reopen picking before handover (2026-10-13)
 Use a distinct warehouse command to confirm physical return to storage before reopening the existing proposal workflow. Keep reservations and quantities unchanged; clear the picking checklist. Do not allow direct post-handover edits or invent a physical stock return movement when no stock issue happened. Lifecycle guard exception is limited to privileged market reset, not general backward transitions.
+
+## Canva22 — guest-visible reopening reasons (2026-10-13)
+Start an explicit public history at migration0107; do not backfill reasons previously entered without guest-visible disclosure. Keep newest20 plus tracked count, while original audit stays private. Share only time/reason, never employee identifiers. History belongs to the original order and is not silently copied to successors.

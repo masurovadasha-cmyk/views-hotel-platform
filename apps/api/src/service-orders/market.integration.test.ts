@@ -37,6 +37,14 @@ const command=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>(
 const act=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>service.staffAct(actor(),'b1'.repeat(32),o.orderId,randomUUID(),command(o,action,extra));
 const checklist={quantities:true,expiry:true,packaging:true};
 describe.sequential('V Market / real PostgreSQL',()=>{
+ it('keeps a bounded newest-first history with the complete count',async()=>{
+  const f=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);
+  for(let n=1;n<=22;n++){o=await act(o,'pick');o=await act(o,'reopen_picking',{returnedToStorage:true,note:'Public reason '+n});}
+  expect(o.reopenCount).toBe(22);expect(o.reopenHistory).toHaveLength(20);
+  expect(o.reopenHistory![0].note).toBe('Public reason 22');expect(o.reopenHistory![19].note).toBe('Public reason 3');
+  const latest=(await service.guestList(f.a.token,f.r)).items.find(x=>x.orderId===o.orderId)!;
+  expect(latest.reopenHistory).toEqual(o.reopenHistory);
+ });
  it('serializes reopening against physical handover',async()=>{
   const f=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);o=await act(o,'pick');o=await act(o,'ready',{checklist});
   const results=await Promise.allSettled([act(o,'reopen_picking',{returnedToStorage:true,note:'Back in storage'}),act(o,'handover')]);
@@ -56,7 +64,8 @@ describe.sequential('V Market / real PostgreSQL',()=>{
   await expect(service.staffAct(actor(2),'b2'.repeat(32),o.orderId,randomUUID(),command(o,'reopen_picking',fields))).rejects.toThrow('SERVICE_FORBIDDEN');
   const key=randomUUID(),body=command(o,'reopen_picking',fields),old=o;
   const results=await Promise.all([service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body),service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body)]);
-  expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);o=results[0];expect(o).toMatchObject({stage:'reserved',revision:old.revision+1,totalMinor:'200'});
+  expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);o=results[0];expect(o).toMatchObject({stage:'reserved',revision:old.revision+1,totalMinor:'200',reopenCount:2,reopenHistory:[{note:fields.note,at:expect.any(String)},{note:fields.note,at:expect.any(String)}]});
+  expect((await service.guestList(f.a.token,f.r)).items.find(x=>x.orderId===o.orderId)).toMatchObject({reopenCount:2,reopenHistory:expect.any(Array)});
   expect((await run('SELECT checklist FROM market_orders WHERE order_id=$1',[o.orderId])).rows[0].checklist).toBeNull();
   expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('5');
   expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});

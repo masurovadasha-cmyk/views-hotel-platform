@@ -12,6 +12,10 @@ function projection(b){
    result.items=v.items===null?null:v.items.map(i=>({tag:i.tag,description:i.description,priceMinor:i.priceMinor}));
   }
   if(Object.hasOwn(v,'lines')){if(!Array.isArray(v.lines)||v.lines.length>20)throw Error('INVALID_RESPONSE');result.lines=v.lines.map(l=>({serviceId:l.serviceId,name:l.name,quantity:l.quantity,priceMinor:l.priceMinor}));}
+  if(v.reopenHistory!==undefined){
+   if(!Array.isArray(v.reopenHistory)||v.reopenHistory.length>20||!Number.isSafeInteger(v.reopenCount)||v.reopenCount<v.reopenHistory.length)throw Error('INVALID_RESPONSE');
+   result.reopenCount=v.reopenCount;result.reopenHistory=v.reopenHistory.map(e=>({at:e.at,note:e.note}));
+  }
   if(v.returns){if(!Array.isArray(v.returns)||v.returns.length>20||!Array.isArray(v.returnedByService)||v.returnedByService.length>20)throw Error('INVALID_RESPONSE');result.returns=v.returns.map(r=>({id:r.id,serviceId:r.serviceId,quantity:r.quantity,status:r.status,reason:r.reason,resolutionNote:r.resolutionNote,receivedAt:r.receivedAt,resolvedAt:r.resolvedAt}));result.returnedByService=v.returnedByService.map(r=>({serviceId:r.serviceId,quantity:r.quantity}));}
   if(v.credits){if(!Array.isArray(v.credits)||v.credits.length>20)throw Error('INVALID_RESPONSE');result.credits=v.credits.map(c=>({id:c.id,amountMinor:c.amountMinor,reason:c.reason,createdAt:c.createdAt}));}
   if(v.proposal){const p=v.proposal;if(!Array.isArray(p.lines)||p.lines.length>20)throw Error('INVALID_RESPONSE');result.proposal={status:p.status,kind:p.kind==='quantity'?'quantity':'replacement',note:p.note,totalMinor:p.totalMinor,expiresAt:p.expiresAt,lines:p.lines.map(l=>({serviceId:l.serviceId,name:l.name,quantity:l.quantity,priceMinor:l.priceMinor}))};}

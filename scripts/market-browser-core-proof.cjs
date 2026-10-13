@@ -103,13 +103,18 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await sc.getByRole('button',{name:'Start picking',exact:true}).click();await sc.getByTestId('market-stage').getByText('Being picked',{exact:true}).waitFor();assert.equal(await sc.getByRole('button',{name:'Finish picking',exact:true}).isDisabled(),true);
   for(const label of ['Items and quantities checked','Expiry dates checked','Packaging checked'])await sc.getByLabel(label,{exact:true}).check();
   await sc.getByRole('button',{name:'Finish picking',exact:true}).click();
-  const reopen=sc.getByTestId('market-reopen');await reopen.getByLabel('Reason for reopening',{exact:true}).fill('All picked goods returned for agreement');
+  const reopen=sc.getByTestId('market-reopen');await reopen.getByLabel('Reason for reopening (visible to guest)',{exact:true}).fill('All picked goods returned for agreement');
   assert.equal(await reopen.getByRole('button',{name:'Reopen for agreement',exact:true}).isDisabled(),true);
   await reopen.getByLabel('All goods are back in storage and have not been handed to the guest',{exact:true}).check();
   await reopen.getByRole('button',{name:'Reopen for agreement',exact:true}).click();await sc.getByTestId('market-stage').getByText('Stock reserved',{exact:true}).waitFor();
   assert.equal((await admin.query('SELECT checklist FROM market_orders WHERE order_id=$1',[oid])).rows[0].checklist,null);
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByTestId('market-stage').getByText('Stock reserved',{exact:true}).waitFor();
   assert.equal(await gc.getByTestId('market-reopen').count(),0);
+  const guestHistory=gc.getByTestId('market-reopen-history'),staffHistory=sc.getByTestId('market-reopen-history');
+  await guestHistory.getByText('All picked goods returned for agreement',{exact:true}).waitFor();
+  assert.equal(await guestHistory.locator('li').count(),1);
+  assert.equal(await guestHistory.locator('time').getAttribute('datetime'),await staffHistory.locator('time').getAttribute('datetime'));
+
   await sc.getByRole('button',{name:'Start picking',exact:true}).click();await sc.getByTestId('market-stage').getByText('Being picked',{exact:true}).waitFor();
   assert.equal(await sc.getByRole('button',{name:'Finish picking',exact:true}).isDisabled(),true);
   for(const label of ['Items and quantities checked','Expiry dates checked','Packaging checked'])await sc.getByLabel(label,{exact:true}).check();

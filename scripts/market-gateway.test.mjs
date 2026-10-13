@@ -4,6 +4,12 @@ const require=createRequire(import.meta.url),guest=require('../apps/api/ops/gues
 const id='12345678-1234-4123-8123-123456789012';
 afterEach(()=>vi.unstubAllEnvs());
 describe('market cookie boundary',()=>{
+ it('projects public reopening history without employee identities',()=>{
+  const r={at:'2026-10-13T18:00:00Z',note:'Guest-facing reason',actorUserId:id};
+  const result=guest.projection({orderId:id,revision:1,idempotentReplay:false,reopenCount:1,reopenHistory:[r]});
+  expect(result.reopenCount).toBe(1);expect(result.reopenHistory).toEqual([{at:r.at,note:r.note}]);
+  expect(()=>guest.projection({orderId:id,revision:1,idempotentReplay:false,reopenCount:21,reopenHistory:Array(21).fill(r)})).toThrow();
+ });
  it('is opt-in and demands CSRF on mutations',async()=>{
   vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','false');
   const calls=[],ctx={route:'services/market',req:{method:'POST',headers:{}},res:{},token:'synthetic',csrf:()=> 'csrf',reply:(_r,s)=>calls.push(s),upstream:()=>{throw Error('MUST_NOT_FORWARD');}};
