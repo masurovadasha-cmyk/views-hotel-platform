@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 12 October 2026 (Tashkent)
 
+L2f.3: [выдача V Market по актуальным версиям партий](MARKET_CURRENT_LOTS_L2F3.md), feature-ветка; public web/APK без изменений.
+
 L2f.2: [журнал версий партий и актуальная ручная выдача](SUPPLY_LOT_LEDGER_L2F2.md) в feature-ветке; public web/APK без изменений.
 
 L2f.1: [проверочный расчёт остатков партий](SUPPLY_LOT_PROJECTION_L2F1.md), только feature-ветка. Выдача/резервы не используют projection как разрешение.

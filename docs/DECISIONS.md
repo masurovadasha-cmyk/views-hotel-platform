@@ -244,3 +244,6 @@ Before operational live-lot allocation, maintain a read-only projection anchored
 
 ## L2f.2 current ledger version issue (2026-10-14)
 Persist immutable normalized after-movement lot distribution checkpoints, including explicit uninitialized/recount states. An optional movementId binds a manual issue to the current checkpoint under the stable item lock; authorize quantity from ledger lines, not client data or mutable projection quantities. Preserve the old fresh-count contract when the token is absent. No historic journal backfill, automatic allocation or lot reservation.
+
+## L2f.3 — текущие партии V Market
+Выдача использует существующий optional movementId миграции0116, без новой схемы. Выбор ручной: одна партия на позицию; при обновлении набора партий сбрасываются выбор и подтверждение передачи. Актуальные варианты доступны только staff API. Резерв по партиям и FEFO — отдельные срезы.

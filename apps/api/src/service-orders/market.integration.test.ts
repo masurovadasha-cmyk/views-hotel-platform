@@ -37,6 +37,19 @@ const command=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>(
 const act=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>service.staffAct(actor(),'b1'.repeat(32),o.orderId,randomUUID(),command(o,action,extra));
 const checklist={quantities:true,expiry:true,packaging:true};
 describe.sequential('V Market / real PostgreSQL',()=>{
+ it('hands over current lot versions after stock moves and rolls back stale multi-item selections',async()=>{
+  await run('UPDATE service_catalog SET active=true WHERE id=ANY($1::uuid[])',[[item(57),item(58)]]);const f=await fixture(item(57)),g=await fixture(item(58));
+  let o=await service.request(f.a.token,randomUUID(),{...f.body,lines:[...f.body.lines,...g.body.lines],expectedTotalMinor:'400'});o=await act(o,'pick');o=await act(o,'ready',{checklist});
+  for(const serviceId of [f.s,g.s]){const b=(await stock('SELECT quantity::text,revision::text FROM supply_balances WHERE item_id=$1',[serviceId])).rows[0];await new SupplyStocktakeService(db).confirm(actor(),randomUUID(),{propertyId:property,itemId:serviceId,countedQuantity:b.quantity,expectedQuantity:b.quantity,expectedRevision:b.revision,reason:'Current market lots',lots:[{lotCode:'CURRENT',expiresOn:'2028-01-01',quantity:b.quantity}]});}
+  const choices=async()=>(await service.staffList(actor(),'b1'.repeat(32),property)).items.find(x=>x.orderId===o.orderId)!.trackedLots!;
+  const selection=(lots:Awaited<ReturnType<typeof choices>>)=>lots.map(({serviceId,quantity,...lotAllocation})=>({serviceId,lotAllocation}));
+  let lots=await choices();expect(lots).toHaveLength(2);expect((await service.guestList(f.a.token,f.r)).items.find(x=>x.orderId===o.orderId)).not.toHaveProperty('trackedLots');
+  await supply.issue(actor(),randomUUID(),{propertyId:property,itemId:g.s,quantity:'1',reference:'Intervening allocated issue',lotAllocation:selection(lots).find(x=>x.serviceId===g.s)!.lotAllocation});
+  await expect(act(o,'handover',{lotSelections:selection(lots)})).rejects.toThrow('SERVICE_REVISION_CHANGED');expect((await stock('SELECT count(*)::int n FROM supply_movements WHERE reference=$1',['V Market '+o.orderId])).rows[0].n).toBe(0);
+  expect((await stock('SELECT stage FROM market_orders WHERE order_id=$1',[o.orderId])).rows[0].stage).toBe('ready');lots=await choices();expect(lots.find(l=>l.serviceId===g.s)?.quantity).toBe('4');
+  const key=randomUUID(),cmd=command(o,'handover',{lotSelections:selection(lots)});const both=await Promise.all([service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,cmd),service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,cmd)]);expect(both.filter(x=>!x.idempotentReplay)).toHaveLength(1);expect(both[0].totalMinor).toBe('400');
+  expect((await stock("SELECT count(*)::int n FROM supply_movements WHERE reference=$1 AND lot_allocation ? 'movementId'",['V Market '+o.orderId])).rows[0].n).toBe(2);
+ });
  it('hands over all selected counted lots atomically, without leaking staff choices or double issue',async()=>{
   await run('UPDATE service_catalog SET active=true WHERE id=ANY($1::uuid[])',[[item(59),item(60)]]); // Dedicated products: do not shift the neighbouring suite fixture range.
   const f=await fixture(item(59)),second=await fixture(item(60)),body={...f.body,lines:[...f.body.lines,...second.body.lines],expectedTotalMinor:'400'};

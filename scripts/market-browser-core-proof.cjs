@@ -119,18 +119,33 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   assert.equal(await sc.getByRole('button',{name:'Finish picking',exact:true}).isDisabled(),true);
   for(const label of ['Items and quantities checked','Expiry dates checked','Packaging checked'])await sc.getByLabel(label,{exact:true}).check();
   const countedItems=(await admin.query('SELECT l.item_id,b.quantity::text FROM market_order_lines l JOIN supply_balances b ON b.item_id=l.item_id WHERE l.order_id=$1',[oid])).rows;
-  for(const item of countedItems){
+  async function countItem(item){
    const result=await warehouse.evaluate(async({item,property,key})=>{const session=await(await fetch('/local-api/session',{headers:{'X-Views-Local-Workspace':'1'}})).json();const headers={'Content-Type':'application/json','X-Views-Local-Workspace':'1','X-CSRF-Token':session.csrf,'Idempotency-Key':key};const body={propertyId:property,itemId:item.item_id,countedQuantity:item.quantity,reason:'Synthetic market lot count',lots:[{lotCode:'MARKET-BROWSER',expiresOn:'2028-01-01',quantity:item.quantity}]};const preview=await fetch('/local-api/supply/stocktake/preview',{method:'POST',headers,body:JSON.stringify(body)});if(!preview.ok)return preview.status;const p=await preview.json();return(await fetch('/local-api/supply/stocktake/confirm',{method:'POST',headers,body:JSON.stringify({...body,expectedQuantity:p.expectedQuantity,expectedRevision:p.expectedRevision})})).status;},{item,property,key:randomUUID()});assert.equal(result,200);
   }
+  for(const item of countedItems)await countItem(item);
   await sc.getByRole('button',{name:'Finish picking',exact:true}).click();
   await sc.getByLabel('Use counted lots',{exact:true}).check();
+  await sc.getByLabel('Use current lot versions',{exact:true}).check();
   assert.equal(await sc.getByRole('button',{name:'Confirm handover',exact:true}).isDisabled(),true);
   const lotSelectors=sc.getByTestId('market-counted-lot');assert.equal(await lotSelectors.count(),countedItems.length);
   for(const select of await lotSelectors.all())await select.selectOption({index:1});
   await sc.getByLabel('Order physically handed to guest',{exact:true}).check();
   await lotSelectors.first().selectOption('');assert.equal(await sc.getByRole('button',{name:'Confirm handover',exact:true}).isDisabled(),true);await lotSelectors.first().selectOption({index:1});
+  await countItem(countedItems[0]);
+  const rejected=warehouse.waitForResponse(r=>r.request().method()==='POST'&&r.url().includes('/market/')&&r.status()===409);
+  await sc.getByRole('button',{name:'Confirm handover',exact:true}).click();await rejected;
+  assert.equal((await admin.query('SELECT count(*)::int n FROM supply_movements WHERE reference=$1',['V Market '+oid])).rows[0].n,0);
+  const refreshed=warehouse.waitForResponse(r=>r.request().method()==='GET'&&r.url().includes('/market/'));
+  await staff.getByRole('button',{name:'Refresh',exact:true}).click();await refreshed;
+  await warehouse.waitForFunction(id=>{const input=document.querySelector('[data-market-order="'+id+'"] [data-testid="market-lot-handover"] input');return input&&!input.checked;},oid);
+  await sc.getByLabel('Use counted lots',{exact:true}).check();
+  await sc.getByLabel('Use current lot versions',{exact:true}).check();
+  assert.equal(await sc.getByLabel('Order physically handed to guest',{exact:true}).isChecked(),false);
+  assert.equal(await lotSelectors.first().inputValue(),'');
+  for(const select of await lotSelectors.all())await select.selectOption({index:1});
+  await sc.getByLabel('Order physically handed to guest',{exact:true}).check();
   await sc.getByRole('button',{name:'Confirm handover',exact:true}).click();await sc.getByTestId('market-stage').getByText('Handed over — confirm receipt',{exact:true}).waitFor();
-  assert.equal((await admin.query("SELECT count(*)::int n FROM supply_movements WHERE reference=$1 AND lot_allocation->>'lotCode'='MARKET-BROWSER'",['V Market '+oid])).rows[0].n,countedItems.length);
+  assert.equal((await admin.query("SELECT count(*)::int n FROM supply_movements WHERE reference=$1 AND lot_allocation->>'lotCode'='MARKET-BROWSER' AND lot_allocation ? 'movementId'",['V Market '+oid])).rows[0].n,countedItems.length);
   assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'3');assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();
   await gc.getByLabel('Describe missing or damaged goods (3–1000 characters)',{exact:true}).fill('One juice bottle is missing');
@@ -201,6 +216,6 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   const returned=storage.getByTestId('supply-returned-lot');
   for(let n=0;n<20&&await returned.count()===0;n++){const next=storage.getByRole('button',{name:'Next movements',exact:true});if(await next.count()===0)break;const response=warehouse.waitForResponse(r=>r.url().includes('/local-api/supply/movements?'));await next.click();await response;await storage.getByRole('button',{name:'Load supply data',exact:true}).waitFor();}
   await returned.filter({hasText:'MARKET-BROWSER'}).first().waitFor();
-  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','replacement_consent_own_reserve_lost_reply_one_successor','warehouse_proposal_expiry_decline_and_guest_consent_same_key','warehouse_pick_checklist_handover','counted_lots_complete_selection_clear_and_movement_provenance','stock_issue','issue_blocks_receipt','warehouse_answer_no_financial_or_stock_change','guest_receipt_single_folio','private_item_id_stripped','quarantine_inspection_restock_no_credit','return_confirmed_issued_lot_provenance','warehouse_return_lot_history','accountant_credit_same_key_no_stock_or_payment','three_languages_mobile'],publicEnabled:false}));
+  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','replacement_consent_own_reserve_lost_reply_one_successor','warehouse_proposal_expiry_decline_and_guest_consent_same_key','warehouse_pick_checklist_handover','current_lot_versions_stale_rejection_atomic_rollback_refresh_reselection_provenance','stock_issue','issue_blocks_receipt','warehouse_answer_no_financial_or_stock_change','guest_receipt_single_folio','private_item_id_stripped','quarantine_inspection_restock_no_credit','return_confirmed_issued_lot_provenance','warehouse_return_lot_history','accountant_credit_same_key_no_stock_or_payment','three_languages_mobile'],publicEnabled:false}));
  }finally{if(context)await context.close();await web.close();}
 };
