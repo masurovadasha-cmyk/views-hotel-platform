@@ -5,7 +5,7 @@ export type SupplyItem={id:string;sku:string;name:string;unit:SupplyUnit};
 export type SupplyLine={itemId:string;sku:string;name:string;unit:SupplyUnit;quantity:string;receivedQuantity:string;remainingQuantity:string};
 export type SupplyOrder={id:string;reference:string;status:'ordered'|'partially_received'|'received';createdAt:string;lines:SupplyLine[]};
 export type StockItem={itemId:string;sku:string;name:string;unit:SupplyUnit;quantity:string;reservedQuantity?:string;availableQuantity?:string};
-export type StockMovement={id:string;itemId:string;sku:string;name:string;unit:SupplyUnit;kind:'receipt'|'issue'|'adjustment'|'return';quantity:string;reference:string;createdAt:string};
+export type StockMovement={lotCode?:string|null;expiresOn?:string|null;id:string;itemId:string;sku:string;name:string;unit:SupplyUnit;kind:'receipt'|'issue'|'adjustment'|'return';quantity:string;reference:string;createdAt:string};
 export type SupplyPage<T>={items:T[];nextCursor:string|null};
 export type StocktakeInput={propertyId:string;itemId:string;countedQuantity:string;reason:string};
 export type StocktakePreview=StocktakeInput&{sku:string;name:string;unit:SupplyUnit;expectedQuantity:string;deltaQuantity:string;expectedRevision:string};
@@ -13,7 +13,7 @@ export type StocktakeConfirm=StocktakeInput&{expectedQuantity:string;expectedRev
 export type SupplyCommand=
  |{kind:'item';key:string;body:{propertyId:string;sku:string;name:string;unit:SupplyUnit}}
  |{kind:'order';key:string;body:{propertyId:string;reference:string;lines:{itemId:string;quantity:string}[]}}
- |{kind:'receive';key:string;orderId:string;body:Record<string,never>|{lines:{itemId:string;quantity:string}[]}}
+ |{kind:'receive';key:string;orderId:string;body:Record<string,never>|{lines:{itemId:string;quantity:string;lotCode?:string;expiresOn?:string}[]}}
  |{kind:'stocktake';key:string;body:StocktakeConfirm}
  |{kind:'issue';key:string;body:{propertyId:string;itemId:string;quantity:string;reference:string}};
 const uuid=(value:unknown)=>typeof value==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value);
@@ -25,6 +25,8 @@ function record(value:unknown):Record<string,unknown>{if(!value||typeof value!==
 export function supplyCount(value:string):string{if(!/^(0|[1-9]\d{0,18})$/.test(value)||BigInt(value)>9223372036854775807n)throw Error('SUPPLY_QUANTITY_INVALID');return value;}
 export function supplyQuantity(value:string):string{if(!/^[1-9]\d{0,18}$/.test(value)||BigInt(value)>9223372036854775807n)throw Error('SUPPLY_QUANTITY_INVALID');return value;}
 export function supplyPage<T>(raw:unknown,validate:(item:T)=>boolean):SupplyPage<T>{const page=record(raw);if(!Array.isArray(page.items)||page.items.length>50||(page.nextCursor!==null&&(typeof page.nextCursor!=='string'||!/^[A-Za-z0-9_-]{1,700}$/.test(page.nextCursor)))||page.items.some(item=>!item||!validate(item as T)))return bad();return page as unknown as SupplyPage<T>;}
+const lotMetadata=(item:StockMovement)=>item.lotCode==null&&item.expiresOn==null||
+ typeof item.lotCode==='string'&&item.lotCode.length>0&&item.lotCode.length<=80&&typeof item.expiresOn==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(item.expiresOn)&&!item.expiresOn.startsWith('0000')&&Number.isFinite(Date.parse(item.expiresOn))&&new Date(item.expiresOn).toISOString().slice(0,10)===item.expiresOn;
 const named=(item:SupplyItem|StockItem|StockMovement|SupplyLine)=>typeof item.sku==='string'&&typeof item.name==='string'&&unit(item.unit);
 export function supplyCommandResult(raw:unknown,command:SupplyCommand){
  const result=record(raw);if(typeof result.idempotentReplay!=='boolean')return bad();
@@ -48,7 +50,7 @@ export const supplyApi={
  async items(csrf:string,propertyId:string,cursor?:string){return supplyPage<SupplyItem>(await get('items',csrf,propertyId,cursor),item=>uuid(item.id)&&named(item));},
  async orders(csrf:string,propertyId:string,cursor?:string){return supplyPage<SupplyOrder>(await get('orders',csrf,propertyId,cursor),orderValid);},
  async stock(csrf:string,propertyId:string,cursor?:string){return supplyPage<StockItem>(await get('stock',csrf,propertyId,cursor),item=>uuid(item.itemId)&&named(item)&&quantity(item.quantity)&&(item.reservedQuantity===undefined&&item.availableQuantity===undefined||quantity(item.reservedQuantity)&&quantity(item.availableQuantity)&&BigInt(item.reservedQuantity!)+BigInt(item.availableQuantity!)===BigInt(item.quantity)));},
- async movements(csrf:string,propertyId:string,cursor?:string){return supplyPage<StockMovement>(await get('movements',csrf,propertyId,cursor),item=>uuid(item.id)&&uuid(item.itemId)&&named(item)&&['receipt','issue','adjustment','return'].includes(item.kind)&&quantity(item.quantity,true)&&(item.kind==='adjustment'||(['receipt','return'].includes(item.kind)?BigInt(item.quantity)>0n:BigInt(item.quantity)<0n))&&typeof item.reference==='string'&&Number.isFinite(Date.parse(item.createdAt)));},
+ async movements(csrf:string,propertyId:string,cursor?:string){return supplyPage<StockMovement>(await get('movements',csrf,propertyId,cursor),item=>lotMetadata(item)&&uuid(item.id)&&uuid(item.itemId)&&named(item)&&['receipt','issue','adjustment','return'].includes(item.kind)&&quantity(item.quantity,true)&&(item.kind==='adjustment'||(['receipt','return'].includes(item.kind)?BigInt(item.quantity)>0n:BigInt(item.quantity)<0n))&&typeof item.reference==='string'&&Number.isFinite(Date.parse(item.createdAt)));},
  async stocktakePreview(csrf:string,input:StocktakeInput){return supplyStocktakePreview(await request('supply/stocktake/preview',csrf,input),input);},
  async execute(csrf:string,command:SupplyCommand){const route=command.kind==='item'?'items':command.kind==='order'?'orders':command.kind==='receive'?'orders/'+encodeURIComponent(command.orderId)+'/receive':command.kind==='stocktake'?'stocktake/confirm':'stock/issue';return supplyCommandResult(await request('supply/'+route,csrf,command.body,command.key),command);}
 };

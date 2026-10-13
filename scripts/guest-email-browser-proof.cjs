@@ -8,6 +8,8 @@ module.exports=async function guestEmailBrowserProof({coreOrigin,smtp,setLinkOri
  try{
   setLinkOrigin(web.origin+'/?api=guest-core');
   browser=await chromium.launch({headless:true,...(fs.existsSync('/usr/bin/chromium')?{executablePath:'/usr/bin/chromium'}:{}),args:['--no-sandbox']});
+  // Focused supply acceptance still uses real Core, cookies, CSRF and PostgreSQL.
+  if(process.env.VIEWS_SUPPLY_BROWSER_ONLY==='true'){await require('./supply-browser-core-proof.cjs')({browser,admin,coreOrigin});return;}
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage(),errors=[];
   page.on('pageerror',()=>errors.push('BROWSER_JS_ERROR'));
   let exchanges=0;page.on('request',r=>{assert.ok(!/vgel_|vges_/.test(r.url()),'TOKEN_IN_REQUEST_URL');if(r.url().endsWith('/guest-api/exchange'))exchanges++;});

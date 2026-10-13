@@ -1018,7 +1018,7 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending",
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending; docs/design/CANVA_140_BLOCK_23_RECEIPT_LOTS.md (receipt metadata only; no FEFO)",
       "backendImplementation": "local_core_api"
     },
     {

@@ -15,6 +15,19 @@ const stock=async(itemId:string)=>(await query('SELECT COALESCE((SELECT quantity
 beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker).toBe('VIEWS_DISPOSABLE_CORE_TEST'));
 beforeEach(()=>{vi.stubEnv('NODE_ENV','test');vi.stubEnv('VIEWS_LOCAL_REHEARSAL','true');vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');});afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('partial warehouse receipts / actual PostgreSQL',()=>{
+ it('records lot metadata once per shipment without duplicating stock',async()=>{
+  const f=await fixture(['10']),key=randomUUID(),body={lines:[{...f.lines[0],quantity:'4',lotCode:'LOT-A',expiresOn:'2028-02-29'}]};
+  const results=await Promise.all([supply.receive(keeper,f.orderId,key,body),supply.receive(keeper,f.orderId,key,body)]);
+  expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);expect(await stock(f.lines[0].itemId)).toBe('4');
+  await expect(supply.receive(keeper,f.orderId,key,{lines:[{...body.lines[0],lotCode:'LOT-B'}]})).rejects.toThrow('SUPPLY_COMMAND_CONFLICT');
+  const movements=await read.list(keeper,'movements',property);
+  expect(movements.items.find(m=>m.itemId===f.lines[0].itemId)).toMatchObject({lotCode:'LOT-A',expiresOn:'2028-02-29',quantity:'4'});
+  expect((await query('UPDATE supply_receipt_lines SET lot_code=$1 WHERE receipt_id=$2',['forged',results[0].receiptId])).rowCount).toBe(0);
+  expect((await query('SELECT lot_code FROM supply_receipt_lines WHERE receipt_id=$1',[results[0].receiptId])).rows[0].lot_code).toBe('LOT-A');
+  await supply.receive(keeper,f.orderId,randomUUID(),{});expect(await stock(f.lines[0].itemId)).toBe('10');
+  const rows=(await query('SELECT lot_code,expires_on::text FROM supply_receipt_lines WHERE order_line_id=(SELECT id FROM supply_order_lines WHERE order_id=$1)',[f.orderId])).rows;
+  expect(rows).toHaveLength(2);expect(rows).toContainEqual({lot_code:null,expires_on:null});
+ });
  it('posts selected shipment only, exposes exact remaining and preserves full-remaining compatibility',async()=>{
   const f=await fixture(),key=randomUUID(),body={lines:[{itemId:f.lines[0].itemId,quantity:'3'}]};
   const first=await supply.receive(keeper,f.orderId,key,body);expect(first.status).toBe('partially_received');

@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 12 October 2026 (Tashkent)
 
+Блок23: [партия и срок годности при приёмке](design/CANVA_140_BLOCK_23_RECEIPT_LOTS.md), только feature-ветка. Не включает FEFO/блокировку просрочки; публичная версия ниже не обновлялась.
+
 Опубликована **0.15.0-preview**, исходники `eae64e1`. Cloudflare и GitHub Pages
 проверены; опубликованный подписанный APK скачан обратно и проверен по
 SHA256, сертификату и версии. [Веб, APK, проверки и ограничения](RELEASE_0_15_PREVIEW.md).

@@ -214,3 +214,6 @@ Use a distinct warehouse command to confirm physical return to storage before re
 
 ## Canva22 — guest-visible reopening reasons (2026-10-13)
 Start an explicit public history at migration0107; do not backfill reasons previously entered without guest-visible disclosure. Keep newest20 plus tracked count, while original audit stays private. Share only time/reason, never employee identifiers. History belongs to the original order and is not silently copied to successors.
+
+## Canva23 — receipt lot metadata (2026-10-13)
+Record optional paired lot code/date on immutable receipt lines; retain legacy NULLs and one lot per item per receipt. Separate receipts represent multiple lots. This does not allocate stock by lot, implement FEFO or block expired stock. Past dates remain valid metadata; sale eligibility needs a separate policy. Existing scoped keys and idempotent receipt transaction remain authoritative.

@@ -47,6 +47,7 @@ module.exports=async function({browser,admin,coreOrigin}){
   for(const current of [buying,storing])for(const locale of ['ru','uz','en']){await current.page.locator('.staffLanguage select').selectOption(locale);for(const width of [390,1280]){await current.page.setViewportSize({width,height:1000});assert.ok(await current.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}}
   await storing.panel.getByRole('button',{name:'Review goods receipt',exact:true}).click();await storing.panel.getByTestId('supply-receipt-preview').waitFor();
   await storing.panel.getByTestId('supply-receipt-quantity').fill('4');
+  await storing.panel.getByTestId('supply-lot-code').fill('BROWSER-LOT-A');await storing.panel.getByTestId('supply-lot-expiry').fill('2028-02-29');
   assert.equal((await admin.query('SELECT count(*)::int n FROM supply_movements WHERE item_id=$1',[item.id])).rows[0].n,0);
   const receiveRoute='**/local-api/supply/orders/'+order.id+'/receive';
   await storing.page.route(receiveRoute,async route=>{writes.push({key:route.request().headers()['idempotency-key'],body:route.request().postDataJSON()});const response=await route.fetch();assert.equal(response.status(),200);await route.abort('failed');},{times:1});
@@ -57,7 +58,8 @@ module.exports=async function({browser,admin,coreOrigin}){
   assert.equal((await admin.query("SELECT count(*)::int n FROM supply_movements WHERE item_id=$1 AND kind='receipt'",[item.id])).rows[0].n,1);
   assert.equal((await admin.query('SELECT quantity::text quantity FROM supply_balances WHERE item_id=$1',[item.id])).rows[0].quantity,'4');
   assert.equal((await admin.query('SELECT status FROM supply_orders WHERE id=$1',[order.id])).rows[0].status,'partially_received');
-  assert.deepEqual(writes[0].body,{lines:[{itemId:item.id,quantity:'4'}]});
+  assert.deepEqual(writes[0].body,{lines:[{itemId:item.id,quantity:'4',lotCode:'BROWSER-LOT-A',expiresOn:'2028-02-29'}]});
+  await storing.panel.getByTestId('supply-lot-details').getByText('Lot: BROWSER-LOT-A · Expiry date: 2028-02-29',{exact:true}).waitFor();
   const partial=await call(storing.page,'supply/orders?propertyId='+property,'GET',undefined,warehouseHeaders);assert.equal(partial.status,200);assert.equal(partial.body.items.find(o=>o.id===order.id).lines[0].remainingQuantity,'6');
   const exceeded=await call(storing.page,'supply/orders/'+order.id+'/receive','POST',{lines:[{itemId:item.id,quantity:'7'}]},{...warehouseHeaders,'Idempotency-Key':randomUUID()});assert.equal(exceeded.status,409);assert.equal(exceeded.body.error,'RECEIPT_QUANTITY_EXCEEDED');
   const replay=await call(storing.page,'supply/orders/'+order.id+'/receive','POST',writes[0].body,{...warehouseHeaders,'Idempotency-Key':writes[0].key});assert.equal(replay.status,200);assert.equal(replay.body.idempotentReplay,true);

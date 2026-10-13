@@ -388,5 +388,25 @@
   "en": "Stock return",
   "ru": "Возврат на склад",
   "uz": "Omborga qaytarish"
+ },
+ "Lot code (optional)": {
+  "ru": "Номер партии (необязательно)",
+  "uz": "Partiya raqami (ixtiyoriy)"
+ },
+ "Expiry date": {
+  "ru": "Срок годности",
+  "uz": "Yaroqlilik muddati"
+ },
+ "Lot": {
+  "ru": "Партия",
+  "uz": "Partiya"
+ },
+ "Lot data not recorded": {
+  "ru": "Данные партии не указаны",
+  "uz": "Partiya ma’lumotlari kiritilmagan"
+ },
+ "One lot per item per receipt. Enter lot code and expiry together. Lot-based issuing and expiry blocking are not connected yet.": {
+  "ru": "Одна партия на позицию приёмки. Укажите номер и срок вместе. Списание по партиям и блокировка просрочки ещё не подключены.",
+  "uz": "Har qabul pozitsiyasiga bitta partiya. Raqam va muddatni birga kiriting. Partiya bo‘yicha chiqarish va muddati o‘tgan tovarlarni bloklash hali ulanmagan."
  }
 }
