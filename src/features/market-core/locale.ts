@@ -1,6 +1,15 @@
 import type {Locale} from '../../i18n/messages';
 import {cleaningText} from '../service-orders/locale';
 const rows:Record<string,[string,string,string]>={
+ quantityProposal:['Уменьшение количества','Reduced quantity proposal','Miqdorni kamaytirish taklifi'],
+ quantityTerms:['До сборки предложите меньшее количество. Резерв сохранится до согласия гостя с новым составом и актуальной ценой.','Before picking, propose fewer units. The reserve remains until the guest accepts the new basket and current price.','Yig‘ishdan oldin kamroq miqdor taklif qiling. Mehmon yangi tarkib va joriy narxni tasdiqlaguncha zaxira saqlanadi.'],
+ reduceProduct:['Какую позицию уменьшить','Product to reduce','Kamaytiriladigan tovar'],
+ reducedQuantity:['Новое количество','Reduced quantity','Yangi miqdor'],
+ reductionReason:['Причина уменьшения','Reason for reduction','Kamaytirish sababi'],
+ sendQuantity:['Предложить уменьшение','Propose reduction','Kamaytirishni taklif qilish'],
+ acceptQuantity:['Согласовать уменьшение','Accept reduction','Kamaytirishni tasdiqlash'],
+ declineQuantity:['Отклонить уменьшение','Decline reduction','Kamaytirishni rad etish'],
+
  receivedAt:['Принято складом','Received by warehouse','Ombor qabul qilgan'],
  resolvedAt:['Проверка завершена','Inspection completed','Tekshiruv yakunlangan'],
  timeUnknown:['Время не зафиксировано','Time not recorded','Vaqt qayd etilmagan'],

@@ -202,3 +202,6 @@ Quote timestamps require a real Gregorian date (years0001–9999), uppercase T a
 
 ## Canva18 — return chronology
 Market return inspection timestamps start with migration0103; never backfill historical completion with migration time. Display explicit UTC until property timezone is supplied by this read contract. Photo/lot evidence is separate; a timestamp is not inspection evidence. User steering returns current work to Canva/V Market; M1 hold-expiry audit remains in backlog.
+
+## Canva19 — quantity proposal before picking (2026-10-13)
+Reuse market proposal/replacement transactions to consent to fewer units of one product before picking. Keep1+ units; no full line removal or post-picking alteration in this slice. Current catalogue price is quoted and explicitly accepted; do not promise a lower total merely because quantity decreases. The original snapshot remains immutable, with one linked successor on acceptance.

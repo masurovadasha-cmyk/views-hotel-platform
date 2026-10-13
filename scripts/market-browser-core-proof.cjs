@@ -56,6 +56,20 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   context=await browser.newContext({viewport:{width:390,height:844}});await context.addCookies([{name:'views_staff_session',value:'b1'.repeat(32),domain:'127.0.0.1',path:'/local-api',httpOnly:true,sameSite:'Strict'}]);
   const warehouse=await context.newPage();warehouse.setDefaultTimeout(15000);await warehouse.goto(web.origin+'/?staffRole=warehouse');await warehouse.locator('.staffLanguage select').selectOption('en');
   const staff=warehouse.getByTestId('staff-market-core');await staff.getByRole('button',{name:'Open V Market',exact:true}).click();let sc=staff.locator(`[data-market-order="${oid}"]`);await sc.getByText('Unit: Market 201',{exact:true}).waitFor();
+  const reduction=sc.getByTestId('quantity-proposal');
+  await reduction.getByLabel('Product to reduce',{exact:true}).selectOption(coffee);
+  await reduction.getByLabel('Reduced quantity',{exact:true}).fill('1');
+  await reduction.getByLabel('Reason for reduction',{exact:true}).fill('One coffee instead of two');
+  await reduction.getByRole('button',{name:'Propose reduction',exact:true}).click();
+  await sc.getByTestId('market-proposal').getByText('Reduced quantity proposal',{exact:true}).waitFor();
+  await guest.getByRole('button',{name:'Refresh',exact:true}).click();
+  await gc.getByTestId('market-proposal').getByText('Reduced quantity proposal',{exact:true}).waitFor();
+  assert.equal(await gc.getByRole('button',{name:'Accept reduction',exact:true}).isDisabled(),true);
+  assert.equal((await admin.query('SELECT total_minor::text FROM service_orders WHERE id=$1',[oid])).rows[0].total_minor,'18200000');
+  await gc.getByRole('button',{name:'Decline reduction',exact:true}).click();
+  await gc.getByText('Substitution declined',{exact:true}).waitFor();
+  await staff.getByRole('button',{name:'Refresh',exact:true}).click();
+  await sc.getByTestId('quantity-proposal').waitFor();
   async function propose(){
    await sc.getByLabel('Product to replace',{exact:true}).selectOption(water);
    await sc.getByLabel('Replacement product',{exact:true}).selectOption(juice);

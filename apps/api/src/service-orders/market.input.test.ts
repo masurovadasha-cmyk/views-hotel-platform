@@ -2,6 +2,12 @@ import {describe,it,expect} from 'vitest';
 import {marketRequest,marketAction,marketCredit} from './market.input';
 const id='12345678-1234-4123-8123-123456789012',body={reservationId:id,lines:[{serviceId:id,quantity:1,expectedRevision:1}],expectedTotalMinor:'100'};
 describe('market input boundaries',()=>{
+ it('accepts only warehouse quantity reduction requests without client prices',()=>{
+  const b={action:'propose_quantity',expectedRevision:1,fromServiceId:id,quantity:1,note:'Only one available'};
+  expect(marketAction(b,true)).toEqual(b);expect(()=>marketAction(b,false)).toThrow();
+  for(const quantity of [0,-1,1.5,51,'1'])expect(()=>marketAction({...b,quantity},true)).toThrow();
+  expect(()=>marketAction({...b,expectedTotalMinor:'1'},true)).toThrow();
+ });
  it('rejects spoofed scope, floating quantities, duplicate products and numeric money',()=>{
   expect(marketRequest(body)).toEqual(body);
   for(const b of [{...body,propertyId:id},{...body,expectedTotalMinor:100},{...body,lines:[{...body.lines[0],quantity:1.1}]},{...body,lines:[body.lines[0],body.lines[0]]}])expect(()=>marketRequest(b)).toThrow('SERVICE_INPUT_INVALID');

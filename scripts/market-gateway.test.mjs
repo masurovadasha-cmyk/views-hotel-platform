@@ -24,9 +24,9 @@ describe('market cookie boundary',()=>{
   expect(guest.projection({orderId:id,revision:2,idempotentReplay:false,issue:{status:'open',note:'Missing water',internalActorId:id}}).issue).toEqual({status:'open',note:'Missing water',answer:undefined});
  });
  it('strips internal proposal fields and allows only fixed-scope staff catalogues',()=>{
-  const proposal={status:'pending',note:'Alternative',totalMinor:'100',expiresAt:'2026-10-11T10:00:00Z',internalActorId:id,lines:[{serviceId:id,itemId:id,name:{en:'Water'},quantity:1,priceMinor:'100',catalogRevision:4}]};
+  const proposal={kind:'quantity',status:'pending',note:'Alternative',totalMinor:'100',expiresAt:'2026-10-11T10:00:00Z',internalActorId:id,lines:[{serviceId:id,itemId:id,name:{en:'Water'},quantity:1,priceMinor:'100',catalogRevision:4}]};
   const projected=guest.projection({orderId:id,revision:2,idempotentReplay:false,proposal}).proposal;
-  expect(projected.internalActorId).toBeUndefined();expect(projected.lines[0]).toEqual({serviceId:id,name:{en:'Water'},quantity:1,priceMinor:'100'});
+  expect(projected.kind).toBe('quantity');expect(projected.internalActorId).toBeUndefined();expect(projected.lines[0]).toEqual({serviceId:id,name:{en:'Water'},quantity:1,priceMinor:'100'});
   expect(staff.validSearch(new URL('http://local/local-api/service-orders/market/catalog?cursor='+id),'GET')).toBe(true);
   expect(staff.validSearch(new URL('http://local/local-api/service-orders/market/catalog?propertyId='+id),'GET')).toBe(false);
  });

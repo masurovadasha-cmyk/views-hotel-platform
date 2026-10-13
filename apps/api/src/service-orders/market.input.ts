@@ -22,6 +22,11 @@ export function marketAction(raw:unknown,staff:boolean){
   const c=object(b.checklist,['sealed','expiry','quality']);if(c.sealed!==true||c.expiry!==true||c.quality!==true)return invalid();return {...base,returnId,checklist:{sealed:true,expiry:true,quality:true}};
  }
 
+ if(staff&&action==='propose_quantity'){
+  const b=object(raw,['action','expectedRevision','fromServiceId','quantity','note']);
+  if(!Number.isInteger(b.quantity)||(b.quantity as number)<1||(b.quantity as number)>50||typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();
+  return {action,expectedRevision:revision(b.expectedRevision),fromServiceId:uuid(b.fromServiceId),quantity:b.quantity as number,note:b.note.trim()};
+ }
  if(staff&&action==='propose_replacement'){
   const b=object(raw,['action','expectedRevision','fromServiceId','toServiceId','note']);
   if(typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();

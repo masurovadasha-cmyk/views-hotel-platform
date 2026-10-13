@@ -37,6 +37,34 @@ const command=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>(
 const act=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>service.staffAct(actor(),'b1'.repeat(32),o.orderId,randomUUID(),command(o,action,extra));
 const checklist={quantities:true,expiry:true,packaging:true};
 describe.sequential('V Market / real PostgreSQL',()=>{
+ it('reduces quantity only with guest consent and charges the accepted exact total once',async()=>{
+  const f=await fixture(undefined,'9007199254740993'),foreign=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);
+  const fields={fromServiceId:f.s,quantity:1,note:'One unit available'};
+  await expect(act(o,'propose_quantity',{...fields,quantity:2})).rejects.toThrow('SERVICE_INPUT_INVALID');
+  await expect(act(o,'propose_quantity',{...fields,fromServiceId:foreign.s})).rejects.toThrow('SERVICE_INPUT_INVALID');
+  await expect(service.staffAct(actor(2),'b2'.repeat(32),o.orderId,randomUUID(),command(o,'propose_quantity',fields))).rejects.toThrow('SERVICE_FORBIDDEN');
+  const key=randomUUID(),body=command(o,'propose_quantity',fields);
+  o=await service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body);
+  expect((await service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body)).idempotentReplay).toBe(true);
+  expect(o).toMatchObject({totalMinor:f.body.expectedTotalMinor,proposal:{totalMinor:'9007199254740993',status:'pending'}});
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});
+  await expect(act(o,'pick')).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  await expect(service.guestAct(foreign.a.token,o.orderId,randomUUID(),command(o,'accept_proposal',{expectedTotalMinor:'9007199254740993'}))).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
+  o=await service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'decline_proposal'));
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});
+  o=await act(o,'propose_quantity',fields);
+  const acceptKey=randomUUID(),acceptBody=command(o,'accept_proposal',{expectedTotalMinor:'9007199254740993'}),original=o.orderId;
+  const results=await Promise.all([service.guestAct(f.a.token,original,acceptKey,acceptBody),service.guestAct(f.a.token,original,acceptKey,acceptBody)]);
+  expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);o=results[0];
+  expect(o.totalMinor).toBe('9007199254740993');expect(o.orderId).not.toBe(original);
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'4'});
+  o=await act(o,'pick');await expect(act(o,'propose_quantity',fields)).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  o=await act(o,'ready',{checklist});o=await act(o,'handover');
+  const receiptKey=randomUUID(),receipt=command(o,'confirm_receipt');
+  await service.guestAct(f.a.token,o.orderId,receiptKey,receipt);await service.guestAct(f.a.token,o.orderId,receiptKey,receipt);
+  expect((await run('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[o.orderId])).rows).toEqual([{amount_minor:'9007199254740993'}]);
+  expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('4');
+ });
  it('reserves exact prices, issues stock once and charges only on guest receipt',async()=>{
   const f=await fixture(undefined,'9007199254740993'),key=randomUUID();
   let o=await service.request(f.a.token,key,f.body);expect((await service.request(f.a.token,key,f.body)).idempotentReplay).toBe(true);
@@ -166,7 +194,7 @@ describe.sequential('V Market / real PostgreSQL',()=>{
   const accept=command(o,'accept_proposal',{expectedTotalMinor:'300'}),acceptKey=randomUUID();
   const results=await Promise.all([service.guestAct(f.a.token,o.orderId,acceptKey,accept),service.guestAct(f.a.token,o.orderId,acceptKey,accept)]);
   expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);expect(results[0]).toMatchObject({replacesOrderId:o.orderId,totalMinor:'300',stage:'reserved'});
-  expect((await service.guestList(f.a.token,f.r)).items).toEqual(expect.arrayContaining([expect.objectContaining({orderId:o.orderId,proposal:{status:'accepted',note:'Alternative packaging',totalMinor:'300',lines:expect.any(Array),expiresAt:expect.any(String)}})]));
+  expect((await service.guestList(f.a.token,f.r)).items).toEqual(expect.arrayContaining([expect.objectContaining({orderId:o.orderId,proposal:{kind:'replacement',status:'accepted',note:'Alternative packaging',totalMinor:'300',lines:expect.any(Array),expiresAt:expect.any(String)}})]));
   expect((await run('SELECT * FROM folio_entries WHERE source_id=ANY($1::uuid[])',[[o.orderId,results[0].orderId]])).rowCount).toBe(0);
  });
  it('declines or withdraws proposals without changing the old reserve',async()=>{
