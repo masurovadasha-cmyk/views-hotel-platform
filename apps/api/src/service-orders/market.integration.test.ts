@@ -37,6 +37,22 @@ const command=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>(
 const act=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>service.staffAct(actor(),'b1'.repeat(32),o.orderId,randomUUID(),command(o,action,extra));
 const checklist={quantities:true,expiry:true,packaging:true};
 describe.sequential('V Market / real PostgreSQL',()=>{
+ it('hands over all selected counted lots atomically, without leaking staff choices or double issue',async()=>{
+  await run('UPDATE service_catalog SET active=true WHERE id=ANY($1::uuid[])',[[item(59),item(60)]]); // Dedicated products: do not shift the neighbouring suite fixture range.
+  const f=await fixture(item(59)),second=await fixture(item(60)),body={...f.body,lines:[...f.body.lines,...second.body.lines],expectedTotalMinor:'400'};
+  let o=await service.request(f.a.token,randomUUID(),body);o=await act(o,'pick');o=await act(o,'ready',{checklist});
+  const counts=new SupplyStocktakeService(db),selections=[];
+  for(const serviceId of [f.s,second.s]){const b=(await stock('SELECT quantity::text,revision::text FROM supply_balances WHERE item_id=$1',[serviceId])).rows[0];const snapshot=await counts.confirm(actor(),randomUUID(),{propertyId:property,itemId:serviceId,countedQuantity:b.quantity,expectedQuantity:b.quantity,expectedRevision:b.revision,reason:'Market physical count',lots:[{lotCode:'MARKET',expiresOn:'2028-01-01',quantity:b.quantity}]});selections.push({serviceId,lotAllocation:{snapshotId:snapshot.stocktakeId,lotCode:'MARKET',expiresOn:'2028-01-01'}});}
+  const listed=(await service.staffList(actor(),'b1'.repeat(32),property)).items.find(x=>x.orderId===o.orderId);expect(listed?.countedLots).toHaveLength(2);
+  expect((await service.guestList(f.a.token,f.r)).items.find(x=>x.orderId===o.orderId)).not.toHaveProperty('countedLots');
+  await expect(service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'handover',{lotSelections:selections}))).rejects.toThrow('SERVICE_INPUT_INVALID');
+  await expect(act(o,'handover',{lotSelections:selections.slice(0,1)})).rejects.toThrow('SERVICE_INPUT_INVALID');
+  const invalid=[selections[0],{...selections[1],lotAllocation:selections[0].lotAllocation}];await expect(act(o,'handover',{lotSelections:invalid})).rejects.toThrow('SERVICE_REVISION_CHANGED');
+  expect((await stock("SELECT count(*)::int n FROM supply_movements WHERE reference=$1",['V Market '+o.orderId])).rows[0].n).toBe(0);expect((await stock('SELECT stage FROM market_orders WHERE order_id=$1',[o.orderId])).rows[0].stage).toBe('ready');
+  const key=randomUUID(),cmd=command(o,'handover',{lotSelections:selections});const replies=await Promise.all([service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,cmd),service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,cmd)]);expect(replies.filter(r=>!r.idempotentReplay)).toHaveLength(1);
+  expect((await stock('SELECT lot_allocation FROM supply_movements WHERE reference=$1',['V Market '+o.orderId])).rows.map(r=>r.lot_allocation)).toEqual(expect.arrayContaining(selections.map(s=>s.lotAllocation)));
+  await expect(service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,command(o,'handover'))).rejects.toThrow('SERVICE_COMMAND_CONFLICT');expect(replies[0].totalMinor).toBe('400');
+ });
  it('keeps a bounded newest-first history with the complete count',async()=>{
   const f=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);
   for(let n=1;n<=22;n++){o=await act(o,'pick');o=await act(o,'reopen_picking',{returnedToStorage:true,note:'Public reason '+n});}

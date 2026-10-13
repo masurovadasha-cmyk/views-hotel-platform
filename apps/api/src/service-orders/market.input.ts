@@ -1,3 +1,4 @@
+import {countedLot} from '../supply/supply.input';
 import {invalid,object,uuid,revision} from './service-order.input';
 function basket(b:Record<string,unknown>){
  if(typeof b.expectedTotalMinor!=='string'||!/^[1-9]\d{0,18}$/.test(b.expectedTotalMinor)||BigInt(b.expectedTotalMinor)>9223372036854775807n)return invalid();
@@ -55,6 +56,11 @@ export function marketAction(raw:unknown,staff:boolean){
   const b=object(raw,['action','expectedRevision','note']);
   if(typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>1000)return invalid();
   return {action,expectedRevision:revision(b.expectedRevision),note:b.note.trim()};
+ }
+ if(staff&&action==='handover'&&'lotSelections' in raw){
+  const b=object(raw,['action','expectedRevision','lotSelections']);if(!Array.isArray(b.lotSelections)||!b.lotSelections.length||b.lotSelections.length>20)return invalid();
+  const lotSelections=b.lotSelections.map(value=>{const l=object(value,['serviceId','lotAllocation']);try{return {serviceId:uuid(l.serviceId),lotAllocation:countedLot(l.lotAllocation)};}catch{return invalid();}}).sort((a,b)=>a.serviceId.localeCompare(b.serviceId));
+  if(new Set(lotSelections.map(l=>l.serviceId)).size!==lotSelections.length)return invalid();return {action,expectedRevision:revision(b.expectedRevision),lotSelections};
  }
  if(staff&&action==='ready'){
   const b=object(raw,['action','expectedRevision','checklist']),c=object(b.checklist,['quantities','expiry','packaging']);

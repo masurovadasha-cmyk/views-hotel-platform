@@ -229,3 +229,6 @@ Capture all new physical movements transactionally at the database boundary befo
 
 ## L2b manual counted-lot issue (2026-10-14)
 Allow optional single-lot issue provenance only against a current immutable physical count for the same item/scope. Bind to snapshot ID and validate its revision under the existing item lock. Every issue invalidates that count; do not infer a fresh physical balance or auto-assign marketplace/return lots. Keep legacy unallocated issue explicit. Multiple lots require separate issues and counts until a complete allocation ledger exists.
+
+## L2c marketplace counted-lot handover (2026-10-14)
+Optional selection must cover every frozen order line with one counted lot. Reuse item locks and count-revision guard; an invalid line rolls back the entire handover. Validate service-to-item mapping against the immutable order snapshot. Legacy unallocated mode remains explicit. No return provenance, FEFO or live balances are inferred. Warehouse options remain staff-only.
