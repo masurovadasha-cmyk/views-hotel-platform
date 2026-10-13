@@ -5,7 +5,8 @@ describe('market input boundaries',()=>{
  it('accepts only warehouse quantity reduction requests without client prices',()=>{
   const b={action:'propose_quantity',expectedRevision:1,fromServiceId:id,quantity:1,note:'Only one available'};
   expect(marketAction(b,true)).toEqual(b);expect(()=>marketAction(b,false)).toThrow();
-  for(const quantity of [0,-1,1.5,51,'1'])expect(()=>marketAction({...b,quantity},true)).toThrow();
+  expect(marketAction({...b,quantity:0},true)).toMatchObject({quantity:0});
+  for(const quantity of [-1,1.5,51,'1'])expect(()=>marketAction({...b,quantity},true)).toThrow();
   expect(()=>marketAction({...b,expectedTotalMinor:'1'},true)).toThrow();
  });
  it('rejects spoofed scope, floating quantities, duplicate products and numeric money',()=>{

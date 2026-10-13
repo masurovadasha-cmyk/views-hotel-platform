@@ -24,7 +24,7 @@ export function marketAction(raw:unknown,staff:boolean){
 
  if(staff&&action==='propose_quantity'){
   const b=object(raw,['action','expectedRevision','fromServiceId','quantity','note']);
-  if(!Number.isInteger(b.quantity)||(b.quantity as number)<1||(b.quantity as number)>50||typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();
+  if(!Number.isInteger(b.quantity)||(b.quantity as number)<0||(b.quantity as number)>50||typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();
   return {action,expectedRevision:revision(b.expectedRevision),fromServiceId:uuid(b.fromServiceId),quantity:b.quantity as number,note:b.note.trim()};
  }
  if(staff&&action==='propose_replacement'){

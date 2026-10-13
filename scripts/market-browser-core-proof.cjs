@@ -58,13 +58,15 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   const staff=warehouse.getByTestId('staff-market-core');await staff.getByRole('button',{name:'Open V Market',exact:true}).click();let sc=staff.locator(`[data-market-order="${oid}"]`);await sc.getByText('Unit: Market 201',{exact:true}).waitFor();
   const reduction=sc.getByTestId('quantity-proposal');
   await reduction.getByLabel('Product to reduce',{exact:true}).selectOption(coffee);
-  await reduction.getByLabel('Reduced quantity',{exact:true}).fill('1');
-  await reduction.getByLabel('Reason for reduction',{exact:true}).fill('One coffee instead of two');
+  await reduction.getByLabel('Reduced quantity',{exact:true}).fill('0');
+  await reduction.getByLabel('Reason for reduction',{exact:true}).fill('Coffee is unavailable; please review the remaining basket');
   await reduction.getByRole('button',{name:'Propose reduction',exact:true}).click();
   await sc.getByTestId('market-proposal').getByText('Reduced quantity proposal',{exact:true}).waitFor();
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();
   await gc.getByTestId('market-proposal').getByText('Reduced quantity proposal',{exact:true}).waitFor();
   assert.equal(await gc.getByRole('button',{name:'Accept reduction',exact:true}).isDisabled(),true);
+  assert.equal(await gc.getByTestId('market-proposal').locator('li').count(),1);
+  assert.match(await gc.getByTestId('market-proposal').locator('li').innerText(),/Water/);
   assert.equal((await admin.query('SELECT total_minor::text FROM service_orders WHERE id=$1',[oid])).rows[0].total_minor,'18200000');
   await gc.getByRole('button',{name:'Decline reduction',exact:true}).click();
   await gc.getByText('Substitution declined',{exact:true}).waitFor();

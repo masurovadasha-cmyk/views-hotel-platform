@@ -37,6 +37,29 @@ const command=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>(
 const act=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>service.staffAct(actor(),'b1'.repeat(32),o.orderId,randomUUID(),command(o,action,extra));
 const checklist={quantities:true,expiry:true,packaging:true};
 describe.sequential('V Market / real PostgreSQL',()=>{
+ it('removes one line only after consent, releases its reserve and rejects an empty basket',async()=>{
+  const f=await fixture(),g=await fixture(),base=await service.request(f.a.token,randomUUID(),f.body);
+  await expect(act(base,'propose_quantity',{fromServiceId:f.s,quantity:0,note:'Unavailable item'})).rejects.toThrow('SERVICE_INPUT_INVALID');
+  await service.guestAct(f.a.token,base.orderId,randomUUID(),command(base,'cancel'));
+  let o=await service.request(f.a.token,randomUUID(),{...f.body,lines:[...f.body.lines,...g.body.lines],expectedTotalMinor:'400'});
+  const fields={fromServiceId:f.s,quantity:0,note:'Unavailable item'};
+  o=await act(o,'propose_quantity',fields);
+  expect(o).toMatchObject({totalMinor:'400',proposal:{totalMinor:'200',lines:[{serviceId:g.s,quantity:2}]}});
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});
+  o=await service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'decline_proposal'));
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});
+  o=await act(o,'propose_quantity',fields);
+  const original=o.orderId,key=randomUUID(),body=command(o,'accept_proposal',{expectedTotalMinor:'200'});
+  const results=await Promise.all([service.guestAct(f.a.token,original,key,body),service.guestAct(f.a.token,original,key,body)]);
+  expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);o=results[0];
+  expect(o).toMatchObject({totalMinor:'200',lines:[{serviceId:g.s,quantity:2}]});
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'5'});
+  await expect(act(o,'propose_quantity',{fromServiceId:g.s,quantity:0,note:'Last item'})).rejects.toThrow('SERVICE_INPUT_INVALID');
+  o=await act(o,'pick');o=await act(o,'ready',{checklist});o=await act(o,'handover');
+  await service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'confirm_receipt'));
+  expect((await run('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[o.orderId])).rows).toEqual([{amount_minor:'200'}]);
+  expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('5');
+ });
  it('reduces quantity only with guest consent and charges the accepted exact total once',async()=>{
   const f=await fixture(undefined,'9007199254740993'),foreign=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);
   const fields={fromServiceId:f.s,quantity:1,note:'One unit available'};

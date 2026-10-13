@@ -1,6 +1,8 @@
 import type {Locale} from '../../i18n/messages';
 import {cleaningText} from '../service-orders/locale';
 const rows:Record<string,[string,string,string]>={
+ removeLineTerms:['Укажите 0, чтобы предложить исключить позицию. В заказе должна остаться хотя бы одна позиция.','Enter 0 to propose removing this item. At least one item must remain in the order.','Tovarni chiqarishni taklif qilish uchun 0 kiriting. Buyurtmada kamida bitta tovar qolishi kerak.'],
+
  quantityProposal:['Уменьшение количества','Reduced quantity proposal','Miqdorni kamaytirish taklifi'],
  quantityTerms:['До сборки предложите меньшее количество. Резерв сохранится до согласия гостя с новым составом и актуальной ценой.','Before picking, propose fewer units. The reserve remains until the guest accepts the new basket and current price.','Yig‘ishdan oldin kamroq miqdor taklif qiling. Mehmon yangi tarkib va joriy narxni tasdiqlaguncha zaxira saqlanadi.'],
  reduceProduct:['Какую позицию уменьшить','Product to reduce','Kamaytiriladigan tovar'],

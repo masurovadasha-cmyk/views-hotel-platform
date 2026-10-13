@@ -205,3 +205,6 @@ Market return inspection timestamps start with migration0103; never backfill his
 
 ## Canva19 — quantity proposal before picking (2026-10-13)
 Reuse market proposal/replacement transactions to consent to fewer units of one product before picking. Keep1+ units; no full line removal or post-picking alteration in this slice. Current catalogue price is quoted and explicitly accepted; do not promise a lower total merely because quantity decreases. The original snapshot remains immutable, with one linked successor on acceptance.
+
+## Canva20 — remove one line before picking (2026-10-13)
+Supersedes Canva19's no-zero restriction: propose_quantity quantity0 removes a line only if another line remains. Keep the same guest consent/current-price/replacement transaction. Empty basket is rejected; never reinterpret this as implicit cancellation. No post-picking mutation.

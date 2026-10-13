@@ -471,7 +471,7 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending; docs/design/CANVA_140_BLOCK_8_MARKET_ISSUES.md (issue/answer only; no refunds or substitutions); docs/design/CANVA_140_BLOCK_9_MARKET_REPLACEMENT.md (guest basket change before picking; not staff substitution proposals); docs/design/CANVA_140_BLOCK_10_MARKET_PROPOSALS.md (warehouse proposal before picking; guest consent/decline/expiry; no refunds); docs/design/CANVA_140_BLOCK_11_MARKET_ADJUSTMENTS.md (operational credits and inspected stock returns; no provider refund); docs/design/CANVA_140_BLOCK_18_RETURN_TIMELINE.md; docs/design/CANVA_140_BLOCK_19_QUANTITY_PROPOSAL.md",
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending; docs/design/CANVA_140_BLOCK_8_MARKET_ISSUES.md (issue/answer only; no refunds or substitutions); docs/design/CANVA_140_BLOCK_9_MARKET_REPLACEMENT.md (guest basket change before picking; not staff substitution proposals); docs/design/CANVA_140_BLOCK_10_MARKET_PROPOSALS.md (warehouse proposal before picking; guest consent/decline/expiry; no refunds); docs/design/CANVA_140_BLOCK_11_MARKET_ADJUSTMENTS.md (operational credits and inspected stock returns; no provider refund); docs/design/CANVA_140_BLOCK_18_RETURN_TIMELINE.md; docs/design/CANVA_140_BLOCK_19_QUANTITY_PROPOSAL.md; docs/design/CANVA_140_BLOCK_20_REMOVE_LINE.md",
       "backendImplementation": "local_core_api"
     },
     {
@@ -1035,7 +1035,7 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending; docs/design/CANVA_140_BLOCK_8_MARKET_ISSUES.md (issue/answer only; no refunds or substitutions); docs/design/CANVA_140_BLOCK_9_MARKET_REPLACEMENT.md (guest basket change before picking; not staff substitution proposals); docs/design/CANVA_140_BLOCK_10_MARKET_PROPOSALS.md (warehouse proposal before picking; guest consent/decline/expiry; no refunds); docs/design/CANVA_140_BLOCK_11_MARKET_ADJUSTMENTS.md (operational credits and inspected stock returns; no provider refund); docs/design/CANVA_140_BLOCK_18_RETURN_TIMELINE.md; docs/design/CANVA_140_BLOCK_19_QUANTITY_PROPOSAL.md",
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending; docs/design/CANVA_140_BLOCK_8_MARKET_ISSUES.md (issue/answer only; no refunds or substitutions); docs/design/CANVA_140_BLOCK_9_MARKET_REPLACEMENT.md (guest basket change before picking; not staff substitution proposals); docs/design/CANVA_140_BLOCK_10_MARKET_PROPOSALS.md (warehouse proposal before picking; guest consent/decline/expiry; no refunds); docs/design/CANVA_140_BLOCK_11_MARKET_ADJUSTMENTS.md (operational credits and inspected stock returns; no provider refund); docs/design/CANVA_140_BLOCK_18_RETURN_TIMELINE.md; docs/design/CANVA_140_BLOCK_19_QUANTITY_PROPOSAL.md; docs/design/CANVA_140_BLOCK_20_REMOVE_LINE.md",
       "backendImplementation": "local_core_api"
     },
     {
@@ -1503,7 +1503,7 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending; docs/design/CANVA_140_BLOCK_10_MARKET_PROPOSALS.md (warehouse proposal before picking; guest consent/decline/expiry; no refunds); docs/design/CANVA_140_BLOCK_11_MARKET_ADJUSTMENTS.md (operational credits and inspected stock returns; no provider refund); docs/design/CANVA_140_BLOCK_18_RETURN_TIMELINE.md; docs/design/CANVA_140_BLOCK_19_QUANTITY_PROPOSAL.md",
+      "evidence": "docs/design/CANVA_140_BLOCK_7_MARKET_CORE_WEB.md; own-stock basket/reserve/picking/handover; delivery, substitutions and PDF acceptance pending; docs/design/CANVA_140_BLOCK_10_MARKET_PROPOSALS.md (warehouse proposal before picking; guest consent/decline/expiry; no refunds); docs/design/CANVA_140_BLOCK_11_MARKET_ADJUSTMENTS.md (operational credits and inspected stock returns; no provider refund); docs/design/CANVA_140_BLOCK_18_RETURN_TIMELINE.md; docs/design/CANVA_140_BLOCK_19_QUANTITY_PROPOSAL.md; docs/design/CANVA_140_BLOCK_20_REMOVE_LINE.md",
       "backendImplementation": "local_core_api"
     },
     {

@@ -8,6 +8,10 @@ describe('quantity reduction form',()=>{
   const html=renderToStaticMarkup(<MarketQuantityProposal order={order} locale={locale} onAction={()=>{throw Error('render must not submit');}}/>);
   expect(html).toContain('data-testid="quantity-proposal"');expect(html).toContain('<button disabled=""');expect(html).toContain('maxLength="500"');
  });
+ it('allows removal of a single-unit line when another line remains',()=>{
+  const html=renderToStaticMarkup(<MarketQuantityProposal order={{...order,lines:[{...order.lines[0],quantity:1},{...order.lines[0],serviceId:'other',quantity:1}]}} locale="en" onAction={()=>{}}/>);
+  expect(html).toContain('min="0"');expect(html).toContain('At least one item must remain');expect(html).toContain('value="other"');
+ });
  it('does not propose reducing a single unit to zero',()=>{
   expect(renderToStaticMarkup(<MarketQuantityProposal order={{...order,lines:[{...order.lines[0],quantity:1}]}} locale="en" onAction={()=>{}}/>)).toBe('');
  });
