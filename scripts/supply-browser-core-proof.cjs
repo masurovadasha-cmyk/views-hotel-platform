@@ -103,11 +103,19 @@ module.exports=async function({browser,admin,coreOrigin}){
   await lotForm.getByTestId('supply-stocktake-preview-button').click();await storing.panel.getByTestId('supply-stocktake-preview').waitFor();
   await storing.panel.getByTestId('supply-stocktake-confirm').click();await storing.panel.getByTestId('supply-lot-snapshot').getByText('Current at last check',{exact:false}).waitFor();
   assert.equal((await admin.query('SELECT quantity::text quantity FROM supply_balances WHERE item_id=$1',[item.id])).rows[0].quantity,'5');
+  phase='counted-lot-issue';const lotIssue=storing.panel.getByTestId('supply-issue-form'),lotWrites=[];
+  await lotIssue.getByRole('combobox',{name:'Stock item on this page',exact:true}).selectOption(item.id);await lotIssue.getByTestId('supply-issue-lot').selectOption('0');await lotIssue.getByLabel('Quantity in the selected unit',{exact:true}).fill('1');await lotIssue.getByLabel('Issue reference or destination',{exact:true}).fill('Physical unknown lot issue');
+  await storing.page.route('**/local-api/supply/stock/issue',async route=>{lotWrites.push({key:route.request().headers()['idempotency-key'],body:route.request().postDataJSON()});const response=await route.fetch();assert.equal(response.status(),200);await route.abort('failed');},{times:1});
+  await lotIssue.getByRole('button',{name:'Confirm stock issue',exact:true}).click();await storing.panel.getByTestId('supply-retry').waitFor();
+  await storing.page.route('**/local-api/supply/stock/issue',async route=>{lotWrites.push({key:route.request().headers()['idempotency-key'],body:route.request().postDataJSON()});await route.continue();},{times:1});await storing.panel.getByTestId('supply-retry').click();
+  await storing.panel.getByTestId('supply-lot-tracking').getByText('Selected counted lot issued',{exact:true}).waitFor();assert.deepEqual(lotWrites[0],lotWrites[1]);assert.equal(lotWrites[0].body.lotAllocation.lotCode,null);
+  assert.equal((await admin.query('SELECT count(*)::int n FROM supply_movements WHERE item_id=$1 AND lot_allocation IS NOT NULL',[item.id])).rows[0].n,1);await storing.panel.getByTestId('supply-lot-snapshot').getByText('Stale: recount lots',{exact:false}).waitFor();
+  checks.push('counted_lot_issue_lost_response_same_key_one_movement_stale_snapshot');
   // Existing empty-body receipt callers retain full-remaining semantics.
   phase='legacy-receipt';const legacyOrder=await call(buying.page,'supply/orders','POST',{propertyId:property,reference:'Synthetic legacy full receipt',lines:[{itemId:item.id,quantity:'2'}]},{...buyerHeaders,'Idempotency-Key':randomUUID()});assert.equal(legacyOrder.status,200);
   const legacyKey=randomUUID(),legacyReceipt=await call(storing.page,'supply/orders/'+legacyOrder.body.orderId+'/receive','POST',{}, {...warehouseHeaders,'Idempotency-Key':legacyKey});assert.equal(legacyReceipt.status,200);assert.equal(legacyReceipt.body.status,'received');
   assert.equal((await call(storing.page,'supply/orders/'+legacyOrder.body.orderId+'/receive','POST',{}, {...warehouseHeaders,'Idempotency-Key':legacyKey})).body.idempotentReplay,true);
-  assert.equal((await admin.query('SELECT quantity::text quantity FROM supply_balances WHERE item_id=$1',[item.id])).rows[0].quantity,'7');checks.push('legacy_empty_receipt_body_full_remaining_and_same_command_replay');
+  assert.equal((await admin.query('SELECT quantity::text quantity FROM supply_balances WHERE item_id=$1',[item.id])).rows[0].quantity,'6');checks.push('legacy_empty_receipt_body_full_remaining_and_same_command_replay');
   await storing.panel.getByRole('button',{name:'Load supply data',exact:true}).click();await storing.panel.getByTestId('supply-lot-snapshot').getByText('Stale: recount lots',{exact:false}).waitFor();
   checks.push('lot_snapshot_unknown_origin_zero_adjustment_then_stale_after_receipt');
   await storing.panel.getByTestId('supply-lot-tracking').getByText('Lot count snapshot recorded',{exact:true}).waitFor();await storing.panel.getByTestId('supply-lot-tracking').getByText('Lot allocation pending',{exact:true}).first().waitFor();checks.push('lot_movement_intake_receipt_snapshot_and_pending_no_live_allocation');

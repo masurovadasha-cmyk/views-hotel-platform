@@ -39,7 +39,7 @@ export class SupplyService{
  async issue(a:Actor,key:unknown,raw:unknown){enabled();const b=input.issue(raw),command=input.id(key),payload={type:'issue',...b};try{return await this.db.withActor(a,async c=>{
   const prior=await replay(c,a,b.propertyId,command,'stock.manage',payload);if(prior)return prior;
   if(!(await c.query('SELECT 1 FROM supply_items WHERE id=$1 AND organization_id=$2 AND property_id=$3',[b.itemId,a.organizationId,b.propertyId])).rowCount)throw new NotFoundException('SUPPLY_NOT_FOUND');
-  const movementId=randomUUID();await c.query("INSERT INTO supply_movements(id,organization_id,property_id,item_id,kind,quantity,reference,actor_user_id,actor_membership_id) VALUES($1,$2,$3,$4,'issue',$5,$6,$7,$8)",[movementId,a.organizationId,b.propertyId,b.itemId,(-BigInt(b.quantity)).toString(),b.reference,a.userId,a.membershipId]);
+  const movementId=randomUUID();await c.query("INSERT INTO supply_movements(id,organization_id,property_id,item_id,kind,quantity,reference,actor_user_id,actor_membership_id,lot_allocation) VALUES($1,$2,$3,$4,'issue',$5,$6,$7,$8,$9)",[movementId,a.organizationId,b.propertyId,b.itemId,(-BigInt(b.quantity)).toString(),b.reference,a.userId,a.membershipId,b.lotAllocation?JSON.stringify(b.lotAllocation):null]);
   const remaining=(await c.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[b.itemId])).rows[0].quantity;
   const result={movementId,itemId:b.itemId,quantity:b.quantity,remainingQuantity:remaining,idempotentReplay:false};await record(c,a,b.propertyId,command,'stock.manage',payload,result,'supply.stock_issued',movementId);return result;
  });}catch(e){mapped(e);}}

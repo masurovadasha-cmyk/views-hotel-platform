@@ -226,3 +226,6 @@ Reuse stocktake lots as an optional immutable distribution, requiring zero quant
 
 ## L2a lot movement intake (2026-10-14)
 Capture all new physical movements transactionally at the database boundary before enabling lot allocation. Reuse immutable source records rather than infer historic allocations or return provenance. Intake classification is evidence, not an allocation or balance. Runtime has scoped read-only access; actual allocation remains disabled until all movement paths and totals are covered.
+
+## L2b manual counted-lot issue (2026-10-14)
+Allow optional single-lot issue provenance only against a current immutable physical count for the same item/scope. Bind to snapshot ID and validate its revision under the existing item lock. Every issue invalidates that count; do not infer a fresh physical balance or auto-assign marketplace/return lots. Keep legacy unallocated issue explicit. Multiple lots require separate issues and counts until a complete allocation ledger exists.

@@ -15,7 +15,7 @@ describe('supply UI command and stock boundary',()=>{
   const base={id:key,itemId,sku:'LOT',name:'Water',unit:'piece',kind:'receipt',quantity:'4',reference:'Receipt',createdAt:'2026-10-13T00:00:00Z',lotCode:'LOT-A',expiresOn:'2028-02-29'};
   const fetch=vi.fn();vi.stubGlobal('fetch',fetch);
   fetch.mockResolvedValueOnce(answer({items:[base],nextCursor:null}));expect((await supplyApi.movements('csrf',propertyId)).items[0].lotCode).toBe('LOT-A');
-  for(const patch of [{lotTrackingStatus:'allocated'},{expiresOn:'2027-02-29'},{expiresOn:null},{lotCode:7}]){fetch.mockResolvedValueOnce(answer({items:[{...base,...patch}],nextCursor:null}));await expect(supplyApi.movements('csrf',propertyId)).rejects.toThrow('SUPPLY_INVALID_RESPONSE');}
+  for(const patch of [{lotTrackingStatus:'lot_issued'},{lotAllocation:{snapshotId:'bad',lotCode:'A',expiresOn:'2028-01-01'}},{lotTrackingStatus:'allocated'},{expiresOn:'2027-02-29'},{expiresOn:null},{lotCode:7}]){fetch.mockResolvedValueOnce(answer({items:[{...base,...patch}],nextCursor:null}));await expect(supplyApi.movements('csrf',propertyId)).rejects.toThrow('SUPPLY_INVALID_RESPONSE');}
  });
  it('preserves exact physical integer quantities and rejects fractions, zero and bigint overflow',()=>{
   expect(supplyQuantity('9007199254740993')).toBe('9007199254740993');expect(supplyQuantity('9223372036854775807')).toBe('9223372036854775807');

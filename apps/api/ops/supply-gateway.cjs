@@ -12,7 +12,7 @@ exports.handle=async function({u,req,res,identity,token,core,json,fail,readJson,
  let body,key;
  if(write){
   key=req.headers['idempotency-key'];if(!preview&&(typeof key!=='string'||!UUID.test(key)))fail(400,'IDEMPOTENCY_KEY_REQUIRED');body=await readJson(req,16384);if(!body||typeof body!=='object'||Array.isArray(body))fail(400,'INVALID_REQUEST');
-  exactKeys(body,receive?(Object.keys(body).length?['lines']:[]):count?(preview?['propertyId','itemId','countedQuantity','reason',...('lots' in body?['lots']:[])]:['propertyId','itemId','countedQuantity','reason','expectedQuantity','expectedRevision',...('lots' in body?['lots']:[])]):issue?['propertyId','itemId','quantity','reference']:part==='items'?['propertyId','sku','name','unit']:['propertyId','reference','lines']);
+  exactKeys(body,receive?(Object.keys(body).length?['lines']:[]):count?(preview?['propertyId','itemId','countedQuantity','reason',...('lots' in body?['lots']:[])]:['propertyId','itemId','countedQuantity','reason','expectedQuantity','expectedRevision',...('lots' in body?['lots']:[])]):issue?['propertyId','itemId','quantity','reference',...('lotAllocation' in body?['lotAllocation']:[])]:part==='items'?['propertyId','sku','name','unit']:['propertyId','reference','lines']);
   if(!receive)scope(body.propertyId);
  }else if(part!=='properties')scope(u.searchParams.get('propertyId'));
  json(res,200,await core(u.pathname.replace('/local-api/','/v1/')+u.search,req.method,body,key,token,identity));return true;

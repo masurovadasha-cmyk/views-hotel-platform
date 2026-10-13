@@ -18,6 +18,26 @@ async function receive(itemId:string,quantity:string){const order=await supply.c
 beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker).toBe('VIEWS_DISPOSABLE_CORE_TEST'));
 beforeEach(()=>{vi.stubEnv('NODE_ENV','test');vi.stubEnv('VIEWS_LOCAL_REHEARSAL','true');vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');});afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('physical stocktake / actual PostgreSQL',()=>{
+ it('issues a selected counted lot once and rejects stale or insufficient lot provenance',async()=>{
+  const itemId=await item();await receive(itemId,'10');const lots=[{lotCode:'A',expiresOn:'2028-02-29',quantity:'7'},{lotCode:null,expiresOn:null,quantity:'3'}];
+  const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'10'),lots});
+  const lotAllocation={snapshotId:snap.stocktakeId,lotCode:'A',expiresOn:'2028-02-29'},body={propertyId:property,itemId,quantity:'2',reference:'Physical lot issue',lotAllocation},key=randomUUID();
+  await expect(supply.issue(keeper,randomUUID(),{...body,quantity:'8'})).rejects.toThrow('INSUFFICIENT_STOCK');
+  await expect(supply.issue(keeper,randomUUID(),{...body,lotAllocation:{...lotAllocation,lotCode:'OTHER'}})).rejects.toThrow('INSUFFICIENT_STOCK');
+  await expect(supply.issue(buyer,key,body)).rejects.toThrow('PROPERTY_FORBIDDEN');await expect(supply.issue(foreign,key,body)).rejects.toThrow('PROPERTY_FORBIDDEN');
+  await expect(supply.issue(keeper,randomUUID(),{...body,itemId:await item()})).rejects.toThrow('STOCKTAKE_STALE');
+  const broken={withActor:(a:Actor,work:Parameters<DatabaseService['withActor']>[1])=>db.withActor(a,c=>work(new Proxy(c,{get(target,k){if(k==='query')return(sql:string,args:unknown[])=>{if(sql.startsWith('INSERT INTO audit_log'))throw Error('LOT_ROLLBACK');return target.query(sql,args);};return Reflect.get(target,k);}})))} as DatabaseService;
+  await expect(new SupplyService(broken).issue(keeper,randomUUID(),body)).rejects.toThrow('LOT_ROLLBACK');expect((await balance(itemId)).quantity).toBe('10');
+  const results=await Promise.all([supply.issue(keeper,key,body),supply.issue(keeper,key,body)]);expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);expect((await balance(itemId)).quantity).toBe('8');
+  expect((await query('SELECT lot_allocation FROM supply_movements WHERE id=$1',[results[0].movementId])).rows[0].lot_allocation).toEqual(lotAllocation);
+  await expect(supply.issue(keeper,randomUUID(),body)).rejects.toThrow('STOCKTAKE_STALE');
+  await expect(supply.issue(keeper,key,{...body,quantity:'1'})).rejects.toThrow('SUPPLY_COMMAND_CONFLICT');
+ });
+ it('allows one concurrent allocation per physical count and supports explicitly unknown origin',async()=>{
+  const itemId=await item();await receive(itemId,'4');const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'4'),lots:[{lotCode:null,expiresOn:null,quantity:'4'}]});
+  const body={propertyId:property,itemId,quantity:'1',reference:'Unknown lot',lotAllocation:{snapshotId:snap.stocktakeId,lotCode:null,expiresOn:null}};
+  const results=await Promise.allSettled([supply.issue(keeper,randomUUID(),body),supply.issue(keeper,randomUUID(),body)]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect((await balance(itemId)).quantity).toBe('3');
+ });
  it('saves a scoped immutable lot snapshot once, then marks it stale after an issue',async()=>{
   const itemId=await item();await receive(itemId,'10');const lots=[{lotCode:'A',expiresOn:'2028-02-29',quantity:'7'},{lotCode:null,expiresOn:null,quantity:'3'}];
   const p={...await preview(itemId,'10'),lots},key=randomUUID();

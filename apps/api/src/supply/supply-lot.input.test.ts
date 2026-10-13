@@ -1,7 +1,12 @@
 import {describe,it,expect} from 'vitest';
-import {receipt} from './supply.input';
+import {receipt,issue} from './supply.input';
 const line={itemId:'12345678-1234-4123-8123-123456789012',quantity:'2',lotCode:'LOT-01',expiresOn:'2028-02-29'};
 describe('receipt lot metadata',()=>{
+ it('validates optional single-lot issue provenance without accepting caller allocations',()=>{
+  const body={propertyId:line.itemId,itemId:line.itemId,quantity:'1',reference:'Physical issue'},lotAllocation={snapshotId:line.itemId,lotCode:'A',expiresOn:'2028-02-29'};
+  expect(issue({...body,lotAllocation}).lotAllocation).toEqual(lotAllocation);expect(issue(body).lotAllocation).toBeUndefined();
+  for(const changed of [{...lotAllocation,snapshotId:'bad'},{...lotAllocation,expiresOn:'2027-02-29'},{...lotAllocation,quantity:'99'},{...lotAllocation,lotCode:null}])expect(()=>issue({...body,lotAllocation:changed})).toThrow();
+ });
  it('accepts real dates and preserves legacy receipt bodies',()=>{
   expect(receipt({lines:[line]})).toEqual([line]);expect(receipt({})).toBeNull();
   expect(receipt({lines:[{itemId:line.itemId,quantity:'2'}]})).toEqual([{itemId:line.itemId,quantity:'2'}]);

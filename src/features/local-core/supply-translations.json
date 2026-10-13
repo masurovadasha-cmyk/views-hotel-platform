@@ -460,5 +460,25 @@
   "Lot allocation is not enabled. These statuses describe recorded evidence, not live lot balances.": {
     "ru": "Распределение по партиям не включено. Статусы показывают сохранённые сведения, а не текущие остатки партий.",
     "uz": "Partiyalarga taqsimlash yoqilmagan. Holatlar qayd etilgan ma’lumotlarni ko‘rsatadi, joriy partiya qoldiqlarini emas."
+  },
+  "Selected counted lot issued": {
+    "ru": "Выдача выбранной партии записана",
+    "uz": "Tanlangan partiya chiqimi qayd etildi"
+  },
+  "Counted lot (optional)": {
+    "ru": "Партия из сверки (необязательно)",
+    "uz": "Sanoqdagi partiya (ixtiyoriy)"
+  },
+  "Issue without lot allocation": {
+    "ru": "Выдать без распределения по партии",
+    "uz": "Partiyaga taqsimlamasdan berish"
+  },
+  "One lot per issue. A fresh physical count is required; this issue makes that count stale. No expiry blocking is enabled.": {
+    "ru": "Одна партия на выдачу. Нужна свежая физическая сверка; после выдачи она устареет. Блокировка просрочки не включена.",
+    "uz": "Har chiqimga bitta partiya. Yangi jismoniy sanoq kerak; chiqimdan so‘ng u eskiradi. Muddati o‘tgan mahsulotlar bloklanmaydi."
+  },
+  "Automatic lot allocation is not enabled. Manual counted-lot issues are recorded separately; these are not live lot balances.": {
+    "ru": "Автоматическое распределение партий не включено. Ручная выдача из сверенных партий записывается отдельно; это не текущие остатки партий.",
+    "uz": "Partiyalar avtomatik taqsimlanmaydi. Sanalgan partiyadan qo‘lda berish alohida qayd etiladi; bu joriy partiya qoldig‘i emas."
   }
 }
