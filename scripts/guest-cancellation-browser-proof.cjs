@@ -53,13 +53,26 @@ module.exports=async function({page,api,admin,identity}){
  assert.equal((await admin.query('SELECT count(*)::int n FROM booking_cancellations WHERE reservation_id=$1',[id])).rows[0].n,1);
  assert.equal((await admin.query('SELECT count(*)::int n FROM organization_memberships WHERE user_id=$1',[identity.profile.userId])).rows[0].n,0);
  await page.reload();await page.getByRole('button',{name:'View trip',exact:true}).click();
+ // A click is not a completed detail load: wait before asserting absence or revoking ownership.
+ await page.getByTestId('guest-trip-detail').waitFor();
  assert.equal(await page.getByTestId('guest-cancellation-confirm').count(),0);
- // Ownership revocation also denies a successful command's replay.
- await admin.query('UPDATE guest_profiles SET user_id=NULL WHERE id=$1',[profile]);
- assert.equal((await api(route+'confirm','POST',writes[0].body,{...csrf,'Idempotency-Key':writes[0].key})).status,404);
+ await page.getByRole('button',{name:'Back to trips',exact:true}).click();await page.getByTestId('guest-trip').waitFor();
+ // Deterministically revoke while a fresh detail request is in flight, not by timing luck.
+ let release,arrived;const held=new Promise(resolve=>{release=resolve;}),requested=new Promise(resolve=>{arrived=resolve;});
+ await page.route('**/guest-api/trips/'+id,async request=>{arrived();await held;await request.continue();},{times:1});
+ await page.getByRole('button',{name:'View trip',exact:true}).click();await requested;
+ try{
+  assert.equal(await page.locator('.guestTrips').getAttribute('aria-busy'),'true');
+  assert.equal(await page.getByTestId('guest-trip-detail').count(),0);
+  await admin.query('UPDATE guest_profiles SET user_id=NULL WHERE id=$1',[profile]);
+  // Ownership revocation also denies a successful command's replay.
+  assert.equal((await api(route+'confirm','POST',writes[0].body,{...csrf,'Idempotency-Key':writes[0].key})).status,404);
+ }finally{release();}
+ await page.getByText('This trip is no longer available to your account.',{exact:true}).waitFor();
+ assert.equal(await page.getByTestId('guest-trip-detail').count(),0);assert.equal(await page.getByTestId('guest-trip').count(),0);
  const saved=process.env.VIEWS_GUEST_CANCELLATION_PILOT_ENABLED;process.env.VIEWS_GUEST_CANCELLATION_PILOT_ENABLED='false';
  try{assert.equal((await api(route+'preview','POST',{},csrf)).body.error,'GUEST_CANCELLATION_DISABLED');}finally{process.env.VIEWS_GUEST_CANCELLATION_PILOT_ENABLED=saved;}
- await page.getByRole('button',{name:'Refresh trips',exact:true}).click();await page.getByText('No bookings are linked to this account yet.',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Try again',exact:true}).click();await page.getByText('No bookings are linked to this account yet.',{exact:true}).waitFor();
  await page.setViewportSize({width:390,height:844});
- console.log(JSON.stringify({result:'pass',proof:'guest_cancellation_browser_core_postgres',checks:['cookie_csrf_exact_body_foreign_reservation_and_preview_without_write','three_languages_two_widths_exact_bigint_and_stale_terms','lost_reply_same_command_offline_manual_retry_one_cancellation_inventory_release','no_staff_membership_reload_revoked_ownership_and_default_off'],realPayments:false,externalRequestsSent:0}));
+ console.log(JSON.stringify({result:'pass',proof:'guest_cancellation_browser_core_postgres',checks:['cookie_csrf_exact_body_foreign_reservation_and_preview_without_write','three_languages_two_widths_exact_bigint_and_stale_terms','lost_reply_same_command_offline_manual_retry_one_cancellation_inventory_release','no_staff_membership_reload_revoked_ownership_and_default_off','inflight_detail_revocation_clears_cached_trip_and_manual_retry_is_empty'],realPayments:false,externalRequestsSent:0}));
 };

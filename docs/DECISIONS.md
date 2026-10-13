@@ -217,3 +217,6 @@ Start an explicit public history at migration0107; do not backfill reasons previ
 
 ## Canva23 — receipt lot metadata (2026-10-13)
 Record optional paired lot code/date on immutable receipt lines; retain legacy NULLs and one lot per item per receipt. Separate receipts represent multiple lots. This does not allocate stock by lot, implement FEFO or block expired stock. Past dates remain valid metadata; sale eligibility needs a separate policy. Existing scoped keys and idempotent receipt transaction remain authoritative.
+
+## Guest trip revocation acceptance (2026-10-14)
+Browser actions must await rendered detail before asserting absent controls. Exercise in-flight ownership revocation with an explicit network barrier and real Core404, then manual recovery. Do not change authorization or add arbitrary delays to repair a test race. Build static assets before starting browser fixtures, never concurrently with their reloads.

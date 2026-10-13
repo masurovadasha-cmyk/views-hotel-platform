@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 12 October 2026 (Tashkent)
 
+14 октября: [исправлена гонка теста отзыва доступа к поездке](GUEST_TRIP_REVOCATION_CHECK.md); общий локальный browser chain снова PASS. Изменений публичного приложения нет.
+
 Блок23: [партия и срок годности при приёмке](design/CANVA_140_BLOCK_23_RECEIPT_LOTS.md), только feature-ветка. Не включает FEFO/блокировку просрочки; публичная версия ниже не обновлялась.
 
 Опубликована **0.15.0-preview**, исходники `eae64e1`. Cloudflare и GitHub Pages
