@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 12 October 2026 (Tashkent)
 
+L2d: [возврат в партию выдачи](MARKET_RETURN_LOT_L2D.md) в feature-ветке; публичные веб/APK без изменений.
+
 L2c: [выдача V Market из сверенных партий](MARKET_COUNTED_LOT_HANDOVER_L2C.md) в feature-ветке; публичные веб/APK без изменений.
 
 14 октября: [L2b — ручная выдача сверенной партии](SUPPLY_COUNTED_LOT_ISSUE_L2B.md) доступна в feature-ветке. Автоматическое распределение остальных движений и живые остатки партий ещё не включены; публичная версия не менялась.

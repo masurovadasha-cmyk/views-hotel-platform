@@ -20,12 +20,12 @@ export function marketAction(raw:unknown,staff:boolean){
   return {action,expectedRevision:revision(b.expectedRevision),returnedToStorage:true,note:b.note.trim()};
  }
  if(staff&&['receive_return','restock_return','discard_return'].includes(String(action))){
-  const b=object(raw,action==='receive_return'?['action','expectedRevision','serviceId','quantity','note']:action==='restock_return'?['action','expectedRevision','returnId','checklist','note']:['action','expectedRevision','returnId','note']);
+  const b=object(raw,action==='receive_return'?['action','expectedRevision','serviceId','quantity','note']:action==='restock_return'?['action','expectedRevision','returnId','checklist','note',...('sameIssuedLot' in (raw as object)?['sameIssuedLot']:[])]:['action','expectedRevision','returnId','note']);
   if(typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();
   const base={action:action as string,expectedRevision:revision(b.expectedRevision),note:b.note.trim()};
   if(action==='receive_return'){if(!Number.isInteger(b.quantity)||(b.quantity as number)<1||(b.quantity as number)>50)return invalid();return {...base,serviceId:uuid(b.serviceId),quantity:b.quantity as number};}
   const returnId=uuid(b.returnId);if(action==='discard_return')return {...base,returnId};
-  const c=object(b.checklist,['sealed','expiry','quality']);if(c.sealed!==true||c.expiry!==true||c.quality!==true)return invalid();return {...base,returnId,checklist:{sealed:true,expiry:true,quality:true}};
+  const c=object(b.checklist,['sealed','expiry','quality']);if(c.sealed!==true||c.expiry!==true||c.quality!==true)return invalid();if('sameIssuedLot' in b&&b.sameIssuedLot!==true)return invalid();return {...base,returnId,checklist:{sealed:true,expiry:true,quality:true},...('sameIssuedLot' in b?{sameIssuedLot:true}:{})};
  }
 
  if(staff&&action==='propose_quantity'){

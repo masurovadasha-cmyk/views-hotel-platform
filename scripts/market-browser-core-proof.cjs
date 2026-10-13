@@ -153,8 +153,10 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await inspection.getByLabel('Inspection or disposal note (3–500 characters)',{exact:true}).fill('Sealed package and storage checked');
   assert.equal(await inspection.getByRole('button',{name:'Return to available stock',exact:true}).isDisabled(),true);
   for(const label of ['Factory seal intact','Expiry checked','Quality and storage conditions checked'])await inspection.getByLabel(label,{exact:true}).check();
+  await inspection.getByLabel('Returned label matches the issued lot',{exact:false}).check();
   await inspection.getByRole('button',{name:'Return to available stock',exact:true}).click();await inspection.getByText('Restocked',{exact:false}).waitFor();
   await inspection.getByText('Inspection completed',{exact:true}).waitFor();
+  assert.equal((await admin.query("SELECT i.lot_allocation->>'lotCode' code FROM supply_movements m JOIN supply_movements i ON i.id=m.return_source_issue_id WHERE m.market_return_id=$1",[receipt])).rows[0].code,'MARKET-BROWSER');
   assert.equal(await inspection.getByTestId('return-timeline').locator('time').count(),2);
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();
   const guestTimeline=gc.locator(`[data-return-id="${receipt}"]`).getByTestId('return-timeline');
@@ -195,6 +197,6 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   }finally{await financeContext.close();}
   for(const language of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(language);await warehouse.locator('.staffLanguage select').selectOption(language);for(const p of [page,warehouse])assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}
   await guest.screenshot({path:'/tmp/views-market-guest.png'});await staff.screenshot({path:'/tmp/views-market-staff.png'});
-  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','replacement_consent_own_reserve_lost_reply_one_successor','warehouse_proposal_expiry_decline_and_guest_consent_same_key','warehouse_pick_checklist_handover','counted_lots_complete_selection_clear_and_movement_provenance','stock_issue','issue_blocks_receipt','warehouse_answer_no_financial_or_stock_change','guest_receipt_single_folio','private_item_id_stripped','quarantine_inspection_restock_no_credit','accountant_credit_same_key_no_stock_or_payment','three_languages_mobile'],publicEnabled:false}));
+  console.log(JSON.stringify({proof:'market_browser_core',result:'pass',checks:['consented_cart','lost_reply_same_key_one_order','csrf','offline','navigation_guard','stock_reserved','replacement_consent_own_reserve_lost_reply_one_successor','warehouse_proposal_expiry_decline_and_guest_consent_same_key','warehouse_pick_checklist_handover','counted_lots_complete_selection_clear_and_movement_provenance','stock_issue','issue_blocks_receipt','warehouse_answer_no_financial_or_stock_change','guest_receipt_single_folio','private_item_id_stripped','quarantine_inspection_restock_no_credit','return_confirmed_issued_lot_provenance','accountant_credit_same_key_no_stock_or_payment','three_languages_mobile'],publicEnabled:false}));
  }finally{if(context)await context.close();await web.close();}
 };

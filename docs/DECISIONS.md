@@ -232,3 +232,6 @@ Allow optional single-lot issue provenance only against a current immutable phys
 
 ## L2c marketplace counted-lot handover (2026-10-14)
 Optional selection must cover every frozen order line with one counted lot. Reuse item locks and count-revision guard; an invalid line rolls back the entire handover. Validate service-to-item mapping against the immutable order snapshot. Legacy unallocated mode remains explicit. No return provenance, FEFO or live balances are inferred. Warehouse options remain staff-only.
+
+## L2d returned lot provenance (2026-10-14)
+An explicit inspected label match may link a restock movement to the immutable original marketplace issue. The server derives the source from order/item/scope; never accept a client-selected source UUID or infer provenance from receipts. The original count may be stale: the link records historic issuance, not new stock availability. Legacy unallocated restocking remains available and no financial credit is automatic.

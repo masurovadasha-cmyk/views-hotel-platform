@@ -1,6 +1,7 @@
 import type {Locale} from '../../i18n/messages';
 import {cleaningText} from '../service-orders/locale';
 const rows:Record<string,[string,string,string]>={
+ sameIssuedLot:['Маркировка возвращённого товара совпадает с партией выдачи','Returned label matches the issued lot','Qaytarilgan yorliq berilgan partiyaga mos'],
  useCountedLots:['Выдать из сверенных партий','Use counted lots','Sanalgan partiyalardan berish'],
  chooseCountedLot:['Выберите партию из свежей сверки','Choose a current counted lot','Yangi sanoqdan partiyani tanlang'],
  unknownLot:['Неизвестная партия','Unknown lot','Noma’lum partiya'],
