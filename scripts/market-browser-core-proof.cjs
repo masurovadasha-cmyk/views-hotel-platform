@@ -102,6 +102,17 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   gc=guest.locator(`[data-market-order="${oid}"]`);await staff.getByRole('button',{name:'Refresh',exact:true}).click();sc=staff.locator(`[data-market-order="${oid}"]`);
   await sc.getByRole('button',{name:'Start picking',exact:true}).click();await sc.getByTestId('market-stage').getByText('Being picked',{exact:true}).waitFor();assert.equal(await sc.getByRole('button',{name:'Finish picking',exact:true}).isDisabled(),true);
   for(const label of ['Items and quantities checked','Expiry dates checked','Packaging checked'])await sc.getByLabel(label,{exact:true}).check();
+  await sc.getByRole('button',{name:'Finish picking',exact:true}).click();
+  const reopen=sc.getByTestId('market-reopen');await reopen.getByLabel('Reason for reopening',{exact:true}).fill('All picked goods returned for agreement');
+  assert.equal(await reopen.getByRole('button',{name:'Reopen for agreement',exact:true}).isDisabled(),true);
+  await reopen.getByLabel('All goods are back in storage and have not been handed to the guest',{exact:true}).check();
+  await reopen.getByRole('button',{name:'Reopen for agreement',exact:true}).click();await sc.getByTestId('market-stage').getByText('Stock reserved',{exact:true}).waitFor();
+  assert.equal((await admin.query('SELECT checklist FROM market_orders WHERE order_id=$1',[oid])).rows[0].checklist,null);
+  await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByTestId('market-stage').getByText('Stock reserved',{exact:true}).waitFor();
+  assert.equal(await gc.getByTestId('market-reopen').count(),0);
+  await sc.getByRole('button',{name:'Start picking',exact:true}).click();await sc.getByTestId('market-stage').getByText('Being picked',{exact:true}).waitFor();
+  assert.equal(await sc.getByRole('button',{name:'Finish picking',exact:true}).isDisabled(),true);
+  for(const label of ['Items and quantities checked','Expiry dates checked','Packaging checked'])await sc.getByLabel(label,{exact:true}).check();
   await sc.getByRole('button',{name:'Finish picking',exact:true}).click();await sc.getByLabel('Order physically handed to guest',{exact:true}).check();await sc.getByRole('button',{name:'Confirm handover',exact:true}).click();await sc.getByTestId('market-stage').getByText('Handed over — confirm receipt',{exact:true}).waitFor();
   assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'3');assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();

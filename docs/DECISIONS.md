@@ -208,3 +208,6 @@ Reuse market proposal/replacement transactions to consent to fewer units of one 
 
 ## Canva20 — remove one line before picking (2026-10-13)
 Supersedes Canva19's no-zero restriction: propose_quantity quantity0 removes a line only if another line remains. Keep the same guest consent/current-price/replacement transaction. Empty basket is rejected; never reinterpret this as implicit cancellation. No post-picking mutation.
+
+## Canva21 — reopen picking before handover (2026-10-13)
+Use a distinct warehouse command to confirm physical return to storage before reopening the existing proposal workflow. Keep reservations and quantities unchanged; clear the picking checklist. Do not allow direct post-handover edits or invent a physical stock return movement when no stock issue happened. Lifecycle guard exception is limited to privileged market reset, not general backward transitions.

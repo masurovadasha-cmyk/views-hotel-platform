@@ -13,6 +13,11 @@ export function marketRequest(raw:unknown){
 export function marketAction(raw:unknown,staff:boolean){
  if(!raw||typeof raw!=='object'||!('action' in raw))return invalid();
  const action=raw.action;
+ if(staff&&action==='reopen_picking'){
+  const b=object(raw,['action','expectedRevision','returnedToStorage','note']);
+  if(b.returnedToStorage!==true||typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();
+  return {action,expectedRevision:revision(b.expectedRevision),returnedToStorage:true,note:b.note.trim()};
+ }
  if(staff&&['receive_return','restock_return','discard_return'].includes(String(action))){
   const b=object(raw,action==='receive_return'?['action','expectedRevision','serviceId','quantity','note']:action==='restock_return'?['action','expectedRevision','returnId','checklist','note']:['action','expectedRevision','returnId','note']);
   if(typeof b.note!=='string'||b.note.trim().length<3||b.note.trim().length>500)return invalid();

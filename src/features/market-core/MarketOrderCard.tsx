@@ -3,6 +3,7 @@ import type {Locale} from '../../i18n/messages';
 import {localizedName,localeTags} from '../local-core/staff-locale';
 import {marketText} from './locale';
 import type {MarketOrder,MarketProduct} from './model';
+import {MarketReopen} from './MarketReopen';
 import {MarketReturns} from './MarketReturns';
 import {MarketCreditSummary} from './MarketCreditSummary';
 import {MarketProposal} from './MarketProposal';
@@ -22,6 +23,7 @@ export function MarketOrderCard({order:o,locale,staff=false,disabled,onAction,on
  {!staff&&o.stage==='handed_over'&&o.issue?.status!=='open'&&<><label><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/>{t('receiptConsent')}</label><button disabled={!consent} onClick={()=>onAction('confirm_receipt')}>{t('receipt')}</button></>}
  {o.issue&&<section aria-label={t('issue')}><h5>{t(o.issue.status==='open'?'issueOpen':'issueAnswered')}</h5><p>{o.issue.note}</p>{o.issue.answer&&<p>{o.issue.answer}</p>}<p>{t('noRefund')}</p></section>}
  {((!staff&&['handed_over','completed'].includes(o.stage)&&o.issue?.status!=='open')||(staff&&o.issue?.status==='open'))&&<><label>{t(staff?'answerNote':'issueNote')}<textarea maxLength={1000} value={note} onChange={e=>setNote(e.target.value)}/></label><button disabled={note.trim().length<3} onClick={()=>onAction(staff?'answer_issue':'report_issue',{note:note.trim()})}>{t(staff?'answerIssue':'reportIssue')}</button></>}
+ {staff&&['picking','ready'].includes(o.stage)&&<MarketReopen locale={locale} onAction={onAction}/>}
  <MarketReturns order={o} locale={locale} staff={staff} onAction={onAction}/>
  <MarketCreditSummary order={o} locale={locale}/>
  <MarketProposal order={o} locale={locale} staff={staff} products={products} onAction={onAction}/>

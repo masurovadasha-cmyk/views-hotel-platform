@@ -37,6 +37,36 @@ const command=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>(
 const act=(o:MarketReceipt,action:string,extra:Record<string,unknown>={})=>service.staffAct(actor(),'b1'.repeat(32),o.orderId,randomUUID(),command(o,action,extra));
 const checklist={quantities:true,expiry:true,packaging:true};
 describe.sequential('V Market / real PostgreSQL',()=>{
+ it('serializes reopening against physical handover',async()=>{
+  const f=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);o=await act(o,'pick');o=await act(o,'ready',{checklist});
+  const results=await Promise.allSettled([act(o,'reopen_picking',{returnedToStorage:true,note:'Back in storage'}),act(o,'handover')]);
+  expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+  const stage=(await run('SELECT stage FROM market_orders WHERE order_id=$1',[o.orderId])).rows[0].stage;
+  expect(['reserved','handed_over']).toContain(stage);
+  expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe(stage==='reserved'?'5':'3');
+ });
+ it('reopens picking/ready once without releasing stock, clears inspection and forbids reopening after handover',async()=>{
+  const f=await fixture();let o=await service.request(f.a.token,randomUUID(),f.body);
+  const fields={returnedToStorage:true,note:'All goods returned to storage'};
+  await expect(act(o,'reopen_picking',fields)).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+  o=await act(o,'pick');
+  await expect(run("UPDATE service_orders SET status='requested' WHERE id=$1",[o.orderId])).rejects.toThrow();
+  o=await act(o,'reopen_picking',fields);expect(o.stage).toBe('reserved');
+  o=await act(o,'pick');o=await act(o,'ready',{checklist});
+  await expect(service.staffAct(actor(2),'b2'.repeat(32),o.orderId,randomUUID(),command(o,'reopen_picking',fields))).rejects.toThrow('SERVICE_FORBIDDEN');
+  const key=randomUUID(),body=command(o,'reopen_picking',fields),old=o;
+  const results=await Promise.all([service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body),service.staffAct(actor(),'b1'.repeat(32),o.orderId,key,body)]);
+  expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);o=results[0];expect(o).toMatchObject({stage:'reserved',revision:old.revision+1,totalMinor:'200'});
+  expect((await run('SELECT checklist FROM market_orders WHERE order_id=$1',[o.orderId])).rows[0].checklist).toBeNull();
+  expect((await stock('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[f.s])).rows[0].quantity).toBe('5');
+  expect((await service.catalog(f.a.token,f.r)).items.find(i=>i.id===f.s)).toMatchObject({availableQuantity:'3'});
+  expect((await run('SELECT id FROM folio_entries WHERE source_id=$1',[o.orderId])).rowCount).toBe(0);
+  await expect(act(old,'handover')).rejects.toThrow('SERVICE_REVISION_CHANGED');
+  o=await act(o,'propose_quantity',{fromServiceId:f.s,quantity:1,note:'Only one needed'});
+  o=await service.guestAct(f.a.token,o.orderId,randomUUID(),command(o,'accept_proposal',{expectedTotalMinor:'100'}));
+  o=await act(o,'pick');o=await act(o,'ready',{checklist});o=await act(o,'handover');
+  await expect(act(o,'reopen_picking',fields)).rejects.toThrow('SERVICE_TRANSITION_INVALID');
+ });
  it('removes one line only after consent, releases its reserve and rejects an empty basket',async()=>{
   const f=await fixture(),g=await fixture(),base=await service.request(f.a.token,randomUUID(),f.body);
   await expect(act(base,'propose_quantity',{fromServiceId:f.s,quantity:0,note:'Unavailable item'})).rejects.toThrow('SERVICE_INPUT_INVALID');

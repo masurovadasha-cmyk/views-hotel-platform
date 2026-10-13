@@ -2,6 +2,11 @@ import {describe,it,expect} from 'vitest';
 import {marketRequest,marketAction,marketCredit} from './market.input';
 const id='12345678-1234-4123-8123-123456789012',body={reservationId:id,lines:[{serviceId:id,quantity:1,expectedRevision:1}],expectedTotalMinor:'100'};
 describe('market input boundaries',()=>{
+ it('requires explicit warehouse confirmation to reopen picking',()=>{
+  const b={action:'reopen_picking',expectedRevision:1,returnedToStorage:true,note:'Goods returned to storage'};
+  expect(marketAction(b,true)).toEqual(b);expect(()=>marketAction(b,false)).toThrow();
+  for(const extra of [{returnedToStorage:false},{returnedToStorage:'true'},{note:' '},{propertyId:id}])expect(()=>marketAction({...b,...extra},true)).toThrow();
+ });
  it('accepts only warehouse quantity reduction requests without client prices',()=>{
   const b={action:'propose_quantity',expectedRevision:1,fromServiceId:id,quantity:1,note:'Only one available'};
   expect(marketAction(b,true)).toEqual(b);expect(()=>marketAction(b,false)).toThrow();
