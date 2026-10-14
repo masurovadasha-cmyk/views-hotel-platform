@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 12 October 2026 (Tashkent)
 
+L4a: [фундамент резерва по партиям](MARKET_LOT_RESERVE_L4A.md); миграция и административные проверки, пользовательский режим не включён.
+
 L3b: [годные партии и порядок ручного выбора](MARKET_LOT_ELIGIBILITY_L3B.md); резерв по партиям ещё не включён, public web/APK без изменений.
 
 L2f.3: [выдача V Market по актуальным версиям партий](MARKET_CURRENT_LOTS_L2F3.md), feature-ветка; public web/APK без изменений.

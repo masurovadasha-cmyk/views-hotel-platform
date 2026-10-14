@@ -76,7 +76,7 @@ const run = args => {
     for(const block of seedBlocks)assert.equal(await applySyntheticSeed(admin,block.name,block.sql),false);
     assert.deepEqual((await admin.query('SELECT * FROM seed_private.applied ORDER BY name')).rows,seedHistory);
     const seedPeer=new Client({host:'127.0.0.1',port,database:'views',user:'views',password:ownerPassword});
-    try{await seedPeer.connect();await require('./synthetic-seed-proof.cjs')(admin,seedPeer);}
+    try{await seedPeer.connect();await require('./synthetic-seed-proof.cjs')(admin,seedPeer);if(!dev)await require('./market-lot-reserve-proof.cjs')(admin,seedPeer).catch(error=>{console.error('LOT_RESERVE_PROOF_FAILED:'+error.message);throw error;});}
     finally{await seedPeer.end();}
     await assert.rejects(admin.query(`INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,source_ref,stay_period)
       VALUES('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',

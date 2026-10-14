@@ -1,0 +1,65 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {randomUUID}=require('node:crypto');
+module.exports=async function lotReserveProof(db,peer){
+ assert.equal((await db.query("SELECT to_regclass('public.market_lot_reservations')::text name")).rows[0].name,'market_lot_reservations');
+ const org='00000000-0000-0000-0000-000000000001',property='00000000-0000-0000-0000-000000000002';
+ const user='76600000-0000-4000-8000-000000000002',member='76600000-0000-4000-8000-000000000012';
+ await db.query("SELECT set_config('app.organization_id',$1,false),set_config('app.user_id',$2,false),set_config('app.membership_id',$3,false)",[org,user,member]);
+ const item=randomUUID(),service=randomUUID(),orders=[randomUUID(),randomUUID()];
+ await db.query("INSERT INTO supply_items(id,organization_id,property_id,sku,name,unit) VALUES($1::uuid,$2,$3,upper($1::text),'Reservation proof','piece')",[item,org,property]);
+ await db.query("INSERT INTO service_catalog(id,organization_id,property_id,code,name,currency,price_minor,execution_kind) VALUES($1::uuid,$2,$3,$1::text,'{}','UZS',100,'market')",[service,org,property]);
+ const guest=randomUUID();await db.query("INSERT INTO guest_profiles(id,organization_id,first_name,last_name) VALUES($1,$2,'Synthetic','Reserve proof')",[guest,org]);
+ async function count(lots){
+  const b=(await db.query('SELECT quantity,revision FROM supply_balances WHERE item_id=$1',[item])).rows[0]||{quantity:'0',revision:'0'};
+  const snapshot=randomUUID();
+  await db.query("INSERT INTO supply_stocktakes(id,organization_id,property_id,item_id,expected_quantity,counted_quantity,expected_revision,reason,actor_user_id,actor_membership_id,lot_counts) VALUES($1,$2,$3,$4,$5,5,$6,'Reserve proof',$7,$8,$9)",[snapshot,org,property,item,b.quantity,b.revision,user,member,lots&&JSON.stringify(lots)]);
+  await db.query("INSERT INTO supply_movements(organization_id,property_id,item_id,kind,quantity,reference,actor_user_id,actor_membership_id,stocktake_id) VALUES($1,$2,$3,'adjustment',$4,'Reserve proof',$5,$6,$7)",[org,property,item,5-Number(b.quantity),user,member,snapshot]);
+  return (await db.query('SELECT last_movement_id FROM supply_lot_projections WHERE item_id=$1',[item])).rows[0]?.last_movement_id;
+ }
+ await db.query('BEGIN');await count(null);
+ const lots=[{lotCode:'HELD',expiresOn:'2099-01-01',quantity:'2'},{lotCode:null,expiresOn:null,quantity:'3'}];
+ const version=await count(lots);await db.query('COMMIT');
+ for(const order of orders){
+  await db.query("INSERT INTO service_orders(id,organization_id,property_id,service_id,guest_profile_id,currency,quantity,total_minor,commission_minor,requested_for,snapshot,idempotency_key) VALUES($1::uuid,$2,$3,$4,$5,'UZS',1,200,0,now(),'{}',$1::text)",[order,org,property,service,guest]);
+  await db.query('INSERT INTO market_orders(order_id,organization_id,property_id) VALUES($1,$2,$3)',[order,org,property]);
+  await db.query('INSERT INTO market_order_lines VALUES($1,$2,$3,$4,2)',[org,property,order,item]);
+ }
+ const insert="INSERT INTO market_lot_reservations(organization_id,property_id,order_id,item_id,movement_id,lot_code,expires_on,quantity) VALUES($1,$2,$3,$4,$5,$6,$7,2)";
+ const args=order=>[org,property,order,item,version,'HELD','2099-01-01'];
+ const race=await Promise.allSettled([db.query(insert,args(orders[0])),peer.query(insert,args(orders[1]))]);
+ assert.equal(race.filter(x=>x.status==='fulfilled').length,1);
+ assert.match(race.find(x=>x.status==='rejected').reason.message,/LOT_RESERVE_UNAVAILABLE/);
+ const winner=(await db.query('SELECT order_id FROM market_lot_reservations WHERE item_id=$1',[item])).rows[0].order_id;
+ const loser=orders.find(o=>o!==winner);
+ await assert.rejects(db.query(insert,args(winner)),/LOT_RESERVE_UNAVAILABLE|duplicate key/);
+ await assert.rejects(db.query(insert,[...args(loser).slice(0,5),null,null]),/LOT_RESERVE_UNKNOWN/);
+ await assert.rejects(db.query(insert,[org,property,loser,item,version,'HELD','2000-01-01']),/LOT_RESERVE_EXPIRED/);
+ await assert.rejects(db.query(insert.replace(',2)',',1)'),args(loser)),/LOT_RESERVE_QUANTITY/);
+ await assert.rejects(db.query(insert,[org,property,loser,item,randomUUID(),'HELD','2099-01-01']),/LOT_RESERVE_STALE/);
+ await assert.rejects(db.query("UPDATE market_orders SET stage='cancelled' WHERE order_id=$1",[winner]),/LOT_RESERVE_ACTIVE/);
+ await assert.rejects(db.query("INSERT INTO supply_movements(organization_id,property_id,item_id,kind,quantity,reference,actor_user_id,actor_membership_id) VALUES($1,$2,$3,'issue',-1,'Reserved issue proof',$4,$5)",[org,property,item,user,member]),/LOT_RESERVE_UNAVAILABLE/);
+ assert.equal((await db.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[item])).rows[0].quantity,'5');
+ await db.query('BEGIN');
+ await assert.rejects(count([{lotCode:'HELD',expiresOn:'2099-01-01',quantity:'1'},{lotCode:null,expiresOn:null,quantity:'4'}]),/LOT_RESERVE_UNAVAILABLE/);
+ await db.query('ROLLBACK');
+ assert.equal((await db.query('SELECT last_movement_id FROM supply_lot_projections WHERE item_id=$1',[item])).rows[0].last_movement_id,version);
+ await db.query('BEGIN');
+ await db.query('UPDATE market_lot_reservations SET released_at=clock_timestamp() WHERE order_id=$1',[winner]);
+ await db.query('ROLLBACK');
+ await assert.rejects(db.query(insert,args(loser)),/LOT_RESERVE_UNAVAILABLE/);
+ await db.query('UPDATE market_lot_reservations SET released_at=clock_timestamp() WHERE order_id=$1',[winner]);
+ await assert.rejects(db.query('UPDATE market_lot_reservations SET released_at=NULL WHERE order_id=$1',[winner]),/LOT_RESERVE_IMMUTABLE/);
+ await db.query(insert,args(loser));
+ await db.query("BEGIN; SET LOCAL ROLE views_app");
+ await db.query("SELECT set_config('app.organization_id',$1,true),set_config('app.user_id',$2,true),set_config('app.membership_id',$3,true)",[org,user,member]);
+ assert.equal((await db.query('SELECT * FROM market_lot_reservations WHERE item_id=$1 AND released_at IS NULL',[item])).rowCount,1);
+ await db.query("SELECT set_config('app.organization_id','10000000-0000-4000-8000-000000000001',true)");
+ assert.equal((await db.query('SELECT * FROM market_lot_reservations WHERE item_id=$1',[item])).rowCount,0);
+ await assert.rejects(db.query(insert,args(winner)),/LOT_RESERVE_DISABLED|permission denied|row-level security/);
+ await db.query('ROLLBACK');
+ await db.query('UPDATE market_lot_reservations SET released_at=clock_timestamp() WHERE order_id=$1',[loser]);
+ await db.query("UPDATE market_orders SET stage='cancelled' WHERE order_id=ANY($1::uuid[])",[orders]);
+ await db.query("SELECT set_config('app.organization_id','',false),set_config('app.user_id','',false),set_config('app.membership_id','',false)");
+ console.log('Lot reserve schema: race, stale/unknown rejection, stock rollback, release rollback, no reactivation and runtime isolation PASS; runtime activation disabled.');
+};
