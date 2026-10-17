@@ -1,3 +1,4 @@
+import {useLegacyStaffLocale} from './LegacyStaffLocale';
 import {useEffect,useState} from "react";
 import type {HospitalityRole} from "../../domain/types";
 import type {LiveHousekeepingJob,LiveMaintenanceTicket} from "../../api/types";
@@ -9,10 +10,12 @@ function errorText(error:unknown){
 }
 
 function Panel({title,children}:{title:string;children:React.ReactNode}){
-  return <section className="panel"><header><small>VIEWS LIVE OPERATIONS</small><h2>{title}</h2></header>{children}</section>;
+  const {t,locale}=useLegacyStaffLocale();
+  return <section className="panel"><header><small>{t("VIEWS LIVE OPERATIONS")}</small><h2>{t(String(title))}</h2></header>{children}</section>;
 }
 
 export function HousekeepingLive({role}:{role:HospitalityRole}){
+  const {t,locale}=useLegacyStaffLocale();
   const [jobs,setJobs]=useState<LiveHousekeepingJob[]>([]);
   const [error,setError]=useState("");
   const [busy,setBusy]=useState("");
@@ -37,30 +40,31 @@ export function HousekeepingLive({role}:{role:HospitalityRole}){
   const canVerify=["housekeeping_supervisor","general_manager","super_admin"].includes(role);
 
   return <div className="staffBoard">
-    <Panel title="Housekeeping queue">
-      {error&&<div className="notice">{error}</div>}
-      {jobs.length===0?<div className="emptyLine">No housekeeping jobs assigned to this queue.</div>:
+    <Panel title={t("Housekeeping queue")}>
+      {error&&<div className="notice">{t(String(error))}</div>}
+      {jobs.length===0?<div className="emptyLine">{t("No housekeeping jobs assigned to this queue.")}</div>:
       <div className="orderList">{jobs.map(job=><article className="order" key={job.id}>
-        <div><b>Apartment {job.unit_code}</b><span>Housekeeping · {job.assigned_user_id?"assigned":"unassigned"}</span></div>
-        <span className={"status "+job.status}>{job.status.replaceAll("_"," ")}</span>
+        <div><b>{t("Apartment")}{' '}{job.unit_code}</b><span>{t("Housekeeping ·")}{' '}{job.assigned_user_id?t("assigned"):t("unassigned")}</span></div>
+        <span className={"status "+job.status}>{t(String(job.status.replace(/_/g," ")))}</span>
         <div className="orderActions">
-          {job.status==="dirty"&&<button className="primary" disabled={busy!==""} onClick={()=>act(job.id,"start")}>Start</button>}
-          {job.status==="dirty"&&<button disabled={busy!==""} onClick={()=>act(job.id,"decline")}>Decline</button>}
-          {(job.status==="dirty"||job.status==="cleaning")&&<button disabled={busy!==""} onClick={()=>act(job.id,"dnd")}>DND</button>}
-          {job.status==="cleaning"&&<button className="primary" disabled={busy!==""} onClick={()=>act(job.id,"complete")}>Complete</button>}
-          {job.status==="inspection"&&canVerify&&<button className="primary" disabled={busy!==""} onClick={()=>act(job.id,"verify")}>Verify ready</button>}
-          {job.status==="inspection"&&!canVerify&&<span>Awaiting supervisor verification</span>}
+          {job.status==="dirty"&&<button className="primary" disabled={busy!==""} onClick={()=>act(job.id,"start")}>{t("Start")}</button>}
+          {job.status==="dirty"&&<button disabled={busy!==""} onClick={()=>act(job.id,"decline")}>{t("Decline")}</button>}
+          {(job.status==="dirty"||job.status==="cleaning")&&<button disabled={busy!==""} onClick={()=>act(job.id,"dnd")}>{t("DND")}</button>}
+          {job.status==="cleaning"&&<button className="primary" disabled={busy!==""} onClick={()=>act(job.id,"complete")}>{t("Complete")}</button>}
+          {job.status==="inspection"&&canVerify&&<button className="primary" disabled={busy!==""} onClick={()=>act(job.id,"verify")}>{t("Verify ready")}</button>}
+          {job.status==="inspection"&&!canVerify&&<span>{t("Awaiting supervisor verification")}</span>}
         </div>
       </article>)}</div>}
     </Panel>
-    <Panel title="Housekeeping control">
-      <div className="workflow"><span><b>dirty</b></span><span><i>→</i><b>cleaning</b></span><span><i>→</i><b>inspection</b></span><span><i>→</i><b>ready</b></span></div>
-      <div className="notice">Cleaner actions and supervisor verification are enforced again on the server; UI buttons are not the authorization boundary.</div>
+    <Panel title={t("Housekeeping control")}>
+      <div className="workflow"><span><b>{t("dirty")}</b></span><span><i>→</i><b>{t("cleaning")}</b></span><span><i>→</i><b>{t("inspection")}</b></span><span><i>→</i><b>{t("ready")}</b></span></div>
+      <div className="notice">{t("Cleaner actions and supervisor verification are enforced again on the server; UI buttons are not the authorization boundary.")}</div>
     </Panel>
   </div>;
 }
 
 export function MaintenanceLive({role}:{role:HospitalityRole}){
+  const {t,locale}=useLegacyStaffLocale();
   const [tickets,setTickets]=useState<LiveMaintenanceTicket[]>([]);
   const [error,setError]=useState("");
   const [busy,setBusy]=useState("");
@@ -85,25 +89,25 @@ export function MaintenanceLive({role}:{role:HospitalityRole}){
   const canVerify=["maintenance_manager","general_manager","super_admin"].includes(role);
 
   return <div className="staffBoard">
-    <Panel title="Maintenance queue">
-      {error&&<div className="notice">{error}</div>}
-      {tickets.length===0?<div className="emptyLine">No maintenance tickets assigned to this queue.</div>:
+    <Panel title={t("Maintenance queue")}>
+      {error&&<div className="notice">{t(String(error))}</div>}
+      {tickets.length===0?<div className="emptyLine">{t("No maintenance tickets assigned to this queue.")}</div>:
       <div className="orderList">{tickets.map(ticket=><article className="order" key={ticket.id}>
-        <div><b>{ticket.title}</b><span>Apt {ticket.unit_code??"—"} · {ticket.priority} priority</span></div>
-        <span className={"status "+ticket.status}>{ticket.status.replaceAll("_"," ")}</span>
+        <div><b>{ticket.title}</b><span>{t("Apt")}{' '}{ticket.unit_code??"—"} · {t(String(ticket.priority))} {' '}{t("priority")}</span></div>
+        <span className={"status "+ticket.status}>{t(String(ticket.status.replace(/_/g," ")))}</span>
         <div className="orderActions">
-          {(ticket.status==="open"||ticket.status==="assigned")&&<button className="primary" disabled={busy!==""} onClick={()=>act(ticket.id,"start")}>Start</button>}
-          {["open","assigned","in_progress","waiting"].includes(ticket.status)&&<button disabled={busy!==""} onClick={()=>act(ticket.id,"block")}>Block</button>}
-          {ticket.status==="in_progress"&&<button disabled={busy!==""} onClick={()=>act(ticket.id,"wait")}>Wait</button>}
-          {["open","assigned","in_progress","waiting","blocked"].includes(ticket.status)&&<button className="primary" disabled={busy!==""} onClick={()=>act(ticket.id,"resolve")}>Resolve</button>}
-          {ticket.status==="inspection"&&canVerify&&<button className="primary" disabled={busy!==""} onClick={()=>act(ticket.id,"verify")}>Verify & close</button>}
-          {ticket.status==="inspection"&&!canVerify&&<span>Awaiting manager verification</span>}
+          {(ticket.status==="open"||ticket.status==="assigned")&&<button className="primary" disabled={busy!==""} onClick={()=>act(ticket.id,"start")}>{t("Start")}</button>}
+          {["open","assigned","in_progress","waiting"].includes(ticket.status)&&<button disabled={busy!==""} onClick={()=>act(ticket.id,"block")}>{t("Block")}</button>}
+          {ticket.status==="in_progress"&&<button disabled={busy!==""} onClick={()=>act(ticket.id,"wait")}>{t("Wait")}</button>}
+          {["open","assigned","in_progress","waiting","blocked"].includes(ticket.status)&&<button className="primary" disabled={busy!==""} onClick={()=>act(ticket.id,"resolve")}>{t("Resolve")}</button>}
+          {ticket.status==="inspection"&&canVerify&&<button className="primary" disabled={busy!==""} onClick={()=>act(ticket.id,"verify")}>{t("Verify & close")}</button>}
+          {ticket.status==="inspection"&&!canVerify&&<span>{t("Awaiting manager verification")}</span>}
         </div>
       </article>)}</div>}
     </Panel>
-    <Panel title="Maintenance control">
-      <div className="workflow"><span><b>open</b></span><span><i>→</i><b>in_progress</b></span><span><i>→</i><b>waiting / blocked</b></span><span><i>→</i><b>inspection</b></span><span><i>→</i><b>closed</b></span></div>
-      <div className="notice">Technicians receive only their assigned tickets. Verification remains manager-only on the API.</div>
+    <Panel title={t("Maintenance control")}>
+      <div className="workflow"><span><b>{t("open")}</b></span><span><i>→</i><b>{t("in_progress")}</b></span><span><i>→</i><b>{t("waiting / blocked")}</b></span><span><i>→</i><b>{t("inspection")}</b></span><span><i>→</i><b>{t("closed")}</b></span></div>
+      <div className="notice">{t("Technicians receive only their assigned tickets. Verification remains manager-only on the API.")}</div>
     </Panel>
   </div>;
 }

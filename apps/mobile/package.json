@@ -1,0 +1,26 @@
+{
+  "name": "@views/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "dev": "expo start --localhost",
+    "build": "expo export --platform android --max-workers 2 --clear",
+    "build:ios": "expo export --platform ios --max-workers 2 --clear",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@views/shared": "workspace:*",
+    "expo": "57.0.27",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "@views/ui": "workspace:*",
+    "expo-file-system": "57.0.7"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "@types/node": "22.19.3",
+    "typescript": "^5.7.2"
+  }
+}

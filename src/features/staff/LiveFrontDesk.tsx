@@ -1,3 +1,4 @@
+import {useLegacyStaffLocale,legacyDate} from './LegacyStaffLocale';
 import {useEffect,useMemo,useState} from "react";
 import type {HospitalityRole} from "../../domain/types";
 import type {LiveFrontDeskReservation} from "../../api/types";
@@ -9,6 +10,7 @@ function errorMessage(error:unknown){
 }
 
 export function LiveFrontDesk({role}:{role:HospitalityRole}){
+  const {t,locale}=useLegacyStaffLocale();
   const [items,setItems]=useState<LiveFrontDeskReservation[]>([]);
   const [error,setError]=useState("");
   const [busy,setBusy]=useState("");
@@ -38,37 +40,37 @@ export function LiveFrontDesk({role}:{role:HospitalityRole}){
 
   return <div className="staffBoard">
     <section className="panel">
-      <header><small>VIEWS LIVE FRONT DESK</small><h2>Arrivals & active stays</h2></header>
+      <header><small>{t("VIEWS LIVE FRONT DESK")}</small><h2>{t("Arrivals & active stays")}</h2></header>
       <section className="kpis">
-        <article><span>Arrivals</span><b>{arrivals.length}</b></article>
-        <article><span>In house</span><b>{inHouse.length}</b></article>
-        <article><span>Ready units</span><b>{ready.length}</b></article>
-        <article><span>Role</span><b>{role.replaceAll("_"," ")}</b></article>
+        <article><span>{t("Arrivals")}</span><b>{arrivals.length}</b></article>
+        <article><span>{t("In house")}</span><b>{inHouse.length}</b></article>
+        <article><span>{t("Ready units")}</span><b>{ready.length}</b></article>
+        <article><span>{t("Role")}</span><b>{t(String(role.replace(/_/g," ")))}</b></article>
       </section>
 
-      {error&&<div className="notice">{error}</div>}
-      {items.length===0?<div className="emptyLine">No front-desk reservations in this property queue.</div>:
+      {error&&<div className="notice">{t(String(error))}</div>}
+      {items.length===0?<div className="emptyLine">{t("No front-desk reservations in this property queue.")}</div>:
       <div className="orderList">{items.map(item=><article className="order" key={item.id}>
         <div>
-          <b>{item.first_name} {item.last_name}{item.vip?" · VIP":""}</b>
-          <span>{item.confirmation_code} · Apt {item.unit_code??"—"} · {item.check_in_date} → {item.check_out_date}</span>
-          <small>{"Unit: "+(item.unit_status??"unassigned")+(item.stay_status?" · Stay: "+item.stay_status:"")}</small>
+          <b>{item.first_name} {item.last_name}{item.vip?t(" · VIP"):""}</b>
+          <span>{item.confirmation_code} {' '}{t("· Apt")}{' '}{item.unit_code??"—"} · {legacyDate(item.check_in_date,locale,true)} → {legacyDate(item.check_out_date,locale,true)}</span>
+          <small>{t("Unit: {unit} · Stay: {stay}",{unit:t(item.unit_status??"unassigned"),stay:t(item.stay_status??"—")})}</small>
         </div>
-        <span className={"status "+item.status}>{item.status.replaceAll("_"," ")}</span>
+        <span className={"status "+item.status}>{t(String(item.status.replace(/_/g," ")))}</span>
         <div className="orderActions">
           {["confirmed","assigned"].includes(item.status)&&
-            <button className="primary" disabled={busy!==""||!["ready","available"].includes(item.unit_status||"")} onClick={()=>act(item,"check_in")}>Check in</button>}
+            <button className="primary" disabled={busy!==""||!["ready","available"].includes(item.unit_status||"")} onClick={()=>act(item,"check_in")}>{t("Check in")}</button>}
           {item.status==="checked_in"&&
-            <button className="primary" disabled={busy!==""} onClick={()=>act(item,"check_out")}>Check out</button>}
-          {item.status==="completed"&&<span>Completed · housekeeping queued</span>}
+            <button className="primary" disabled={busy!==""} onClick={()=>act(item,"check_out")}>{t("Check out")}</button>}
+          {item.status==="completed"&&<span>{t("Completed · housekeeping queued")}</span>}
         </div>
       </article>)}</div>}
     </section>
 
     <section className="panel">
-      <header><small>GOLDEN FLOW</small><h2>Reservation → stay → turnover</h2></header>
-      <div className="workflow"><span><b>confirmed</b></span><span><i>→</i><b>checked_in</b></span><span><i>→</i><b>occupied</b></span><span><i>→</i><b>completed</b></span><span><i>→</i><b>dirty</b></span><span><i>→</i><b>housekeeping</b></span></div>
-      <div className="notice">Check-out atomically completes the reservation, closes the stay, marks the apartment dirty and creates the turnover housekeeping job.</div>
+      <header><small>{t("GOLDEN FLOW")}</small><h2>{t("Reservation → stay → turnover")}</h2></header>
+      <div className="workflow"><span><b>{t("confirmed")}</b></span><span><i>→</i><b>{t("checked_in")}</b></span><span><i>→</i><b>{t("occupied")}</b></span><span><i>→</i><b>{t("completed")}</b></span><span><i>→</i><b>{t("dirty")}</b></span><span><i>→</i><b>{t("housekeeping")}</b></span></div>
+      <div className="notice">{t("Check-out atomically completes the reservation, closes the stay, marks the apartment dirty and creates the turnover housekeeping job.")}</div>
     </section>
   </div>;
 }

@@ -20,7 +20,7 @@ export class CancellationPreviewService{
       if(!reservation)throw new Error("RESERVATION_NOT_FOUND");
 
       const access=await client.query<{allowed:boolean}>(
-        "SELECT app.can_access_property($1::uuid) AS allowed",[reservation.property_id]
+        "SELECT app.registry_access(app.current_organization_id(),$1::uuid,'reservation.read') AS allowed",[reservation.property_id]
       );
       if(!access.rows[0]?.allowed)throw new Error("PROPERTY_FORBIDDEN");
       if(!["confirmed","checked_in"].includes(reservation.status))throw new Error("CANCELLATION_NOT_AVAILABLE");

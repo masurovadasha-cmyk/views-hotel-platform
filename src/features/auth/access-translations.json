@@ -1,0 +1,102 @@
+{
+  "Guests": {
+    "ru": "Гости",
+    "uz": "Mehmonlar"
+  },
+  "Hosts & owners": {
+    "ru": "Хосты и владельцы",
+    "uz": "Xostlar va egalar"
+  },
+  "Employees": {
+    "ru": "Сотрудники",
+    "uz": "Xodimlar"
+  },
+  "Platform administration": {
+    "ru": "Администрация платформы",
+    "uz": "Platforma maʼmuriyati"
+  },
+  "Find an apartment, manage your trip and order services.": {
+    "ru": "Поиск апартаментов, ваши поездки и заказ услуг.",
+    "uz": "Apartamentlarni toping, sayohatingizni boshqaring va xizmatlarga buyurtma bering."
+  },
+  "Manage properties, availability, rates and statements.": {
+    "ru": "Объекты, свободные даты, тарифы и отчёты.",
+    "uz": "Obyektlar, boʻsh sanalar, tariflar va hisobotlarni boshqaring."
+  },
+  "Reception, housekeeping, maintenance and guest care.": {
+    "ru": "Ресепшен, уборка, обслуживание и забота о гостях.",
+    "uz": "Resepshn, tozalash, texnik xizmat va mehmonlarga yordam."
+  },
+  "Moderation, disputes, commissions and access control.": {
+    "ru": "Модерация, споры, комиссии и управление доступом.",
+    "uz": "Moderatsiya, nizolar, komissiyalar va ruxsatlarni boshqarish."
+  },
+  "Your stay. Your space. Your VIEWS.": {
+    "ru": "Ваш отдых. Ваше пространство. Ваш VIEWS.",
+    "uz": "Sizning dam olishingiz. Sizning makoningiz. Sizning VIEWS."
+  },
+  "More than accommodation. A better experience in Uzbekistan.": {
+    "ru": "Больше, чем проживание. Новый опыт путешествий по Узбекистану.",
+    "uz": "Turar joydan ham koʻproq. Oʻzbekistonda yanada yaxshi sayohat tajribasi."
+  },
+  "VIEWS apartment interior": {
+    "ru": "Интерьер апартаментов VIEWS",
+    "uz": "VIEWS apartamenti interyeri"
+  },
+  "ONE PLATFORM": {
+    "ru": "ЕДИНАЯ ПЛАТФОРМА",
+    "uz": "YAGONA PLATFORMA"
+  },
+  "Choose your workspace": {
+    "ru": "Выберите своё направление",
+    "uz": "Yoʻnalishingizni tanlang"
+  },
+  "Email identifies your account. Permissions are assigned by the platform, never by this selection.": {
+    "ru": "Email определяет вашу учётную запись. Права назначает платформа: выбор раздела не меняет доступ.",
+    "uz": "Email hisobingizni aniqlaydi. Huquqlarni platforma tayinlaydi: boʻlimni tanlash ruxsatlarni oʻzgartirmaydi."
+  },
+  "Sign in with email": {
+    "ru": "Войти по email",
+    "uz": "Email orqali kirish"
+  },
+  "Explore demo screens": {
+    "ru": "Посмотреть демо",
+    "uz": "Demoni koʻrish"
+  },
+  "Email sign-in": {
+    "ru": "Вход по email",
+    "uz": "Email orqali kirish"
+  },
+  "Email sign-in is not connected in this preview. No email is sent and no account is created.": {
+    "ru": "В этой демоверсии вход по email ещё не подключён. Письмо не отправляется, учётная запись не создаётся.",
+    "uz": "Bu demoda email orqali kirish hali ulanmagan. Xat yuborilmaydi va hisob yaratilmaydi."
+  },
+  "Email": {
+    "ru": "Электронная почта",
+    "uz": "Elektron pochta"
+  },
+  "Continue with email": {
+    "ru": "Продолжить по email",
+    "uz": "Email orqali davom etish"
+  },
+  "Interface preview with sample data. Real bookings, payments and staff access require a connected server.": {
+    "ru": "Обзор интерфейса с демонстрационными данными. Для настоящих бронирований, платежей и входа сотрудников нужен подключённый сервер.",
+    "uz": "Namunaviy maʼlumotlar bilan interfeys koʻrinishi. Haqiqiy bronlar, toʻlovlar va xodimlar kirishi uchun ulangan server kerak."
+  },
+  "People. Places. Possibilities.": {
+    "ru": "Люди. Места. Возможности.",
+    "uz": "Odamlar. Joylar. Imkoniyatlar."
+  },
+  "Android build & release notes": {
+    "ru": "Android и информация о версии",
+    "uz": "Android va versiya haqida maʼlumot"
+  },
+  "Purchasing & warehouse": {
+    "ru": "Закупки и склад",
+    "uz": "Xaridlar va ombor"
+  },
+  "Purchases, receiving, stock and supplies for every property.": {
+    "ru": "Закупки, приёмка, остатки и снабжение каждого объекта.",
+    "uz": "Har bir obyekt uchun xaridlar, qabul qilish, qoldiqlar va ta’minot."
+  }
+}

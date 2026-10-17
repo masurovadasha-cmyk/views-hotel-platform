@@ -77,6 +77,14 @@ export class StaffAuthService{
     }
     return {ok:true};
   }
+  async reauthenticate(token:unknown,password:unknown){
+    const identity=await this.resolve(token);await this.rate('staff.passkey.enroll',identity.membershipId,8);
+    const row=(await this.db.query<{membership_id:string;password_hash:string;version:number}>('SELECT * FROM app.staff_auth_lookup($1,$2)',
+      [identity.organizationId,identity.email])).rows.find(r=>r.membership_id===identity.membershipId);
+    if(!row||row.version!==identity.credentialVersion||!await this.kdf(()=>verifyStaffPassword(password,row.password_hash)))
+      throw new UnauthorizedException('STAFF_LOGIN_FAILED');
+    return identity;
+  }
   async change(token:unknown,body:{currentPassword:unknown;password:unknown}){
     const identity=await this.resolve(token);await this.rate('staff.password.change',identity.membershipId,8);
     const row=(await this.db.query<{membership_id:string;password_hash:string;version:number}>('SELECT * FROM app.staff_auth_lookup($1,$2)',
@@ -84,8 +92,15 @@ export class StaffAuthService{
     if(!await this.kdf(()=>verifyStaffPassword(body.currentPassword,row?.password_hash||DUMMY_PASSWORD_HASH))||!row)
       throw new UnauthorizedException('STAFF_LOGIN_FAILED');
     const encoded=await this.kdf(()=>hashStaffPassword(body.password));
-    const ok=(await this.db.query<{ok:boolean}>('SELECT app.staff_auth_change($1,$2,$3) AS ok',
-      [staffTokenHash(token as string),row.version,encoded])).rows[0]?.ok;
+    let ok:boolean|undefined;
+    try{
+      ok=(await this.db.query<{ok:boolean}>('SELECT app.staff_auth_change($1,$2,$3) AS ok',
+        [staffTokenHash(token as string),row.version,encoded])).rows[0]?.ok;
+    }catch(error){
+      const failure=error as {code?:string;message?:string};
+      if(failure.code==='P0001'&&failure.message==='STAFF_ASSURANCE_REQUIRED')throw new ForbiddenException('STAFF_ASSURANCE_REQUIRED');
+      throw error;
+    }
     if(!ok)throw new UnauthorizedException('STAFF_SESSION_REQUIRED');
     return {ok:true,loginRequired:true};
   }

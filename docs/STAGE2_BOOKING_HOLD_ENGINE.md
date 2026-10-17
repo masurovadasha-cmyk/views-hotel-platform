@@ -49,7 +49,7 @@ The HoldExpiryQueuePort is the queue boundary for the future BullMQ adapter.
 ## Local run
 1. docker compose -f docker-compose.production-dev.yml up -d
 2. Apply infra/postgres/init/001_extensions.sql.
-3. Apply apps/api/db/migrations/0001 through 0006 in order.
+3. Apply db/migrations/0001 through 0006 in order.
 4. Create a restricted views_app runtime role as documented in ADR 0002.
 5. cd apps/api
 6. npm install

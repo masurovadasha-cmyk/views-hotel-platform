@@ -1,0 +1,7 @@
+body {margin:0;}
+.crmShell {min-height:100vh;background:var(--bg);color:var(--fg);}
+.shellToolbar {display:flex;flex-wrap:wrap;align-items:center;gap:1.5rem;padding:1rem 1.5rem;border-bottom:1px solid var(--line);background:var(--card);}
+.crmShell main {max-width:960px;margin:auto;padding:1.5rem;}
+.crmShell select {padding:.6rem;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;max-width:100%;}
+.crmShell [role=status] {padding:1rem;background:var(--surface);border-radius:var(--radius);}
+.crmShell input {accent-color:var(--gold);}

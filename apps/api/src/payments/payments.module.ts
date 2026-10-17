@@ -11,14 +11,16 @@ import {PaymentWebhookService} from "./payment-webhook.service";
 import {PaymeSandboxPaymentProvider} from "./payme-sandbox-payment-provider";
 import {PaymeMerchantApiController} from "./payme-merchant-api.controller";
 import {PaymeMerchantApiService} from "./payme-merchant-api.service";
+import {RefundReconciliationService} from './refund-reconciliation.service';
+import {RefundReconciliationController} from './refund-reconciliation.controller';
 
 @Module({
   controllers:[
-    PaymentController,PaymentWebhookController,PaymeMerchantApiController
+    PaymentController,PaymentWebhookController,PaymeMerchantApiController,RefundReconciliationController
   ],
   providers:[
     PaymentProviderRegistry,LedgerService,PaymentRecoveryService,PaymentIntentService,
-    PaymentWebhookService,PaymentRefundWorkerService,
+    PaymentWebhookService,PaymentRefundWorkerService,RefundReconciliationService,
     PaymeSandboxPaymentProvider,PaymeMerchantApiService,PaymeExpiryWorkerService
   ],
   exports:[

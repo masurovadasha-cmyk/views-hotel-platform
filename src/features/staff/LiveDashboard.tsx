@@ -1,3 +1,4 @@
+import {useLegacyStaffLocale,legacyDate} from './LegacyStaffLocale';
 import {useEffect,useMemo,useState} from "react";
 import type {HospitalityRole} from "../../domain/types";
 import type {LiveAnalyticsDashboardSummary,LiveFrontDeskReservation,LiveHousekeepingJob,LiveMaintenanceTicket,LivePropertyUnit,LiveServiceOrder} from "../../api/types";
@@ -19,22 +20,24 @@ function analyticsErrorText(error:unknown){
 }
 
 function dashboardRange(now=new Date()){
-  const year=now.getFullYear();
-  const month=String(now.getMonth()+1).padStart(2,"0");
-  const day=String(now.getDate()).padStart(2,"0");
+  now=new Date(now.getTime()+5*3600000);
+  const year=now.getUTCFullYear();
+  const month=String(now.getUTCMonth()+1).padStart(2,"0");
+  const day=String(now.getUTCDate()).padStart(2,"0");
   return {from:`${year}-${month}-01`,to:`${year}-${month}-${day}`};
 }
 
-function minorUnits(value:string){
-  try{return BigInt(value).toLocaleString("en-US")}catch{return value}
+function minorUnits(value:string,locale:string){
+  try{return BigInt(value).toLocaleString(locale)}catch{return value}
 }
 
-function percent(value:number){
-  return (value*100).toFixed(1)+"%";
+function percent(value:number,locale:string){
+  return new Intl.NumberFormat(locale,{style:"percent",minimumFractionDigits:1,maximumFractionDigits:1}).format(value);
 }
 
 function Panel({title,children}:{title:string;children:React.ReactNode}){
-  return <section className="panel"><header><small>VIEWS LIVE OVERVIEW</small><h2>{title}</h2></header>{children}</section>;
+  const {t,locale}=useLegacyStaffLocale();
+  return <section className="panel"><header><small>{t("VIEWS LIVE OVERVIEW")}</small><h2>{t(String(title))}</h2></header>{children}</section>;
 }
 
 const management=(role:HospitalityRole)=>role==="general_manager"||role==="super_admin";
@@ -43,6 +46,7 @@ const housekeepingRole=(role:HospitalityRole)=>["cleaner","housekeeping_supervis
 const maintenanceRole=(role:HospitalityRole)=>["technician","maintenance_manager","general_manager","super_admin"].includes(role);
 
 export function LiveDashboard({role}:{role:HospitalityRole}){
+  const {t,locale}=useLegacyStaffLocale();
   const [units,setUnits]=useState<LivePropertyUnit[]>([]);
   const [orders,setOrders]=useState<LiveServiceOrder[]>([]);
   const [reservations,setReservations]=useState<LiveFrontDeskReservation[]>([]);
@@ -125,73 +129,71 @@ export function LiveDashboard({role}:{role:HospitalityRole}){
       :{label:"Open tasks",value:openOrders.length};
 
   return <div>
-    {error&&<div className="notice">{error}</div>}
+    {error&&<div className="notice">{t(String(error))}</div>}
     <section className="kpis">
-      <article><span>{primaryMetric.label}</span><b>{primaryMetric.value}</b></article>
-      <article><span>{frontDeskRole(role)?"Arrivals":"Ready units"}</span><b>{frontDeskRole(role)?arrivals.length:readyUnits}</b></article>
-      <article><span>{frontDeskRole(role)?"In house":"Occupied units"}</span><b>{frontDeskRole(role)?inHouse.length:occupiedUnits}</b></article>
-      <article><span>Role</span><b>{role.replaceAll("_"," ")}</b></article>
+      <article><span>{t(String(primaryMetric.label))}</span><b>{primaryMetric.value}</b></article>
+      <article><span>{frontDeskRole(role)?t("Arrivals"):t("Ready units")}</span><b>{frontDeskRole(role)?arrivals.length:readyUnits}</b></article>
+      <article><span>{frontDeskRole(role)?t("In house"):t("Occupied units")}</span><b>{frontDeskRole(role)?inHouse.length:occupiedUnits}</b></article>
+      <article><span>{t("Role")}</span><b>{t(String(role.replace(/_/g," ")))}</b></article>
     </section>
 
     <div className="staffBoard">
-      <Panel title="Current work">
-        {openOrders.length===0?<div className="emptyLine">No open service orders visible to this role.</div>:
+      <Panel title={t("Current work")}>
+        {openOrders.length===0?<div className="emptyLine">{t("No open service orders visible to this role.")}</div>:
         <div className="compactRows">{openOrders.slice(0,6).map(order=><div key={order.id}>
-          <span>{order.priority}</span>
+          <span>{t(String(order.priority))}</span>
           <b>{order.title}</b>
-          <small>{order.category.replaceAll("_"," ")} · {order.unit_id?"Apt "+order.unit_id:"Property task"}</small>
-          <i className={"status "+order.status}>{order.status.replaceAll("_"," ")}</i>
+          <small>{t(String(order.category.replace(/_/g," ")))} · {order.unit_id?t("Apartment {unit}",{unit:order.unit_id}):t("Property task")}</small>
+          <i className={"status "+order.status}>{t(String(order.status.replace(/_/g," ")))}</i>
         </div>)}</div>}
       </Panel>
 
-      <Panel title="Property readiness">
+      <Panel title={t("Property readiness")}>
         <section className="kpis">
-          <article><span>Ready</span><b>{readyUnits}</b></article>
-          <article><span>Occupied</span><b>{occupiedUnits}</b></article>
-          <article><span>Dirty</span><b>{dirtyUnits}</b></article>
-          <article><span>Total units</span><b>{units.length}</b></article>
+          <article><span>{t("Ready")}</span><b>{readyUnits}</b></article>
+          <article><span>{t("Occupied")}</span><b>{occupiedUnits}</b></article>
+          <article><span>{t("Dirty")}</span><b>{dirtyUnits}</b></article>
+          <article><span>{t("Total units")}</span><b>{units.length}</b></article>
         </section>
         <div className="compactRows">{units.slice(0,8).map(unit=><div key={unit.id}>
-          <span>Apt {unit.code}</span>
+          <span>{t("Apt")}{' '}{unit.code}</span>
           <b>{unit.name}</b>
-          <small>{unit.capacity} guests · {unit.bedrooms} BR</small>
-          <i className={"status "+unit.status}>{unit.status.replaceAll("_"," ")}</i>
+          <small>{unit.capacity} {' '}{t("guests ·")}{' '}{unit.bedrooms} BR</small>
+          <i className={"status "+unit.status}>{t(String(unit.status.replace(/_/g," ")))}</i>
         </div>)}</div>
       </Panel>
     </div>
 
-    {management(role)&&<Panel title="Analytics · canonical Core read model">
-      {analyticsError?<div className="notice">{analyticsError}</div>:
-      !analytics?<div className="emptyLine">Loading canonical analytics…</div>:
+    {management(role)&&<Panel title={t("Analytics · canonical Core read model")}>
+      {analyticsError?<div className="notice">{t(String(analyticsError))}</div>:
+      !analytics?<div className="emptyLine">{t("Loading canonical analytics…")}</div>:
       <div>
         <div className="compactRows">
           {analytics.kpisByCurrency.length===0?<div>
-            <span>{analytics.period.from} → {analytics.period.to}</span>
-            <b>No materialized KPI rows yet</b>
-            <small>Projection status: {analytics.freshness.projectionStatus}</small>
+            <span>{legacyDate(analytics.period.from,locale,true)} → {legacyDate(analytics.period.to,locale,true)}</span>
+            <b>{t("No materialized KPI rows yet")}</b>
+            <small>{t("Projection status:")}{' '}{t(String(analytics.freshness.projectionStatus))}</small>
           </div>:
           analytics.kpisByCurrency.map(kpi=><div key={kpi.currency}>
-            <span>{kpi.currency} · {analytics.period.from} → {analytics.period.to}</span>
-            <b>Occupancy {percent(kpi.occupancy)} · ADR {minorUnits(kpi.adrMinor)} minor · RevPAR {minorUnits(kpi.revparMinor)} minor</b>
+            <span>{kpi.currency} · {legacyDate(analytics.period.from,locale,true)} → {legacyDate(analytics.period.to,locale,true)}</span>
+            <b>{t("Occupancy")}{' '}{percent(kpi.occupancy,locale)} {' '}{t("· ADR")}{' '}{minorUnits(kpi.adrMinor,locale)} {' '}{t("minor · RevPAR")}{' '}{minorUnits(kpi.revparMinor,locale)} {' '}{t("minor")}</b>
             <small>
-              Gross {minorUnits(kpi.grossRevenueMinor)} minor · Net {minorUnits(kpi.netRevenueMinor)} minor ·
-              {" "}Bookings {kpi.bookingCount} · Properties {kpi.propertyCount}
+              {t("Gross")}{' '}{minorUnits(kpi.grossRevenueMinor,locale)} {' '}{t("minor · Net")}{' '}{minorUnits(kpi.netRevenueMinor,locale)} {' '}{t("minor ·")}{' '}{" "}{t("Bookings")}{' '}{kpi.bookingCount} {' '}{t("· Properties")}{' '}{kpi.propertyCount}
             </small>
             <i className={"status "+(analytics.freshness.projectionStatus==="healthy"?"ready":"waiting")}>
-              {analytics.freshness.projectionStatus}
+              {t(String(analytics.freshness.projectionStatus))}
             </i>
           </div>)}
         </div>
         <div className="emptyLine">
-          Core projection · pending events {analytics.freshness.pendingEvents} ·
-          {" "}scope properties {analytics.freshness.scopePropertyCount} ·
-          {" "}cache {analytics.cache.hit?"hit":"miss"}
+          {t("Core projection · pending events")}{' '}{analytics.freshness.pendingEvents} ·
+          {" "}{t("scope properties")}{' '}{analytics.freshness.scopePropertyCount} ·
+          {" "}{t("cache")}{' '}{analytics.cache.hit?t("hit"):t("miss")}
         </div>
       </div>}
     </Panel>}
 
     {management(role)&&<div className="notice">
-      Operational panels use persisted Pages/D1 data. Occupancy, ADR, RevPAR and revenue above come only from the canonical PostgreSQL analytics projection through the server-side BFF.
-    </div>}
+      {t("Operational panels use persisted Pages/D1 data. Occupancy, ADR, RevPAR and revenue above come only from the canonical PostgreSQL analytics projection through the server-side BFF.")}{' '}</div>}
   </div>;
 }

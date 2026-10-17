@@ -1,0 +1,1 @@
+{"build":{"guest-preview":{"distribution":"internal","env":{"EXPO_PUBLIC_APP_MODE":"guest"},"android":{"buildType":"apk"}},"staff-preview":{"distribution":"internal","env":{"EXPO_PUBLIC_APP_MODE":"staff"},"android":{"buildType":"apk"}}}}

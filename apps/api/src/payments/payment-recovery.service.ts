@@ -82,14 +82,6 @@ export class PaymentRecoveryService{
           );
         }
 
-        await client.query(
-          `UPDATE payment_intents
-              SET status='refund_pending',updated_at=now(),version=version+1
-            WHERE id=$1 AND status<>'refunded'`,
-          [intent.id]
-        );
-        await publishPaymentProjection(client,organizationId,intent.id);
-
         const ensured=await this.ensureRefundsForIntent(client,{
           organizationId,
           paymentIntentId:intent.id,
@@ -119,8 +111,10 @@ export class PaymentRecoveryService{
       external_transaction_id:string;
       captured_minor:string;
       refunded_minor:string;
+      refund_limit_minor:string|null;
+      reclassification_minor:string|null;
     }>(
-      `SELECT c.external_transaction_id,
+      `SELECT c.external_transaction_id,limits.refund_limit_minor::text,limits.reclassification_minor::text,
               c.amount_minor::text AS captured_minor,
               COALESCE((
                 SELECT sum(r.amount_minor)
@@ -130,18 +124,25 @@ export class PaymentRecoveryService{
                    AND r.related_external_transaction_id=c.external_transaction_id
               ),0)::text AS refunded_minor
          FROM provider_transactions c
+         LEFT JOIN cancellation_capture_limits limits ON limits.provider_transaction_id=c.id AND limits.organization_id=c.organization_id
         WHERE c.payment_intent_id=$1 AND c.kind='capture'
         ORDER BY c.occurred_at,c.id`,
       [input.paymentIntentId]
     );
 
-    let refundsQueued=0,reclassified=0;
+    let refundsQueued=0,reclassified=0,hasRefundableBalance=false;
 
     for(const capture of captures.rows){
       const captured=BigInt(capture.captured_minor);
       const refunded=BigInt(capture.refunded_minor);
-      const outstanding=captured-refunded;
+      const target=capture.refund_limit_minor===null?captured:BigInt(capture.refund_limit_minor);
+      const outstanding=target-refunded;
       if(outstanding<=0n)continue;
+      hasRefundableBalance=true;
+
+      // An unresolved submission (including uncertain delivery) owns this
+      // capture's refund until reconciliation. Never queue a second remainder.
+      if((await client.query("SELECT 1 FROM payment_refund_requests WHERE payment_intent_id=$1 AND external_capture_id=$2 AND status<>'completed'",[input.paymentIntentId,capture.external_transaction_id])).rowCount)continue;
 
       const lateJournalKey=`late-capture:${input.provider}:${capture.external_transaction_id}`;
       const lateJournal=await client.query<{id:string}>(
@@ -154,7 +155,7 @@ export class PaymentRecoveryService{
         await this.ledger.postRefundReclassification(client,{
           organizationId:input.organizationId,
           paymentIntentId:input.paymentIntentId,
-          amountMinor:captured,
+          amountMinor:capture.reclassification_minor===null?captured:BigInt(capture.reclassification_minor),
           currency:input.currency,
           idempotencyKey:`refund-reclassify:${input.provider}:${capture.external_transaction_id}`
         });
@@ -167,13 +168,14 @@ export class PaymentRecoveryService{
            id,organization_id,payment_intent_id,provider,amount_minor,currency,reason,
            liability_account_code,idempotency_key,external_capture_id
          )
-         VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,'booking_unavailable_after_capture',
+         VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$8,
                 'refunds_payable',$6,$7)
          ON CONFLICT(organization_id,idempotency_key) DO NOTHING
          RETURNING id`,
         [
           input.organizationId,input.paymentIntentId,input.provider,outstanding.toString(),
-          input.currency,refundKey,capture.external_transaction_id
+          input.currency,refundKey,capture.external_transaction_id,
+          capture.refund_limit_minor===null?"booking_unavailable_after_capture":"booking_policy_cancellation"
         ]
       );
 
@@ -194,13 +196,17 @@ export class PaymentRecoveryService{
               externalCaptureId:capture.external_transaction_id,
               amountMinor:outstanding.toString(),
               currency:input.currency,
-              reason:"booking_unavailable_after_capture"
+              reason:capture.refund_limit_minor===null?"booking_unavailable_after_capture":"booking_policy_cancellation"
             })
           ]
         );
       }
     }
 
+    if(hasRefundableBalance){
+      const changed=await client.query("UPDATE payment_intents SET status='refund_pending',updated_at=now(),version=version+1 WHERE id=$1 AND status NOT IN ('refund_pending','refunded')",[input.paymentIntentId]);
+      if(changed.rowCount)await publishPaymentProjection(client,input.organizationId,input.paymentIntentId);
+    }
     return {refundsQueued,reclassified};
   }
 }

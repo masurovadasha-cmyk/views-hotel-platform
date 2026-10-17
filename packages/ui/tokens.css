@@ -1,0 +1,41 @@
+/* Canva 140-screen PDF: neutral/gold and graphite surfaces.
+   Accent text/focus variants are adjusted for contrast; fills follow the export. */
+.app {
+  --bg: #f6f5f2;
+  --fg: #20242c;
+  --card: #ffffff;
+  --surface: #eef0f3;
+  --muted: #5f636c;
+  --line: #d6d8de;
+  --gold: #765c2f;
+  --gold2: #a88b58;
+  --good: #296644;
+  --warn: #815916;
+  --danger: #ae3439;
+  --success-surface: #e5f1e8;
+  --warning-surface: #faf0d9;
+  --danger-surface: #fcebed;
+  --focus: #796026;
+  --action-bg: #a88b58;
+  --action-fg: #171a20;
+  --radius: 16px;
+  --shadow: 0 8px 28px rgb(25 31 24 / .06);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+.app.dark {
+  --bg: #1a1d24;
+  --fg: #f2f3f6;
+  --card: #242832;
+  --surface: #303744;
+  --muted: #bfc4ce;
+  --line: #4b5260;
+  --gold: #d9bd7d;
+  --good: #8dd9aa;
+  --warn: #eac278;
+  --danger: #ff999c;
+  --success-surface: #213a2c;
+  --warning-surface: #3b3220;
+  --danger-surface: #41292f;
+  --focus: #e2c786;
+}

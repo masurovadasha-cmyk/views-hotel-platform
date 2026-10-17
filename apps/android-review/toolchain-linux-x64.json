@@ -1,0 +1,26 @@
+[
+  {
+    "file": "jdk.tar.gz",
+    "destination": "java",
+    "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk_x64_linux_hotspot_21.0.12.1_1.tar.gz",
+    "sha256": "ce79869e1307ed8ee1e2baa86a412b1eb5b75d10a01006d788a6f968bcfaee94"
+  },
+  {
+    "file": "platform-35-ext15_r01.zip",
+    "destination": "sdk/platforms/android-35",
+    "url": "https://dl.google.com/android/repository/platform-35-ext15_r01.zip",
+    "sha256": "a93712aedd4f851d9cf1f7281f7c4fe5581ce03a9df37ffc8c53a487eadf311f"
+  },
+  {
+    "file": "build-tools_r35_linux.zip",
+    "destination": "sdk/build-tools/35.0.0",
+    "url": "https://dl.google.com/android/repository/build-tools_r35_linux.zip",
+    "sha256": "bd3a4966912eb8b30ed0d00b0cda6b6543b949d5ffe00bea54c04c81e1561d88"
+  },
+  {
+    "file": "commandlinetools-linux-16111833_latest.zip",
+    "destination": "sdk/cmdline-tools/latest",
+    "url": "https://dl.google.com/android/repository/commandlinetools-linux-16111833_latest.zip",
+    "sha256": "0877a1d048fe4a24efe2eff536ca4223f7adeb58648bb81909d33c446918cfa8"
+  }
+]

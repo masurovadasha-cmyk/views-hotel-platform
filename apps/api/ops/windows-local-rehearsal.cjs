@@ -65,7 +65,7 @@ async function database(){
  try{
   await c.query(fs.readFileSync(path.join(REPO,'infra/postgres/init/001_extensions.sql'),'utf8'));
   await c.query('CREATE TABLE IF NOT EXISTS public.views_local_migrations(name text PRIMARY KEY,sha256 text NOT NULL,applied_at timestamptz NOT NULL DEFAULT now())');
-  const dir=path.join(API,'db','migrations');
+  const dir=path.join(REPO,'db','migrations');
   for(const name of fs.readdirSync(dir).filter(n=>/^\d{4}_[a-z0-9_]+\.sql$/.test(n)).sort()){
    const sql=fs.readFileSync(path.join(dir,name),'utf8'),hash=createHash('sha256').update(sql).digest('hex');
    const old=(await c.query('SELECT sha256 FROM views_local_migrations WHERE name=$1',[name])).rows[0];
