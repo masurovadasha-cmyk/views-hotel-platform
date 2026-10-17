@@ -1,6 +1,20 @@
 # VIEWS — текущая точка продолжения
 
 
+## 2026-10-17 — L4b: приватная команда резерва и освобождения
+- Migration0118: reserve_lots/release_lots, строгий контракт, сессия + stock.manage + scope, ревизия заказа.
+- Блокировки ключ→заезд→заказ→товары; повторная авторизация после ожидания, включая cached replay.
+- Все позиции атомарно, количество из БД; повтор ключа без дублей, изменённое тело конфликтует.
+- Ревизия/команда/audit/outbox фиксируются вместе; освобождение после окончания проживания допустимо.
+- Новая команда закрыта в service_private; runtime-grant/API/UI отсутствуют до всех путей освобождения.
+- Независимый review + новый proof: отзыв сессии во время lock wait, multi-line rollback, scope, replay, аудит PASS.
+- Red: отсутствующая функция; исправлен CASE-синтаксис новой миграции до финального прогона.
+- Dirty3b5aa89: Core161/web385 PASS; API/web typecheck/build, network187/mail15,118 checksum/diff check PASS.
+- PostgreSQL disposable, оба административных proof PASS, exit0; browser не запускался — UI не менялся.
+- Запуск/ручная проверка/риски: MARKET_LOT_COMMAND_L4B.md; новых зависимостей и runtime-прав нет.
+- Далее: атомарное освобождение при отмене/замене/выдаче, затем API/UI. Public web032ea93/APK без изменений.
+
+
 ## 2026-10-17 — обновлён публичный веб по запросу владельца
 - GitHub Pages опубликован из 032ea93449ecd25f6ddf80039cb3ecf0ee9045cc, версия 0.15.0-preview.
 - Workflow pages.yml dispatch: run39027334890 success; 385 тестов и build:pages PASS.

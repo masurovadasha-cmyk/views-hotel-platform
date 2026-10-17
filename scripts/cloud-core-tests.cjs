@@ -48,7 +48,7 @@ const run = args => {
       const {readMigrations,applyMigrations}=require('../apps/api/ops/migrations.cjs');
       await applyMigrations(admin,readMigrations(migrations,path.join(REPO,'db/migrations.sha256')));
     }else for (const file of fs.readdirSync(migrations).filter(f => /^\d{4}_.*\.sql$/.test(f)).sort()) {
-      await admin.query(fs.readFileSync(path.join(migrations, file), 'utf8'));
+      await admin.query(fs.readFileSync(path.join(migrations, file), 'utf8')).catch(error=>{console.error('MIGRATION_FAILED:'+file+':'+error.message+':position='+error.position);throw error;});
     }
     // Use the authoritative workflow fixture SQL, including its scoped identities.
     const workflow = fs.readFileSync(path.join(REPO, '.github/workflows/production-core.yml'), 'utf8');

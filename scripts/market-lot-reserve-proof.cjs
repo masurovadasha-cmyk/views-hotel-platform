@@ -20,8 +20,12 @@ module.exports=async function lotReserveProof(db,peer){
  await db.query('BEGIN');await count(null);
  const lots=[{lotCode:'HELD',expiresOn:'2099-01-01',quantity:'2'},{lotCode:null,expiresOn:null,quantity:'3'}];
  const version=await count(lots);await db.query('COMMIT');
+ const type=randomUUID(),unit=randomUUID(),stay=randomUUID();
+ await db.query("INSERT INTO unit_types(id,property_id,name,max_guests) VALUES($1,$2,'{}',2)",[type,property]);
+ await db.query("INSERT INTO units(id,property_id,unit_type_id,code) VALUES($1::uuid,$2,$3,$1::text)",[unit,property,type]);
+ await db.query("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) VALUES($1::uuid,$2,$3,$4,$5,$1::text,'checked_in',now()-interval '1 day',now()+interval '5 days','UZS',0,'{}')",[stay,org,property,unit,guest]);
  for(const order of orders){
-  await db.query("INSERT INTO service_orders(id,organization_id,property_id,service_id,guest_profile_id,currency,quantity,total_minor,commission_minor,requested_for,snapshot,idempotency_key) VALUES($1::uuid,$2,$3,$4,$5,'UZS',1,200,0,now(),'{}',$1::text)",[order,org,property,service,guest]);
+  await db.query("INSERT INTO service_orders(id,organization_id,property_id,service_id,guest_profile_id,currency,quantity,total_minor,commission_minor,requested_for,snapshot,idempotency_key,reservation_id) VALUES($1::uuid,$2,$3,$4,$5,'UZS',1,200,0,now(),'{}',$1::text,$6)",[order,org,property,service,guest,stay]);
   await db.query('INSERT INTO market_orders(order_id,organization_id,property_id) VALUES($1,$2,$3)',[order,org,property]);
   await db.query('INSERT INTO market_order_lines VALUES($1,$2,$3,$4,2)',[org,property,order,item]);
  }
@@ -59,6 +63,7 @@ module.exports=async function lotReserveProof(db,peer){
  await assert.rejects(db.query(insert,args(winner)),/LOT_RESERVE_DISABLED|permission denied|row-level security/);
  await db.query('ROLLBACK');
  await db.query('UPDATE market_lot_reservations SET released_at=clock_timestamp() WHERE order_id=$1',[loser]);
+ await require('./market-lot-command-proof.cjs')(db,peer,{org,property,user,member,item,service,orders,version,guest,stay});
  await db.query("UPDATE market_orders SET stage='cancelled' WHERE order_id=ANY($1::uuid[])",[orders]);
  await db.query("SELECT set_config('app.organization_id','',false),set_config('app.user_id','',false),set_config('app.membership_id','',false)");
  console.log('Lot reserve schema: race, stale/unknown rejection, stock rollback, release rollback, no reactivation and runtime isolation PASS; runtime activation disabled.');

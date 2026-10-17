@@ -1,0 +1,76 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {randomBytes,randomUUID}=require('node:crypto');
+module.exports=async function lotCommandProof(db,peer,f){
+ const {org,property,user,member,item,orders,version,stay}=f,oid=orders[0];
+ const identities=[{org,user,member},{org,user:'76600000-0000-4000-8000-000000000001',member:'76600000-0000-4000-8000-000000000011'},{org:'10000000-0000-4000-8000-000000000001',user:'76600000-0000-4000-8000-000000000003',member:'76600000-0000-4000-8000-000000000013'}];
+ for(const identity of identities){
+  identity.hash=randomBytes(32).toString('hex');
+  await db.query("INSERT INTO staff_private.credentials(membership_id,password_hash,verification_channel) VALUES($1,$2,'local_fixture')",[identity.member,'scrypt-v1$131072$8$1$'+'00'.repeat(16)+'$'+'00'.repeat(64)]);
+  await db.query('INSERT INTO staff_private.sessions(token_hash,membership_id,credential_version,role_id) SELECT $1,m.id,c.version,m.role_id FROM organization_memberships m JOIN staff_private.credentials c ON c.membership_id=m.id WHERE m.id=$2',[identity.hash,identity.member]);
+ }
+ const context=(client,identity=identities[0])=>client.query("SELECT set_config('app.organization_id',$1,false),set_config('app.user_id',$2,false),set_config('app.membership_id',$3,false)",[identity.org,identity.user,identity.member]);
+ const call=async(client,key,body,hash=identities[0].hash)=>(await client.query('SELECT service_private.market_lot_command($1,$2,$3,$4) result',[hash,oid,key,body])).rows[0].result;
+ const selection={itemId:item,movementId:version,lotCode:'HELD',expiresOn:'2099-01-01'},reserve={action:'reserve_lots',expectedRevision:1,selections:[selection]};
+ const active=async()=>(await db.query('SELECT count(*)::int n FROM market_lot_reservations WHERE order_id=$1 AND released_at IS NULL',[oid])).rows[0].n;
+ const evidence=async(key)=>(await db.query("SELECT (SELECT count(*)::int FROM service_private.commands WHERE actor_user_id=$1::uuid AND command_key=$2::uuid) commands,(SELECT count(*)::int FROM audit_log WHERE entity_id=$3::uuid AND action LIKE 'market.%lots') audit,(SELECT count(*)::int FROM outbox_events WHERE idempotency_key='service-command:'||$1::text||':'||$2::text) outbox",[user,key,oid])).rows[0];
+ const original=(await db.query('SELECT total_minor::text FROM service_orders WHERE id=$1',[oid])).rows[0];
+ const stock=(await db.query('SELECT quantity::text,revision::text FROM supply_balances WHERE item_id=$1',[item])).rows[0];
+ await context(db);await context(peer);
+ await assert.rejects(call(db,randomUUID(),reserve,'0'.repeat(64)),/SERVICE_SESSION_INVALID/);
+ await db.query('BEGIN');await db.query('UPDATE staff_private.sessions SET revoked_at=now() WHERE token_hash=$1',[identities[0].hash]);
+ await assert.rejects(call(db,randomUUID(),reserve),/SERVICE_SESSION_INVALID/);await db.query('ROLLBACK');
+ await context(db,identities[1]);await assert.rejects(call(db,randomUUID(),reserve),/SERVICE_SESSION_INVALID/);
+ await assert.rejects(call(db,randomUUID(),reserve,identities[1].hash),/SERVICE_FORBIDDEN/);
+ await context(db,identities[2]);await assert.rejects(call(db,randomUUID(),reserve,identities[2].hash),/SERVICE_STAY_NOT_FOUND/);
+ await context(db);await db.query('BEGIN');
+ await db.query('DELETE FROM membership_property_scopes WHERE membership_id=$1 AND property_id=$2',[member,property]);
+ await assert.rejects(call(db,randomUUID(),reserve),/SERVICE_FORBIDDEN/);await db.query('ROLLBACK');
+ assert.equal((await db.query("SELECT has_function_privilege('views_app','service_private.market_lot_command(text,uuid,uuid,jsonb)','EXECUTE') allowed")).rows[0].allowed,false);
+ await db.query('BEGIN; SET LOCAL ROLE views_app');await assert.rejects(call(db,randomUUID(),reserve),/permission denied/);await db.query('ROLLBACK');
+ const waitingKey=randomUUID();await db.query('BEGIN');
+ await db.query("SELECT pg_advisory_xact_lock(hashtextextended('service:'||$1::text||':'||$2::text,0))",[user,waitingKey]);
+ const waiting=call(peer,waitingKey,reserve).then(result=>({result}),error=>({error}));let blocked=false;
+ for(let n=0;n<500;n++){
+  blocked=(await db.query("SELECT EXISTS(SELECT 1 FROM pg_locks WHERE pid=$1 AND locktype='advisory' AND NOT granted) blocked",[peer.processID])).rows[0].blocked;
+  if(blocked)break;await new Promise(resolve=>setTimeout(resolve,10));
+ }
+ await db.query('UPDATE staff_private.sessions SET revoked_at=now() WHERE token_hash=$1',[identities[0].hash]);await db.query('COMMIT');
+ const resumed=await waiting;assert.equal(blocked,true);assert.match(resumed.error?.message||'unexpected successful command',/SERVICE_SESSION_INVALID/);
+ await db.query('UPDATE staff_private.sessions SET revoked_at=NULL WHERE token_hash=$1',[identities[0].hash]);assert.equal(await active(),0);
+ await assert.rejects(call(db,randomUUID(),{...reserve,selections:[selection,selection]}),/SERVICE_INPUT_INVALID/);
+ await assert.rejects(call(db,randomUUID(),{...reserve,selections:[{...selection,movementId:randomUUID()}]}),/SERVICE_REVISION_CHANGED|LOT_RESERVE_STALE/);
+ // The valid first insertion must roll back if a later line has no usable lot ledger.
+ const second='ffffffff-ffff-ffff-ffff-ffffffffffff',snapshot=randomUUID(),failedKey=randomUUID();await db.query('BEGIN');
+ await db.query("INSERT INTO supply_items(id,organization_id,property_id,sku,name,unit) VALUES($1::uuid,$2,$3,upper($1::text),'Synthetic second lot','piece')",[second,org,property]);
+ await db.query("INSERT INTO supply_stocktakes(id,organization_id,property_id,item_id,expected_quantity,counted_quantity,expected_revision,reason,actor_user_id,actor_membership_id) VALUES($1,$2,$3,$4,0,5,0,'Second lot proof',$5,$6)",[snapshot,org,property,second,user,member]);
+ await db.query("INSERT INTO supply_movements(organization_id,property_id,item_id,kind,quantity,reference,actor_user_id,actor_membership_id,stocktake_id) VALUES($1,$2,$3,'adjustment',5,'Second lot proof',$4,$5,$6)",[org,property,second,user,member,snapshot]);
+ await db.query('INSERT INTO market_order_lines VALUES($1,$2,$3,$4,2)',[org,property,oid,second]);await db.query('SAVEPOINT before_reserve');
+ await assert.rejects(call(db,failedKey,{...reserve,selections:[selection,{...selection,itemId:second}]}),/SERVICE_REVISION_CHANGED|LOT_RESERVE_STALE/);
+ await db.query('ROLLBACK TO SAVEPOINT before_reserve');assert.equal(await active(),0);assert.deepEqual(await evidence(failedKey),{commands:0,audit:0,outbox:0});await db.query('ROLLBACK');
+ await db.query('BEGIN');await db.query("UPDATE reservations SET check_out_at=now()-interval '1 hour' WHERE id=$1",[stay]);
+ await assert.rejects(call(db,randomUUID(),reserve),/SERVICE_STAY_INELIGIBLE/);await db.query('ROLLBACK');
+ const key=randomUUID(),replies=await Promise.all([call(db,key,reserve),call(peer,key,reserve)]);
+ assert.equal(replies.filter(r=>r.idempotentReplay===false).length,1);assert.equal(replies.filter(r=>r.idempotentReplay===true).length,1);
+ assert.deepEqual(replies[0].reservedLots,[{...selection,quantity:2}]);assert.equal(replies[0].revision,2);assert.equal(await active(),1);
+ assert.deepEqual(await evidence(key),{commands:1,audit:1,outbox:1});
+ const release={action:'release_lots',expectedRevision:2,note:'Synthetic return to storage'};
+ await assert.rejects(call(db,key,release),/SERVICE_COMMAND_CONFLICT/);
+ await assert.rejects(call(db,randomUUID(),reserve),/SERVICE_REVISION_CHANGED/);
+ const releaseKey=randomUUID();await db.query('BEGIN');
+ await db.query("UPDATE reservations SET check_out_at=now()-interval '1 hour' WHERE id=$1",[stay]);
+ const provisional=await call(db,releaseKey,release);assert.equal(provisional.revision,3);assert.deepEqual(provisional.reservedLots,[]);assert.equal(await active(),0);
+ await db.query('ROLLBACK');assert.equal(await active(),1);assert.deepEqual(await evidence(releaseKey),{commands:0,audit:1,outbox:0});
+ const released=await Promise.all([call(db,releaseKey,release),call(peer,releaseKey,release)]);
+ assert.equal(released.filter(r=>r.idempotentReplay===false).length,1);assert.equal(released.filter(r=>r.idempotentReplay===true).length,1);
+ assert.equal(await active(),0);assert.deepEqual(await evidence(releaseKey),{commands:1,audit:2,outbox:1});
+ await assert.rejects(call(db,randomUUID(),{...release,expectedRevision:3}),/SERVICE_TRANSITION_INVALID/);
+ assert.equal((await call(db,key,reserve)).idempotentReplay,true);assert.equal(await active(),0);
+ assert.deepEqual((await db.query('SELECT total_minor::text FROM service_orders WHERE id=$1',[oid])).rows[0],original);
+ assert.deepEqual((await db.query('SELECT quantity::text,revision::text FROM supply_balances WHERE item_id=$1',[item])).rows[0],stock);
+ assert.equal((await db.query("SELECT stage,revision FROM market_orders WHERE order_id=$1",[oid])).rows[0].stage,'reserved');
+ await db.query('DELETE FROM staff_private.sessions WHERE token_hash=ANY($1::text[])',[identities.map(i=>i.hash)]);
+ await db.query('DELETE FROM staff_private.credentials WHERE membership_id=ANY($1::uuid[])',[identities.map(i=>i.member)]);
+ await peer.query("SELECT set_config('app.organization_id','',false),set_config('app.user_id','',false),set_config('app.membership_id','',false)");
+ console.log('Private lot command: authenticated scope, reserve/release replay, conflict, rollback, unchanged money/stock and disabled runtime PASS.');
+};
