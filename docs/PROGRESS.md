@@ -1,6 +1,15 @@
 # VIEWS — текущая точка продолжения
 
 
+## 2026-10-17 — обновлён публичный веб по запросу владельца
+- GitHub Pages опубликован из 032ea93449ecd25f6ddf80039cb3ecf0ee9045cc, версия 0.15.0-preview.
+- Workflow pages.yml dispatch: run39027334890 success; 385 тестов и build:pages PASS.
+- https://masurovadasha-cmyk.github.io/views-hotel-platform/
+- public-release.browser.cjs PASS: чистый source SHA, 9 скачанных ресурсов с TLS, входы по ролям, V Market, Canva Light/Dark.
+- Это static-demo: Core/email/реальные заказы отключены; резерв партий не активирован.
+- Cloudflare и APK не обновлялись. Следующий программный срез остаётся командой резерва с идемпотентностью/audit.
+
+
 ## 2026-10-14 — L4a: фундамент резерва по партиям
 - Migration0117: FK заказа/позиции/товара/ledger, один активный резерв позиции, индексы, scoped RLS.
 - Текущая версия и годность при создании; общий item lock не допускает двойного занятия партии.

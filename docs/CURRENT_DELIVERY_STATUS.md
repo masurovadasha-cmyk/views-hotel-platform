@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 12 October 2026 (Tashkent)
 
+17 октября 2026: [публичный веб](https://masurovadasha-cmyk.github.io/views-hotel-platform/?build=032ea93) обновлён из 032ea93449ecd25f6ddf80039cb3ecf0ee9045cc. [Run39027334890](https://github.com/masurovadasha-cmyk/views-hotel-platform/actions/runs/39027334890) success;385 тестов, build:pages и проверка публичных ресурсов браузером PASS. Static-demo, Core/email отключены; Cloudflare/APK не менялись. Предыдущие записи ниже исторические.
+
 L4a: [фундамент резерва по партиям](MARKET_LOT_RESERVE_L4A.md); миграция и административные проверки, пользовательский режим не включён.
 
 L3b: [годные партии и порядок ручного выбора](MARKET_LOT_ELIGIBILITY_L3B.md); резерв по партиям ещё не включён, public web/APK без изменений.
