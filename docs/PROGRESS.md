@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез30: доступ при создании и повторе уборки
+- Migration0121: replay после блокировок брони/профиля и актуального доступа, до проверки текущей цены/стадии.
+- Новая команда повторно проверяет сессию после catalog FOR SHARE; цена/начисления/ACL сохранены.
+- Red:5failed/7passed из12 — cached logout/unlink/reassign, обход row wait, создание после logout при catalog wait.
+- Green:12новых проверок с views_app, pg_locks+blocking PID, ограниченными таймаутами и scoped snapshots.
+- Dirty9bbc8fd: Core187/21files, web550/82files; web/API typecheck/build, network187/mail15 PASS.
+- Полная connected browser chain exit0: создание/lost reply/replay/инспекция, отмена из карточки, все4услуги.
+- Также прошли детали, фолио, закупки/склад, входы, RU/UZ/EN и mobile/theme сценарии; SMTP только loopback.
+- 121checksum PASS; старые120миграций/checksum неизменны; новых таблиц, прав и зависимостей нет.
+- Независимое SQL/test review PASS; запуск, критерии и границы READ COMMITTED: CLEANING_REQUEST_REPLAY_AUTHORIZATION_30.md.
+- Public web032ea93/Cloudflare/APK и Canva56partial/84pending не менялись; только disposable PostgreSQL.
+- Далее: аналогичная проверка guest_service_feedback SQL0074; внешние pending guards и остальные экраны открыты.
+
 ## 2026-10-18 — Срез29: повторная авторизация отмены и переноса уборки
 - Migration0120: сохранённый ответ возвращается после прежних row locks и актуальной сессии/владельца.
 - Проверки revision/stage остаются после replay; разрешённый повтор после изменения стадии/выезда сохранён.
