@@ -8,18 +8,33 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
  await admin.query("INSERT INTO units(id,property_id,unit_type_id,code) VALUES($1,$2,$3,'Synthetic cleaning browser')",[unit,property,type]);
  await admin.query("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) VALUES($1,$2,$3,$4,$5,'CLEANING-BROWSER','checked_in',now()-interval '1 day',now()+interval '365 days','UZS',0,'{}')",[reservation,org,property,unit,profile]);
  await admin.query(`INSERT INTO service_catalog(id,organization_id,property_id,code,name,currency,price_minor,active,execution_kind,duration_minutes) VALUES($1,$2,$3,'browser-cleaning','{"en":"Browser cleaning","ru":"Уборка браузер","uz":"Brauzer tozalash"}','UZS',12345,true,'cleaning',40)`,[service,org,property]);
- await page.reload();await page.getByRole('button',{name:'View trip',exact:true}).first().click();
+ await page.reload();await page.locator(`[data-reservation-id="${reservation}"]`).getByRole('button',{name:'View trip',exact:true}).click();
+ const services=page.getByTestId('guest-trip-services'),kinds=['cleaning','laundry','concierge','market'];await services.waitFor();
+ for(const kind of kinds){assert.equal(await page.getByTestId('guest-service-'+kind).getAttribute('aria-pressed'),'false');assert.equal(await page.getByTestId('guest-service-panel-'+kind).count(),0);}
+ await page.getByTestId('guest-service-cleaning').focus();await page.keyboard.press('Enter');
+ assert.equal(await page.getByTestId('guest-service-cleaning').getAttribute('aria-pressed'),'true');
  const catalogue=await api('services/catalog?reservationId='+reservation);if(catalogue.status!==200)console.error('CLEANING_CATALOGUE:'+catalogue.status+':'+catalogue.body.error);assert.equal(catalogue.status,200,JSON.stringify(catalogue.body));assert.ok(catalogue.body.items.some(s=>s.id===service),'CATALOGUE_ITEM_MISSING');
  const guest=page.getByTestId('guest-cleaning');await guest.waitFor();await guest.getByLabel('Service',{exact:true}).selectOption(service);
- await guest.getByLabel('Preferred time (device time zone)').fill(new Date(Date.now()+100*3600000).toISOString().slice(0,16));await guest.getByLabel('I accept the price and folio charge',{exact:true}).check();
+ const draftTime=new Date(Date.now()+100*3600000).toISOString().slice(0,16);
+ await guest.getByLabel('Preferred time (device time zone)').fill(draftTime);await guest.getByLabel('I accept the price and folio charge',{exact:true}).check();
+ await page.getByTestId('guest-service-laundry').click();assert.equal(await guest.isVisible(),false);assert.equal(await page.getByTestId('guest-laundry').isVisible(),true);
+ assert.equal(await page.getByTestId('guest-service-cleaning').getAttribute('aria-pressed'),'false');assert.equal(await page.getByTestId('guest-service-laundry').getAttribute('aria-pressed'),'true');
+ await page.getByTestId('guest-services-back').click();for(const kind of ['cleaning','laundry'])assert.equal(await page.getByTestId('guest-service-panel-'+kind).isVisible(),false);
+ assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('data-testid')),'guest-service-laundry');
+ await page.getByTestId('guest-service-cleaning').click();assert.equal(await guest.getByLabel('Service',{exact:true}).inputValue(),service);
+ assert.equal(await guest.getByLabel('Preferred time (device time zone)').inputValue(),draftTime);assert.equal(await guest.getByLabel('I accept the price and folio charge',{exact:true}).isChecked(),true);
+ assert.equal((await admin.query('SELECT count(*)::int n FROM service_orders WHERE reservation_id=$1',[reservation])).rows[0].n,0);
  const body={reservationId:reservation,serviceId:service,expectedRevision:1,expectedPriceMinor:'12345',requestedFor:new Date(Date.now()+100*3600000).toISOString()};
  assert.equal((await api('services/orders','POST',body,{'Idempotency-Key':randomUUID()})).status,403);
  const writes=[];await page.route('**/guest-api/services/orders',async r=>{writes.push(r.request().headers()['idempotency-key']);const response=await r.fetch();assert.equal(response.status(),200);await r.abort('failed');},{times:1});
  await guest.getByRole('button',{name:'Request cleaning',exact:true}).click();await guest.getByText('No confirmation received. Retry the same operation to check its outcome.',{exact:true}).waitFor();
  assert.equal(await page.getByRole('button',{name:'Back to trips',exact:true}).isDisabled(),true);
+ for(const kind of kinds)assert.equal(await page.getByTestId('guest-service-'+kind).isDisabled(),true);
+ assert.equal(await page.getByTestId('guest-services-back').isDisabled(),true);
  await page.context().setOffline(true);assert.equal(await guest.getByRole('button',{name:'Retry same operation',exact:true}).isDisabled(),true);await page.context().setOffline(false);
  await page.route('**/guest-api/services/orders',async r=>{writes.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});
  await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();await guest.getByText('Saved',{exact:true}).waitFor();if(writes[0]!==writes[1])console.error('RETRY_KEYS:'+JSON.stringify(writes));assert.equal(writes[0],writes[1]);
+ for(const kind of kinds)assert.equal(await page.getByTestId('guest-service-'+kind).isDisabled(),false);
  const orders=(await admin.query('SELECT id FROM service_orders WHERE reservation_id=$1',[reservation])).rows;assert.equal(orders.length,1);const oid=orders[0].id;
  // Guest change review, CSRF, current plan in Core, then a separate cancelled
  // order. The original order continues through worker execution below.
@@ -86,14 +101,20 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   assert.equal(await guest.getByLabel('Preferred time (device time zone)',{exact:true}).inputValue(),'');
   assert.equal((await admin.query('SELECT count(*)::int n FROM service_orders WHERE reservation_id=$1',[reservation])).rows[0].n,2);
   await admin.query("UPDATE reservations SET status='checked_out' WHERE id=$1",[reservation]);
-  await page.reload();await page.getByRole('button',{name:'View trip',exact:true}).first().click();
+  await page.reload();await page.locator(`[data-reservation-id="${reservation}"]`).getByRole('button',{name:'View trip',exact:true}).click();await page.getByTestId('guest-service-cleaning').click();
   await guest.getByText('Service history for a completed stay. New orders and rescheduling are unavailable.',{exact:true}).waitFor();
   assert.equal(await guest.getByRole('button',{name:'Request cleaning',exact:true}).count(),0);
   await guest.getByTestId('service-feedback-saved').waitFor();
   for(const l of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(l);await manager.locator('.staffLanguage select').selectOption(l);for(const p of [page,manager])assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   await page.locator('.guestLanguage select').selectOption('ru');await manager.locator('.staffLanguage select').selectOption('ru');
   await guest.screenshot({path:'/tmp/views-cleaning-guest.png'});await mp.locator('article').filter({hasText:'Уборка браузер'}).filter({hasNotText:'Отменён'}).screenshot({path:'/tmp/views-cleaning-staff.png'});
+  await page.getByTestId('guest-services-back').click();await services.screenshot({path:'/tmp/views-guest-services-light.png'});
+  await page.getByRole('button',{name:'Тёмная тема',exact:true}).click();await services.screenshot({path:'/tmp/views-guest-services-dark.png'});await page.getByRole('button',{name:'Светлая тема',exact:true}).click();
   await page.locator('.guestLanguage select').selectOption('en');
-  console.log(JSON.stringify({result:'pass',proof:'cleaning_guest_dispatch_worker_inspection_folio',duplicateRequests:1,folioEntries:1,csrf:true,offline:true,languages:3,guestReschedule:true,guestCancellation:true,feedbackReplay:true,repeatCurrentPrice:true,historyAfterCheckout:true}));
+  const otherReservation=randomUUID();await admin.query("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) VALUES($1,$2,$3,$4,$5,'CLEANING-OTHER','checked_out',now()-interval '1 hour',now()-interval '30 minutes','UZS',0,'{}')",[otherReservation,org,property,unit,profile]);
+  await page.getByRole('button',{name:'Back to trips',exact:true}).click();await page.locator(`[data-reservation-id="${otherReservation}"]`).getByRole('button',{name:'View trip',exact:true}).click();await services.waitFor();
+  for(const kind of kinds)assert.equal(await page.getByTestId('guest-service-panel-'+kind).count(),0);
+  await page.getByTestId('guest-service-cleaning').click();await guest.getByText('Service history for a completed stay. New orders and rescheduling are unavailable.',{exact:true}).waitFor();assert.equal(await guest.locator('[data-order-id]').count(),0);
+  console.log(JSON.stringify({result:'pass',proof:'cleaning_guest_dispatch_worker_inspection_folio',duplicateRequests:1,folioEntries:1,csrf:true,offline:true,languages:3,guestReschedule:true,guestCancellation:true,feedbackReplay:true,repeatCurrentPrice:true,historyAfterCheckout:true,serviceNavigation:['lazy_overview','keyboard','one_visible_panel','retained_draft','unknown_result_guard','same_key_retry','light_dark','other_trip_reset']}));
  }catch(e){console.error('CLEANING_BROWSER_PHASE:'+phase);throw e;}finally{for(const c of contexts)await c.close();await web.close();}
 };

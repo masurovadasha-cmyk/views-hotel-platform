@@ -1,7 +1,4 @@
-import {GuestConcierge} from '../concierge/GuestConcierge';
-import {GuestMarket} from '../market-core/GuestMarket';
-import {GuestLaundry} from '../laundry/GuestLaundry';
-import {GuestCleaning} from '../service-orders/GuestCleaning';
+import {GuestTripServices} from './GuestTripServices';
 import {useEffect,useRef,useState} from 'react';
 import {GuestCancellation} from './GuestCancellation';
 import {guestTrips,type GuestTrip,type GuestTripPage} from '../../api/guest-trips';
@@ -52,10 +49,9 @@ export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:bo
   {loading&&<p role="status">{t('Loading trips…')}</p>}{error&&<p role="alert">{t(error)}</p>}
   {!loading&&selected?<article data-testid="guest-trip-detail">{summary(selected)}<p>{t('Confirmation code')}: {selected.confirmationCode}</p>
    <p>{t('Booking changes and payment are not connected here yet.')}</p>
-   {['checked_in','checked_out'].includes(selected.status)&&<GuestCleaning canRequest={selected.status==='checked_in'} key={selected.id} reservationId={selected.id} csrf={csrf} online={online} onExpired={()=>expired.current()} onPending={setCleaningPending}/>}
-   {['checked_in','checked_out'].includes(selected.status)&&<GuestLaundry key={'laundry:'+selected.id} reservationId={selected.id} csrf={csrf} online={online} canRequest={selected.status==='checked_in'} onExpired={()=>expired.current()} onPending={setLaundryPending}/>}
-   {['checked_in','checked_out'].includes(selected.status)&&<GuestConcierge key={'concierge:'+selected.id} reservationId={selected.id} csrf={csrf} online={online} canRequest={selected.status==='checked_in'} onExpired={()=>expired.current()} onPending={setConciergePending}/>}
-   {['checked_in','checked_out'].includes(selected.status)&&<GuestMarket key={'market:'+selected.id} reservationId={selected.id} csrf={csrf} online={online} canRequest={selected.status==='checked_in'} onExpired={()=>expired.current()} onPending={setMarketPending}/>}
+   {['checked_in','checked_out'].includes(selected.status)&&<GuestTripServices key={selected.id} reservationId={selected.id} csrf={csrf} online={online}
+    canRequest={selected.status==='checked_in'} blocked={mutationPending} onExpired={()=>expired.current()}
+    onPending={{cleaning:setCleaningPending,laundry:setLaundryPending,concierge:setConciergePending,market:setMarketPending}}/>}
    <GuestCancellation key={selected.id} reservationId={selected.id} status={selected.status} csrf={csrf} online={online} onExpired={()=>expired.current()} onResolutionPending={setCancellationPending} onCancelled={()=>{setSelected(current=>current?{...current,status:'cancelled'}:null);setPage(current=>current?{...current,items:current.items.map(trip=>trip.id===selected.id?{...trip,status:'cancelled'}:trip)}:null);}}/>
    <button disabled={!online||mutationPending} onClick={()=>void load()}>{t('Back to trips')}</button></article>:!loading&&page&&<>
    {!page.items.length&&<p>{t('No bookings are linked to this account yet.')}</p>}

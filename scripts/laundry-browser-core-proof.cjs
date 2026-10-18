@@ -10,6 +10,7 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
  await admin.query("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) VALUES($1,$2,$3,$4,$5,'LAUNDRY-BROWSER','checked_in',now()-interval '1 day',now()+interval '365 days','UZS',0,'{}')",[reservation,org,property,unit,profile]);
  await admin.query(`INSERT INTO service_catalog(id,organization_id,property_id,code,name,currency,price_minor,active,execution_kind,duration_minutes) VALUES($1,$2,$3,$1::uuid::text,'{"en":"Browser laundry","ru":"Стирка браузер","uz":"Brauzer kir yuvish"}','UZS',4000000,true,'laundry',60)`,[service,org,property]);
  await page.reload();await page.locator(`[data-reservation-id="${reservation}"]`).getByRole('button',{name:'View trip',exact:true}).click();
+ await page.getByTestId('guest-service-laundry').click();
  const guest=page.getByTestId('guest-laundry');await guest.getByRole('button',{name:'Open laundry',exact:true}).click();
  const catalogue=await api('services/laundry/catalog?reservationId='+reservation);assert.equal(catalogue.status,200,JSON.stringify(catalogue.body));assert.ok(catalogue.body.items.some(i=>i.id===service));
  await guest.getByLabel('Service',{exact:true}).selectOption(service);await guest.getByLabel('Number of items',{exact:true}).fill('2');
@@ -42,6 +43,7 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   const keys=[];await page.route(`**/guest-api/services/laundry/${iid}/actions`,async r=>{keys.push(r.request().headers()['idempotency-key']);const response=await r.fetch();assert.equal(response.status(),200);await r.abort('failed');},{times:1});
   await gc.getByRole('button',{name:'Approve inventory and price',exact:true}).click();await guest.getByText('No confirmation received. Retry the same operation to check its outcome.',{exact:true}).waitFor();
   assert.equal(await page.getByRole('button',{name:'Back to trips',exact:true}).isDisabled(),true);
+  for(const kind of ['cleaning','laundry','concierge','market'])assert.equal(await page.getByTestId('guest-service-'+kind).isDisabled(),true);assert.equal(await page.getByTestId('guest-services-back').isDisabled(),true);
   await page.context().setOffline(true);await page.waitForFunction(()=>[...document.querySelectorAll('[data-testid=guest-laundry] button')].find(b=>b.textContent==='Retry same operation')?.disabled===true);await page.context().setOffline(false);
   await page.route(`**/guest-api/services/laundry/${iid}/actions`,async r=>{keys.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();await gc.getByTestId('laundry-stage').getByText('Inventory accepted',{exact:true}).waitFor();assert.equal(keys[0],keys[1]);
   const orders=(await admin.query('SELECT id,total_minor::text FROM service_orders WHERE reservation_id=$1',[reservation])).rows;assert.equal(orders.length,1);assert.equal(orders[0].total_minor,'10000000');

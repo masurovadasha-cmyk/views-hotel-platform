@@ -15,6 +15,7 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await admin.query("INSERT INTO market_products(service_id,organization_id,property_id,currency,item_id) VALUES($1,$2,$3,'UZS',$1)",[id,org,property]);
  }
  await page.reload();await page.locator(`[data-reservation-id="${reservation}"]`).getByRole('button',{name:'View trip',exact:true}).click();
+ await page.getByTestId('guest-service-market').click();
  const guest=page.getByTestId('guest-market-core');await guest.getByRole('button',{name:'Open V Market',exact:true}).click();
  const catalogue=await api('services/market/catalog?reservationId='+reservation);assert.equal(catalogue.status,200,JSON.stringify(catalogue.body));
  await guest.locator(`[data-product-id="${water}"]`).getByLabel('Quantity',{exact:true}).fill('2');await guest.locator(`[data-product-id="${coffee}"]`).getByLabel('Quantity',{exact:true}).fill('1');
@@ -23,6 +24,7 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
  assert.equal((await api('services/market','POST',{}, {'Idempotency-Key':randomUUID()})).status,403);
  const keys=[];await page.route('**/guest-api/services/market',async r=>{keys.push(r.request().headers()['idempotency-key']);const response=await r.fetch();assert.equal(response.status(),200);await r.abort('failed');},{times:1});
  await guest.getByRole('button',{name:'Order and reserve',exact:true}).click();await guest.getByText('No confirmation received. Retry the same operation to check its outcome.',{exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:'Back to trips',exact:true}).isDisabled(),true);
+ for(const kind of ['cleaning','laundry','concierge','market'])assert.equal(await page.getByTestId('guest-service-'+kind).isDisabled(),true);assert.equal(await page.getByTestId('guest-services-back').isDisabled(),true);
  await page.context().setOffline(true);await guest.locator('button:disabled').filter({hasText:/^Retry same operation$/}).waitFor();assert.equal(await guest.getByRole('button',{name:'Retry same operation',exact:true}).isDisabled(),true);await page.context().setOffline(false);
  await page.route('**/guest-api/services/market',async r=>{keys.push(r.request().headers()['idempotency-key']);await r.continue();},{times:1});await guest.getByRole('button',{name:'Retry same operation',exact:true}).click();
  await guest.getByTestId('market-stage').getByText('Stock reserved',{exact:true}).waitFor();assert.equal(keys[0],keys[1]);

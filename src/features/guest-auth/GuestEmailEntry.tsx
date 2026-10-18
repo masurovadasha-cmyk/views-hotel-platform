@@ -1,5 +1,6 @@
 import {GuestReservationLink} from './GuestReservationLink';
 import {GuestTrips} from './GuestTrips';
+import {expireMatchingGuestSession} from './guest-session-guard';
 import {useEffect,useRef,useState} from 'react';
 import {guestEmail,GuestEmailError,type GuestSession} from '../../api/guest-email';
 import {translate,type MessageValues} from '../../i18n/messages';
@@ -62,6 +63,7 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
   finally{running.current=false;if(current===generation.current)setBusy(false);}
  }
  const disabled=busy||loading||!online;
+ const expireSession=()=>{if(session?.authenticated)setSession(current=>expireMatchingGuestSession(current,session));};
  return <main className="guestEmail" aria-busy={busy||loading}>
   <div className="guestEmailIntro"><span className="guestEmailEyebrow">VIEWS · {t('Guest account')}</span><h1>{t(session?.authenticated?'Signed in as guest':link?'Confirm sign-in':'Continue with email')}</h1>
    <p>{t(session?.authenticated?'Your guest session is saved on this browser.':'We will send a single-use link. It expires in 15 minutes.')}</p>
@@ -87,7 +89,7 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
    </form>:null}
    {!loading&&<button disabled={disabled} onClick={()=>void act('refresh')}>{t('Check session again')}</button>}
   </section>
-  {session?.authenticated&&<GuestTrips key={session.profile.userId+':'+tripRevision} csrf={session.csrf} online={online} onSessionExpired={()=>setSession({authenticated:false})}/>}
-  {session?.authenticated&&<GuestReservationLink key={session.profile.userId} csrf={session.csrf} online={online} onLinked={()=>setTripRevision(v=>v+1)} onExpired={()=>setSession({authenticated:false})}/>}
+  {session?.authenticated&&<GuestTrips key={session.profile.userId+':'+session.csrf+':'+tripRevision} csrf={session.csrf} online={online} onSessionExpired={expireSession}/>}
+  {session?.authenticated&&<GuestReservationLink key={session.profile.userId} csrf={session.csrf} online={online} onLinked={()=>setTripRevision(v=>v+1)} onExpired={expireSession}/>}
  </main>;
 }

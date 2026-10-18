@@ -1,4 +1,13 @@
 {
+ "My orders":{"ru":"Мои заказы","uz":"Buyurtmalarim"},
+ "Choose a service":{"ru":"Выберите направление","uz":"Xizmat turini tanlang"},
+ "Choose a service to view orders or make a request.":{"ru":"Выберите направление, чтобы посмотреть заказы или оставить заявку.","uz":"Buyurtmalarni ko‘rish yoki so‘rov yuborish uchun xizmat turini tanlang."},
+ "History for a completed stay. New orders are unavailable.":{"ru":"История завершённой поездки. Новые заказы недоступны.","uz":"Yakunlangan safar tarixi. Yangi buyurtmalar mavjud emas."},
+ "Cleaning":{"ru":"Уборка","uz":"Tozalash"},
+ "Laundry":{"ru":"Прачечная","uz":"Kir yuvish"},
+ "Concierge":{"ru":"Консьерж","uz":"Konsyerj"},
+ "Back to services":{"ru":"К направлениям услуг","uz":"Xizmat turlariga qaytish"},
+ "Confirm the pending operation before switching services.":{"ru":"Проверьте результат отправленной операции перед сменой направления.","uz":"Xizmat turini almashtirishdan oldin yuborilgan amal natijasini tekshiring."},
  "My trips":{"ru":"Мои поездки","uz":"Safarlarim"},
  "Only bookings linked to your account appear here. A matching email address alone does not grant access.":{"ru":"Здесь только брони, привязанные к вашему аккаунту. Одного совпадения email для доступа недостаточно.","uz":"Bu yerda faqat hisobingizga bog‘langan bronlar bor. Email manzilining mos kelishi kirish huquqini bermaydi."},
  "Trips are not connected on this server.":{"ru":"Поездки на этом сервере пока не подключены.","uz":"Bu serverda safarlar hali ulanmagan."},
