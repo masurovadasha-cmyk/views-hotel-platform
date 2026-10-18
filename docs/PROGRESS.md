@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-19 — Срез39: претензия прачечной из общей карточки
+- Бирка/тип/описание, явная отправка; accepted→closed, после checkout; open claim/лимит истории скрывают форму.
+- Квитанция проверяет ID/revision/стадию/точные деньги и последнее обращение; pending хранит прежние ключ/тело вне карточки.
+- SQL0124 уже проверяет доступ после locks;9новых report_claim race/replay тестов, всего28focused PASS.
+- RED unit: helper отсутствовал/0tests; GREEN97новых. Dirty91dbfe3: web863/88files, обе сборки/typecheck PASS.
+- Core227/23files PASS; исправлен неоднозначный locator описи старого receipt proof; focused12Core/9proofs PASS.
+- Финальная полная браузерная цепочка exit0:12подготовительных Core и21HTTP/browser proof PASS; новый claim не меняет деньги.
+- Network187/mail15/124checksum PASS;6снимков, RU Light/Dark иUZ Dark визуально проверены; independent review PASS.
+- Запуск/критерии/ручная приёмка: LAUNDRY_DETAIL_CLAIM_39.md; только disposable БД/loopback SMTP.
+- Resolve из общей карточки и hard reload recovery остаются; public032ea93/Cloudflare/APK, Canva56partial/84pending прежние.
+- Далее: явное закрытие претензии из общей карточки отдельно от получения и начисления.
+
 ## 2026-10-18 — Срез38: получение прачечной из общей карточки
 - Delivered: опись/сумма/валюта, checkbox и явное получение с начислением в фолио; после checkout доступно.
 - Open/answered claim скрывает действие; новая претензия после согласия даёт409 без начисления.
