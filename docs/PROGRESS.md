@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-19 — Срез40: закрытие претензии из общей карточки
+- Open/answered: отдельные checkbox/отправка; лимит8 и checkout не мешают закрытию; resolved скрывает форму.
+- Проверяются ID/revision, неизменные стадия/деньги, бирка/тип и последняя запись истории; pending сохраняет ключ/тело.
+- RED unit: helper отсутствовал/0tests; GREEN42. Девять новых resolve race/replay сценариев,37focusedCore PASS.
+- Dirty1ee1c6d: web905/89files, Core236/23files, обе сборки/typecheck, network187/mail15/124checksum PASS.
+- Финальная браузерная цепочка exit0:12подготовительных Core и22HTTP/browser proofs PASS; history8→9, деньги/заказ прежние.
+- 6снимков RU/UZ/EN×Light/Dark×390; RU Light/Dark иUZ Dark просмотрены. SQL0124/API/права/зависимости прежние.
+- Критерии/запуск/риски: LAUNDRY_DETAIL_RESOLVE_40.md; только disposable БД/loopback SMTP.
+- Public032ea93/Cloudflare/APK, Canva56partial/84pending прежние; hard reload recovery остаётся.
+- Далее: получение V Market из общей карточки с предварительной проверкой прав и повторов.
+
 ## 2026-10-19 — Срез39: претензия прачечной из общей карточки
 - Бирка/тип/описание, явная отправка; accepted→closed, после checkout; open claim/лимит истории скрывают форму.
 - Квитанция проверяет ID/revision/стадию/точные деньги и последнее обращение; pending хранит прежние ключ/тело вне карточки.

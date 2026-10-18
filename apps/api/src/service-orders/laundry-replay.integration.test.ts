@@ -168,4 +168,24 @@ describe.sequential('laundry fulfilment reauthorizes after waiting for command a
   await expect(service.guestAct(f.a.token,f.intake.intakeId,f.key,{...f.body,note:'Changed concern'})).rejects.toThrow('SERVICE_COMMAND_CONFLICT');
   expect(await snapshot(f)).toEqual(before);
  });
+ const resolveFixture=async(cached:boolean)=>{
+  const f=await reportFixture(true);f.key=randomUUID();f.body={action:'resolve_claim',expectedRevision:f.receipt!.revision};
+  f.receipt=cached?await service.guestAct(f.a.token,f.intake.intakeId,f.key,f.body):null;return f;
+ };
+ it.each([[false,'logout','command'],[true,'logout','command'],[false,'unlink','command'],[true,'unlink','command'],[false,'reassign','command'],[true,'reassign','command'],[false,'logout','profile'],[true,'logout','profile']] as const)('resolve_claim cached=%s rejects %s after %s lock without writes',async(cached,revocation,lock)=>{
+  const f=await resolveFixture(cached),before=await snapshot(f);
+  const result=await blockedCancel(f,async()=>{
+   if(revocation==='logout')return guest.logout(f.a.token);
+   if(revocation==='unlink')return run('UPDATE guest_profiles SET user_id=NULL WHERE id=$1',[f.g]);
+   const replacement=randomUUID();await run("INSERT INTO guest_profiles(id,organization_id,first_name,last_name) VALUES($1,$2,'Synthetic','Replacement')",[replacement,org]);
+   return run('UPDATE reservations SET primary_guest_id=$2 WHERE id=$1',[f.r,replacement]);
+  },lock);
+  expect(result).toMatchObject({error:revocation==='logout'?{code:'28000',message:'SERVICE_SESSION_INVALID'}:{code:'P0002',message:'SERVICE_STAY_NOT_FOUND'}});
+  expect(result).not.toHaveProperty('value');expect(await snapshot(f)).toEqual(before);expect(before.charges).toBe(0);
+ });
+ it('resolve replay after checkout preserves custody and money without duplicate events',async()=>{
+  const f=await resolveFixture(true);await run("UPDATE reservations SET status='checked_out' WHERE id=$1",[f.r]);const before=await snapshot(f);
+  expect(before.intake).toMatchObject({stage:'delivered',claim:{status:'resolved'}});expect(before.intake.claim.history).toHaveLength(2);expect(before.charges).toBe(0);
+  expect(await blockedCancel(f,async()=>{})).toEqual({value:{...f.receipt,idempotentReplay:true}});expect(await snapshot(f)).toEqual(before);
+ });
 });
