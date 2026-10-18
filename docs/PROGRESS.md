@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез33: доступ при повторе команды прачечной
+- Migration0123: fulfilment replay после прежних locks и текущей авторизации; guest_user после profile FOR SHARE.
+- Сигнатуры/API/ACL/стадии/деньги сохранены;122 прежних миграций/checksum не изменены,123checksum PASS.
+- Red7failed/6passed из13: cached guest/staff logout, unlink/reassign, обход row wait, fresh logout при profile wait.
+- Green на dirty e7ac9f9: Core210/23files, включая13новых; web557/83files, обе сборки/typecheck, network187/mail15 PASS.
+- Runtime views_app, реальные pg_locks+blocking PID, bounded waits; отдельная staff-сессия отзывается в finally.
+- Отказ/replay сохраняют intake/orders/folio, без новых audit/outbox; историческая квитанция после выезда доступна владельцу.
+- Первый full browser: прачечная PASS, затем offline/detail proof race; усилено ожидание offline→online без изменения UI.
+- Focused browser exit0: карточки4услуг, отмена уборки, поздний ответ/offline,13подготовительных Core-тестов PASS.
+- Full browser повтор exit0:16proofs/16подготовительных Core-тестов, включая прачечную/фолио/склад; review PASS.
+- Claims wrapper0101 и поздний folio wait не исправлены; прямой intake-row/staff scope revoke не проверены отдельно.
+- Только disposable PostgreSQL/loopback SMTP; запуск/критерии/риски: LAUNDRY_REPLAY_AUTHORIZATION_33.md.
+- Public web032ea93/Cloudflare/APK и Canva56partial/84pending без изменений; далее отмена прачечной из общей карточки.
+
 ## 2026-10-18 — Срез32: внешняя защита неподтверждённых команд гостя
 - GuestTrips сообщает pending услуг/отмены; выход, проверка сессии, preview/accept брони заблокированы.
 - Внешний запрос блокирует действия поездки; поздний onLinked обновляет список только после разрешения команд.
