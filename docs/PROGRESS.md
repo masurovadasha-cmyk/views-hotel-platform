@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез32: внешняя защита неподтверждённых команд гостя
+- GuestTrips сообщает pending услуг/отмены; выход, проверка сессии, preview/accept брони заблокированы.
+- Внешний запрос блокирует действия поездки; поздний onLinked обновляет список только после разрешения команд.
+- Guard привязан к userId/csrf/tripRevision: старые callbacks/cleanup не очищают новое состояние, rerender сохраняет ключ.
+- Реальный401 очищает подходящую сессию; late account replies инвалидируются; initial load ждёт снятия busy.
+- Red: прежняя сборка разрешала Sign out при удержанном ответе; новый guard отсутствовал;7unit теперь PASS.
+- Dirty4c7fef6: web557/83files, Core197/22files, обе сборки/typecheck, network187/mail15,122checksum PASS.
+- Focused browser exit0: held link/session, inflight/unknown/offline, те же ключ/тело, сохранённый draft, logout→retry401.
+- Full browser chain exit0:16подготовительных Core-тестов,16proofs;4услуги/отмена/детали/фолио/склад/входы PASS.
+- Независимое ревью PASS; StrictMode cleanup проверен анализом, отдельный dev-browser не запускался.
+- Новых миграций/прав/зависимостей нет; только disposable БД/loopback SMTP; запуск/риски: GUEST_OUTER_PENDING_GUARD_32.md.
+- Public web032ea93/Cloudflare/APK и Canva56partial/84pending без изменений; закрытие/reload требует durable recovery.
+- Далее: отмена заявки прачечной из общей карточки с проверкой прав и повтора; аудит прочих команд остаётся.
+
 ## 2026-10-18 — Срез31: доступ при повторе отзыва об уборке
 - Migration0122: сохранённый ответ после прежних locks и текущей сессии/владельца, до feedback-exists guard.
 - Частная оценка услуги, один неизменяемый отзыв; API, ACL, цена, audit/outbox и финансовые правила сохранены.

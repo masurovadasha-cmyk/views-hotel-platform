@@ -1,7 +1,8 @@
 import {GuestReservationLink} from './GuestReservationLink';
 import {GuestTrips} from './GuestTrips';
 import {expireMatchingGuestSession} from './guest-session-guard';
-import {useEffect,useRef,useState} from 'react';
+import {createGuestOperationGuard} from './guest-operation-guard';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import {guestEmail,GuestEmailError,type GuestSession} from '../../api/guest-email';
 import {translate,type MessageValues} from '../../i18n/messages';
 import {useGuestLocale} from '../guest/GuestLocale';
@@ -26,7 +27,15 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
  const [error,setError]=useState(initialLink.invalid?INVALID:''),[notice,setNotice]=useState('');
  const [deadline,setDeadline]=useState(0),[clock,setClock]=useState(Date.now()),[online,setOnline]=useState(navigator.onLine);
  const [tripRevision,setTripRevision]=useState(0);
- const running=useRef(false),generation=useRef(0);
+ const operations=useRef(createGuestOperationGuard()).current,[guardVersion,setGuardVersion]=useState(0);
+ const sessionKey=session?.authenticated?session.profile.userId+':'+session.csrf:'';
+ const owner=sessionKey+':'+tripRevision;operations.enter(owner);
+ const tripPending=useCallback((value:boolean)=>{if(operations.report(owner,'trip',value))setGuardVersion(v=>v+1);},[operations,owner]);
+ const linkBusy=useCallback((value:boolean)=>{if(operations.report(owner,'link',value))setGuardVersion(v=>v+1);},[operations,owner]);
+ const linked=useCallback(()=>{if(operations.requestRefresh(owner))setGuardVersion(v=>v+1);},[operations,owner]);
+ useEffect(()=>{if(operations.takeRefresh())setTripRevision(v=>v+1);},[guardVersion,operations]);
+ const running=useRef(false),generation=useRef(0),currentSession=useRef(session);currentSession.current=session;
+ function applySession(next:GuestSession|null){currentSession.current=next;setSession(next);}
  const seconds=Math.max(0,Math.ceil((deadline-clock)/1000));
  useEffect(()=>{if(!deadline)return;const id=setInterval(()=>setClock(Date.now()),1000);return()=>clearInterval(id);},[deadline]);
  useEffect(()=>{
@@ -38,12 +47,12 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
  },[]);
  useEffect(()=>{
   const current=++generation.current;setLoading(true);
-  void guestEmail.session().then(s=>{if(generation.current===current)setSession(s);}).catch(e=>{if(generation.current===current)setError(message(e));})
+  void guestEmail.session().then(s=>{if(generation.current===current)applySession(s);}).catch(e=>{if(generation.current===current)setError(message(e));})
    .finally(()=>{if(generation.current===current)setLoading(false);});
   return()=>{generation.current++;};
  },[]);
  async function act(kind:'request'|'exchange'|'logout'|'refresh'){
-  if(running.current||!online)return;running.current=true;setBusy(true);setError('');setNotice('');const current=generation.current;
+  if(running.current||!online||operations.blocked())return;running.current=true;setBusy(true);setError('');setNotice('');const current=generation.current;
   try{
    if(kind==='request'){
     setDeadline(Date.now()+60000);setClock(Date.now());
@@ -52,18 +61,22 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
    }else if(kind==='exchange'&&link){
     await guestEmail.exchange(link);
     if(current===generation.current)setLink(previous=>previous===link?null:previous);
-    const next=await guestEmail.session();if(current===generation.current)setSession(next);
+    const next=await guestEmail.session();if(current===generation.current)applySession(next);
    }else if(kind==='logout'&&session?.authenticated){
     await guestEmail.logout(session.csrf);
-    if(current===generation.current){setSession({authenticated:false});setNotice('Signed out on this browser.');}
+    if(current===generation.current){applySession({authenticated:false});setNotice('Signed out on this browser.');}
    }else if(kind==='refresh'){
-    const next=await guestEmail.session();if(current===generation.current)setSession(next);
+    const next=await guestEmail.session();if(current===generation.current)applySession(next);
    }
   }catch(e){if(current===generation.current){setError(message(e));if(e instanceof GuestEmailError&&e.retryAfterSeconds>0){setDeadline(Date.now()+e.retryAfterSeconds*1000);setClock(Date.now());}}}
-  finally{running.current=false;if(current===generation.current)setBusy(false);}
+  finally{if(current===generation.current){running.current=false;setBusy(false);}}
  }
- const disabled=busy||loading||!online;
- const expireSession=()=>{if(session?.authenticated)setSession(current=>expireMatchingGuestSession(current,session));};
+ const disabled=busy||loading||!online||operations.blocked();
+ const expireSession=()=>{
+  if(!session?.authenticated)return;
+  const next=expireMatchingGuestSession(currentSession.current,session);if(next===currentSession.current)return;
+  generation.current++;running.current=false;setBusy(false);setLoading(false);applySession(next);
+ };
  return <main className="guestEmail" aria-busy={busy||loading}>
   <div className="guestEmailIntro"><span className="guestEmailEyebrow">VIEWS · {t('Guest account')}</span><h1>{t(session?.authenticated?'Signed in as guest':link?'Confirm sign-in':'Continue with email')}</h1>
    <p>{t(session?.authenticated?'Your guest session is saved on this browser.':'We will send a single-use link. It expires in 15 minutes.')}</p>
@@ -72,6 +85,7 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
    {!online&&<p role="status">{t('You are offline. Restore the connection and retry manually.')}</p>}
    {error&&<p className="guestEmailError" role="alert">{t(error)}</p>}
    {notice&&<p role="status">{t(notice)}</p>}
+   {operations.tripPending()&&<p role="status">{t('Resolve the pending operation before signing out, checking your session or linking a booking.')}</p>}
    {loading?<p role="status">{t('Checking session…')}</p>:session?.authenticated?<>
     <p className="guestEmailAddress" data-testid="guest-identity">{session.profile.email}</p>
     <p>{t('Your guest session is active. Employee workspaces require separate access.')}</p>
@@ -89,7 +103,7 @@ export function GuestEmailEntry({initialLink}:{initialLink:GuestEmailLinkState})
    </form>:null}
    {!loading&&<button disabled={disabled} onClick={()=>void act('refresh')}>{t('Check session again')}</button>}
   </section>
-  {session?.authenticated&&<GuestTrips key={session.profile.userId+':'+session.csrf+':'+tripRevision} csrf={session.csrf} online={online} onSessionExpired={expireSession}/>}
-  {session?.authenticated&&<GuestReservationLink key={session.profile.userId} csrf={session.csrf} online={online} onLinked={()=>setTripRevision(v=>v+1)} onExpired={expireSession}/>}
+  {session?.authenticated&&<GuestTrips key={owner} csrf={session.csrf} online={online} externalBusy={busy||loading||operations.linkPending()} onPending={tripPending} onSessionExpired={expireSession}/>}
+  {session?.authenticated&&<GuestReservationLink key={sessionKey} csrf={session.csrf} online={online} blocked={disabled} onBusy={linkBusy} onLinked={linked} onExpired={expireSession}/>}
  </main>;
 }

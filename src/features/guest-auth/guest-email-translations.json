@@ -1,4 +1,8 @@
 {
+  "Resolve the pending operation before signing out, checking your session or linking a booking.": {
+    "ru": "Дождитесь результата операции или повторите её перед выходом, проверкой сессии или привязкой брони.",
+    "uz": "Chiqish, sessiyani tekshirish yoki bronni bog‘lashdan oldin amal natijasini kuting yoki uni qayta bajaring."
+  },
   "Guest account": {
     "ru": "Кабинет гостя",
     "uz": "Mehmon kabineti"

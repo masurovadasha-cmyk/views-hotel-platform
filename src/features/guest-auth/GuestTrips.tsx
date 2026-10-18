@@ -7,7 +7,7 @@ import {useGuestLocale} from '../guest/GuestLocale';
 import {translate} from '../../i18n/messages';
 import catalog from './guest-trips-translations.json';
 import {formatStaffMoney,localeTags,localizedName} from '../local-core/staff-locale';
-export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:boolean;onSessionExpired:()=>void}){
+export function GuestTrips({csrf,online,externalBusy,onPending,onSessionExpired}:{csrf:string;online:boolean;externalBusy:boolean;onPending:(value:boolean)=>void;onSessionExpired:()=>void}){
  const {locale}=useGuestLocale(),t=(s:string)=>translate(catalog,locale,s);
  const [page,setPage]=useState<GuestTripPage|null>(null),[selected,setSelected]=useState<GuestTrip|null>(null);
  const [loading,setLoading]=useState(false),[error,setError]=useState(''),[cancellationPending,setCancellationPending]=useState(false);
@@ -15,7 +15,9 @@ export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:bo
  const [conciergePending,setConciergePending]=useState(false);
  const [marketPending,setMarketPending]=useState(false);
  const mutationPending=cancellationPending||cleaningPending||laundryPending||marketPending||conciergePending;
- const generation=useRef(0),busy=useRef(false),expired=useRef(onSessionExpired);expired.current=onSessionExpired;
+ useEffect(()=>onPending(mutationPending),[mutationPending,onPending]);
+ useEffect(()=>()=>onPending(false),[onPending]);
+ const generation=useRef(0),busy=useRef(false),initialLoad=useRef(false),expired=useRef(onSessionExpired);expired.current=onSessionExpired;
  function failure(e:unknown){
   setPage(null);setSelected(null);
   if(e instanceof GuestEmailError&&e.code==='GUEST_EMAIL_SESSION_INVALID'){expired.current();return;}
@@ -23,7 +25,7 @@ export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:bo
    e instanceof GuestEmailError&&e.code==='GUEST_TRIP_NOT_FOUND'?'This trip is no longer available to your account.':'Could not load trips. Try again.');
  }
  async function load(cursor?:string,id?:string){
-  if(busy.current||!online||mutationPending)return;busy.current=true;const turn=++generation.current;setLoading(true);setError('');setSelected(null);
+  if(busy.current||!online||mutationPending||externalBusy)return;busy.current=true;const turn=++generation.current;setLoading(true);setError('');setSelected(null);
   // Clear the previous page before a new authorization check. No persistent trip cache.
   if(!id)setPage(null);
   try{
@@ -32,7 +34,8 @@ export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:bo
   }catch(e){if(generation.current===turn)failure(e);}
   finally{if(generation.current===turn){busy.current=false;setLoading(false);}}
  }
- useEffect(()=>{void load();return()=>{generation.current++;busy.current=false;};},[]);
+ useEffect(()=>{if(!externalBusy&&!initialLoad.current){initialLoad.current=true;void load();}},[externalBusy]);
+ useEffect(()=>()=>{generation.current++;busy.current=false;initialLoad.current=false;},[]);
  function when(value:string,zone:string){try{return new Intl.DateTimeFormat(localeTags[locale],{dateStyle:'medium',timeStyle:'short',timeZone:zone}).format(new Date(value));}catch{return value;}}
  function money(trip:GuestTrip){return ['UZS','USD','EUR'].includes(trip.currency)?formatStaffMoney(trip.totalMinor,locale).replace(/UZS$/,trip.currency):trip.totalMinor+' '+trip.currency+' '+t('(minor units)');}
  function summary(trip:GuestTrip){return <>
@@ -44,6 +47,7 @@ export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:bo
    <dt>{t('Booking total')}</dt><dd>{money(trip)}</dd></dl>
  </>;}
  return <section className="guestTrips" aria-label={t('My trips')} aria-busy={loading}>
+  <fieldset className="guestTripControls" disabled={externalBusy}>
   <h2>{t('My trips')}</h2><p>{t('Only bookings linked to your account appear here. A matching email address alone does not grant access.')}</p>
   {!online&&<p role="status">{t('Offline. Reconnect to refresh your trips.')}</p>}
   {loading&&<p role="status">{t('Loading trips…')}</p>}{error&&<p role="alert">{t(error)}</p>}
@@ -60,5 +64,6 @@ export function GuestTrips({csrf,online,onSessionExpired}:{csrf:string;online:bo
    {page.nextCursor&&<button disabled={!online} onClick={()=>void load(page.nextCursor!)}>{t('Next trips')}</button>}
   </>}
   <button disabled={loading||!online||mutationPending} onClick={()=>void load()}>{t(error?'Try again':'Refresh trips')}</button>
+  </fieldset>
  </section>;
 }
