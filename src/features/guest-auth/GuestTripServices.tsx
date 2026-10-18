@@ -8,6 +8,8 @@ import {useGuestLocale} from '../guest/GuestLocale';
 import {translate} from '../../i18n/messages';
 import catalog from './guest-trips-translations.json';
 import {GuestOrderList} from './GuestOrderList';
+import {GuestOrderDetail} from './GuestOrderDetail';
+import type {OrderTarget} from './guest-order-selection';
 
 const services={
  cleaning:{title:'Cleaning',icon:Brush,Panel:GuestCleaning},
@@ -22,8 +24,9 @@ type Props={reservationId:string;csrf:string;online:boolean;canRequest:boolean;b
 export function GuestTripServices({blocked,onPending,...common}:Props){
  const {locale}=useGuestLocale(),t=(s:string)=>translate(catalog,locale,s),id=useId();
  const [active,setActive]=useState<Service|null>(null),[visited,setVisited]=useState<Service[]>([]);
+ const [target,setTarget]=useState<OrderTarget|null>(null);
  const buttons=useRef<Partial<Record<Service,HTMLButtonElement|null>>>({});
- function open(kind:Service){if(blocked)return;setVisited(old=>old.includes(kind)?old:[...old,kind]);setActive(kind);}
+ function open(kind:Service){if(blocked)return;setTarget(null);setVisited(old=>old.includes(kind)?old:[...old,kind]);setActive(kind);}
  function back(){if(blocked||!active)return;buttons.current[active]?.focus();setActive(null);}
  return <section className="guestTripServices" data-testid="guest-trip-services" aria-labelledby={id}>
   <h3 id={id}>{t('My orders')}</h3>
@@ -37,7 +40,9 @@ export function GuestTripServices({blocked,onPending,...common}:Props){
   </nav>
   {blocked&&<p role="status">{t('Confirm the pending operation before switching services.')}</p>}
   {active&&<button type="button" data-testid="guest-services-back" disabled={blocked} onClick={back}>{t('Back to services')}</button>}
-  {!active&&<GuestOrderList reservationId={common.reservationId} online={common.online} blocked={blocked} onExpired={common.onExpired} onOpen={open}/>}
+  {!active&&!target&&<GuestOrderList reservationId={common.reservationId} online={common.online} blocked={blocked} onExpired={common.onExpired} onOpen={next=>{if(!blocked)setTarget(next);}}/>}
+  {target&&<GuestOrderDetail key={target.kind+':'+target.id+':'+target.cursor} reservationId={common.reservationId} target={target} online={common.online} blocked={blocked} onExpired={common.onExpired}
+   onBack={()=>{if(!blocked){buttons.current[target.kind]?.focus();setTarget(null);}}} onService={()=>open(target.kind)}/>}
   {/* Keep drafts and retry keys in memory; the trip/session boundary unmounts every panel. */}
   {visited.map(kind=>{const {Panel}=services[kind];return <div key={kind} id={id+'-panel-'+kind}
    role="region" aria-labelledby={id+'-'+kind} data-testid={'guest-service-panel-'+kind} hidden={active!==kind}>

@@ -9,9 +9,10 @@ import {marketText} from '../market-core/locale';
 import {conciergeText} from '../concierge/locale';
 import {orderKinds,orderSources,orderPage,mergeOrderPages,type OrderKind,type OrderGroup,type OrderPage} from './guest-order-list';
 import catalog from './guest-trips-translations.json';
+import type {OrderTarget} from './guest-order-selection';
 type Pages=Partial<Record<OrderKind,OrderPage>>;
 const stageText={cleaning:cleaningText,laundry:laundryText,market:marketText,concierge:conciergeText};
-export function GuestOrderList({reservationId,online,blocked,onExpired,onOpen}:{reservationId:string;online:boolean;blocked:boolean;onExpired:()=>void;onOpen:(kind:OrderKind)=>void}){
+export function GuestOrderList({reservationId,online,blocked,onExpired,onOpen}:{reservationId:string;online:boolean;blocked:boolean;onExpired:()=>void;onOpen:(target:OrderTarget)=>void}){
  const {locale}=useGuestLocale(),t=(s:string)=>translate(catalog,locale,s);
  const [pages,setPages]=useState<Pages|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState(false);
  const [kind,setKind]=useState<OrderKind|'all'>('all'),[group,setGroup]=useState<OrderGroup|'all'>('all');
@@ -25,7 +26,7 @@ export function GuestOrderList({reservationId,online,blocked,onExpired,onOpen}:{
    const entries=await Promise.all((more?[more]:orderKinds).map(async k=>{
     const cursor=more?previous?.[k]?.nextCursor:null;
     const raw=await guestEmailRequest(orderSources[k].route+'?reservationId='+encodeURIComponent(reservationId)+(cursor?'&cursor='+encodeURIComponent(cursor):''));
-    return [k,orderPage(k,raw)] as const;
+    return [k,orderPage(k,raw,cursor??null)] as const;
    }));
    if(generation.current!==turn||!connected.current)return;
    const next=Object.fromEntries(entries) as Pages;
@@ -48,7 +49,7 @@ export function GuestOrderList({reservationId,online,blocked,onExpired,onOpen}:{
    <h4>{t(orderSources[r.kind].title)}{r.name?' · '+localizedName(r.name,locale):r.category?' · '+conciergeText(locale,r.category):''}</h4>
    <small>{r.id}</small><p>{stageText[r.kind](locale,r.stage)}</p>
    {r.money?<p>{t(r.money.label)}: {formatStaffMoney(r.money.minor,locale).replace(/UZS$/,r.money.currency)}</p>:<p>{t('Assistance request — not a paid booking')}</p>}
-   <button disabled={disabled} onClick={()=>onOpen(r.kind)}>{t('Open service')}</button>
+   <button disabled={disabled} onClick={()=>onOpen({kind:r.kind,id:r.id,cursor:r.cursor})}>{t('Open order')}</button>
   </article>)}
   {orderKinds.filter(k=>pages[k]?.nextCursor).map(k=><button key={k} data-testid={'guest-orders-more-'+k} disabled={disabled} onClick={()=>void load(k)}>{t('Load more')} · {t(orderSources[k].title)}</button>)}
   </>}

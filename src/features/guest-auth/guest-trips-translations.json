@@ -1,4 +1,11 @@
 {
+ "Open order":{"ru":"Открыть заказ","uz":"Buyurtmani ochish"},
+ "Order details":{"ru":"Детали заказа","uz":"Buyurtma tafsilotlari"},
+ "View the latest details here. To make changes, open the service.":{"ru":"Здесь актуальные детали заказа. Чтобы внести изменения, откройте направление услуги.","uz":"Bu yerda buyurtmaning joriy tafsilotlari. O‘zgartirish uchun xizmatni oching."},
+ "Back to orders":{"ru":"К списку заказов","uz":"Buyurtmalar ro‘yxatiga qaytish"},
+ "Offline. Reconnect and refresh this order.":{"ru":"Нет сети. После подключения обновите этот заказ.","uz":"Internet yo‘q. Ulangach ushbu buyurtmani yangilang."},
+ "This order could not be loaded. Refresh or return to the order list.":{"ru":"Не удалось загрузить этот заказ. Обновите данные или вернитесь к списку заказов.","uz":"Ushbu buyurtmani yuklab bo‘lmadi. Yangilang yoki buyurtmalar ro‘yxatiga qayting."},
+ "Refresh order":{"ru":"Обновить заказ","uz":"Buyurtmani yangilash"},
  "Order list":{"ru":"Список заказов","uz":"Buyurtmalar ro‘yxati"},
  "Grouped by service. Filters apply to loaded orders; load more for the remaining orders.":{"ru":"Заказы сгруппированы по направлениям. Фильтры действуют на загруженные заказы; остальные доступны на следующих страницах.","uz":"Buyurtmalar xizmat bo‘yicha guruhlangan. Filtrlar yuklangan buyurtmalarga tegishli; qolganlarini keyingi sahifalarda yuklang."},
  "Amounts do not show payment or refund status. Open the service for price details.":{"ru":"Суммы не подтверждают оплату или возврат денег. Подробности расчёта смотрите в направлении услуги.","uz":"Summalar to‘lov yoki pul qaytarilganini tasdiqlamaydi. Narx tafsilotlari uchun xizmatni oching."},

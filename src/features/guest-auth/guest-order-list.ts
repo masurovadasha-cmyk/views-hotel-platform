@@ -7,12 +7,13 @@ export const orderSources={
 export type OrderKind=keyof typeof orderSources;
 export const orderKinds=Object.keys(orderSources) as OrderKind[];
 export type OrderGroup='active'|'completed'|'cancelled';
-export type OrderSummary={id:string;kind:OrderKind;stage:string;group:OrderGroup;name:Record<string,string>|null;category:string|null;money:{minor:string;currency:string;label:string}|null};
+export type OrderSummary={id:string;kind:OrderKind;cursor:string|null;stage:string;group:OrderGroup;name:Record<string,string>|null;category:string|null;money:{minor:string;currency:string;label:string}|null};
 export type OrderPage={items:OrderSummary[];nextCursor:string|null};
 const uuid=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
 function invalid():never{throw Error('INVALID_ORDER_PAGE');}
 function record(value:unknown):Record<string,unknown>{if(!value||typeof value!=='object'||Array.isArray(value))invalid();return value as Record<string,unknown>;}
-export function orderPage(kind:OrderKind,raw:unknown):OrderPage{
+export function orderPage(kind:OrderKind,raw:unknown,cursor:string|null=null):OrderPage{
+ if(cursor!==null&&!uuid.test(cursor))invalid();
  const b=record(raw),source=orderSources[kind];
  if(!Array.isArray(b.items)||b.items.length>50||b.nextCursor!==null&&(typeof b.nextCursor!=='string'||!uuid.test(b.nextCursor)))invalid();
  const items=b.items.map((value):OrderSummary=>{
@@ -28,7 +29,7 @@ export function orderPage(kind:OrderKind,raw:unknown):OrderPage{
    if(typeof minor!=='string'||!/^(0|[1-9]\d{0,18})$/.test(minor)||BigInt(minor)>9223372036854775807n||typeof r.currency!=='string'||!['UZS','USD','EUR'].includes(r.currency))invalid();
    money={minor,currency:r.currency,label:kind==='laundry'?(estimate?'Estimate':'Quoted amount'):'Original order amount'};
   }
-  return {id,kind,stage,group:stage==='cancelled'?'cancelled':stage===source.done?'completed':'active',name,category,money};
+  return {id,kind,cursor,stage,group:stage==='cancelled'?'cancelled':stage===source.done?'completed':'active',name,category,money};
  });
  if(new Set(items.map(r=>r.id)).size!==items.length||b.nextCursor!==null&&items.at(-1)?.id!==b.nextCursor)invalid();
  return {items,nextCursor:b.nextCursor as string|null};
