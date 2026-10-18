@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез34: отмена прачечной из общей карточки
+- Requested + действующий заезд: review/checkbox/явная отправка; received/quoted/выезд — без отмены.
+- Проверены intakeId/revision и cancelled-квитанция с null orderId/items/totalMinor; API/SQL0123 прежние.
+- Hook хранит ключ/тело вне очищаемой карточки; in-flight/unknown/offline блокируют переходы и выход.
+- Unit red10failed/21passed +absent helper; browser старого dist упал на отсутствующей кнопке; новые58targeted PASS.
+- Dirty a0bb6e2: web593/84files, Core210/23files, обе сборки/typecheck, network187/mail15,123checksum PASS.
+- Первый Core209/210 выявил старый тест first-page UUID; исправлен обход страниц в тесте, код склада прежний.
+- Focused browser exit0:13Core/5proofs, requestSubmit без согласия, held200→lost→same-key, audit/outbox1,orders/folio0.
+- Stale409 без autoresend, received/quoted/checkout, unlink→cached404/очистка; RU/UZ/EN,Light/Dark,390px PASS.
+- Full browser exit0:17proofs, все4услуги/карточки/входы/фолио/склад PASS; снимки тем просмотрены; review PASS.
+- Новых миграций/прав/зависимостей нет; только disposable PostgreSQL/loopback SMTP; LAUNDRY_DETAIL_CANCELLATION_34.md.
+- Hard reload recovery и claims/folio wait остаются; public web032ea93/Cloudflare/APK и Canva56/84 без изменений.
+- Далее: согласование описи и итоговой цены прачечной из общей карточки заказа.
+
 ## 2026-10-18 — Срез33: доступ при повторе команды прачечной
 - Migration0123: fulfilment replay после прежних locks и текущей авторизации; guest_user после profile FOR SHARE.
 - Сигнатуры/API/ACL/стадии/деньги сохранены;122 прежних миграций/checksum не изменены,123checksum PASS.

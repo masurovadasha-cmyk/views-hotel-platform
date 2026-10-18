@@ -35,8 +35,11 @@ describe.sequential('partial warehouse receipts / actual PostgreSQL',()=>{
   const results=await Promise.all([supply.receive(keeper,f.orderId,key,body),supply.receive(keeper,f.orderId,key,body)]);
   expect(results.filter(r=>!r.idempotentReplay)).toHaveLength(1);expect(await stock(f.lines[0].itemId)).toBe('4');
   await expect(supply.receive(keeper,f.orderId,key,{lines:[{...body.lines[0],lotCode:'LOT-B'}]})).rejects.toThrow('SUPPLY_COMMAND_CONFLICT');
-  const movements=await read.list(keeper,'movements',property);
-  expect(movements.items.find(m=>m.itemId===f.lines[0].itemId)).toMatchObject({lotCode:'LOT-A',expiresOn:'2028-02-29',quantity:'4'});
+  // Movement pages sort by UUID, so a new receipt can appear after the first page.
+  const movements:Awaited<ReturnType<SupplyReadService['list']>>['items']=[];let cursor:string|null=null,pages=0;
+  do{const page=await read.list(keeper,'movements',property,cursor??undefined);movements.push(...page.items.filter(m=>m.itemId===f.lines[0].itemId));cursor=page.nextCursor;pages++;}while(cursor&&pages<20);
+  expect(cursor).toBeNull();expect(movements).toHaveLength(1);
+  expect(movements[0]).toMatchObject({lotCode:'LOT-A',expiresOn:'2028-02-29',quantity:'4'});
   expect((await query('UPDATE supply_receipt_lines SET lot_code=$1 WHERE receipt_id=$2',['forged',results[0].receiptId])).rowCount).toBe(0);
   expect((await query('SELECT lot_code FROM supply_receipt_lines WHERE receipt_id=$1',[results[0].receiptId])).rows[0].lot_code).toBe('LOT-A');
   await supply.receive(keeper,f.orderId,randomUUID(),{});expect(await stock(f.lines[0].itemId)).toBe('10');

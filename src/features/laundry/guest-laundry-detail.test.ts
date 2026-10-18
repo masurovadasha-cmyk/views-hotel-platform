@@ -4,12 +4,13 @@ import {createElement} from 'react';
 import {GuestLaundryDetail,parseLaundryDetail} from './GuestLaundryDetail';
 const at='2026-10-18T10:15:00.123456+00:00';
 const item={tag:'001',description:'Shirt',priceMinor:'9007199254740993'};
-const base={declaredCount:1,preferences:'No perfume',pickupAt:at,returnBy:at,currency:'UZS',items:[item],totalMinor:item.priceMinor,claim:null};
+const base={revision:1,declaredCount:1,preferences:'No perfume',pickupAt:at,returnBy:at,currency:'UZS',items:[item],totalMinor:item.priceMinor,claim:null};
 describe('guest laundry detail whitelist',()=>{
  it('preserves bigint price and strips internal fields at every level',()=>{
   const result=parseLaundryDetail({...base,staffToken:'secret',items:[{...item,cost:'private'}]});
-  expect(result.items?.[0]).toEqual(item);expect(JSON.stringify(result)).not.toMatch(/secret|private|staffToken|cost/);
+  expect(result.revision).toBe(1);expect(result.items?.[0]).toEqual(item);expect(JSON.stringify(result)).not.toMatch(/secret|private|staffToken|cost/);
  });
+ it.each([undefined,null,0,-1,1.5,Infinity,NaN,Number.MAX_SAFE_INTEGER+1,'1'])('rejects untrusted revision %s',revision=>expect(()=>parseLaundryDetail({...base,revision})).toThrow('INVALID_LAUNDRY_DETAIL'));
  it.each(['0','-1','1.2','01','1e3','9223372036854775808',1])('rejects invalid item money %s',priceMinor=>{
   expect(()=>parseLaundryDetail({...base,items:[{...item,priceMinor}]})).toThrow('INVALID_LAUNDRY_DETAIL');
  });

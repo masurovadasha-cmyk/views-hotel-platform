@@ -19,6 +19,7 @@ function timestamp(v:unknown){
 /** Detail projection only: identifiers, stage and aggregate amount belong to the parent summary. */
 export function parseLaundryDetail(raw:unknown){
  const r=record(raw),currency=member(r.currency,['UZS','USD','EUR'] as const);
+ if(!Number.isSafeInteger(r.revision)||(r.revision as number)<1)invalid();
  if(!Number.isInteger(r.declaredCount)||(r.declaredCount as number)<1||(r.declaredCount as number)>50)invalid();
  const preferences=text(r.preferences,500,true),pickupAt=timestamp(r.pickupAt),returnBy=r.returnBy===null?null:timestamp(r.returnBy);
  if(r.items!==null&&(!Array.isArray(r.items)||r.items.length<1||r.items.length>50))invalid();
@@ -44,7 +45,7 @@ export function parseLaundryDetail(raw:unknown){
   const expected={open:'report_claim',answered:'answer_claim',resolved:'resolve_claim'};
   if(history.at(-1)?.action!==expected[status])invalid();return {status,tag:claimTag,kind,history};
  })();
- return {declaredCount:r.declaredCount as number,preferences,pickupAt,returnBy,currency,items,claim};
+ return {revision:r.revision as number,declaredCount:r.declaredCount as number,preferences,pickupAt,returnBy,currency,items,claim};
 }
 const labels={
  pickup:['Requested pickup (device time zone)','Запрошенный забор (часовой пояс устройства)','So‘ralgan olib ketish (qurilma vaqt mintaqasi)'],

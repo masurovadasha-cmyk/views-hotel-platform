@@ -12,6 +12,8 @@ import {GuestCleaningChange} from '../service-orders/GuestCleaningChange';
 import {useCleaning} from '../service-orders/useCleaning';
 import {cleaningCancelAttempt,assertCleaningCancelReceipt} from '../service-orders/guest-cleaning-cancel';
 import {GuestLaundryDetail,parseLaundryDetail} from '../laundry/GuestLaundryDetail';
+import {GuestLaundryCancel} from '../laundry/GuestLaundryCancel';
+import {assertLaundryCancelReceipt} from '../laundry/guest-laundry-cancel';
 import {GuestMarketDetail,parseMarketDetail} from '../market-core/GuestMarketDetail';
 import {GuestConciergeDetail,parseConciergeDetail} from '../concierge/GuestConciergeDetail';
 import {orderSources,type OrderSummary} from './guest-order-list';
@@ -37,7 +39,7 @@ export function GuestOrderDetail({reservationId,target,online,blocked,csrf,canRe
  const [value,setValue]=useState<Detail|null>(null),[loading,setLoading]=useState(false),[error,setError]=useState(false);
  const generation=useRef(0),busy=useRef(false),connected=useRef(online);connected.current=online;
  const heading=useRef<HTMLHeadingElement>(null);
- const command=useCleaning(async attempt=>{const receipt=await guestEmailRequest(attempt.route,attempt.body,csrf,attempt.key);assertCleaningCancelReceipt(receipt,attempt);},()=>refresh(true),onPending,onExpired);
+ const command=useCleaning(async attempt=>{const receipt=await guestEmailRequest(attempt.route,attempt.body,csrf,attempt.key);(target.kind==='laundry'?assertLaundryCancelReceipt:assertCleaningCancelReceipt)(receipt,attempt);},()=>refresh(true),onPending,onExpired);
  const locked=blocked||command.busy||!!command.pending;
  async function refresh(afterCommand=false){
   if(!connected.current||(!afterCommand&&locked)||busy.current)return;
@@ -68,6 +70,10 @@ export function GuestOrderDetail({reservationId,target,online,blocked,csrf,canRe
    {value.kind==='cleaning'&&canRequest&&<div data-testid="guest-order-detail-cleaning-change"><GuestCleaningChange cancelOnly key={value.order.revision} order={{orderId:summary.id,stage:summary.stage,revision:value.order.revision}} locale={locale} disabled={locked||loading||!online} act={async a=>{
     if(locked||loading||!connected.current)return;
     const attempt=cleaningCancelAttempt(summary.id,value.order.revision,a.key);
+    generation.current++;setValue(null);setError(false);await command.act(attempt);
+   }}/></div>}
+   {value.kind==='laundry'&&canRequest&&summary.stage==='requested'&&<div data-testid="guest-order-detail-laundry-change"><GuestLaundryCancel key={value.order.revision} order={{intakeId:summary.id,stage:summary.stage,revision:value.order.revision}} locale={locale} disabled={locked||loading||!online} act={async attempt=>{
+    if(locked||loading||!connected.current)return;
     generation.current++;setValue(null);setError(false);await command.act(attempt);
    }}/></div>}
   </article>}
