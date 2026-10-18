@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-19 — Срез41: авторизация получения V Market
+- До UI выявлен cached replay до проверки актуальных прав и logout во время ожидания начисления.
+- SQL0125 выделяет гостевой confirm_receipt; повтор проверяет владельца/сессию после locks, поздний отказ откатывает начисление.
+- Суммы bigint, единственное начисление, audit/outbox, прежний payload и остальные dispatch сохранены; private ACL закрыт.
+- RED8failed/8passed на прежнемSQL; GREEN17целевых, Core253/24files PASS на dirty3b34808.
+- Web905/89files, web/APIbuild/typecheck, network187/mail15/125checksum PASS; прежние124checksum сохранены.
+- Сквозная цепочка:24подготовительных Core и22HTTP/browser proofs PASS, exit0.
+- Критерии, команды и риски: MARKET_RECEIPT_AUTHORIZATION_41.md; только disposable PostgreSQL16/loopback SMTP.
+- Public032ea93/Cloudflare/APK и Canva56partial/84pending прежние; остальные команды требуют отдельного аудита.
+- Далее: подтверждение получения V Market из общей карточки; UI перенесён ради предварительного исправления прав.
+
 ## 2026-10-19 — Срез40: закрытие претензии из общей карточки
 - Open/answered: отдельные checkbox/отправка; лимит8 и checkout не мешают закрытию; resolved скрывает форму.
 - Проверяются ID/revision, неизменные стадия/деньги, бирка/тип и последняя запись истории; pending сохраняет ключ/тело.
