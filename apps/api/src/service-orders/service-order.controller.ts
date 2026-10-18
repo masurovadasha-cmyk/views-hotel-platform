@@ -11,6 +11,7 @@ function query(q:Record<string,unknown>,keys:string[]){if(Object.keys(q).some(k=
 @Controller('v1/guest-identity/email/services')
 export class GuestServiceOrderController{
  constructor(private readonly service:ServiceOrderService,private readonly laundry: LaundryService,private readonly market:MarketService,private readonly concierge:ConciergeService){}
+ @Get('details/:kind/:id') @Header('Cache-Control','no-store') detail(@Headers() h:Record<string,string>,@Param('kind') kind:string,@Param('id') id:string,@Query() q:Record<string,unknown>){query(q,['reservationId']);return this.service.detail(bearer(h),q.reservationId,kind,id);}
  @Get('laundry/catalog') @Header('Cache-Control','no-store') laundryCatalog(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['reservationId','cursor']);return this.laundry.catalog(bearer(h),q.reservationId,q.cursor);}
  @Get('market/catalog') @Header('Cache-Control','no-store') marketCatalog(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['reservationId','cursor']);return this.market.catalog(bearer(h),q.reservationId,q.cursor);}
  @Get('laundry') @Header('Cache-Control','no-store') laundryList(@Headers() h:Record<string,string>,@Query() q:Record<string,unknown>){query(q,['reservationId','cursor']);return this.laundry.guestList(bearer(h),q.reservationId,q.cursor);}

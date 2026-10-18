@@ -1,5 +1,7 @@
 # Приёмка 140 экранов Canva
 
+Блок27: [прямой read по ID](CANVA_140_BLOCK_27_DIRECT_ORDER.md) для четырёх услуг; SG-GN-006/007 остаются partial, полной PDF-приёмки нет.
+
 Блок26: [конкретный заказ четырёх услуг](CANVA_140_BLOCK_26_ORDER_DETAILS.md), read-only детали из scoped API; SG-GN-006/007 остаются partial. [Полная параллельная очередь](CANVA_140_PARALLEL_QUEUE.md) покрывает все140 ID.
 
 Блок25: [общий список заказов и фильтры](CANVA_140_BLOCK_25_ORDER_LIST.md), четыре Core-направления и независимая догрузка; SG-GN-006 остаётся partial.

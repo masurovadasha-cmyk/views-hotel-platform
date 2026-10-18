@@ -32,15 +32,17 @@ function projection(b){
 exports.handle=async function({route,req,res,token,csrf,upstream,reply,failed,jsonBody}){
  if(!route.startsWith('services'))return false;
  if(process.env.VIEWS_SERVICE_ORDER_PILOT_ENABLED!=='true'){reply(res,404,{error:'SERVICE_ORDERS_DISABLED'});return true;}
- if(route.startsWith('services/market')&&process.env.VIEWS_MARKET_PILOT_ENABLED!=='true'){reply(res,404,{error:'SERVICE_MARKET_DISABLED'});return true;}
- const u=new URL('/'+route,'http://local'),read=req.method==='GET'&&['/services/catalog','/services/orders','/services/concierge','/services/concierge/preferences','/services/laundry','/services/laundry/catalog','/services/market','/services/market/catalog'].includes(u.pathname);
+ const u=new URL('/'+route,'http://local');
+ if((u.pathname.startsWith('/services/market')||u.pathname.startsWith('/services/details/market/'))&&process.env.VIEWS_MARKET_PILOT_ENABLED!=='true'){reply(res,404,{error:'SERVICE_MARKET_DISABLED'});return true;}
+ const read=req.method==='GET'&&['/services/catalog','/services/orders','/services/concierge','/services/concierge/preferences','/services/laundry','/services/laundry/catalog','/services/market','/services/market/catalog'].includes(u.pathname);
+ const detail=u.pathname.match(/^\/services\/details\/(?:cleaning|laundry|market|concierge)\/([^/]+)$/),detailRead=req.method==='GET'&&detail&&UUID.test(detail[1]);
  const action=u.pathname.match(/^\/services\/orders\/([^/]+)\/(?:actions|feedback)$/);
  const conciergeAction=u.pathname.match(/^\/services\/concierge\/([^/]+)\/actions$/);
  const laundryAction=u.pathname.match(/^\/services\/laundry\/([^/]+)\/actions$/);
  const marketAction=u.pathname.match(/^\/services\/market\/([^/]+)\/actions$/);
  const repeat=req.method==='GET'&&/^\/services\/orders\/[a-f0-9-]{36}\/repeat$/i.test(u.pathname)&&UUID.test(u.pathname.split('/')[3])&&!u.search;
  const write=req.method==='POST'&&(u.pathname==='/services/orders'||u.pathname==='/services/concierge'||u.pathname==='/services/concierge/preferences'||conciergeAction&&UUID.test(conciergeAction[1])||u.pathname==='/services/laundry'||u.pathname==='/services/market'||marketAction&&UUID.test(marketAction[1])||laundryAction&&UUID.test(laundryAction[1])||action&&UUID.test(action[1]))&&!u.search;
- if((!read&&!write&&!repeat)||(read&&(!UUID.test(u.searchParams.get('reservationId')||'')||[...u.searchParams.keys()].some(k=>!['reservationId','cursor'].includes(k)||u.searchParams.getAll(k).length!==1)||(u.searchParams.has('cursor')&&!UUID.test(u.searchParams.get('cursor')))))){reply(res,400,{error:'SERVICE_INPUT_INVALID'});return true;}
+ if((!read&&!write&&!repeat&&!detailRead)||((read||detailRead)&&(!UUID.test(u.searchParams.get('reservationId')||'')||[...u.searchParams.keys()].some(k=>!(detailRead?['reservationId']:['reservationId','cursor']).includes(k)||u.searchParams.getAll(k).length!==1)||(u.searchParams.has('cursor')&&!UUID.test(u.searchParams.get('cursor')))))){reply(res,400,{error:'SERVICE_INPUT_INVALID'});return true;}
  if(!token){reply(res,401,{error:'GUEST_EMAIL_SESSION_INVALID'});return true;}
  let body,key;
  if(write){

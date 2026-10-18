@@ -97,7 +97,7 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; docs/design/CANVA_140_BLOCK_24_GUEST_SERVICE_NAV.md; docs/design/CANVA_140_BLOCK_25_ORDER_LIST.md; local four-service list, loaded-page filters and independent pagination; full visual acceptance pending; docs/design/CANVA_140_BLOCK_26_ORDER_DETAILS.md; exact read-only detail in four services, scoped fresh read; full acceptance pending"
+      "evidence": "docs/design/CANVA_140_BLOCK_4_FEEDBACK_REPEAT.md; docs/design/CANVA_140_BLOCK_24_GUEST_SERVICE_NAV.md; docs/design/CANVA_140_BLOCK_25_ORDER_LIST.md; local four-service list, loaded-page filters and independent pagination; full visual acceptance pending; docs/design/CANVA_140_BLOCK_26_ORDER_DETAILS.md; exact read-only detail in four services, scoped fresh read; full acceptance pending; docs/design/CANVA_140_BLOCK_27_DIRECT_ORDER.md; scoped direct lookup independent of list cursor"
     },
     {
       "id": "SG-GN-007",
@@ -113,7 +113,7 @@
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only; docs/design/CANVA_140_BLOCK_26_ORDER_DETAILS.md; exact read-only detail in four services, scoped fresh read; full acceptance pending"
+      "evidence": "docs/design/CANVA_140_BLOCK_1.md; shared presentation only; docs/design/CANVA_140_BLOCK_26_ORDER_DETAILS.md; exact read-only detail in four services, scoped fresh read; full acceptance pending; docs/design/CANVA_140_BLOCK_27_DIRECT_ORDER.md; scoped direct lookup independent of list cursor"
     },
     {
       "id": "SG-GN-008",

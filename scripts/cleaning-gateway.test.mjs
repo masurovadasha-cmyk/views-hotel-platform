@@ -21,3 +21,34 @@ describe('cleaning browser gateway boundaries',()=>{
   await expect(staff.handle({u:new URL('http://local/local-api/service-orders'),req:{method:'GET'},identity:{permissions:['reservation.manage'],propertyIds:[]},propertyId:id,fail:(_status,code)=>{throw Error(code);},core:()=>{throw Error('MUST_NOT_FORWARD');}})).rejects.toThrow('PROPERTY_FORBIDDEN');
  });
 });
+
+describe('exact guest service detail boundary',()=>{
+ const route=kind=>'services/details/'+kind+'/'+id+'?reservationId='+id;
+ function context(path=route('cleaning')){
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','true');
+  return {route:path,req:{method:'GET',headers:{}},res:{},token:'synthetic',reply:vi.fn(),failed:vi.fn(),upstream:vi.fn(async()=>({status:200,body:{items:[{orderId:id,stage:'requested',revision:1,totalMinor:'9007199254740993',staffNote:'private',organizationId:id,messages:[{id,author:'staff',text:'Ready',createdAt:'2026-10-18',actorId:id}]}],nextCursor:null}}))};
+ }
+ it.each(['cleaning','laundry','market','concierge'])('forwards only the selected %s item and strips staff fields',async kind=>{
+  const ctx=context(route(kind));await guest.handle(ctx);
+  expect(ctx.upstream).toHaveBeenCalledOnce();expect(ctx.upstream).toHaveBeenCalledWith(route(kind),undefined,'synthetic',undefined);
+  expect(ctx.reply.mock.calls[0][1]).toBe(200);const page=ctx.reply.mock.calls[0][2];expect(page.nextCursor).toBeNull();expect(page.items).toHaveLength(1);
+  expect(page.items[0]).toEqual({orderId:id,stage:'requested',revision:1,totalMinor:'9007199254740993',messages:[{id,author:'staff',text:'Ready',createdAt:'2026-10-18'}]});
+ });
+ it.each(['','?reservationId=bad','?reservationId='+id+'&reservationId='+id,'?reservationId='+id+'&cursor='+id,'?reservationId='+id+'&propertyId='+id])('rejects invalid or excessive query %s before forwarding',async query=>{
+  const ctx=context('services/details/cleaning/'+id+query);await guest.handle(ctx);expect(ctx.reply.mock.calls[0][1]).toBe(400);expect(ctx.upstream).not.toHaveBeenCalled();
+ });
+ it.each(['unknown/'+id,'cleaning/bad','cleaning/'+id+'/actions','cleaning/'+id+'/'])('rejects unrecognized detail path %s',async path=>{
+  const ctx=context('services/details/'+path+'?reservationId='+id);await guest.handle(ctx);expect(ctx.reply.mock.calls[0][1]).toBe(400);expect(ctx.upstream).not.toHaveBeenCalled();
+ });
+ it('requires a session, GET and both pilot flags without forwarding',async()=>{
+  for(const setup of [c=>{c.token=undefined;},c=>{c.req.method='POST';},()=>vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','false'),()=>vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','false')]){
+   const ctx=context(route('market'));setup(ctx);await guest.handle(ctx);expect(ctx.reply.mock.calls[0][1]).toBe(ctx.token===undefined?401:ctx.req.method==='POST'?400:404);expect(ctx.upstream).not.toHaveBeenCalled();
+  }
+ });
+ it('preserves upstream not-found without exposing the private response',async()=>{
+  const ctx=context();ctx.upstream.mockResolvedValue({status:404,body:{error:'SERVICE_ORDER_NOT_FOUND',privateNote:'hidden'}});await guest.handle(ctx);expect(ctx.failed).toHaveBeenCalledOnce();expect(ctx.reply).not.toHaveBeenCalled();
+ });
+ it.each(['services/details/cleaning/../market/'+id,'services/details/cleaning/%2e%2e/market/'+id,'services/laundry/../market'])('keeps market disabled after normalization of %s',async path=>{
+  const ctx=context(path+'?reservationId='+id);vi.stubEnv('VIEWS_MARKET_PILOT_ENABLED','false');await guest.handle(ctx);expect(ctx.reply).toHaveBeenCalledWith(ctx.res,404,{error:'SERVICE_MARKET_DISABLED'});expect(ctx.upstream).not.toHaveBeenCalled();
+ });
+});

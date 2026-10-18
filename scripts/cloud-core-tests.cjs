@@ -63,6 +63,7 @@ const run = args => {
     await seed('stage-b1.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/stage-b1.synthetic.sql'), 'utf8'));
     await seed('service-orders.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/service-orders.synthetic.sql'), 'utf8'));
     await seed('market.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/market.synthetic.sql'), 'utf8'));
+    await seed('guest-service-detail.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/guest-service-detail.synthetic.sql'), 'utf8'));
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b1.constraints.sql'), 'utf8'));
     console.log('B1 administrative constraint proofs: 7 groups PASS (rolled back).');
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b2.sms.sql'), 'utf8'));

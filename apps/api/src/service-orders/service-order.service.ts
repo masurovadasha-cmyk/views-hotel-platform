@@ -4,7 +4,8 @@ import {DatabaseService} from '../database/database.service';
 import {GuestEmailService} from '../guest-identity/guest-email.service';
 import {StaffAuthService} from '../staff-auth/staff-auth.service';
 import type {RequestActorContext} from '../identity/actor-context';
-import {actionInput,feedbackInput,guestChangeInput,requestInput,uuid} from './service-order.input';
+import {actionInput,feedbackInput,guestChangeInput,invalid,requestInput,uuid} from './service-order.input';
+import {conciergeSla} from './concierge-sla';
 export type ServiceReceipt={orderId:string;status:string;stage:string;revision:number;folioEntryId?:string|null;currency?:string;totalMinor?:string;idempotentReplay:boolean};
 export type ServiceFeedbackReceipt={orderId:string;revision:number;rating:number;idempotentReplay:boolean};
 type PageRow={id?:string;orderId?:string;[key:string]:unknown};
@@ -18,6 +19,12 @@ export class ServiceOrderService{
  private async guestRead(kind:'catalog'|'orders',token:string,reservation:unknown,after?:unknown){enabled();await this.guest.session(token);const r=uuid(reservation),cursor=after===undefined?null:uuid(after);return safe(async()=>page((await this.db.query<{value:{items:PageRow[]}}>(`SELECT app.guest_cleaning_${kind}($1,$2,$3) value`,[hash(token),r,cursor])).rows[0].value));}
  catalog(token:string,reservation:unknown,after?:unknown){return this.guestRead('catalog',token,reservation,after);}
  orders(token:string,reservation:unknown,after?:unknown){return this.guestRead('orders',token,reservation,after);}
+ async detail(token:string,reservation:unknown,kind:unknown,order:unknown){
+  enabled();if(typeof kind!=='string'||!['cleaning','laundry','market','concierge'].includes(kind))invalid();
+  if(kind==='market'&&process.env.VIEWS_MARKET_PILOT_ENABLED!=='true')throw new NotFoundException('SERVICE_MARKET_DISABLED');
+  await this.guest.session(token);const r=uuid(reservation),id=uuid(order);
+  return safe(async()=>{const item=(await this.db.query<{value:PageRow & Parameters<typeof conciergeSla>[0]}>('SELECT app.guest_service_detail($1,$2,$3,$4) value',[hash(token),r,kind,id])).rows[0].value;return {items:[kind==='concierge'?{...item,sla:conciergeSla(item,new Date())}:item],nextCursor:null};});
+ }
  async change(token:string,order:unknown,key:unknown,raw:unknown){enabled();await this.guest.session(token);const id=uuid(order),command=uuid(key),body=guestChangeInput(raw);return safe(()=>this.db.withOrganization('',async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:ServiceReceipt}>('SELECT app.guest_cleaning_change($1,$2,$3,$4) value',[hash(token),id,command,body])).rows[0].value;}));}
  async request(token:string,key:unknown,raw:unknown){enabled();await this.guest.session(token);const body=requestInput(raw),command=uuid(key);return safe(()=>this.db.withOrganization('',async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:ServiceReceipt}>('SELECT app.guest_cleaning_request($1,$2,$3) value',[hash(token),command,body])).rows[0].value;}));}
  async feedback(token:string,order:unknown,key:unknown,raw:unknown){enabled();await this.guest.session(token);const id=uuid(order),command=uuid(key),body=feedbackInput(raw);return safe(()=>this.db.withOrganization('',async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query<{value:ServiceFeedbackReceipt}>('SELECT app.guest_service_feedback($1,$2,$3,$4) value',[hash(token),id,command,body])).rows[0].value;}));}

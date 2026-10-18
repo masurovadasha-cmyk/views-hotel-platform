@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Canva27: прямые детали заказа по ID
+- Migration0119/API/gateway: один scoped GET для cleaning/laundry/market/concierge, laundry по intakeId.
+- Сессия, текущий владелец, организация/объект проверяются в БД; чужой/неверный/отсутствующий ID дают404.
+- UI больше не использует cursor для деталей; строгий single-item ответ, offline/revocation/late-response guards сохранены.
+- Whitelist скрывает stock IDs/служебные заметки; история после выезда, без новых начислений и событий.
+- Red: отсутствующая SQL-функция и прежний UI маршрут; review выявил normalized-URL market gate bypass, исправлен.
+- Изолированы три synthetic товара: первый общий browser run упал в market; после teardown полный повтор exit0.
+- Dirty a09bffe: web520/81files, Core165/19files; web/API typecheck/build, network187/mail15,119checksum PASS.
+- Full connected browser chain PASS:4прямых GET,2-я страница безcursor, строгие query/method, RU/UZ/EN×Light/Dark×390px.
+- Lifecycle7reads PASS:stale cursor/StrictMode/target/unmount; независимое ревью PASS; synthetic seed8replays PASS.
+- Критерии/запуск/риски: design/CANVA_140_BLOCK_27_DIRECT_ORDER.md; новых зависимостей/таблиц/индексов нет.
+- Только disposable PostgreSQL, внешние операции отключены; SG-GN-006/007 partial, общий реестр56/84.
+- Public web032ea93/Cloudflare/APK без изменений. Далее: действия внутри карточки, затем серверный поиск истории.
+
 ## 2026-10-18 — Canva26: параллельные детали четырёх услуг
 - Все140 ID включены в CANVA_140_PARALLEL_QUEUE.md;280 WebP checksum/decode/размеры PASS, исходный PDF сейчас отсутствует.
 - Четыре агента сделали read-only карточки уборки/прачечной/V Market/консьержа; отдельные inventory/browser/review, root объединил.

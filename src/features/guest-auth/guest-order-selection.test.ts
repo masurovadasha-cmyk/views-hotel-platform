@@ -11,23 +11,30 @@ describe('exact guest order selection',()=>{
   const second=orderPage('laundry',{items:[row],nextCursor:null},cursor);
   expect(mergeOrderPages(first,second).items.map(r=>[r.id,r.cursor])).toEqual([[cursor,null],[id,cursor]]);
  });
- it('requests only the selected source, scoped to its stay and source cursor',()=>{
-  expect(orderTargetRoute(reservation,target)).toBe('services/laundry?reservationId='+reservation+'&cursor='+cursor);
-  expect(orderTargetRoute(reservation,{...target,cursor:null})).toBe('services/laundry?reservationId='+reservation);
+ it('requests the selected ID in its own direction and stay, independent of pagination',()=>{
+  const route='services/details/laundry/'+id+'?reservationId='+reservation;
+  for(const bookmark of [cursor,null,'invalid',id,'ffffffff-ffff-4fff-8fff-ffffffffffff'])
+   expect(orderTargetRoute(reservation,{...target,cursor:bookmark})).toBe(route);
  });
- it('selects the exact ID rather than the first item',()=>{
-  const raw={items:[{...row,intakeId:cursor},row],nextCursor:null};
-  expect(selectOrder(raw,{...target,cursor:null}).raw).toBe(row);
+ it('accepts only the exact single order, ignoring its old source cursor',()=>{
+  const raw={items:[row],nextCursor:null};
+  expect(selectOrder(raw,{...target,cursor:'stale'}).raw).toBe(row);
   expect(selectOrder(raw,target).summary.id).toBe(id);
  });
- it('never falls back to another order when the selected one is absent',()=>{
-  expect(()=>selectOrder({items:[{...row,intakeId:cursor}],nextCursor:null},target)).toThrow('ORDER_NOT_ON_PAGE');
+ it.each([
+  {items:[],nextCursor:null},
+  {items:[{...row,intakeId:cursor}],nextCursor:null},
+  {items:[{...row,intakeId:cursor},row],nextCursor:null},
+  {items:[row],nextCursor:id},
+  {items:[row,row],nextCursor:null},
+  {items:[{orderId:id,stage:'reserved',totalMinor:'123',currency:'UZS'}],nextCursor:null},
+ ])('rejects missing, mismatched, multiple, paginated or wrong-kind detail: %j',raw=>{
+  expect(()=>selectOrder(raw,target)).toThrow();
  });
- it.each([{id:'../other'},{cursor:'invalid'},{cursor:id},{kind:'admin'},{id:cursor}])('rejects an invalid bookmark %j',fields=>{
+ it.each([{id:'../other'},{kind:'admin'},{id:''}])('rejects an invalid target %j',fields=>{
   expect(()=>orderTargetRoute(reservation,{...target,...fields} as OrderTarget)).toThrow('INVALID_ORDER_TARGET');
  });
- it('rejects unscoped reads and duplicate response IDs',()=>{
-  expect(()=>orderTargetRoute('',target)).toThrow();
-  expect(()=>selectOrder({items:[row,row],nextCursor:null},target)).toThrow();
+ it('rejects unscoped reads',()=>{
+  expect(()=>orderTargetRoute('',target)).toThrow('INVALID_ORDER_TARGET');
  });
 });

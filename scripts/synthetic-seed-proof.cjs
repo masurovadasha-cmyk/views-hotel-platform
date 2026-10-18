@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const {applySyntheticSeed}=require('../apps/api/ops/synthetic-seed.cjs');
 module.exports=async function seedProof(client,peer){
  const before=(await client.query('SELECT * FROM seed_private.applied ORDER BY name')).rows;
- assert.equal(before.length,7);
+ assert.equal(before.length,8);
  await assert.rejects(applySyntheticSeed(client,before[0].name,'SELECT 1'),/SEED_CHECKSUM_CHANGED/);
  assert.deepEqual((await client.query('SELECT * FROM seed_private.applied ORDER BY name')).rows,before);
  await client.query("COMMENT ON DATABASE views IS 'UNMARKED'");
@@ -22,5 +22,5 @@ module.exports=async function seedProof(client,peer){
  assert.equal(await applySyntheticSeed(peer,'race-probe',sql),false);
  const visibility=await client.query("SELECT has_schema_privilege('views_app','seed_private','USAGE') AS allowed");
  assert.equal(visibility.rows[0].allowed,false);
- console.log('Synthetic seed: seven replays, checksum guard, unmarked DB rejection, rollback, concurrent exactly-once and private ledger PASS.');
+ console.log('Synthetic seed: eight replays, checksum guard, unmarked DB rejection, rollback, concurrent exactly-once and private ledger PASS.');
 };
