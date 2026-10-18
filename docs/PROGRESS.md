@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез29: повторная авторизация отмены и переноса уборки
+- Migration0120: сохранённый ответ возвращается после прежних row locks и актуальной сессии/владельца.
+- Проверки revision/stage остаются после replay; разрешённый повтор после изменения стадии/выезда сохранён.
+- До исправления9тестов:4cached-replay отказа упали,5прошли; зафиксирован возврат ответа после отзыва доступа.
+- Новые10тестов: logout/unlink/смена гостя при advisory wait, logout при row wait, fresh/replay/conflict без записей.
+- Runtime views_app без superuser/bypassRLS; pg_locks+blocking PID доказывают ожидание, таймауты ограничены.
+- Dirty b7f58e0: Core175/20files, web550/82files; web/API typecheck/build, network187/mail15,120checksum PASS.
+- Focused connected browser exit0: прямые детали4услуг и отмена с потерянным ответом, один audit/outbox, folio0.
+- Полная browser chain не повторялась: API/экран не менялись; независимое SQL/security review PASS.
+- Старые миграции/checksum и права сохранены, новых таблиц/зависимостей нет; только disposable PostgreSQL.
+- Критерии/запуск/границы READ COMMITTED: CLEANING_REPLAY_AUTHORIZATION_29.md; ограничение блока28 закрыто для change.
+- Public web032ea93/Cloudflare/APK и Canva56 partial/84 pending без изменений; внешние pending guards открыты.
+- Далее: аналогичная защита повтора создания уборки SQL0069, затем проверки остальных команд услуг.
+
 ## 2026-10-18 — Canva28: отмена уборки из точной карточки
 - GuestOrderDetail: явное подтверждение отмены requested/assigned; после выезда только история.
 - Использованы API/SQL0073/0119 и useCleaning; команда привязана к ID/revision, ответ строго проверяется.

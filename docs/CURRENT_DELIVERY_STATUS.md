@@ -1,5 +1,7 @@
 # VIEWS — current delivery status, 18 October 2026 (Tashkent)
 
+Срез29: [защита повтора отмены/переноса уборки](CLEANING_REPLAY_AUTHORIZATION_29.md) после ожидания блокировки; migration0120 и10проверок гонок. Публичная версия не менялась.
+
 Блок28: [отмена уборки из карточки](design/CANVA_140_BLOCK_28_DETAIL_CANCELLATION.md), подтверждение и повтор прежнего ключа при потерянном ответе. Только feature-ветка; публичные web/APK без изменений.
 
 Блок27: [прямая загрузка четырёх видов заказов по ID](design/CANVA_140_BLOCK_27_DIRECT_ORDER.md), независимо от страницы списка; защищённый read-only API. Public web/APK без изменений.
