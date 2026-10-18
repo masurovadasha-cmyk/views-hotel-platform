@@ -42,6 +42,10 @@ module.exports=async function guestEmailBrowserProof({coreOrigin,smtp,setLinkOri
   await page.reload();await visible('[data-testid="guest-identity"]');
   const identity=await api('session');assert.equal(identity.status,200);assert.equal(identity.body.profile.email,email);
   if(process.env.VIEWS_ORDER_LIST_BROWSER_ONLY==='true'){await require('./guest-order-list-browser-proof.cjs')({page,api,admin,identity:identity.body});return;}
+  if(process.env.VIEWS_CLEANING_BROWSER_ONLY==='true'){
+   phase='cleaning_orders';await require('./cleaning-browser-core-proof.cjs')({browser,page,api,admin,identity:identity.body,coreOrigin});
+   assert.deepEqual(errors,[]);return;
+  }
   assert.equal(identity.body.token,undefined);checks.push('real_smtp_link_explicit_confirmation_httponly_cookie_reload_no_token_storage');
   phase='owned_trips';await require('./guest-trips-browser-proof.cjs')({page,api,admin,identity:identity.body});
   phase='reservation_link';await require('./guest-reservation-link-browser-proof.cjs')({page,api,admin,identity:identity.body,coreOrigin});

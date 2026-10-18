@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез31: доступ при повторе отзыва об уборке
+- Migration0122: сохранённый ответ после прежних locks и текущей сессии/владельца, до feedback-exists guard.
+- Частная оценка услуги, один неизменяемый отзыв; API, ACL, цена, audit/outbox и финансовые правила сохранены.
+- Red4failed/6passed: cached logout/unlink/reassign и обход order row wait; все10 новых тестов теперь PASS.
+- Runtime views_app, pg_locks+blocking PID, bounded waits; реальные request/assign/start/submit/approve в fixtures.
+- Отказ/replay не меняют feedback/order/task/folio/audit/outbox; teardown выключает только свои catalog IDs.
+- Dirtya2fe3d3: Core197/22files, web550/82files; web/API typecheck/build, network187/mail15 PASS.
+- Focused connected cleaning browser exit0: полный путь уборки, lost feedback reply/same-key, одно начисление.
+- RU/UZ/EN, Light/Dark/mobile/offline и checkout history PASS; полная browser chain не повторялась.
+- Добавлен focused flag к существующему runner; 122checksum PASS, старые121миграций неизменны; review PASS.
+- Критерии/запуск/границы READ COMMITTED: CLEANING_FEEDBACK_REPLAY_AUTHORIZATION_31.md; новых прав/зависимостей нет.
+- Только disposable БД/loopback SMTP; public web032ea93/Cloudflare/APK и Canva56partial/84pending без изменений.
+- Далее: pending guard внешних logout/session refresh/привязки брони; остальные команды услуг требуют аудита.
+
 ## 2026-10-18 — Срез30: доступ при создании и повторе уборки
 - Migration0121: replay после блокировок брони/профиля и актуального доступа, до проверки текущей цены/стадии.
 - Новая команда повторно проверяет сессию после catalog FOR SHARE; цена/начисления/ACL сохранены.
