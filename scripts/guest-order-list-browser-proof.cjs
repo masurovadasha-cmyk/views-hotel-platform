@@ -75,4 +75,5 @@ module.exports=async function({page,api,admin,identity}){
  console.log(JSON.stringify({proof:'guest_order_list_browser_core',result:'pass',checks:['detail_http_wrong_kind_absent_wrong_stay_strict_query_read_only','four_real_guest_endpoints_one_owned_stay','independent_cursor_append','kind_and_terminal_filters','open_service_explicit_reload','read_error_clears_manual_retry','offline_stale_read_ignored','three_languages_two_themes_mobile','four_exact_order_details_one_scoped_read','second_page_laundry_concierge_exact_id_without_cursor','fresh_detail_status_and_missing_id_clears','detail_offline_stale_read_ignored','service_draft_retained','detail_three_languages_two_themes_mobile','revoked_stay_ownership_clears_detail_and_list','no_ui_commands_or_folio_changes'],publicEnabled:false}));
  await require('./guest-cleaning-detail-cancel-browser.cjs')({page,api,admin,identity});
  await require('./guest-laundry-detail-cancel-browser.cjs')({page,api,admin,identity});
+ await require('./guest-laundry-detail-accept-browser.cjs')({page,api,admin,identity});
 };

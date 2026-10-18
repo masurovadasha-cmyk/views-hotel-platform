@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез35: согласование прачечной из общей карточки
+- Quoted + действующий заезд: опись/итог/срок, явный checkbox; requestSubmit без согласия не отправляет POST.
+- Команда связывает ID/revision/точный bigint; квитанция проверяет accepted/orderId/следующую revision и опись.
+- Pending вне карточки сохраняет ключ/тело при потере/повреждении ответа; offline/переходы/выход защищены.
+- RED: helper отсутствовал,0собранных unit; старый dist упал на отсутствующей кнопке. Новые48unit PASS.
+- Dirty fca3a81: web641/85files, Core211/23files, обе сборки/typecheck, network187/mail15,123checksum PASS.
+- Полный Core/browser exit0:18структурированных proofs; runtime views_app, реальные staff receive/quote.
+- Held200→lost→malformed replay→valid replay: один заказ/audit/outbox, ноль folio; точная сумма больше2^53.
+- Requote409/manualGET сбрасывает согласие; Core также проверяет изменённую опись/срок при прежней цене.
+- Requested/accepted/checkout без кнопки; RU/UZ/EN×Light/Dark×390px PASS, снимки просмотрены; review PASS.
+- API/SQL0123/права/зависимости прежние; запуск/ручная приёмка: LAUNDRY_DETAIL_APPROVAL_35.md.
+- Только disposable БД/loopback SMTP; hard reload recovery и claims/folio wait остаются отдельными задачами.
+- Public web032ea93/Cloudflare/APK и Canva56partial/84pending без изменений; далее отклонение описи и возврат без обработки из карточки.
+
 ## 2026-10-18 — Срез34: отмена прачечной из общей карточки
 - Requested + действующий заезд: review/checkbox/явная отправка; received/quoted/выезд — без отмены.
 - Проверены intakeId/revision и cancelled-квитанция с null orderId/items/totalMinor; API/SQL0123 прежние.

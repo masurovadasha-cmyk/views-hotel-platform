@@ -57,6 +57,16 @@ describe.sequential('laundry consent and custody / real PostgreSQL',()=>{
   const outcomes=await Promise.allSettled([service.guestAct(f.a.token,q.intakeId,randomUUID(),command(q,'accept',{expectedTotalMinor:q.totalMinor})),staffAct(q,'quote',{...quote,items:[{tag:'003',description:'Other item',priceMinor:'200'}]})]);
   expect(outcomes.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(outcomes.find(r=>r.status==='rejected')).toMatchObject({reason:{message:'SERVICE_REVISION_CHANGED'}});
  });
+ it('requires renewed consent after an equal-price inventory and return-time change',async()=>{
+  const {f,quoted}=await prepared(),items=quote.items.map((item,index)=>index?item:{...item,description:'Updated shirt description'}),returnBy=new Date(Date.now()+4*86400000).toISOString();
+  const updated=await staffAct(quoted,'quote',{items,returnBy});expect(updated.totalMinor).toBe(quoted.totalMinor);
+  await expect(service.guestAct(f.a.token,quoted.intakeId,randomUUID(),command(quoted,'accept',{expectedTotalMinor:quoted.totalMinor}))).rejects.toThrow('SERVICE_REVISION_CHANGED');
+  expect((await run('SELECT * FROM service_orders WHERE reservation_id=$1',[f.r])).rowCount).toBe(0);
+  const accepted=await service.guestAct(f.a.token,updated.intakeId,randomUUID(),command(updated,'accept',{expectedTotalMinor:updated.totalMinor}));
+  const order=(await run('SELECT snapshot,total_minor::text FROM service_orders WHERE id=$1',[accepted.orderId])).rows[0];
+  expect(order).toMatchObject({total_minor:quoted.totalMinor,snapshot:{items,quoteRevision:updated.revision}});expect(Date.parse(order.snapshot.returnBy)).toBe(Date.parse(returnBy));
+  expect((await run('SELECT * FROM folio_entries WHERE source_id=$1',[accepted.orderId])).rowCount).toBe(0);
+ });
  it('retains custody after rejection until unprocessed items are returned, with no charge',async()=>{
   const {f,quoted}=await prepared();await expect(service.guestAct(f.a.token,quoted.intakeId,randomUUID(),command(quoted,'cancel'))).rejects.toThrow('SERVICE_TRANSITION_INVALID');
   const refused=await service.guestAct(f.a.token,quoted.intakeId,randomUUID(),command(quoted,'reject'));expect(refused.stage).toBe('awaiting_return');
