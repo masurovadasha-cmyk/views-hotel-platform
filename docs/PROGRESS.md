@@ -1,5 +1,20 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез36: отказ от описи из общей карточки
+- Quoted: review/checkbox/явная отправка; владелец может запросить возврат без обработки и после выезда.
+- Awaiting_return сохраняет ответственность за вещи; только staff return_unprocessed фиксирует передачу, без заказа/начисления.
+- ID/revision/строгая квитанция; pending вне карточки, тот же ключ/тело при потере ответа, offline/переходы/выход защищены.
+- RED: missing helper0tests и старая сборка без кнопки; gateway regression1failed/47passed, теперь48новых unit PASS.
+- Gateway опускает claim:null; helper совместим с null/отсутствием, остальные значения отклоняет; API прежний.
+- Dirty f68527f: web689/86files, Core212/23files, обе сборки/typecheck, network187/mail15,123checksum PASS.
+- Первый full остановился на staff-пагинации; тест теперь связывает каждый GET с HTTP200 и конкретными DOM-карточками.
+- Первый focused обнаружил несовпадение claim; финальный full exit0:212Core и19HTTP/browser proofs PASS.
+- Held/lost/invalid/replay: один reject audit/outbox,orders/folio0; same-price requote409/manualGET сбрасывает review.
+- Concurrent reject после checkout и cached receipt после staff-return проверены; RU/UZ/EN×Light/Dark×390px, снимки/review PASS.
+- API/SQL0123/права/зависимости прежние; только disposable БД/loopback SMTP; LAUNDRY_DETAIL_REJECTION_36.md.
+- Hard reload recovery, claims/folio wait остаются; public web032ea93/Cloudflare/APK и Canva56/84 без изменений.
+- Далее: проверить авторизацию confirm_receipt после ожидания блокировки фолио, затем добавить получение/начисление в карточку.
+
 ## 2026-10-18 — Срез35: согласование прачечной из общей карточки
 - Quoted + действующий заезд: опись/итог/срок, явный checkbox; requestSubmit без согласия не отправляет POST.
 - Команда связывает ID/revision/точный bigint; квитанция проверяет accepted/orderId/следующую revision и опись.

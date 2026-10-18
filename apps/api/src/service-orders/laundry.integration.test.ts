@@ -73,6 +73,19 @@ describe.sequential('laundry consent and custody / real PostgreSQL',()=>{
   await expect(staffAct(refused,'wash')).rejects.toThrow('SERVICE_TRANSITION_INVALID');expect((await staffAct(refused,'return_unprocessed')).stage).toBe('cancelled');
   expect((await run('SELECT * FROM service_orders WHERE reservation_id=$1',[f.r])).rowCount).toBe(0);
  });
+ it('serializes rejection after checkout and replays the retained-custody receipt after physical return',async()=>{
+  const {f,quoted}=await prepared(),key=randomUUID(),body=command(quoted,'reject');await run("UPDATE reservations SET status='checked_out' WHERE id=$1",[f.r]);
+  const replies=await Promise.all([service.guestAct(f.a.token,quoted.intakeId,key,body),service.guestAct(f.a.token,quoted.intakeId,key,body)]);expect(replies.filter(r=>!r.idempotentReplay)).toHaveLength(1);
+  expect(replies[0]).toMatchObject({stage:'awaiting_return',revision:quoted.revision+1,orderId:null,items:quote.items,totalMinor:quoted.totalMinor});
+  await expect(staffAct(replies[0],'wash')).rejects.toThrow('SERVICE_TRANSITION_INVALID');expect((await service.guestList(f.a.token,f.r)).items[0].stage).toBe('awaiting_return');
+  const returned=await staffAct(replies[0],'return_unprocessed');expect(returned).toMatchObject({stage:'cancelled',revision:quoted.revision+2});
+  expect(await service.guestAct(f.a.token,quoted.intakeId,key,body)).toEqual({...replies[0],idempotentReplay:true});
+  expect((await service.guestList(f.a.token,f.r)).items[0]).toMatchObject({stage:'cancelled',revision:returned.revision});
+  expect((await run("SELECT * FROM audit_log WHERE entity_id=$1 AND action='laundry.reject'",[quoted.intakeId])).rowCount).toBe(1);
+  expect((await run("SELECT * FROM outbox_events WHERE aggregate_id=$1 AND event_type='laundry.reject'",[quoted.intakeId])).rowCount).toBe(1);
+  expect((await run('SELECT * FROM service_orders WHERE reservation_id=$1',[f.r])).rowCount).toBe(0);
+  expect((await run('SELECT e.id FROM folio_entries e JOIN guest_folios f ON f.id=e.folio_id WHERE f.reservation_id=$1',[f.r])).rowCount).toBe(0);
+ });
  it('denies foreign guest, worker, spoofed actor, direct writes and revoked session',async()=>{
   const {f,quoted}=await prepared(),other=await account();await expect(service.guestList(other.token,f.r)).rejects.toThrow('SERVICE_STAY_NOT_FOUND');
   await expect(service.guestAct(other.token,quoted.intakeId,randomUUID(),command(quoted,'reject'))).rejects.toThrow('SERVICE_STAY_NOT_FOUND');

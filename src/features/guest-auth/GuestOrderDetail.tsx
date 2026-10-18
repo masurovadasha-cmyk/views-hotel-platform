@@ -15,6 +15,8 @@ import {GuestLaundryDetail,parseLaundryDetail} from '../laundry/GuestLaundryDeta
 import {GuestLaundryCancel} from '../laundry/GuestLaundryCancel';
 import {GuestLaundryApprove} from '../laundry/GuestLaundryApprove';
 import {assertLaundryAcceptReceipt} from '../laundry/guest-laundry-accept';
+import {GuestLaundryReject} from '../laundry/GuestLaundryReject';
+import {assertLaundryRejectReceipt} from '../laundry/guest-laundry-reject';
 import {assertLaundryCancelReceipt} from '../laundry/guest-laundry-cancel';
 import {GuestMarketDetail,parseMarketDetail} from '../market-core/GuestMarketDetail';
 import {GuestConciergeDetail,parseConciergeDetail} from '../concierge/GuestConciergeDetail';
@@ -43,7 +45,7 @@ export function GuestOrderDetail({reservationId,target,online,blocked,csrf,canRe
  const heading=useRef<HTMLHeadingElement>(null);
  const command=useCleaning(async attempt=>{
   const receipt=await guestEmailRequest(attempt.route,attempt.body,csrf,attempt.key);
-  if(target.kind==='laundry')(attempt.body.action==='accept'?assertLaundryAcceptReceipt:assertLaundryCancelReceipt)(receipt,attempt);
+  if(target.kind==='laundry')(attempt.body.action==='accept'?assertLaundryAcceptReceipt:attempt.body.action==='reject'?assertLaundryRejectReceipt:assertLaundryCancelReceipt)(receipt,attempt);
   else assertCleaningCancelReceipt(receipt,attempt);
  },()=>refresh(true),onPending,onExpired);
  const locked=blocked||command.busy||!!command.pending;
@@ -73,6 +75,7 @@ export function GuestOrderDetail({reservationId,target,online,blocked,csrf,canRe
    <small>{summary.id}</small><p>{stageText[summary.kind](locale,summary.stage)}</p>
    {summary.money?<p>{t(summary.money.label)}: {formatStaffMoney(summary.money.minor,locale).replace(/UZS$/,summary.money.currency)}</p>:<p>{t('Assistance request — not a paid booking')}</p>}
    {value.kind==='cleaning'?<GuestCleaningDetail order={value.order} locale={locale}/>:value.kind==='laundry'?<GuestLaundryDetail order={value.order} locale={locale}/>:value.kind==='market'?<GuestMarketDetail order={value.order} locale={locale}/>:<GuestConciergeDetail order={value.order} locale={locale}/>}
+   {value.kind==='laundry'&&summary.stage==='awaiting_return'&&<p role="status">{laundryText(locale,'returnPending')}</p>}
    {value.kind==='cleaning'&&canRequest&&<div data-testid="guest-order-detail-cleaning-change"><GuestCleaningChange cancelOnly key={value.order.revision} order={{orderId:summary.id,stage:summary.stage,revision:value.order.revision}} locale={locale} disabled={locked||loading||!online} act={async a=>{
     if(locked||loading||!connected.current)return;
     const attempt=cleaningCancelAttempt(summary.id,value.order.revision,a.key);
@@ -83,6 +86,10 @@ export function GuestOrderDetail({reservationId,target,online,blocked,csrf,canRe
     generation.current++;setValue(null);setError(false);await command.act(attempt);
    }}/></div>}
    {value.kind==='laundry'&&canRequest&&summary.stage==='quoted'&&value.order.items&&value.order.returnBy&&summary.money&&<div data-testid="guest-order-detail-laundry-approve"><GuestLaundryApprove key={value.order.revision} order={{intakeId:summary.id,stage:summary.stage,revision:value.order.revision,totalMinor:summary.money.minor}} locale={locale} disabled={locked||loading||!online} act={async attempt=>{
+    if(locked||loading||!connected.current)return;
+    generation.current++;setValue(null);setError(false);await command.act(attempt);
+   }}/></div>}
+   {value.kind==='laundry'&&summary.stage==='quoted'&&value.order.items&&value.order.returnBy&&<div data-testid="guest-order-detail-laundry-reject"><GuestLaundryReject key={value.order.revision} order={{intakeId:summary.id,stage:summary.stage,revision:value.order.revision}} locale={locale} disabled={locked||loading||!online} act={async attempt=>{
     if(locked||loading||!connected.current)return;
     generation.current++;setValue(null);setError(false);await command.act(attempt);
    }}/></div>}
