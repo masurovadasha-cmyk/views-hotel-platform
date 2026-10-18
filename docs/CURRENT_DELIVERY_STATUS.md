@@ -1,5 +1,8 @@
 # VIEWS — current delivery status, 18 October 2026 (Tashkent)
 
+Блок26: [детали конкретного заказа четырёх услуг](design/CANVA_140_BLOCK_26_ORDER_DETAILS.md); объединены параллельные срезы.
+Проверены все280 Light/Dark WebP, [полная очередь140 ID](design/CANVA_140_PARALLEL_QUEUE.md); статусы56 partial/84 pending, public web/APK без изменений.
+
 Блок25: [общий список заказов гостя](design/CANVA_140_BLOCK_25_ORDER_LIST.md) — четыре направления, фильтры загруженных страниц, независимая догрузка и очистка при offline/отзыве доступа. SG-GN-006 partial, public web/APK без обновления.
 
 Блок24: [направления услуг в поездке](design/CANVA_140_BLOCK_24_GUEST_SERVICE_NAV.md) — уборка, прачечная, консьерж, V Market; SG-GN-006 остаётся partial. Feature-ветка, public web/APK без обновления.

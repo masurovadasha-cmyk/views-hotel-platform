@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Canva26: параллельные детали четырёх услуг
+- Все140 ID включены в CANVA_140_PARALLEL_QUEUE.md;280 WebP checksum/decode/размеры PASS, исходный PDF сейчас отсутствует.
+- Четыре агента сделали read-only карточки уборки/прачечной/V Market/консьержа; отдельные inventory/browser/review, root объединил.
+- Конкретный заказ перечитывается одним scoped GET по source cursor; нет подмены соседним ID или автоматических команд.
+- Whitelist, bigint, опись/претензии/кредиты/переписка/SLA; служебные заметки и бюджет консьержа не раскрываются.
+- Offline/ошибка/отзыв доступа очищают детали; сохранены черновики и ручной retry; действия остаются в направлениях.
+- Red unit: новые модули отсутствовали; review нашёл StrictMode busy-lock, исправлено; dev browser red/green подтвердил.
+- Dirty f9e655b: web499/81files, Core161/18files; web/API typecheck/build, network187/mail15,118 checksum PASS.
+- Полная connected browser chain exit0:4точных заказа,2-я страница,1GET, RU/UZ/EN×Light/Dark×390px, без новых начислений.
+- Lifecycle browser PASS:StrictMode, смена target/unmount и поздний ответ; mobile screenshots просмотрены.
+- Миграций/зависимостей/прав не добавлено; disposable PostgreSQL, реальные внешние операции отключены.
+- Критерии/запуск/риски: design/CANVA_140_BLOCK_26_ORDER_DETAILS.md; SG-GN-006/007 partial, реестр56/84 без повышения.
+- Public web032ea93/Cloudflare/APK без изменений. Далее: read-by-ID/действия заказа и независимые пакеты полной очереди.
+
 ## 2026-10-18 — Canva25: общий список заказов поездки
 - GuestOrderList: четыре направления, явная загрузка, фильтры статуса/услуги, независимая догрузка страниц.
 - Фильтры относятся только к загруженным страницам; UUID-порядок не выдаётся за хронологию.
