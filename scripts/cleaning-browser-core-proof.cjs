@@ -97,16 +97,24 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   async function employee(n,role){const context=await browser.newContext({viewport:{width:390,height:900}});contexts.push(context);await context.addCookies([{name:'views_staff_session',value:('a'+n).repeat(32),domain:'127.0.0.1',path:'/local-api',httpOnly:true,sameSite:'Strict'}]);const p=await context.newPage();p.setDefaultTimeout(15000);await p.goto(web.origin+'/?staffRole='+role);await p.locator('.staffLanguage select').selectOption('en');return p;}
   const manager=await employee(1,'manager'),worker=await employee(2,'housekeeper');
   const mp=manager.getByTestId('staff-cleaning'),wp=worker.getByTestId('staff-cleaning');
-  await mp.getByRole('button',{name:'Open cleaning queue',exact:true}).click();await wp.getByRole('button',{name:'Open cleaning queue',exact:true}).click();
-  const card=p=>p.locator('article').filter({hasText:'Browser cleaning'}).filter({hasNotText:'Cancelled'});
+  const card=p=>p.locator(`article[data-order-id="${oid}"]`);
+  async function readPage(p,action){
+   const view=p===mp?manager:worker,received=view.waitForResponse(r=>new URL(r.url()).pathname==='/local-api/service-orders'&&r.request().method()==='GET');
+   await action();const response=await received;assert.equal(response.status(),200,'CLEANING_STAFF_PAGE_HTTP_'+response.status());const body=await response.json();await response.finished();
+   // Match the committed DOM page to this GET before looking for the exact order.
+   await view.waitForFunction(({ids,next})=>{const root=document.querySelector('[data-testid=staff-cleaning]'),buttons=[...root.querySelectorAll('button')];return buttons.find(b=>b.textContent==='Refresh')?.disabled===false&&JSON.stringify([...root.querySelectorAll('[data-order-id]')].map(n=>n.getAttribute('data-order-id')))===JSON.stringify(ids)&&buttons.some(b=>b.textContent==='Next page')===next;},{ids:body.items.map(i=>i.orderId),next:!!body.nextCursor});
+  }
+  async function findOrder(p){for(let n=0;n<100&&await card(p).count()===0;n++){assert.equal(await p.getByRole('button',{name:'Next page',exact:true}).count(),1,'CLEANING_ORDER_MISSING_FROM_EXHAUSTED_PAGES');await readPage(p,()=>p.getByRole('button',{name:'Next page',exact:true}).click());}assert.equal(await card(p).count(),1,'CLEANING_ORDER_NOT_FOUND_WITHIN_PAGE_LIMIT');}
+  async function queue(p,action){await readPage(p,action);await findOrder(p);}
+  await queue(mp,()=>mp.getByRole('button',{name:'Open cleaning queue',exact:true}).click());await readPage(wp,()=>wp.getByRole('button',{name:'Open cleaning queue',exact:true}).click());
   await card(mp).getByText(/Synthetic cleaning browser/).waitFor();
-  await card(mp).getByLabel('Housekeeper',{exact:true}).selectOption(id(2));await card(mp).getByRole('button',{name:'Assign',exact:true}).click();await card(mp).getByText(/Assigned/).waitFor();
-  await wp.getByRole('button',{name:'Refresh',exact:true}).click();await card(wp).getByRole('button',{name:'Start',exact:true}).click();await card(wp).getByLabel('Note',{exact:true}).fill('Synthetic completed checklist');
+  await card(mp).getByLabel('Housekeeper',{exact:true}).selectOption(id(2));await queue(mp,()=>card(mp).getByRole('button',{name:'Assign',exact:true}).click());await card(mp).getByText(/Assigned/).waitFor();
+  await queue(wp,()=>wp.getByRole('button',{name:'Refresh',exact:true}).click());await queue(wp,()=>card(wp).getByRole('button',{name:'Start',exact:true}).click());await card(wp).getByLabel('Note',{exact:true}).fill('Synthetic completed checklist');
   for(const label of ['Linen checked','Bathroom cleaned','Floor cleaned'])await card(wp).getByLabel(label,{exact:true}).check();
-  await card(wp).getByRole('button',{name:'Submit for inspection',exact:true}).click();await card(wp).getByText(/Awaiting inspection/).waitFor();
+  await queue(wp,()=>card(wp).getByRole('button',{name:'Submit for inspection',exact:true}).click());await card(wp).getByText(/Awaiting inspection/).waitFor();
   assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
-  phase='approval';await mp.getByRole('button',{name:'Refresh',exact:true}).click();await card(mp).getByLabel('Note',{exact:true}).fill('Independent browser inspection');await card(mp).getByLabel('I confirm inspection and the stated charge',{exact:true}).check();
-  await card(mp).getByRole('button',{name:'Accept and charge',exact:true}).click();await card(mp).getByText(/Accepted and charged/).waitFor();
+  phase='approval';await queue(mp,()=>mp.getByRole('button',{name:'Refresh',exact:true}).click());await card(mp).getByLabel('Note',{exact:true}).fill('Independent browser inspection');await card(mp).getByLabel('I confirm inspection and the stated charge',{exact:true}).check();
+  await queue(mp,()=>card(mp).getByRole('button',{name:'Accept and charge',exact:true}).click());await card(mp).getByText(/Accepted and charged/).waitFor();
   const entries=(await admin.query('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[oid])).rows;assert.deepEqual(entries,[{amount_minor:'12345'}]);
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();await guest.getByText(/Accepted and charged/).waitFor();
   const finished=guest.locator('article[data-order-id="'+oid+'"]');
@@ -123,7 +131,7 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await finished.getByTestId('service-feedback-saved').waitFor();assert.deepEqual(feedbackKeys[0],feedbackKeys[1]);await outerGuard(false);
   assert.equal((await admin.query('SELECT count(*)::int n FROM service_order_feedback WHERE order_id=$1',[oid])).rows[0].n,1);page.off('request',recordOuter);
   assert.equal(await finished.locator('b').count(),0);
-  await mp.getByRole('button',{name:'Refresh',exact:true}).click();await card(mp).getByText('<b>Friendly team</b>',{exact:true}).waitFor();
+  await queue(mp,()=>mp.getByRole('button',{name:'Refresh',exact:true}).click());await card(mp).getByText('<b>Friendly team</b>',{exact:true}).waitFor();
   await admin.query('UPDATE service_catalog SET price_minor=24567 WHERE id=$1',[service]);
   await finished.getByRole('button',{name:'Repeat at current price',exact:true}).click();
   await page.waitForFunction(()=>{const select=document.querySelector('[data-testid="guest-cleaning"] select');return select?.selectedOptions[0]?.textContent.includes('245.67');});
@@ -137,7 +145,7 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await guest.getByTestId('service-feedback-saved').waitFor();
   for(const l of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(l);await manager.locator('.staffLanguage select').selectOption(l);for(const p of [page,manager])assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   await page.locator('.guestLanguage select').selectOption('ru');await manager.locator('.staffLanguage select').selectOption('ru');
-  await guest.screenshot({path:'/tmp/views-cleaning-guest.png'});await mp.locator('article').filter({hasText:'Уборка браузер'}).filter({hasNotText:'Отменён'}).screenshot({path:'/tmp/views-cleaning-staff.png'});
+  await guest.screenshot({path:'/tmp/views-cleaning-guest.png'});await card(mp).screenshot({path:'/tmp/views-cleaning-staff.png'});
   await page.getByTestId('guest-services-back').click();await services.screenshot({path:'/tmp/views-guest-services-light.png'});
   await page.getByRole('button',{name:'Тёмная тема',exact:true}).click();await services.screenshot({path:'/tmp/views-guest-services-dark.png'});await page.getByRole('button',{name:'Светлая тема',exact:true}).click();
   await page.locator('.guestLanguage select').selectOption('en');

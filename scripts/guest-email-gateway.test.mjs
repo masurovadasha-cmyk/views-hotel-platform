@@ -1,5 +1,6 @@
 import {describe,it,expect,afterEach,vi} from 'vitest';
 import http from 'node:http';
+import {createHmac} from 'node:crypto';
 import {createRequire} from 'node:module';
 const {createGuestEmailGateway}=createRequire(import.meta.url)('../apps/api/ops/guest-email-gateway.cjs');
 const servers=[];
@@ -16,6 +17,14 @@ async function fixture(handler){
 }
 afterEach(async()=>{vi.unstubAllEnvs();await Promise.all(servers.splice(0).map(s=>new Promise(resolve=>{s.close(resolve);s.closeAllConnections();})));});
 describe('guest email cookie boundary',()=>{
+ it.each([['FOLIO_NOT_OPEN','FOLIO_NOT_OPEN'],['FOLIO_PRIVATE_SQL_DETAIL','GUEST_CORE_UNAVAILABLE']])('preserves only the known folio rejection %s',async(message,error)=>{
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');
+  const call=await fixture((_req,res)=>{res.writeHead(409);res.end(JSON.stringify({message}));});
+  const token='vges_'+'a'.repeat(43),id='12345678-1234-4123-8123-123456789012';
+  const csrf=createHmac('sha256',Buffer.from('a'.repeat(64),'hex')).update('guest-csrf:v1:'+token).digest('hex');
+  const r=await call('services/laundry/'+id+'/actions',{method:'POST',headers:{Cookie:'views_guest_email='+token,'Content-Type':'application/json','X-Views-Guest-Csrf':csrf,'Idempotency-Key':id},body:JSON.stringify({action:'confirm_receipt',expectedRevision:7})});
+  expect(r.status).toBe(409);expect(await r.json()).toEqual({error});
+ });
  it('rejects arbitrary upstreams and browser origins',()=>{
   for(const url of ['https://remote.example','http://localhost:3001','http://127.0.0.1:3001/private','http://user:pass@127.0.0.1:3001']){
    expect(()=>createGuestEmailGateway({origin:'http://127.0.0.1:4174',coreOrigin:url,csrfKey:'a'.repeat(64)})).toThrow();

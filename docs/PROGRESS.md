@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез38: получение прачечной из общей карточки
+- Delivered: опись/сумма/валюта, checkbox и явное получение с начислением в фолио; после checkout доступно.
+- Open/answered claim скрывает действие; новая претензия после согласия даёт409 без начисления.
+- Expected сумма/валюта остаются в Attempt вне body; closed receipt проверяется строго, включая bigint и claim.
+- Pending вне карточки сохраняет ключ/тело при lost/invalid ответе; offline/переходы/выход защищены.
+- RED: helper отсутствовал/0tests; старая сборка остановилась на отсутствующей форме. Новые75unit PASS.
+- Dirty2a14153: web766/87files, обе сборки/typecheck, network187/mail15,124checksum PASS.
+- Финальный связанный прогон exit0:218Core/23files и20HTTP/browser proofs PASS, включая новое получение из карточки.
+- Gateway скрывал FOLIO_NOT_OPEN как uncertain: RED1failed/8passed, теперь известный отказ409 передаётся, неизвестные скрыты.
+- Proof: точные ID/пагинация cleaning, счётчик receipt и паузы laundry в пределах лимита;6снимков, RU Light/Dark иUZ Dark reviewed PASS.
+- SQL0124/маршруты/body/права/зависимости прежние; запуск/ручная приёмка: LAUNDRY_DETAIL_RECEIPT_38.md.
+- Только disposable БД/loopback SMTP; hard reload recovery остаётся. Public web032ea93/Cloudflare/APK прежние.
+- Canva56partial/84pending без изменения статусов; далее претензии к прачечной из общей карточки.
+
 ## 2026-10-18 — Срез37: авторизация получения прачечной после ожидания
 - Миграция0124: сессия проверяется после profile lock, folio lock/insert и позднего order UPDATE.
 - Cached receipt не выдаётся после logout; свежая команда откатывает начисление и статусы целиком.

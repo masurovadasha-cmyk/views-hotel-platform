@@ -25,11 +25,18 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
  let context;
  try{
   context=await browser.newContext({viewport:{width:390,height:844}});await context.addCookies([{name:'views_staff_session',value:'a1'.repeat(32),domain:'127.0.0.1',path:'/local-api',httpOnly:true,sameSite:'Strict'}]);
-  const manager=await context.newPage();manager.setDefaultTimeout(15000);await manager.goto(web.origin+'/?staffRole=manager');await manager.locator('.staffLanguage select').selectOption('en');
+  const manager=await context.newPage(),requestTimes=[];manager.setDefaultTimeout(15000);
+  manager.on('request',r=>{if(new URL(r.url()).pathname.startsWith('/local-api/'))requestTimes.push(Date.now());});
+  await manager.goto(web.origin+'/?staffRole=manager');await manager.locator('.staffLanguage select').selectOption('en');
   const staff=manager.getByTestId('staff-laundry'),sc=staff.locator(`[data-intake-id="${iid}"]`);
+  // Reserve two requests for an action and its GET; keep the production limiter intact.
+  async function requestBudget(){let announced=false;for(;;){const now=Date.now();while(requestTimes.length&&requestTimes[0]<=now-60000)requestTimes.shift();if(requestTimes.length<=88)return;if(!announced){console.log('LAUNDRY_STAFF_TEST_REQUEST_BUDGET_PAUSE');announced=true;}await new Promise(resolve=>setTimeout(resolve,Math.min(10000,60001-(now-requestTimes[0]))));}}
   async function readPage(action){
+   await requestBudget();
    const received=manager.waitForResponse(r=>new URL(r.url()).pathname==='/local-api/service-orders/laundry'&&r.request().method()==='GET');
-   await action();const response=await received;assert.equal(response.status(),200,'LAUNDRY_STAFF_PAGE_HTTP_'+response.status());const body=await response.json();await response.finished();
+   await action();const response=await received,body=await response.json().catch(()=>null);
+   if(response.status()!==200)console.error('LAUNDRY_STAFF_PAGE_HTTP_'+response.status()+':'+(typeof body?.error==='string'&&/^[A-Z][A-Z0-9_]{0,79}$/.test(body.error)?body.error:'UNAVAILABLE'));
+   assert.equal(response.status(),200,'LAUNDRY_STAFF_PAGE_HTTP_'+response.status());await response.finished();
    // Bind each navigation to its response, then wait for the page snapshot to commit.
    await manager.waitForFunction(({ids,next})=>{const root=document.querySelector('[data-testid=staff-laundry]'),buttons=[...root.querySelectorAll('button')];return buttons.find(b=>b.textContent==='Refresh')?.disabled===false&&JSON.stringify([...root.querySelectorAll('[data-intake-id]')].map(n=>n.getAttribute('data-intake-id')))===JSON.stringify(ids)&&buttons.some(b=>b.textContent==='Next page')===next;},{ids:body.items.map(i=>i.intakeId),next:!!body.nextCursor});
   }

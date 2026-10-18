@@ -23,7 +23,7 @@ export function StaffCleaning({csrf,manager}:{csrf:string;manager:boolean}){
 }
 function Order({order:o,manager,workers,disabled,onAct}:{order:CleaningOrder;manager:boolean;workers:{id:string;name:string}[];disabled:boolean;onAct:(action:string,fields:Record<string,unknown>)=>void}){
  const {locale}=useStaffLocale(),t=(k:string)=>cleaningText(locale,k);const [worker,setWorker]=useState(''),[note,setNote]=useState(''),[accept,setAccept]=useState(false),[check,setCheck]=useState({linen:false,bathroom:false,floor:false});
- return <article className="localPanel"><h3>{localizedName(o.name,locale)}</h3><p>{t(o.stage)} · {formatStaffMoney(o.totalMinor,locale).replace(/UZS$/,o.currency)}</p><p>{t('unit')}: {o.unitCode||'—'}</p><time>{new Date(o.requestedFor).toLocaleString(locale)}</time>
+ return <article className="localPanel" data-order-id={o.orderId}><h3>{localizedName(o.name,locale)}</h3><p>{t(o.stage)} · {formatStaffMoney(o.totalMinor,locale).replace(/UZS$/,o.currency)}</p><p>{t('unit')}: {o.unitCode||'—'}</p><time>{new Date(o.requestedFor).toLocaleString(locale)}</time>
  {o.completionNote&&<p>{o.completionNote}</p>}{o.inspectionNote&&<p>{o.inspectionNote}</p>}
  {manager&&o.feedback&&<aside><p>{t('rating')}: {o.feedback.rating} / 5</p><p>{o.feedback.comment}</p></aside>}
  <fieldset disabled={disabled}>

@@ -77,4 +77,5 @@ module.exports=async function({page,api,admin,identity}){
  await require('./guest-laundry-detail-cancel-browser.cjs')({page,api,admin,identity});
  await require('./guest-laundry-detail-accept-browser.cjs')({page,api,admin,identity});
  await require('./guest-laundry-detail-reject-browser.cjs')({page,api,admin,identity});
+ await require('./guest-laundry-detail-receipt-browser.cjs')({page,api,admin,identity});
 };
