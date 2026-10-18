@@ -41,6 +41,7 @@ module.exports=async function guestEmailBrowserProof({coreOrigin,smtp,setLinkOri
   assert.ok(!JSON.stringify(storage).includes(cookie.value));assert.ok(!/vgel_|vges_/.test(JSON.stringify(storage)));
   await page.reload();await visible('[data-testid="guest-identity"]');
   const identity=await api('session');assert.equal(identity.status,200);assert.equal(identity.body.profile.email,email);
+  if(process.env.VIEWS_ORDER_LIST_BROWSER_ONLY==='true'){await require('./guest-order-list-browser-proof.cjs')({page,api,admin,identity:identity.body});return;}
   assert.equal(identity.body.token,undefined);checks.push('real_smtp_link_explicit_confirmation_httponly_cookie_reload_no_token_storage');
   phase='owned_trips';await require('./guest-trips-browser-proof.cjs')({page,api,admin,identity:identity.body});
   phase='reservation_link';await require('./guest-reservation-link-browser-proof.cjs')({page,api,admin,identity:identity.body,coreOrigin});
@@ -49,6 +50,7 @@ module.exports=async function guestEmailBrowserProof({coreOrigin,smtp,setLinkOri
   phase='laundry';await require('./laundry-browser-core-proof.cjs')({browser,page,api,admin,identity:identity.body,coreOrigin});
   phase='market';await require('./market-browser-core-proof.cjs')({browser,page,api,admin,identity:identity.body,coreOrigin});
   phase='concierge';await require('./concierge-browser-core-proof.cjs')({browser,page,api,admin,identity:identity.body,coreOrigin});
+  phase='guest_order_list';await require('./guest-order-list-browser-proof.cjs')({page,api,admin,identity:identity.body});
   phase='staff_invitation_panel';await require('./guest-link-staff-browser-proof.cjs')({browser});
   phase='staff_role_entries';await require('./staff-role-entry.browser.cjs')({browser});
   phase='folio_workspace';await require('./folio-browser-core-proof.cjs')({browser,admin,coreOrigin});

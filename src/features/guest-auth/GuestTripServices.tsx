@@ -7,6 +7,7 @@ import {GuestMarket} from '../market-core/GuestMarket';
 import {useGuestLocale} from '../guest/GuestLocale';
 import {translate} from '../../i18n/messages';
 import catalog from './guest-trips-translations.json';
+import {GuestOrderList} from './GuestOrderList';
 
 const services={
  cleaning:{title:'Cleaning',icon:Brush,Panel:GuestCleaning},
@@ -36,6 +37,7 @@ export function GuestTripServices({blocked,onPending,...common}:Props){
   </nav>
   {blocked&&<p role="status">{t('Confirm the pending operation before switching services.')}</p>}
   {active&&<button type="button" data-testid="guest-services-back" disabled={blocked} onClick={back}>{t('Back to services')}</button>}
+  {!active&&<GuestOrderList reservationId={common.reservationId} online={common.online} blocked={blocked} onExpired={common.onExpired} onOpen={open}/>}
   {/* Keep drafts and retry keys in memory; the trip/session boundary unmounts every panel. */}
   {visited.map(kind=>{const {Panel}=services[kind];return <div key={kind} id={id+'-panel-'+kind}
    role="region" aria-labelledby={id+'-'+kind} data-testid={'guest-service-panel-'+kind} hidden={active!==kind}>

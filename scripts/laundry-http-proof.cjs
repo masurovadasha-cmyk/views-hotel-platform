@@ -2,9 +2,11 @@
 const assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
 module.exports=async function({admin,rpc,session,coreOrigin,internalKey}){
  const org='10000000-0000-4000-8000-000000000001',property='10000000-0000-4000-8000-000000000002',id=n=>'76800000-0000-4000-8000-'+String(n).padStart(12,'0');
- const profile=randomUUID(),reservation=randomUUID(),service=randomUUID();
+ const profile=randomUUID(),reservation=randomUUID(),service=randomUUID(),unit=randomUUID(),unitType=randomUUID();
+ await admin.query("INSERT INTO unit_types(id,property_id,name,max_guests) VALUES($1,$2,'{}',2)",[unitType,property]);
+ await admin.query('INSERT INTO units(id,property_id,unit_type_id,code) VALUES($1,$2,$3,$1::uuid::text)',[unit,property,unitType]);
  await admin.query("INSERT INTO guest_profiles(id,user_id,organization_id,first_name,last_name) VALUES($1,$2,$3,'Synthetic','Laundry HTTP')",[profile,session.userId,org]);
- await admin.query("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) VALUES($1,$2,$3,(SELECT id FROM units WHERE property_id=$3 LIMIT 1),$4,$1::uuid::text,'checked_in',now()-interval '1 day',now()+interval '5 days','UZS',0,'{}')",[reservation,org,property,profile]);
+ await admin.query("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) VALUES($1,$2,$3,$5,$4,$1::uuid::text,'checked_in',now()-interval '1 day',now()+interval '5 days','UZS',0,'{}')",[reservation,org,property,profile,unit]);
  await admin.query("INSERT INTO service_catalog(id,organization_id,property_id,code,name,currency,price_minor,active,execution_kind) VALUES($1,$2,$3,$1::uuid::text,'{\"en\":\"Synthetic laundry\"}','UZS',100,true,'laundry')",[service,org,property]);
  async function guest(route,body,key=randomUUID()){return rpc('services/laundry'+route,body,session.token,{'Idempotency-Key':key});}
  async function staff(route,body,n=1){
