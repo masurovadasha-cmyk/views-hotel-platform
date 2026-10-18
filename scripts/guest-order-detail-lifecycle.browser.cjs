@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {chromium}=require('playwright');
 const root=path.resolve(__dirname,'..'),red=process.env.VIEWS_DETAIL_LIFECYCLE_RED==='true';
 const a='00000000-0000-4000-8000-000000000001',b='00000000-0000-4000-8000-000000000002',stay='00000000-0000-4000-8000-000000000003';
-const rows=[a,b].map(orderId=>({orderId,name:{en:'Synthetic cleaning'},stage:'requested',totalMinor:'123',currency:'UZS',requestedFor:'2026-10-18T12:00:00Z',feedback:null}));
+const rows=[a,b].map(orderId=>({orderId,name:{en:'Synthetic cleaning'},stage:'requested',revision:1,totalMinor:'123',currency:'UZS',requestedFor:'2026-10-18T12:00:00Z',feedback:null}));
 (async()=>{
  let server,browser;const cacheDir=fs.mkdtempSync(path.join(os.tmpdir(),'views-detail-lifecycle-'));let transformed=false;
  try{
@@ -11,7 +11,7 @@ const rows=[a,b].map(orderId=>({orderId,name:{en:'Synthetic cleaning'},stage:'re
   const html='<div id="root"></div><script type="module" src="/__views_detail_entry__.js"></script>';
   const entry=`import React from 'react';import{createRoot}from'react-dom/client';import{GuestOrderDetail}from'/src/features/guest-auth/GuestOrderDetail.tsx';
 const root=createRoot(document.getElementById('root'));window.expired=0;
-window.show=(id)=>root.render(React.createElement(React.StrictMode,null,id?React.createElement(GuestOrderDetail,{reservationId:'${stay}',target:{kind:'cleaning',id,cursor:'ffffffff-ffff-4fff-8fff-ffffffffffff'},online:true,blocked:false,onExpired:()=>window.expired++,onBack:()=>{},onService:()=>{}}):null));window.show('${a}');`;
+window.show=(id)=>root.render(React.createElement(React.StrictMode,null,id?React.createElement(GuestOrderDetail,{reservationId:'${stay}',target:{kind:'cleaning',id,cursor:'ffffffff-ffff-4fff-8fff-ffffffffffff'},online:true,blocked:false,csrf:'synthetic',canRequest:false,onPending:()=>{},onExpired:()=>window.expired++,onBack:()=>{},onService:()=>{}}):null));window.show('${a}');`;
   server=await createServer({root,configFile:false,cacheDir,logLevel:'error',esbuild:{jsx:'automatic'},server:{host:'127.0.0.1',port:0,strictPort:true,hmr:false},plugins:[{name:'lifecycle-fixture',enforce:'pre',
    resolveId(id){if(id==='/__views_detail_entry__.js')return '\0views-detail-entry';},load(id){if(id==='\0views-detail-entry')return entry;},
    transform(code,id){if(red&&id.endsWith('/GuestOrderDetail.tsx')){const next=code.replace('generation.current++;busy.current=false;};},[reservationId,target]);','generation.current++;};},[reservationId,target]);');assert.notEqual(next,code,'RED_TRANSFORM_NOT_APPLIED');transformed=true;return next;}},

@@ -41,7 +41,7 @@ export function GuestTripServices({blocked,onPending,...common}:Props){
   {blocked&&<p role="status">{t('Confirm the pending operation before switching services.')}</p>}
   {active&&<button type="button" data-testid="guest-services-back" disabled={blocked} onClick={back}>{t('Back to services')}</button>}
   {!active&&!target&&<GuestOrderList reservationId={common.reservationId} online={common.online} blocked={blocked} onExpired={common.onExpired} onOpen={next=>{if(!blocked)setTarget(next);}}/>}
-  {target&&<GuestOrderDetail key={target.kind+':'+target.id+':'+target.cursor} reservationId={common.reservationId} target={target} online={common.online} blocked={blocked} onExpired={common.onExpired}
+  {target&&<GuestOrderDetail key={target.kind+':'+target.id+':'+target.cursor} reservationId={common.reservationId} target={target} online={common.online} blocked={blocked} csrf={common.csrf} canRequest={common.canRequest} onPending={onPending[target.kind]} onExpired={common.onExpired}
    onBack={()=>{if(!blocked){buttons.current[target.kind]?.focus();setTarget(null);}}} onService={()=>open(target.kind)}/>}
   {/* Keep drafts and retry keys in memory; the trip/session boundary unmounts every panel. */}
   {visited.map(kind=>{const {Panel}=services[kind];return <div key={kind} id={id+'-panel-'+kind}

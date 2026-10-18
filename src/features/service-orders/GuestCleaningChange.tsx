@@ -4,7 +4,7 @@ import {cleaningText} from './locale';
 import type {Attempt,CleaningOrder} from './model';
 
 /** Review before sending; the server rechecks ownership, revision and stage. */
-export function GuestCleaningChange({order,locale,disabled,act}:{order:CleaningOrder;locale:Locale;disabled:boolean;act:(a:Attempt)=>Promise<void>}){
+export function GuestCleaningChange({order,locale,disabled,act,cancelOnly=false}:{order:Pick<CleaningOrder,'orderId'|'stage'|'revision'>;locale:Locale;disabled:boolean;act:(a:Attempt)=>Promise<void>;cancelOnly?:boolean}){
  const t=(key:string)=>cleaningText(locale,key);
  const [mode,setMode]=useState<'cancel'|'reschedule'|null>(null),[time,setTime]=useState(''),[confirmed,setConfirmed]=useState(false);
  if(!['requested','assigned'].includes(order.stage))return null;
@@ -17,7 +17,7 @@ export function GuestCleaningChange({order,locale,disabled,act}:{order:CleaningO
   setMode(null);setConfirmed(false);
  }
  return <div data-testid="guest-cleaning-change">
-  {!mode?<><button disabled={disabled} onClick={()=>choose('reschedule')}>{t('changeTime')}</button><button disabled={disabled} onClick={()=>choose('cancel')}>{t('cancel')}</button></>:
+  {!mode?<>{!cancelOnly&&<button disabled={disabled} onClick={()=>choose('reschedule')}>{t('changeTime')}</button>}<button disabled={disabled} onClick={()=>choose('cancel')}>{t('cancel')}</button></>:
    <form onSubmit={e=>{e.preventDefault();void submit();}}><fieldset disabled={disabled}>
     <legend>{t(mode==='cancel'?'cancelReview':'rescheduleReview')}</legend>
     <p>{t(mode==='cancel'?'cancelTerms':'rescheduleTerms')}</p>

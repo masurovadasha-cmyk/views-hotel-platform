@@ -6,7 +6,8 @@ import {cleaningText} from './locale';
 export function parseCleaningDetail(raw:unknown){
  const fail=():never=>{throw new Error('GUEST_CLEANING_DETAIL_INVALID');};
  const record=(value:unknown):Record<string,unknown>=>value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:fail();
- const value=record(raw),time=value.requestedFor;
+ const value=record(raw),time=value.requestedFor,revision=value.revision;
+ if(typeof revision!=='number'||!Number.isSafeInteger(revision)||revision<1)return fail();
  if(typeof time!=='string'||time.length>40||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(time)||!Number.isFinite(Date.parse(time)))return fail();
  let feedback:{rating:number;comment:string}|null=null;
  if(value.feedback!==undefined&&value.feedback!==null){
@@ -14,7 +15,7 @@ export function parseCleaningDetail(raw:unknown){
   if(typeof rating!=='number'||!Number.isInteger(rating)||rating<1||rating>5||typeof comment!=='string'||comment.length>500||/[\u0000-\u001f\u007f-\u009f]/.test(comment))return fail();
   feedback={rating,comment};
  }
- return {requestedFor:new Date(time).toISOString(),feedback};
+ return {revision,requestedFor:new Date(time).toISOString(),feedback};
 }
 const labels:Record<Locale,{time:string;zone:string}>={
  ru:{time:'Запрошенное время',zone:'Часовой пояс устройства'},

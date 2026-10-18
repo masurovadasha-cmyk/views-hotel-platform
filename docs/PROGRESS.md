@@ -1,5 +1,19 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Canva28: отмена уборки из точной карточки
+- GuestOrderDetail: явное подтверждение отмены requested/assigned; после выезда только история.
+- Использованы API/SQL0073/0119 и useCleaning; команда привязана к ID/revision, ответ строго проверяется.
+- Pending хранится вне очищаемой карточки: offline не теряет ключ/тело, переходы/refresh блокируются.
+- Неизвестный результат — ручной повтор той же команды; stale conflict очищает карточку до ручного GET.
+- Red: отсутствующий helper/непроверенная revision; browser старой сборки упал на отсутствующей отмене.
+- Dirty7b5867c: web550/82files, Core165/19files; web/API typecheck/build, network187/mail15,119checksum PASS.
+- Полная connected browser chain exit0: lost response → same-key/body replay → один audit/outbox, folio0.
+- Проверены stale409 без autoresend, checked_out без действий, RU/UZ/EN×Light/Dark×390px; lifecycle7reads PASS.
+- Независимое ревью PASS; новых миграций/зависимостей/прав нет, только disposable PostgreSQL.
+- Критерии/запуск/риски: design/CANVA_140_BLOCK_28_DETAIL_CANCELLATION.md; реестр56 partial/84 pending.
+- Public web032ea93/Cloudflare/APK без изменений. Внешние logout/booking-link pending guards остаются открыты.
+- Далее: перепроверка доступа после ожидания cached replay SQL0073; затем команды других услуг из деталей.
+
 ## 2026-10-18 — Canva27: прямые детали заказа по ID
 - Migration0119/API/gateway: один scoped GET для cleaning/laundry/market/concierge, laundry по intakeId.
 - Сессия, текущий владелец, организация/объект проверяются в БД; чужой/неверный/отсутствующий ID дают404.

@@ -1,5 +1,7 @@
 # Приёмка 140 экранов Canva
 
+Блок28: [отмена уборки из точной карточки](CANVA_140_BLOCK_28_DETAIL_CANCELLATION.md); SG-GN-006/007/008 partial, команды остальных услуг и полная визуальная приёмка открыты.
+
 Блок27: [прямой read по ID](CANVA_140_BLOCK_27_DIRECT_ORDER.md) для четырёх услуг; SG-GN-006/007 остаются partial, полной PDF-приёмки нет.
 
 Блок26: [конкретный заказ четырёх услуг](CANVA_140_BLOCK_26_ORDER_DETAILS.md), read-only детали из scoped API; SG-GN-006/007 остаются partial. [Полная параллельная очередь](CANVA_140_PARALLEL_QUEUE.md) покрывает все140 ID.
