@@ -29,13 +29,26 @@ async function fixture(cached:boolean){
  return {a,r,g,s,key,body,intake,receipt};
 }
 type Fixture=Awaited<ReturnType<typeof fixture>>;
+async function receiptFixture(cached:boolean){
+ const f=await fixture(false),actor={organizationId:org,userId:manager,membershipId:manager,requestId:randomUUID()};
+ const act=(i:Fixture['intake'],action:string,extra:Record<string,unknown>={})=>service.staffAct(actor,'a1'.repeat(32),i.intakeId,randomUUID(),{action,expectedRevision:i.revision,...extra});
+ let i=await act(f.intake,'receive');
+ i=await act(i,'quote',{items:[{tag:'001',description:'Shirt',priceMinor:'9007199254740993'},{tag:'002',description:'Trousers',priceMinor:'7'}],returnBy:new Date(Date.now()+3*86400000).toISOString()});
+ i=await service.guestAct(f.a.token,i.intakeId,randomUUID(),{action:'accept',expectedRevision:i.revision,expectedTotalMinor:i.totalMinor});
+ for(const action of ['wash','ready','deliver'])i=await act(i,action);
+ await run("INSERT INTO guest_folios(organization_id,property_id,reservation_id,currency) VALUES($1,$2,$3,'UZS')",[org,property,f.r]);
+ f.body={action:'confirm_receipt',expectedRevision:i.revision};
+ f.receipt=cached?await service.guestAct(f.a.token,i.intakeId,f.key,f.body):null;
+ return f;
+}
 const snapshot=async(f:Fixture)=>(await run(`SELECT to_jsonb(i) AS intake,
  (SELECT coalesce(jsonb_agg(to_jsonb(o) ORDER BY o.id),'[]') FROM service_orders o WHERE o.reservation_id=i.reservation_id) orders,
  (SELECT count(*) FROM audit_log WHERE entity_id=i.id)::int audits,
  (SELECT count(*) FROM outbox_events WHERE aggregate_id=i.id)::int events,
+ (SELECT coalesce(jsonb_agg(jsonb_build_object('id',e.id,'amountMinor',e.amount_minor::text,'currency',e.currency,'sourceId',e.source_id) ORDER BY e.id),'[]') FROM folio_entries e JOIN guest_folios g ON g.id=e.folio_id WHERE g.reservation_id=i.reservation_id) entries,
  (SELECT count(*) FROM folio_entries f JOIN guest_folios g ON g.id=f.folio_id WHERE g.reservation_id=i.reservation_id)::int charges
  FROM laundry_intakes i WHERE i.id=$1`,[f.intake.intakeId])).rows[0];
-async function blockedCancel(f:Fixture,revoke:()=>Promise<unknown>,lock:'command'|'stay'|'profile'='command',staffToken?:string){
+async function blockedCancel(f:Fixture,revoke:()=>Promise<unknown>,lock:'command'|'stay'|'profile'|'folio'|'order'='command',staffToken?:string){
  const locker=new Client({connectionString:process.env.DATABASE_URL}),caller=new Client({connectionString:process.env.DATABASE_URL});
  let pending:Promise<{value?:unknown;error?:unknown}>|undefined;
  try{
@@ -45,7 +58,8 @@ async function blockedCancel(f:Fixture,revoke:()=>Promise<unknown>,lock:'command
   if(lock==='command')await locker.query("SELECT pg_advisory_xact_lock(hashtextextended('service:'||$1::text||':'||$2::text,0))",[staffToken?'76800000-0000-4000-8000-000000000002':f.a.userId,f.key]);
   else{
    await locker.query("SELECT set_config('app.organization_id',$1,true),set_config('app.user_id',$2,true),set_config('app.membership_id',$2,true)",[org,manager]);
-   expect((await locker.query(lock==='stay'?'SELECT id FROM reservations WHERE id=$1 FOR UPDATE':'SELECT id FROM guest_profiles WHERE id=$1 FOR UPDATE',[lock==='stay'?f.r:f.g])).rowCount).toBe(1);
+   const sql=lock==='stay'?'SELECT id FROM reservations WHERE id=$1 FOR UPDATE':lock==='folio'?'SELECT id FROM guest_folios WHERE reservation_id=$1 FOR UPDATE':lock==='order'?'SELECT id FROM service_orders WHERE reservation_id=$1 FOR UPDATE':'SELECT id FROM guest_profiles WHERE id=$1 FOR UPDATE';
+   expect((await locker.query(sql,[lock==='profile'?f.g:f.r])).rowCount).toBe(1);
   }
   if(staffToken)await caller.query("SELECT set_config('app.organization_id',$1,false),set_config('app.user_id',$2,false),set_config('app.membership_id',$3,false)",[org,'76800000-0000-4000-8000-000000000002','76800000-0000-4000-8000-000000000005']);
   const pid=(await caller.query('SELECT pg_backend_pid() AS pid')).rows[0].pid,blocker=(await locker.query('SELECT pg_backend_pid() AS pid')).rows[0].pid;
@@ -113,5 +127,22 @@ describe.sequential('laundry fulfilment reauthorizes after waiting for command a
    expect(await blockedCancel(f,()=>staff.logout(token,false),'command',token)).toMatchObject({error:{code:'28000',message:'SERVICE_SESSION_INVALID'}});
    expect(await snapshot(f)).toEqual(before);
   }finally{await staff.logout(token,false);}
+ });
+ it.each([[false,'folio'],[true,'profile'],[false,'order']] as const)('confirm_receipt cached=%s rechecks logout after the %s lock without changing money or custody',async(cached,lock)=>{
+  const f=await receiptFixture(cached),before=await snapshot(f);
+  expect(before.intake.stage).toBe(cached?'closed':'delivered');expect(before.charges).toBe(cached?1:0);
+  expect(await blockedCancel(f,()=>guest.logout(f.a.token),lock)).toMatchObject({error:{code:'28000',message:'SERVICE_SESSION_INVALID'}});
+  expect(await snapshot(f)).toEqual(before);
+ });
+ it.each([[false,'folio'],[true,'profile'],[false,'order']] as const)('confirm_receipt cached=%s succeeds after the %s lock with one exact charge and replay',async(cached,lock)=>{
+  const f=await receiptFixture(cached),before=await snapshot(f),result=await blockedCancel(f,async()=>{},lock);
+  expect(result).not.toHaveProperty('error');expect(result.value).toMatchObject({stage:'closed',revision:f.body.expectedRevision+1,idempotentReplay:cached,totalMinor:'9007199254741000'});
+  const after=await snapshot(f);expect(after.intake.stage).toBe('closed');expect(after.charges).toBe(1);
+  expect(after.orders).toHaveLength(1);expect(after.orders[0].status).toBe('completed');
+  expect(after.entries).toEqual([{id:after.intake.folio_entry_id,amountMinor:'9007199254741000',currency:'UZS',sourceId:after.orders[0].id}]);
+  expect(after.audits-before.audits).toBe(cached?0:1);expect(after.events-before.events).toBe(cached?0:1);
+  if(cached){expect(result.value).toEqual({...f.receipt,idempotentReplay:true});expect(after).toEqual(before);}
+  expect(await service.guestAct(f.a.token,f.intake.intakeId,f.key,f.body)).toEqual({...result.value as object,idempotentReplay:true});
+  expect(await snapshot(f)).toEqual(after);
  });
 });

@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-18 — Срез37: авторизация получения прачечной после ожидания
+- Миграция0124: сессия проверяется после profile lock, folio lock/insert и позднего order UPDATE.
+- Cached receipt не выдаётся после logout; свежая команда откатывает начисление и статусы целиком.
+- RED на123миграциях:3failed/16passed; GREEN:19passed, шесть новых реальных гонок/контролей.
+- Runtime views_app без super/BYPASSRLS; pg_locks+blocking PID, exact bigint, одна запись и повтор без дублей.
+- Dirty d2c0be5: web689/86files, API/web build/typecheck, network187/mail15,124checksum PASS.
+- Полный связанный прогон exit0: Core218/23files и19HTTP/browser proofs PASS.
+- SQL/ACL/тесты reviewed PASS; прежние123миграции неизменны, API/права/порядок locks/зависимости прежние.
+- Гарантия ограничена проверенными ожиданиями при READ COMMITTED; отдельные гонки претензий не приняты.
+- Только disposable БД/loopback SMTP; запуск/критерии/ручные проверки: LAUNDRY_RECEIPT_AUTHORIZATION_37.md.
+- Public web032ea93/Cloudflare/APK и Canva56partial/84pending без изменений; UI в этом срезе не расширяется.
+- Далее: получение вещей с явным подтверждением начисления из общей карточки и защита неизвестного ответа.
+
 ## 2026-10-18 — Срез36: отказ от описи из общей карточки
 - Quoted: review/checkbox/явная отправка; владелец может запросить возврат без обработки и после выезда.
 - Awaiting_return сохраняет ответственность за вещи; только staff return_unprocessed фиксирует передачу, без заказа/начисления.
