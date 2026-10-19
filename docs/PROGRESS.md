@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-19 — Срез44: претензия V Market из общей карточки
+- GuestMarketReport: описание3–1000, явная отправка для handed_over/completed без open issue; checkout допустим.
+- Проверяются ID/revision, неизменные стадия/деньги, точный текст открытой претензии без прежнего ответа.
+- Pending сохраняет ключ/тело; offline и навигация блокируются; открытая претензия скрывает report/receipt.
+- RED helper/component отсутствовали/0tests; GREEN41новый тест, web983/91files PASS; SQL0126/API прежние.
+- Dirtydc7d8e0: web/APIbuild/typecheck, Core66/6files, network187/mail15/126checksum PASS.
+- Полная HTTP/browser цепочка:24proofs PASS, exit0.
+- Новый Core/browser proof: lost reply, same-key replay, одна issue/audit/outbox, неизменные заказ/фолио/остатки.
+- 6снимков RU/UZ/EN×Light/Dark×390; RU Light/Dark иUZ Dark просмотрены.
+- Команды/риски: MARKET_DETAIL_ISSUE_44.md; public032ea93/Cloudflare/APK и Canva56partial/84pending прежние.
+- Hard reload recovery остаётся. Далее: аудит авторизации ответа склада answer_issue.
+
 ## 2026-10-19 — Срез43: авторизация претензии V Market
 - Перед UI воспроизведены early cached replay и logout во время ожидания профиля вreport_issue.
 - SQL0126 выделяет гостевую команду; владение/сессия проверяются после locks до replay, private ACL закрыт.

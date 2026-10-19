@@ -151,8 +151,8 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   assert.equal((await admin.query("SELECT count(*)::int n FROM supply_movements WHERE reference=$1 AND lot_allocation->>'lotCode'='MARKET-BROWSER' AND lot_allocation ? 'movementId'",['V Market '+oid])).rows[0].n,countedItems.length);
   assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'3');assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
   await guest.getByRole('button',{name:'Refresh',exact:true}).click();
-  await gc.getByLabel('Describe missing or damaged goods (3–1000 characters)',{exact:true}).fill('One juice bottle is missing');
-  await gc.getByRole('button',{name:'Report an issue',exact:true}).click();await gc.getByText('Awaiting warehouse response',{exact:true}).waitFor();
+  await require('./guest-market-detail-issue-browser.cjs')({page,admin,oid});
+  await page.getByTestId('guest-order-detail-service').click();await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByText('Awaiting warehouse response',{exact:true}).waitFor();
   assert.equal(await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).count(),0);
   await staff.getByRole('button',{name:'Refresh',exact:true}).click();
   await sc.getByLabel('Reply to guest: findings and next steps',{exact:true}).fill('The missing juice is available at reception');
