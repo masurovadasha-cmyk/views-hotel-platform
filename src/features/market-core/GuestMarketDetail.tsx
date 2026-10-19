@@ -11,7 +11,8 @@ function money(value:unknown):string{if(typeof value!=='string'||!/^(0|[1-9]\d{0
 function array(value:unknown):unknown[]{if(!Array.isArray(value)||value.length>20)invalid();return value;}
 /** A bounded display model; unrelated API fields never enter the detail component. */
 export function parseMarketDetail(value:unknown){
- const r=object(value),totalMinor=money(r.totalMinor),currency=text(r.currency,3);
+ const r=object(value);if(!Number.isSafeInteger(r.revision)||Number(r.revision)<1)invalid();
+ const totalMinor=money(r.totalMinor),currency=text(r.currency,3);
  if(!['UZS','USD','EUR'].includes(currency))invalid();
  const lines=array(r.lines).map(value=>{
   const l=object(value),source=object(l.name),name:Record<string,string>={};
@@ -26,7 +27,7 @@ export function parseMarketDetail(value:unknown){
  if(creditedMinor===null?credits.length>0:BigInt(creditedMinor)>BigInt(totalMinor)||credits.reduce((n,c)=>n+BigInt(c.amountMinor),0n)>BigInt(creditedMinor)||BigInt(creditedMinor)>0n&&r.stage!=='completed')invalid();
  let issue:{status:'open'|'answered';note:string;answer:string|null}|null=null;
  if(r.issue!==undefined&&r.issue!==null){const i=object(r.issue);if(i.status!=='open'&&i.status!=='answered')invalid();issue={status:i.status,note:text(i.note),answer:i.answer==null?null:text(i.answer)};}
- return {lines,currency,totalMinor,creditedMinor,credits,issue,replacesOrderId:r.replacesOrderId==null?null:id(r.replacesOrderId),replacedByOrderId:r.replacedByOrderId==null?null:id(r.replacedByOrderId)};
+ return {revision:r.revision as number,lines,currency,totalMinor,creditedMinor,credits,issue,replacesOrderId:r.replacesOrderId==null?null:id(r.replacesOrderId),replacedByOrderId:r.replacedByOrderId==null?null:id(r.replacedByOrderId)};
 }
 const labels:Record<string,[string,string,string]>={
  items:['Состав заказа','Order items','Buyurtma tarkibi'],unitPrice:['Цена за единицу','Unit price','Birlik narxi'],lineTotal:['Сумма позиции','Line total','Tovar summasi'],

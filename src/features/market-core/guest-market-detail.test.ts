@@ -4,7 +4,7 @@ import {describe,expect,it} from 'vitest';
 import {GuestMarketDetail,parseMarketDetail} from './GuestMarketDetail';
 const id='00000000-0000-4000-8000-000000000001',other='00000000-0000-4000-8000-000000000002';
 const line={serviceId:id,name:{en:'Water',ru:'Вода',uz:'Suv'},quantity:2,priceMinor:'9007199254740993'};
-const raw={stage:'completed',currency:'UZS',totalMinor:'18014398509481986',lines:[line],creditedMinor:'9007199254740993',credits:[{id:other,amountMinor:'9007199254740993',reason:'Adjustment'}]};
+const raw={revision:8,stage:'completed',currency:'UZS',totalMinor:'18014398509481986',lines:[line],creditedMinor:'9007199254740993',credits:[{id:other,amountMinor:'9007199254740993',reason:'Adjustment'}]};
 describe('guest market read-only detail',()=>{
  it('preserves exact bigint values and discards unrelated data',()=>{
   const parsed=parseMarketDetail({...raw,staffSecret:'hidden',lines:[{...line,privateNote:'hidden'}]});

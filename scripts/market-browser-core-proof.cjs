@@ -159,7 +159,8 @@ module.exports=async function({browser,page,api,admin,identity,coreOrigin}){
   await sc.getByRole('button',{name:'Send response',exact:true}).click();await sc.getByText('Warehouse responded',{exact:true}).waitFor();
   assert.equal((await admin.query('SELECT count(*)::int n FROM folio_entries WHERE source_id=$1',[oid])).rows[0].n,0);
   assert.equal((await admin.query('SELECT quantity::text FROM supply_balances WHERE item_id=$1',[water])).rows[0].quantity,'3');
-  await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByText('The missing juice is available at reception',{exact:true}).waitFor();await gc.getByLabel('All items received. I confirm the stated charge',{exact:true}).check();await gc.getByRole('button',{name:'Confirm receipt and charge',exact:true}).click();await gc.getByTestId('market-stage').getByText('Received and charged',{exact:true}).waitFor();
+  await require('./guest-market-detail-receipt-browser.cjs')({page,admin,oid});
+  await page.getByTestId('guest-order-detail-service').click();await guest.getByRole('button',{name:'Refresh',exact:true}).click();await gc.getByTestId('market-stage').getByText('Received and charged',{exact:true}).waitFor();
   assert.deepEqual((await admin.query('SELECT amount_minor::text FROM folio_entries WHERE source_id=$1',[oid])).rows,[{amount_minor:'19000000'}]);
   await staff.getByRole('button',{name:'Refresh',exact:true}).click();
   const returns=sc.getByTestId('market-returns');await returns.getByLabel('Returned product',{exact:true}).selectOption(coffee);

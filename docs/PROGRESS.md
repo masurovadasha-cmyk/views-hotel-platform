@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-19 — Срез42: получение V Market из общей карточки
+- Добавлена явная форма согласия для handed_over без open issue; completed/прочие стадии скрывают действие.
+- Контракт проверяет ID/revision, точные сумму/валюту, завершение и состав ответа; ошибочный ответ сохраняет pending.
+- Повтор использует исходный ключ/тело; навигация блокируется, offline запрещает отправку. Checkout допустим по Core.
+- RED: helper отсутствовал/0tests; GREEN37новых, web942/90files PASS; SQL0125/API/зависимости прежние.
+- Dirty56375a5: web/APIbuild/typecheck PASS; Core71/6files; network187/mail15/125checksum PASS.
+- Полная HTTP/browser цепочка:23proofs PASS, exit0.
+- Новый браузерный proof: consent, lost reply/replay, offline, одна charge/audit/outbox;6снимков RU/UZ/EN×темы×390.
+- RU Light/Dark иUZ Dark просмотрены; детали/команды/риски: MARKET_DETAIL_RECEIPT_42.md.
+- Public032ea93/Cloudflare/APK и Canva56partial/84pending прежние; hard reload recovery остаётся.
+- Далее: претензия V Market из общей карточки после аудита авторизации этой команды.
+
 ## 2026-10-19 — Срез41: авторизация получения V Market
 - До UI выявлен cached replay до проверки актуальных прав и logout во время ожидания начисления.
 - SQL0125 выделяет гостевой confirm_receipt; повтор проверяет владельца/сессию после locks, поздний отказ откатывает начисление.
