@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-10-19 — Срез43: авторизация претензии V Market
+- Перед UI воспроизведены early cached replay и logout во время ожидания профиля вreport_issue.
+- SQL0126 выделяет гостевую команду; владение/сессия проверяются после locks до replay, private ACL закрыт.
+- Fresh/cached logout/unlink/reassign не меняют заказы, склад, фолио, audit/outbox; доступный повтор создаёт одну претензию.
+- RED7failed/5passed (6гонок+отсутствующая функция); GREEN12целевых, Core265/25files PASS.
+- Dirty5236520: web942/90files, web/APIbuild/typecheck, network187/mail15/126checksum PASS; старые125checksum прежние.
+- Полная цепочка:36подготовительных Core и23HTTP/browser proofs PASS, exit0.
+- Подробности/команды/риски: MARKET_ISSUE_AUTHORIZATION_43.md; только disposable PostgreSQL16/loopback SMTP.
+- Guest UI, staff answer_issue и прочие market-команды не меняются; public032ea93/Cloudflare/APK/Canva прежние.
+- Далее: форма гостевой претензии V Market из общей карточки с неизменным retry и проверкой квитанции.
+
 ## 2026-10-19 — Срез42: получение V Market из общей карточки
 - Добавлена явная форма согласия для handed_over без open issue; completed/прочие стадии скрывают действие.
 - Контракт проверяет ID/revision, точные сумму/валюту, завершение и состав ответа; ошибочный ответ сохраняет pending.
