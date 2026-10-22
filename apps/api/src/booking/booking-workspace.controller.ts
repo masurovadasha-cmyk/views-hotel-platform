@@ -60,7 +60,7 @@ export class BookingWorkspaceController{
           CROSS JOIN LATERAL unnest(ARRAY[
             CASE WHEN r.status='confirmed' AND (r.check_in_at AT TIME ZONE $4)::date=selected.day THEN 'arrivals' END,
             CASE WHEN r.status='checked_in' AND (r.check_out_at AT TIME ZONE $4)::date=selected.day THEN 'departures' END,
-            CASE WHEN r.status='checked_in' THEN 'staying' END,
+            CASE WHEN r.status='checked_in' AND r.check_in_at < ((selected.day + 1)::timestamp AT TIME ZONE $4) AND r.check_out_at > (selected.day::timestamp AT TIME ZONE $4) THEN 'staying' END,
             CASE WHEN r.status='checked_out' AND EXISTS(SELECT 1 FROM local_stay_turnovers t WHERE t.reservation_id=r.id AND t.status='pending') THEN 'cleaning' END
           ]) bucket
           WHERE r.organization_id=$1 AND r.property_id=$2 AND bucket IS NOT NULL
