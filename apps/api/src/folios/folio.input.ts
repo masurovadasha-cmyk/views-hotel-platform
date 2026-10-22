@@ -1,0 +1,11 @@
+import {BadRequestException} from '@nestjs/common';
+export const invalid=():never=>{throw new BadRequestException('FOLIO_INPUT_INVALID');};
+export function id(value:unknown){if(typeof value!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value))return invalid();return value.toLowerCase();}
+export function object(value:unknown,keys:string[]){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==keys.length||!keys.every(k=>Object.hasOwn(value,k)))return invalid();return value as Record<string,unknown>;}
+export function label(value:unknown){if(typeof value!=='string'||value.trim().length<1||value.trim().length>240||/[\u0000-\u001f]/.test(value))return invalid();return value.trim();}
+export function day(value:unknown){if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value+'T00:00:00Z'))||new Date(value+'T00:00:00Z').toISOString().slice(0,10)!==value||value<'2000-01-01')return invalid();return value;}
+export function chargeInput(raw:unknown){const b=object(raw,['kind','amountMinor','label']);if(!['service','minibar','fee'].includes(b.kind as string)||typeof b.amountMinor!=='string'||!/^[1-9]\d{0,18}$/.test(b.amountMinor)||BigInt(b.amountMinor)>9223372036854775807n)return invalid();return {kind:b.kind as 'service'|'minibar'|'fee',amountMinor:b.amountMinor,label:label(b.label)};}
+export function reversalInput(raw:unknown){const b=object(raw,['entryId','reason']);return {entryId:id(b.entryId),reason:label(b.reason)};}
+export function auditInput(raw:unknown){const b=object(raw,['propertyId','businessDate','expectedRevision']);if(typeof b.expectedRevision!=='string'||!/^[a-f0-9]{64}$/.test(b.expectedRevision))return invalid();return {propertyId:id(b.propertyId),businessDate:day(b.businessDate),expectedRevision:b.expectedRevision};}
+export function cursor(raw:unknown,scope:string){if(raw===undefined)return null;try{if(typeof raw!=='string'||raw.length>700)throw Error();const p:unknown=JSON.parse(Buffer.from(raw,'base64url').toString());if(!Array.isArray(p)||p.length!==2||p[0]!==scope)throw Error();return id(p[1]);}catch{return invalid();}}
+export const nextCursor=(scope:string,last:string)=>Buffer.from(JSON.stringify([scope,last])).toString('base64url');

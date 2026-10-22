@@ -1,4 +1,4 @@
-import {Injectable,OnModuleDestroy} from "@nestjs/common";
+import {Injectable,Logger,OnModuleDestroy} from "@nestjs/common";
 import {Pool,PoolClient,QueryResultRow} from "pg";
 import {loadConfig} from "../config";
 import type {RequestActorContext} from "../identity/actor-context";
@@ -6,6 +6,11 @@ import type {RequestActorContext} from "../identity/actor-context";
 @Injectable()
 export class DatabaseService implements OnModuleDestroy{
  private readonly pool=new Pool({connectionString:loadConfig().databaseUrl,max:20});
+
+ constructor(){
+  // Idle clients can fail between requests; never log the pg error/client object.
+  this.pool.on('error',()=>new Logger(DatabaseService.name).error('DATABASE_IDLE_CONNECTION_ERROR'));
+ }
 
  async query<T extends QueryResultRow>(sql:string,params:unknown[]=[]){return this.pool.query<T>(sql,params)}
 

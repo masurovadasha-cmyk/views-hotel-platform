@@ -380,7 +380,7 @@ describe.sequential("payments and ledger integration",()=>{
 
     const refunded=await webhooks.processVerified("payme",event({
       eventId:"evt-partial-expire-refund",
-      txId:"refund-partial-expire",
+      txId:"refund-cap-partial-expire",
       related:"cap-partial-expire",
       type:"refunded",
       paymentIntentId:payment.paymentIntentId,

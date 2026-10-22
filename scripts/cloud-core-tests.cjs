@@ -1,0 +1,114 @@
+'use strict';
+// Run the existing CI's PostgreSQL fixtures and full API suite in a fresh container.
+// The development database is never reset or used by this runner.
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const assert = require('node:assert/strict');
+const { randomBytes } = require('node:crypto');
+const { spawn, spawnSync } = require('node:child_process');
+const REPO = path.resolve(__dirname, '..');
+const {applySyntheticSeed}=require('../apps/api/ops/synthetic-seed.cjs');
+const { Client } = require(path.join(REPO, 'apps/api/node_modules/pg'));
+const IMAGE = 'postgres@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4';
+const dev=process.argv.includes('--dev-local');
+let stopping=false;
+if(dev)for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{stopping=true;});
+const name = 'views-core-ci-' + randomBytes(8).toString('hex');
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'views-core-ci-'));
+const ownerPassword = randomBytes(32).toString('hex');
+const runtimePassword = randomBytes(32).toString('hex');
+const run = args => {
+  const r = spawnSync('docker', args, { encoding: 'utf8', timeout: 120000 });
+  if (r.error || r.status !== 0) throw Error('DOCKER_COMMAND_FAILED:' + args[0]);
+  return r.stdout;
+};
+
+(async () => {
+  let admin, runtime, created = false;
+  try {
+    fs.writeFileSync(path.join(dir, 'password'), ownerPassword, { mode: 0o600 });
+    run(['run', '--detach', '--rm', '--name', name, '--label', 'views.disposable-core-test=true',
+      '--publish', '127.0.0.1::5432', '--mount', `type=bind,src=${path.join(dir, 'password')},dst=/run/password,readonly`,
+      '--env', 'POSTGRES_DB=views', '--env', 'POSTGRES_USER=views', '--env', 'POSTGRES_PASSWORD_FILE=/run/password', IMAGE]);
+    created = true;
+    const binding = JSON.parse(run(['inspect', name]))[0].NetworkSettings.Ports['5432/tcp'][0];
+    assert.equal(binding.HostIp, '127.0.0.1');
+    const port = Number(binding.HostPort);
+    for (let i = 0; i < 60; i++) {
+      const candidate = new Client({ host: '127.0.0.1', port, database: 'views', user: 'views', password: ownerPassword, connectionTimeoutMillis: 1000 });
+      try { await candidate.connect(); admin = candidate; break; }
+      catch { await candidate.end().catch(() => {}); await new Promise(r => setTimeout(r, 500)); }
+    }
+    if (!admin) throw Error('CI_POSTGRES_NOT_READY');
+    await admin.query("COMMENT ON DATABASE views IS 'VIEWS_DISPOSABLE_CORE_TEST'");
+    await admin.query(fs.readFileSync(path.join(REPO, 'infra/postgres/init/001_extensions.sql'), 'utf8'));
+    const migrations = path.join(REPO, 'db/migrations');
+    if(dev){
+      const {readMigrations,applyMigrations}=require('../apps/api/ops/migrations.cjs');
+      await applyMigrations(admin,readMigrations(migrations,path.join(REPO,'db/migrations.sha256')));
+    }else for (const file of fs.readdirSync(migrations).filter(f => /^\d{4}_.*\.sql$/.test(f)).sort()) {
+      await admin.query(fs.readFileSync(path.join(migrations, file), 'utf8')).catch(error=>{console.error('MIGRATION_FAILED:'+file+':'+error.message+':position='+error.position);throw error;});
+    }
+    // Use the authoritative workflow fixture SQL, including its scoped identities.
+    const workflow = fs.readFileSync(path.join(REPO, '.github/workflows/production-core.yml'), 'utf8');
+    const blocks = [...workflow.matchAll(/<<'SQL'\r?\n([\s\S]*?)\r?\n\s+SQL(?:\r?\n|$)/g)].map(m => m[1]);
+    assert.equal(blocks.length, 3, 'Review this runner when the CI seed contract changes');
+    const seedBlocks=[];
+    async function seed(name,sql){
+      assert.equal(await applySyntheticSeed(admin,name,sql),true);
+      seedBlocks.push({name,sql});
+    }
+    for (const [index,sql] of blocks.entries()) await seed('workflow-'+index,sql.replaceAll("'views_app_test'", "'" + runtimePassword + "'"));
+    await seed('stage-b1.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/stage-b1.synthetic.sql'), 'utf8'));
+    await seed('service-orders.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/service-orders.synthetic.sql'), 'utf8'));
+    await seed('market.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/market.synthetic.sql'), 'utf8'));
+    await seed('guest-service-detail.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/guest-service-detail.synthetic.sql'), 'utf8'));
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b1.constraints.sql'), 'utf8'));
+    console.log('B1 administrative constraint proofs: 7 groups PASS (rolled back).');
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b2.sms.sql'), 'utf8'));
+    console.log('B2 SMS administrative clock and identity proofs PASS (rolled back).');
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b2.email.sql'), 'utf8'));
+    console.log('B2 email expiry, supersession and role separation proofs PASS (rolled back).');
+    await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b4.supply-auth.sql'), 'utf8'));
+    console.log('Supply staff invitation, mail, assurance and restricted role proofs PASS (rolled back).');
+    await seed('supply-auth.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/supply-auth.synthetic.sql'), 'utf8'));
+    const seedHistory=(await admin.query('SELECT * FROM seed_private.applied ORDER BY name')).rows;
+    for(const block of seedBlocks)assert.equal(await applySyntheticSeed(admin,block.name,block.sql),false);
+    assert.deepEqual((await admin.query('SELECT * FROM seed_private.applied ORDER BY name')).rows,seedHistory);
+    const seedPeer=new Client({host:'127.0.0.1',port,database:'views',user:'views',password:ownerPassword});
+    try{await seedPeer.connect();await require('./synthetic-seed-proof.cjs')(admin,seedPeer);if(!dev)await require('./market-lot-reserve-proof.cjs')(admin,seedPeer).catch(error=>{console.error('LOT_RESERVE_PROOF_FAILED:'+error.message);throw error;});}
+    finally{await seedPeer.end();}
+    await assert.rejects(admin.query(`INSERT INTO inventory_periods(organization_id,property_id,unit_id,kind,source_ref,stay_period)
+      VALUES('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000004','maintenance','cloud-ci-overlap',tstzrange('2026-10-11T12:00:00+05','2026-10-13T12:00:00+05','[)'))`), { code: '23P01' });
+    runtime = new Client({ host: '127.0.0.1', port, database: 'views', user: 'views_app', password: runtimePassword });
+    await runtime.connect();
+    const role = (await runtime.query('SELECT rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user')).rows[0];
+    assert.equal(role.rolsuper, false); assert.equal(role.rolbypassrls, false);
+    await runtime.query("BEGIN; SELECT set_config('app.organization_id','00000000-0000-0000-0000-000000000001',true); SELECT set_config('app.user_id','20000000-0000-4000-8000-000000000001',true); SELECT set_config('app.membership_id','30000000-0000-4000-8000-000000000001',true)");
+    assert.equal((await runtime.query("SELECT count(*)::int n FROM properties WHERE id='00000000-0000-0000-0000-000000000002'")).rows[0].n, 1);
+    assert.equal((await runtime.query("SELECT count(*)::int n FROM properties WHERE id='10000000-0000-4000-8000-000000000002'")).rows[0].n, 0);
+    await runtime.query('ROLLBACK');
+    if(dev){
+      if(!stopping)await require('./dev-local-runtime.cjs')({runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`,smoke:process.argv.includes('--smoke'),stopping:()=>stopping});
+      return;
+    }
+    console.log('PostgreSQL 16: migrations, no-overbooking and tenant isolation PASS; starting '+(process.argv.length>2?'selected':'complete')+' Core suite.');
+    const exitCode = await new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [path.join(REPO, 'apps/api/node_modules/vitest/vitest.mjs'), 'run', ...process.argv.slice(2)], {
+        cwd: path.join(REPO, 'apps/api'), stdio: 'inherit',
+        env: { ...process.env, NODE_ENV: 'test', DATABASE_URL: `postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views` }
+      });
+      child.once('error', reject); child.once('exit', code => resolve(code ?? 1));
+    });
+    process.exitCode = exitCode;
+    if(exitCode===0&&process.env.VIEWS_HOUSEKEEPING_HTTP_PROOF==='true')await require('./housekeeping-connected-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
+    if(exitCode===0&&process.env.VIEWS_GUEST_EMAIL_HTTP_PROOF==='true')await require('./guest-email-http-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
+  } finally {
+    if (runtime) await runtime.end();
+    if (admin) await admin.end();
+    if (created) run(['stop', '--time', '10', name]);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+})().catch(error => { console.error('CORE_CI_FAILED:' + (error.code || 'SETUP_OR_ASSERTION')); process.exitCode = 1; });

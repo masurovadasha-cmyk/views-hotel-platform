@@ -49,7 +49,7 @@ Never use float/double for booking totals.
 
 ## Migration
 
-apps/api/db/migrations/0007_rates_quotes_cancellation.sql
+db/migrations/0007_rates_quotes_cancellation.sql
 
 New tables:
 - rate_day_overrides

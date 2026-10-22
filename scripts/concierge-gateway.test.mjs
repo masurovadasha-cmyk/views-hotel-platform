@@ -1,0 +1,61 @@
+import {createRequire} from 'node:module';
+import {afterEach,describe,it,expect,vi} from 'vitest';
+const require=createRequire(import.meta.url),guest=require('../apps/api/ops/guest-service-gateway.cjs'),staff=require('../apps/api/ops/service-order-gateway.cjs');
+const id='12345678-1234-4123-8123-123456789012';
+afterEach(()=>vi.unstubAllEnvs());
+describe('concierge cookie boundary',()=>{
+ it('requires explicit pilot, session and CSRF before accepting a request',async()=>{
+  const calls=[],ctx={route:'services/concierge',req:{method:'POST',headers:{}},res:{},token:'synthetic',csrf:()=> 'csrf',reply:(_r,s)=>calls.push(s),upstream:()=>{throw Error('MUST_NOT_FORWARD');}};
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','false');await guest.handle(ctx);expect(calls.pop()).toBe(404);
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');await guest.handle(ctx);expect(calls.pop()).toBe(403);
+  ctx.req.method='GET';ctx.route='services/concierge?reservationId='+id+'&propertyId='+id;await guest.handle(ctx);expect(calls.pop()).toBe(400);
+ });
+ it('keeps membership and internal identity out of the guest projection',()=>{
+  const p=guest.projection({orderId:id,revision:1,idempotentReplay:false,assigned_membership_id:id,messages:[{id,author:'staff',text:'Answer',createdAt:'2026-10-12',actorId:id}]});
+  expect(p.assigned_membership_id).toBeUndefined();expect(p.messages[0].actorId).toBeUndefined();
+  expect(()=>guest.projection({orderId:id,revision:1,idempotentReplay:false,messages:Array(101).fill({})})).toThrow('INVALID_RESPONSE');
+ });
+ it('accepts concierge or dispatcher scope, but denies warehouse and caller-selected property',async()=>{
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');
+  const ctx={u:new URL('http://local/local-api/service-orders/concierge'),req:{method:'GET',headers:{}},res:{},identity:{permissions:['concierge.work'],propertyIds:[id]},propertyId:id,token:'staff',fail:(_s,c)=>{throw Error(c);},json:vi.fn(),core:vi.fn(async()=>({items:[]}))};
+  await staff.handle(ctx);expect(ctx.core.mock.calls[0][0]).toBe('/v1/service-orders/concierge?propertyId='+id);
+  ctx.identity.permissions=['stock.manage'];await expect(staff.handle(ctx)).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  ctx.identity.permissions=['reservation.manage'];ctx.identity.propertyIds=[];await expect(staff.handle(ctx)).rejects.toThrow('PROPERTY_FORBIDDEN');
+  expect(staff.validSearch(new URL('http://local/local-api/service-orders/concierge?propertyId='+id),'GET')).toBe(false);
+ });
+});
+
+describe('concierge support gateway',()=>{
+ it('scopes search and keeps profile query empty',async()=>{
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');
+  const ctx={u:new URL('http://local/local-api/service-orders/concierge/knowledge?search=quiet%20room'),req:{method:'GET',headers:{}},res:{},identity:{permissions:['concierge.work'],propertyIds:[id]},propertyId:id,token:'staff',fail:(_s,c)=>{throw Error(c);},json:vi.fn(),core:vi.fn(async()=>({items:[]}))};
+  await staff.handle(ctx);expect(ctx.core.mock.calls[0][0]).toContain('propertyId='+id);expect(ctx.core.mock.calls[0][0]).toContain('search=quiet%20room');
+  ctx.u=new URL('http://local/local-api/service-orders/concierge/'+id+'/profile');await staff.handle(ctx);expect(ctx.core.mock.calls[1][0]).toBe('/v1/service-orders/concierge/'+id+'/profile');
+  ctx.u=new URL('http://local/local-api/service-orders/concierge/knowledge');ctx.req.method='POST';await expect(staff.handle(ctx)).rejects.toThrow('STAFF_PERMISSION_DENIED');
+ });
+ it('projects preferences without private identities or arbitrary fields',()=>{
+  expect(guest.projection({reservationId:id,revision:1,consent:true,preferences:'Quiet',user_id:id,secret:'hidden'})).toEqual({reservationId:id,revision:1,consent:true,preferences:'Quiet'});
+ });
+});
+
+describe('concierge SLA guest projection',()=>{
+ it('keeps the bounded deadline snapshot but strips nested staff identity',()=>{
+  const due='2026-10-12T08:15:00Z',sla={policy:'concierge-response-15m-v1',hypothesis:true,evaluatedAt:due,responseDueAt:due,state:'pending',overdueSeconds:0,answeredLate:null};
+  const raw={items:[{orderId:id,responseDueAt:due,sla:{...sla,staffMembershipId:id,privateNote:'hidden'}}],nextCursor:null};
+  expect(guest.projection(raw).items[0].sla).toEqual(sla);
+  for(const patch of [{overdueSeconds:-1},{policy:'unknown'},{hypothesis:false},{evaluatedAt:'invalid'},{answeredLate:'yes'}])expect(()=>guest.projection({...raw,items:[{...raw.items[0],sla:{...sla,...patch}}]})).toThrow('INVALID_RESPONSE');
+ });
+});
+
+describe('concierge overdue staff queue',()=>{
+ it('forwards only server-selected property and bounded cursor with existing role scope',async()=>{
+  vi.stubEnv('VIEWS_SERVICE_ORDER_PILOT_ENABLED','true');
+  const url='http://local/local-api/service-orders/concierge/overdue';
+  expect(staff.validSearch(new URL(url+'?cursor='+id),'GET')).toBe(true);
+  for(const query of ['?propertyId='+id,'?now=2026-10-12','?cursor='+id+'&cursor='+id])expect(staff.validSearch(new URL(url+query),'GET')).toBe(false);
+  const ctx={u:new URL(url+'?cursor='+id),req:{method:'GET',headers:{}},res:{},identity:{permissions:['concierge.work'],propertyIds:[id]},propertyId:id,token:'staff',fail:(_s,c)=>{throw Error(c);},json:vi.fn(),core:vi.fn(async()=>({items:[],nextCursor:null}))};
+  await staff.handle(ctx);expect(ctx.core.mock.calls[0][0]).toBe('/v1/service-orders/concierge/overdue?propertyId='+id+'&cursor='+id);
+  ctx.identity.permissions=['stock.manage'];await expect(staff.handle(ctx)).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  ctx.identity.permissions=['reservation.manage'];ctx.identity.propertyIds=[];await expect(staff.handle(ctx)).rejects.toThrow('PROPERTY_FORBIDDEN');
+ });
+});

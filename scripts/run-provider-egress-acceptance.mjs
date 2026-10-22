@@ -13,7 +13,7 @@ const compiled=spawnSync(process.execPath,[compiler,'--target','ES2022','--modul
   '--esModuleInterop','--strict','--skipLibCheck','--types','node','--typeRoots','apps/api/node_modules/@types',
   '--outDir',build,...sources],{stdio:'inherit'});
 if(compiled.status!==0)process.exit(compiled.status||1);
-const result=spawnSync(process.execPath,['--test','scripts/provider-egress-client.acceptance.mjs',
+const result=spawnSync(process.execPath,['--test','--test-reporter=tap','scripts/provider-egress-client.acceptance.mjs',
   'scripts/relay-destination-policy.acceptance.mjs'],{encoding:'utf8',env:{...process.env,VIEWS_EGRESS_TEST_BUILD:build},timeout:60000});
 const text=(result.stdout||'')+(result.stderr||'');
 process.stdout.write(text);writeFileSync(path.join(evidence,'acceptance.tap'),text);

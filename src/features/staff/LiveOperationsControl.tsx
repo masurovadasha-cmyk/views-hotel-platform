@@ -1,3 +1,4 @@
+import {useLegacyStaffLocale,legacyDate} from './LegacyStaffLocale';
 import {FormEvent,useEffect,useState} from "react";
 import type {LiveDamageReport,LiveInventoryItem,LiveLostFoundItem,LiveOperationsObservability,LiveShiftHandover} from "../../api/types";
 import {api,ApiError} from "../../api/client";
@@ -8,15 +9,17 @@ function errorMessage(error:unknown){
 }
 
 function Panel({title,children}:{title:string;children:React.ReactNode}){
-  return <section className="panel"><header><small>VIEWS LIVE OPERATIONS</small><h2>{title}</h2></header>{children}</section>;
+  const {t,locale}=useLegacyStaffLocale();
+  return <section className="panel"><header><small>{t("VIEWS LIVE OPERATIONS")}</small><h2>{t(String(title))}</h2></header>{children}</section>;
 }
 
 export function OperationsOverviewLive(){
+  const {t,locale}=useLegacyStaffLocale();
   const [summary,setSummary]=useState<{lostFoundOpen:number;damageOpen:number;inventoryLow:number;serviceOrdersOpen:number}|null>(null);
   const [observability,setObservability]=useState<LiveOperationsObservability|null>(null);
   const [error,setError]=useState("");
   const [busy,setBusy]=useState(false);
-  const [outboxMessage,setOutboxMessage]=useState("");
+  const [outboxMessage,setOutboxMessage]=useState<Record<string,number>|null>(null);
 
   async function load(){
     try{
@@ -32,53 +35,54 @@ export function OperationsOverviewLive(){
   useEffect(()=>{void load()},[]);
 
   async function processOutbox(){
-    setBusy(true);setOutboxMessage("");
+    setBusy(true);setOutboxMessage(null);
     try{
       const result=await api.processOutbox(50);
-      setOutboxMessage("Claimed "+result.claimed+" · processed "+result.processed+" · skipped "+result.skippedClaim+" · retried "+result.retried+" · dead-letter "+result.deadLettered+" · remaining "+result.remaining);
+      setOutboxMessage({claimed:result.claimed,processed:result.processed,skipped:result.skippedClaim,retried:result.retried,failed:result.deadLettered,remaining:result.remaining});
       await load();
     }catch(e){setError(errorMessage(e))}
     finally{setBusy(false)}
   }
 
   return <div>
-    {error&&<div className="notice">{error}</div>}
+    {error&&<div className="notice">{t(String(error))}</div>}
     <section className="kpis">
-      <article><span>Open service orders</span><b>{summary?.serviceOrdersOpen??"—"}</b></article>
-      <article><span>Lost & Found</span><b>{summary?.lostFoundOpen??"—"}</b></article>
-      <article><span>Damage reports</span><b>{summary?.damageOpen??"—"}</b></article>
-      <article><span>Low stock</span><b>{summary?.inventoryLow??"—"}</b></article>
+      <article><span>{t("Open service orders")}</span><b>{summary?.serviceOrdersOpen??"—"}</b></article>
+      <article><span>{t("Lost & Found")}</span><b>{summary?.lostFoundOpen??"—"}</b></article>
+      <article><span>{t("Damage reports")}</span><b>{summary?.damageOpen??"—"}</b></article>
+      <article><span>{t("Low stock")}</span><b>{summary?.inventoryLow??"—"}</b></article>
     </section>
     <section className="kpis">
-      <article><span>Outbox pending</span><b>{observability?.outboxPending??"—"}</b></article>
-      <article><span>Outbox retrying</span><b>{observability?.outboxRetrying??"—"}</b></article>
-      <article><span>Outbox leased</span><b>{observability?.outboxLeased??"—"}</b></article>
-      <article><span>Dead-letter</span><b>{observability?.outboxDeadLetter??"—"}</b></article>
+      <article><span>{t("Outbox pending")}</span><b>{observability?.outboxPending??"—"}</b></article>
+      <article><span>{t("Outbox retrying")}</span><b>{observability?.outboxRetrying??"—"}</b></article>
+      <article><span>{t("Outbox leased")}</span><b>{observability?.outboxLeased??"—"}</b></article>
+      <article><span>{t("Dead-letter")}</span><b>{observability?.outboxDeadLetter??"—"}</b></article>
     </section>
     <section className="kpis">
-      <article><span>Stale service work</span><b>{observability?.stale.serviceOrders??"—"}</b></article>
-      <article><span>Stale housekeeping</span><b>{observability?.stale.housekeeping??"—"}</b></article>
-      <article><span>Stale maintenance</span><b>{observability?.stale.maintenance??"—"}</b></article>
-      <article><span>Queue health</span><b>{observability?.outboxDeadLetter===0?"OK":"ATTENTION"}</b></article>
-      <article><span>Processor</span><button className="primary" disabled={busy} onClick={processOutbox}>{busy?"Processing…":"Process now"}</button></article>
+      <article><span>{t("Stale service work")}</span><b>{observability?.stale.serviceOrders??"—"}</b></article>
+      <article><span>{t("Stale housekeeping")}</span><b>{observability?.stale.housekeeping??"—"}</b></article>
+      <article><span>{t("Stale maintenance")}</span><b>{observability?.stale.maintenance??"—"}</b></article>
+      <article><span>{t("Queue health")}</span><b>{observability?.outboxDeadLetter===0?t("OK"):t("ATTENTION")}</b></article>
+      <article><span>{t("Processor")}</span><button className="primary" disabled={busy} onClick={processOutbox}>{busy?t("Processing…"):t("Process now")}</button></article>
     </section>
-    {outboxMessage&&<div className="notice">{outboxMessage}</div>}
-    <Panel title="Recent operational events">
-      {!observability?.recentEvents.length?<div className="emptyLine">No domain events recorded yet.</div>:
+    {outboxMessage&&<div className="notice">{t("Claimed {claimed} · processed {processed} · skipped {skipped} · retried {retried} · failed {failed} · remaining {remaining}",outboxMessage)}</div>}
+    <Panel title={t("Recent operational events")}>
+      {!observability?.recentEvents.length?<div className="emptyLine">{t("No domain events recorded yet.")}</div>:
       <div className="compactRows">{observability.recentEvents.slice(0,12).map((event,index)=><div key={event.source+event.aggregate_id+event.created_at+index}>
-        <span>{event.source}</span>
-        <b>{event.event_type}</b>
-        <small>{event.from_status??"—"} → {event.to_status??"—"} · {event.actor_user_id??"system"}</small>
-        <i>{event.created_at}</i>
+        <span>{t(String(event.source))}</span>
+        <b>{t(String(event.event_type))}</b>
+        <small>{t(String(event.from_status??"—"))} → {t(String(event.to_status??"—"))} · {event.actor_user_id??t("system")}</small>
+        <i>{legacyDate(event.created_at,locale)}</i>
       </div>)}</div>}
     </Panel>
-    <Panel title="Operations control">
-      <div className="notice">All observability data is organization/property scoped. Raw event payloads are intentionally not exposed in this UI.</div>
+    <Panel title={t("Operations control")}>
+      <div className="notice">{t("All observability data is organization/property scoped. Raw event payloads are intentionally not exposed in this UI.")}</div>
     </Panel>
   </div>;
 }
 
 export function ExceptionsLive(){
+  const {t,locale}=useLegacyStaffLocale();
   const [lost,setLost]=useState<LiveLostFoundItem[]>([]);
   const [damage,setDamage]=useState<LiveDamageReport[]>([]);
   const [stock,setStock]=useState<LiveInventoryItem[]>([]);
@@ -112,42 +116,43 @@ export function ExceptionsLive(){
   }
 
   return <div className="exceptionsGrid">
-    {error&&<div className="notice">{error}</div>}
-    <Panel title="Lost & Found">
-      {lost.length===0?<div className="emptyLine">No open lost-and-found records.</div>:<div className="orderList">{lost.map(item=><article className="order" key={item.id}>
-        <div><b>{item.item_name}</b><span>{item.unit_code?"Apt "+item.unit_code:item.found_location||"Property"} · {item.found_at}</span></div>
-        <span className={"status "+item.status}>{item.status}</span>
+    {error&&<div className="notice">{t(String(error))}</div>}
+    <Panel title={t("Lost & Found")}>
+      {lost.length===0?<div className="emptyLine">{t("No open lost-and-found records.")}</div>:<div className="orderList">{lost.map(item=><article className="order" key={item.id}>
+        <div><b>{item.item_name}</b><span>{item.unit_code?t("Apartment {unit}",{unit:item.unit_code}):item.found_location||t("Property")} · {legacyDate(item.found_at,locale)}</span></div>
+        <span className={"status "+item.status}>{t(String(item.status))}</span>
         <div className="orderActions">
-          {item.status==="pending"&&<button disabled={busy!==""} onClick={()=>lostAction(item.id,"claim")}>Claim</button>}
-          {["pending","claimed"].includes(item.status)&&<button className="primary" disabled={busy!==""} onClick={()=>lostAction(item.id,"return")}>Return</button>}
-          {item.status==="returned"&&<button className="primary" disabled={busy!==""} onClick={()=>lostAction(item.id,"close")}>Close</button>}
+          {item.status==="pending"&&<button disabled={busy!==""} onClick={()=>lostAction(item.id,"claim")}>{t("Claim")}</button>}
+          {["pending","claimed"].includes(item.status)&&<button className="primary" disabled={busy!==""} onClick={()=>lostAction(item.id,"return")}>{t("Return")}</button>}
+          {item.status==="returned"&&<button className="primary" disabled={busy!==""} onClick={()=>lostAction(item.id,"close")}>{t("Close")}</button>}
         </div>
       </article>)}</div>}
     </Panel>
 
-    <Panel title="Damage reports">
-      {damage.length===0?<div className="emptyLine">No open damage reports.</div>:<div className="orderList">{damage.map(item=><article className="order" key={item.id}>
-        <div><b>{item.title}</b><span>{item.unit_code?"Apt "+item.unit_code:"Property"} · {item.severity} severity</span></div>
-        <span className={"status "+item.status}>{item.status}</span>
+    <Panel title={t("Damage reports")}>
+      {damage.length===0?<div className="emptyLine">{t("No open damage reports.")}</div>:<div className="orderList">{damage.map(item=><article className="order" key={item.id}>
+        <div><b>{item.title}</b><span>{item.unit_code?t("Apartment {unit}",{unit:item.unit_code}):t("Property")} · {t(String(item.severity))} {' '}{t("severity")}</span></div>
+        <span className={"status "+item.status}>{t(String(item.status))}</span>
         <div className="orderActions">
-          {item.status==="open"&&<button disabled={busy!==""} onClick={()=>damageAction(item.id,"review")}>Review</button>}
-          {["open","review"].includes(item.status)&&<button className="primary" disabled={busy!==""} onClick={()=>damageAction(item.id,"resolve")}>Resolve</button>}
-          {item.status==="resolved"&&<button className="primary" disabled={busy!==""} onClick={()=>damageAction(item.id,"close")}>Close</button>}
+          {item.status==="open"&&<button disabled={busy!==""} onClick={()=>damageAction(item.id,"review")}>{t("Review")}</button>}
+          {["open","review"].includes(item.status)&&<button className="primary" disabled={busy!==""} onClick={()=>damageAction(item.id,"resolve")}>{t("Resolve")}</button>}
+          {item.status==="resolved"&&<button className="primary" disabled={busy!==""} onClick={()=>damageAction(item.id,"close")}>{t("Close")}</button>}
         </div>
       </article>)}</div>}
     </Panel>
 
-    <Panel title="Inventory below par">
-      {stock.length===0?<div className="emptyLine">All tracked inventory is at or above par.</div>:<div className="orderList">{stock.map(item=><article className="order" key={item.id}>
+    <Panel title={t("Inventory below par")}>
+      {stock.length===0?<div className="emptyLine">{t("All tracked inventory is at or above par.")}</div>:<div className="orderList">{stock.map(item=><article className="order" key={item.id}>
         <div><b>{item.name}</b><span>{item.quantity} / {item.par_level} {item.unit_of_measure}</span></div>
-        <span className="status assigned">reorder</span>
-        <div className="orderActions"><button className="primary" disabled={busy!==""} onClick={()=>restock(item)}>Restock to par</button></div>
+        <span className="status assigned">{t("reorder")}</span>
+        <div className="orderActions"><button className="primary" disabled={busy!==""} onClick={()=>restock(item)}>{t("Restock to par")}</button></div>
       </article>)}</div>}
     </Panel>
   </div>;
 }
 
 export function ShiftHandoverLive(){
+  const {t,locale}=useLegacyStaffLocale();
   const [items,setItems]=useState<LiveShiftHandover[]>([]);
   const [error,setError]=useState("");
   const [busy,setBusy]=useState("");
@@ -188,35 +193,35 @@ export function ShiftHandoverLive(){
   }
 
   return <div className="handoverGrid">
-    {error&&<div className="notice">{error}</div>}
-    <Panel title="Create shift handover">
+    {error&&<div className="notice">{t(String(error))}</div>}
+    <Panel title={t("Create shift handover")}>
       <form className="hostForm" onSubmit={create}>
-        <label>From shift<input value={fromShift} onChange={e=>setFromShift(e.target.value)} required/></label>
-        <label>To shift<input value={toShift} onChange={e=>setToShift(e.target.value)} required/></label>
-        <label>Unresolved requests<textarea value={unresolved} onChange={e=>setUnresolved(e.target.value)} placeholder="One item per line"/></label>
-        <label>Risks<textarea value={risks} onChange={e=>setRisks(e.target.value)} placeholder="One item per line"/></label>
-        <label>Required follow-up<textarea value={followUp} onChange={e=>setFollowUp(e.target.value)} placeholder="One item per line"/></label>
-        <button className="primary" disabled={busy!==""}>Create handover</button>
+        <label>{t("From shift")}<input value={fromShift} onChange={e=>setFromShift(e.target.value)} required/></label>
+        <label>{t("To shift")}<input value={toShift} onChange={e=>setToShift(e.target.value)} required/></label>
+        <label>{t("Unresolved requests")}<textarea value={unresolved} onChange={e=>setUnresolved(e.target.value)} placeholder={t("One item per line")}/></label>
+        <label>{t("Risks")}<textarea value={risks} onChange={e=>setRisks(e.target.value)} placeholder={t("One item per line")}/></label>
+        <label>{t("Required follow-up")}<textarea value={followUp} onChange={e=>setFollowUp(e.target.value)} placeholder={t("One item per line")}/></label>
+        <button className="primary" disabled={busy!==""}>{t("Create handover")}</button>
       </form>
     </Panel>
 
-    <Panel title="Recent handovers">
-      {items.length===0?<div className="emptyLine">No shift handovers yet.</div>:<div className="orderList">{items.map(item=><article className="order" key={item.id}>
+    <Panel title={t("Recent handovers")}>
+      {items.length===0?<div className="emptyLine">{t("No shift handovers yet.")}</div>:<div className="orderList">{items.map(item=><article className="order" key={item.id}>
         <div>
           <b>{item.from_shift} → {item.to_shift}</b>
-          <span>{item.created_at} · {item.acknowledged_at?"acknowledged":"awaiting acknowledgement"}</span>
-          <small>{"Unresolved "+item.unresolved.length+" · Risks "+item.risks.length+" · Follow-up "+item.followUp.length}</small>
+          <span>{legacyDate(item.created_at,locale)} · {item.acknowledged_at?t("acknowledged"):t("awaiting acknowledgement")}</span>
+          <small>{t("Unresolved {count} · Risks {risks} · Follow-up {followup}",{count:item.unresolved.length,risks:item.risks.length,followup:item.followUp.length})}</small>
         </div>
-        <span className={"status "+(item.acknowledged_at?"done":"assigned")}>{item.acknowledged_at?"acknowledged":"open"}</span>
-        <div className="orderActions">{!item.acknowledged_at&&<button className="primary" disabled={busy!==""} onClick={()=>acknowledge(item.id)}>Acknowledge</button>}</div>
+        <span className={"status "+(item.acknowledged_at?"done":"assigned")}>{item.acknowledged_at?t("acknowledged"):t("open")}</span>
+        <div className="orderActions">{!item.acknowledged_at&&<button className="primary" disabled={busy!==""} onClick={()=>acknowledge(item.id)}>{t("Acknowledge")}</button>}</div>
       </article>)}</div>}
     </Panel>
 
-    {items[0]&&<Panel title="Latest handover detail">
+    {items[0]&&<Panel title={t("Latest handover detail")}>
       <div className="riskList">
-        {items[0].unresolved.map((x,i)=><article key={"u"+i}><b>Unresolved</b><span>{String(x)}</span></article>)}
-        {items[0].risks.map((x,i)=><article className="dangerRow" key={"r"+i}><b>Risk</b><span>{String(x)}</span></article>)}
-        {items[0].followUp.map((x,i)=><article key={"f"+i}><b>Follow-up</b><span>{String(x)}</span></article>)}
+        {items[0].unresolved.map((x,i)=><article key={"u"+i}><b>{t("Unresolved")}</b><span>{String(x)}</span></article>)}
+        {items[0].risks.map((x,i)=><article className="dangerRow" key={"r"+i}><b>{t("Risk")}</b><span>{String(x)}</span></article>)}
+        {items[0].followUp.map((x,i)=><article key={"f"+i}><b>{t("Follow-up")}</b><span>{String(x)}</span></article>)}
       </div>
     </Panel>}
   </div>;

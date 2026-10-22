@@ -1,0 +1,50 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "VIEWS guest trips pilot",
+    "version": "1.0.0"
+  },
+  "servers": [{"url": "/v1/guest-identity/email"}],
+  "security": [{"guestSession": []}],
+  "paths": {
+    "/trips": {
+      "get": {
+        "operationId": "list",
+        "parameters": [{"name": "cursor", "in": "query", "required": false, "schema": {"type": "string"}}],
+        "responses": {"200": {"description": "Account-owned trips; money in minor units as decimal strings.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GuestTripPage"}}}}, "400": {"description": "Invalid query"}, "401": {"description": "Missing or expired guest session"}, "404": {"description": "Pilot disabled or trip unavailable"}}
+      }
+    },
+    "/trips/{id}": {
+      "get": {
+        "operationId": "detail",
+        "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}],
+        "responses": {"200": {"description": "Account-owned trips; money in minor units as decimal strings.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GuestTripDetail"}}}}, "400": {"description": "Invalid query"}, "401": {"description": "Missing or expired guest session"}, "404": {"description": "Pilot disabled or trip unavailable"}}
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "guestSession": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "GuestTrip": {
+        "type": "object",
+        "required": ["id", "confirmationCode", "status", "checkInAt", "checkOutAt", "currency", "totalMinor", "property"],
+        "properties": {"id": {"type": "string"}, "confirmationCode": {"type": "string"}, "status": {"type": "string"}, "checkInAt": {"type": "string", "format": "date-time"}, "checkOutAt": {"type": "string", "format": "date-time"}, "currency": {"type": "string", "pattern": "^[A-Z]{3}$"}, "totalMinor": {"type": "string", "pattern": "^\\d{1,19}$"}, "property": {"type": "object", "required": ["name", "city", "timezone"], "properties": {"name": {"type": "object", "additionalProperties": {"type": "string"}}, "city": {"type": "string"}, "timezone": {"type": "string"}}}}
+      },
+      "GuestTripPage": {
+        "type": "object",
+        "required": ["items", "nextCursor"],
+        "properties": {"items": {"type": "array", "maxItems": 20, "items": {"$ref": "#/components/schemas/GuestTrip"}}, "nextCursor": {"type": "string", "nullable": true, "pattern": "^[A-Za-z0-9_-]{1,300}$"}}
+      },
+      "GuestTripDetail": {
+        "type": "object",
+        "required": ["trip"],
+        "properties": {"trip": {"$ref": "#/components/schemas/GuestTrip"}}
+      }
+    }
+  }
+}

@@ -1,0 +1,1126 @@
+{
+  "Demo catalog. No booking, payment, service request or message is sent.": {
+    "ru": "Демонстрационный каталог. Брони, платежи, заявки на услуги и сообщения не отправляются.",
+    "uz": "Demo katalog. Bron, toʻlov, xizmat soʻrovi yoki xabar yuborilmaydi."
+  },
+  "PEOPLE · PLACES · POSSIBILITIES": {
+    "ru": "ЛЮДИ · МЕСТА · ВОЗМОЖНОСТИ",
+    "uz": "INSONLAR · MASKANLAR · IMKONIYATLAR"
+  },
+  "Stay beautifully.": {
+    "ru": "Живите красиво.",
+    "uz": "Goʻzal maskanda yashang."
+  },
+  "Move effortlessly.": {
+    "ru": "Путешествуйте легко.",
+    "uz": "Oson sayohat qiling."
+  },
+  "Book VIEWS apartments and manage your stay, services and concierge requests in one place.": {
+    "ru": "Бронируйте апартаменты VIEWS и управляйте проживанием, услугами и обращениями к консьержу в одном месте.",
+    "uz": "VIEWS apartamentlarini bron qiling, yashash, xizmatlar va konsyerj soʻrovlarini bir joyda boshqaring."
+  },
+  "WELCOME": {
+    "ru": "ДОБРО ПОЖАЛОВАТЬ",
+    "uz": "XUSH KELIBSIZ"
+  },
+  "Quick access": {
+    "ru": "Быстрый доступ",
+    "uz": "Tezkor kirish"
+  },
+  "SMS verification": {
+    "ru": "Проверка по SMS",
+    "uz": "SMS orqali tekshirish"
+  },
+  "Destination": {
+    "ru": "Направление",
+    "uz": "Manzil"
+  },
+  "Tashkent": {
+    "ru": "Ташкент",
+    "uz": "Toshkent"
+  },
+  "Check-in": {
+    "ru": "Заезд",
+    "uz": "Kelish"
+  },
+  "Check-out": {
+    "ru": "Выезд",
+    "uz": "Ketish"
+  },
+  "Guests": {
+    "ru": "Гости",
+    "uz": "Mehmonlar"
+  },
+  "Show results": {
+    "ru": "Показать результаты",
+    "uz": "Natijalarni koʻrsatish"
+  },
+  "Show all apartments": {
+    "ru": "Все апартаменты",
+    "uz": "Barcha apartamentlar"
+  },
+  "Favorites only": {
+    "ru": "Только избранное",
+    "uz": "Faqat saralanganlar"
+  },
+  "Prices are unavailable until a rate source is connected": {
+    "ru": "Цены недоступны до подключения источника тарифов",
+    "uz": "Tarif manbai ulanmaguncha narxlar mavjud emas"
+  },
+  "List": {
+    "ru": "Список",
+    "uz": "Roʻyxat"
+  },
+  "Map": {
+    "ru": "Карта",
+    "uz": "Xarita"
+  },
+  "MAP": {
+    "ru": "КАРТА",
+    "uz": "XARITA"
+  },
+  "Map UI is ready. A live map provider will replace this staging canvas when connected.": {
+    "ru": "Это макет карты. После подключения картографического сервиса здесь появится настоящая карта.",
+    "uz": "Bu xarita maketi. Xarita xizmati ulangach, bu yerda haqiqiy xarita koʻrinadi."
+  },
+  "EXPLORE VIEWS": {
+    "ru": "ОТКРОЙТЕ VIEWS",
+    "uz": "VIEWS BILAN TANISHING"
+  },
+  "Available apartments": {
+    "ru": "Доступные апартаменты",
+    "uz": "Mavjud apartamentlar"
+  },
+  "Listings: {count}. Choose dates to preview the booking steps.": {
+    "ru": "Объявлений: {count}. Выберите даты, чтобы просмотреть шаги бронирования.",
+    "uz": "Eʼlonlar: {count}. Bronlash bosqichlarini koʻrish uchun sanalarni tanlang."
+  },
+  "No apartments match. Change the guest count or turn off the favorites filter.": {
+    "ru": "Подходящих апартаментов нет. Измените число гостей или отключите фильтр избранного.",
+    "uz": "Mos apartamentlar yoʻq. Mehmonlar sonini oʻzgartiring yoki saralanganlar filtrini oʻchiring."
+  },
+  "Remove from favorites: {name}": {
+    "ru": "Убрать из избранного: {name}",
+    "uz": "Saralanganlardan olib tashlash: {name}"
+  },
+  "Add to favorites: {name}": {
+    "ru": "В избранное: {name}",
+    "uz": "Saralanganlarga qoʻshish: {name}"
+  },
+  "Bedrooms: {count}": {
+    "ru": "Спален: {count}",
+    "uz": "Yotoqxonalar: {count}"
+  },
+  "Select dates for live rate": {
+    "ru": "Выберите даты для получения тарифа",
+    "uz": "Tarif uchun sanalarni tanlang"
+  },
+  " / night": {
+    "ru": " / ночь",
+    "uz": " / kecha"
+  },
+  "View": {
+    "ru": "Подробнее",
+    "uz": "Batafsil"
+  },
+  "ONE ECOSYSTEM": {
+    "ru": "ОДНА ЭКОСИСТЕМА",
+    "uz": "YAGONA EKOTIZIM"
+  },
+  "Everything around your stay": {
+    "ru": "Всё для вашего проживания",
+    "uz": "Yashashingiz uchun barcha xizmatlar"
+  },
+  "Request in app": {
+    "ru": "Запрос в приложении",
+    "uz": "Ilovada soʻrov"
+  },
+  "MY BOOKINGS": {
+    "ru": "МОИ БРОНИ",
+    "uz": "BRONLARIM"
+  },
+  "Trips & stays": {
+    "ru": "Поездки и проживание",
+    "uz": "Sayohat va yashash"
+  },
+  "Loading bookings…": {
+    "ru": "Загрузка броней…",
+    "uz": "Bronlar yuklanmoqda…"
+  },
+  "Could not load bookings. Check your connection and try again.": {
+    "ru": "Не удалось загрузить брони. Проверьте соединение и повторите запрос.",
+    "uz": "Bronlarni yuklab boʻlmadi. Ulanishni tekshiring va qayta urining."
+  },
+  "Retry": {
+    "ru": "Повторить",
+    "uz": "Qayta urinish"
+  },
+  "Live total unavailable": {
+    "ru": "Итоговая стоимость недоступна",
+    "uz": "Yakuniy narx mavjud emas"
+  },
+  "Details": {
+    "ru": "Детали",
+    "uz": "Tafsilotlar"
+  },
+  "No bookings found": {
+    "ru": "Брони не найдены",
+    "uz": "Bronlar topilmadi"
+  },
+  "No live bookings seeded": {
+    "ru": "Реальных броней в демо нет",
+    "uz": "Demoda haqiqiy bronlar yoʻq"
+  },
+  "Only bookings linked to this authenticated guest are shown.": {
+    "ru": "Показаны только брони, связанные с авторизованным гостем.",
+    "uz": "Faqat tizimga kirgan mehmonga tegishli bronlar koʻrsatiladi."
+  },
+  "Production bookings will appear only when linked to the authenticated guest.": {
+    "ru": "Реальные брони появятся только после привязки к авторизованному гостю.",
+    "uz": "Haqiqiy bronlar faqat tizimga kirgan mehmonga bogʻlangach koʻrinadi."
+  },
+  "Cancellation & refund": {
+    "ru": "Отмена и возврат",
+    "uz": "Bekor qilish va qaytarish"
+  },
+  "Exact refund calculations are shown before confirmation. No refund value is guessed.": {
+    "ru": "Точный расчёт возврата показывается перед подтверждением. Предполагаемые суммы не используются.",
+    "uz": "Tasdiqlashdan oldin aniq qaytarish hisob-kitobi koʻrsatiladi. Taxminiy summa ishlatilmaydi."
+  },
+  "Preview policy screen": {
+    "ru": "Просмотр экрана правил",
+    "uz": "Qoidalar ekranini koʻrish"
+  },
+  "VIEWS SERVICES": {
+    "ru": "УСЛУГИ VIEWS",
+    "uz": "VIEWS XIZMATLARI"
+  },
+  "Everything for your stay": {
+    "ru": "Всё для вашего отдыха",
+    "uz": "Dam olishingiz uchun barcha xizmatlar"
+  },
+  "Tracked Service Order": {
+    "ru": "Отслеживаемая заявка на услугу",
+    "uz": "Kuzatiladigan xizmat soʻrovi"
+  },
+  "Booking": {
+    "ru": "Бронирование",
+    "uz": "Bronlash"
+  },
+  "Tell us what you need…": {
+    "ru": "Расскажите, что вам нужно…",
+    "uz": "Nima kerakligini yozing…"
+  },
+  "Send request": {
+    "ru": "Отправить запрос",
+    "uz": "Soʻrov yuborish"
+  },
+  "From": {
+    "ru": "Откуда",
+    "uz": "Qayerdan"
+  },
+  "Airport": {
+    "ru": "Аэропорт",
+    "uz": "Aeroport"
+  },
+  "To": {
+    "ru": "Куда",
+    "uz": "Qayerga"
+  },
+  "Apartment": {
+    "ru": "Апартамент",
+    "uz": "Apartament"
+  },
+  "Date": {
+    "ru": "Дата",
+    "uz": "Sana"
+  },
+  "Time": {
+    "ru": "Время",
+    "uz": "Vaqt"
+  },
+  "Comment": {
+    "ru": "Комментарий",
+    "uz": "Izoh"
+  },
+  "Add a note…": {
+    "ru": "Добавьте примечание…",
+    "uz": "Izoh qoʻshing…"
+  },
+  "Create request unavailable in demo": {
+    "ru": "Создание заявки недоступно в демо",
+    "uz": "Demoda soʻrov yaratish mavjud emas"
+  },
+  "CONCIERGE": {
+    "ru": "КОНСЬЕРЖ",
+    "uz": "KONSYERJ"
+  },
+  "Messages & requests": {
+    "ru": "Сообщения и запросы",
+    "uz": "Xabarlar va soʻrovlar"
+  },
+  "Example conversation. No messages are sent.": {
+    "ru": "Пример переписки. Сообщения не отправляются.",
+    "uz": "Suhbat namunasi. Xabarlar yuborilmaydi."
+  },
+  "VIEWS Concierge": {
+    "ru": "Консьерж VIEWS",
+    "uz": "VIEWS konsyerji"
+  },
+  "Online when staff/AI connector is available": {
+    "ru": "Онлайн после подключения сотрудников или ИИ-помощника",
+    "uz": "Xodimlar yoki AI yordamchisi ulangach onlayn"
+  },
+  "Hello. How can VIEWS help with your stay?": {
+    "ru": "Здравствуйте. Чем VIEWS может помочь во время вашего проживания?",
+    "uz": "Salom. Yashashingiz davomida VIEWS qanday yordam bera oladi?"
+  },
+  "I need an airport transfer at 14:00.": {
+    "ru": "Мне нужен трансфер из аэропорта в 14:00.",
+    "uz": "Menga soat 14:00 da aeroportdan transfer kerak."
+  },
+  "Your request will be routed as a tracked Service Order.": {
+    "ru": "Ваш запрос будет направлен как отслеживаемая заявка на услугу.",
+    "uz": "Soʻrovingiz kuzatiladigan xizmat soʻrovi sifatida yoʻnaltiriladi."
+  },
+  "Message concierge": {
+    "ru": "Сообщение консьержу",
+    "uz": "Konsyerjga xabar"
+  },
+  "Messaging is not connected": {
+    "ru": "Обмен сообщениями не подключён",
+    "uz": "Xabar almashish ulanmagan"
+  },
+  "Send message": {
+    "ru": "Отправить сообщение",
+    "uz": "Xabar yuborish"
+  },
+  "VIEWS PROFILE": {
+    "ru": "ПРОФИЛЬ VIEWS",
+    "uz": "VIEWS PROFILI"
+  },
+  "Guest profile": {
+    "ru": "Профиль гостя",
+    "uz": "Mehmon profili"
+  },
+  "Payments use provider-hosted checkout. VIEWS never collects raw card details.": {
+    "ru": "Оплата выполняется на странице провайдера. VIEWS не собирает реквизиты банковских карт.",
+    "uz": "Toʻlov provayder sahifasida bajariladi. VIEWS bank kartasi maʼlumotlarini yigʻmaydi."
+  },
+  "Notifications": {
+    "ru": "Уведомления",
+    "uz": "Bildirishnomalar"
+  },
+  "Updates: {count}": {
+    "ru": "Обновлений: {count}",
+    "uz": "Yangilanishlar: {count}"
+  },
+  "Favorites": {
+    "ru": "Избранное",
+    "uz": "Saralanganlar"
+  },
+  "Saved: {count}": {
+    "ru": "Сохранено: {count}",
+    "uz": "Saqlangan: {count}"
+  },
+  "My reviews": {
+    "ru": "Мои отзывы",
+    "uz": "Sharhlarim"
+  },
+  "Share your stay": {
+    "ru": "Поделитесь впечатлениями",
+    "uz": "Taassurotlaringizni ulashing"
+  },
+  "Payment methods": {
+    "ru": "Способы оплаты",
+    "uz": "Toʻlov usullari"
+  },
+  "Provider-hosted only": {
+    "ru": "Только на стороне провайдера",
+    "uz": "Faqat provayder sahifasida"
+  },
+  "Help & support": {
+    "ru": "Помощь и поддержка",
+    "uz": "Yordam va qoʻllab-quvvatlash"
+  },
+  "Search help…": {
+    "ru": "Поиск в справке…",
+    "uz": "Yordamdan qidirish…"
+  },
+  "Modify booking": {
+    "ru": "Изменить бронь",
+    "uz": "Bronni oʻzgartirish"
+  },
+  "Refund status": {
+    "ru": "Статус возврата",
+    "uz": "Qaytarish holati"
+  },
+  "Registration instructions": {
+    "ru": "Инструкции по регистрации",
+    "uz": "Roʻyxatdan oʻtish yoʻriqnomasi"
+  },
+  "Contact support": {
+    "ru": "Связаться с поддержкой",
+    "uz": "Yordam xizmatiga murojaat qilish"
+  },
+  "Guest sections": {
+    "ru": "Разделы для гостя",
+    "uz": "Mehmon boʻlimlari"
+  },
+  "Preview only. These screens do not create bookings or process payments.": {
+    "ru": "Только просмотр. Эти экраны не создают брони и не выполняют платежи.",
+    "uz": "Faqat koʻrish uchun. Bu ekranlar bron yaratmaydi va toʻlov bajarmaydi."
+  },
+  "Demo apartment with illustrative photos. Real availability and prices are not connected.": {
+    "ru": "Демонстрационный апартамент с иллюстративными фотографиями. Реальная доступность и цены не подключены.",
+    "uz": "Namunaviy rasmlar bilan demo apartament. Haqiqiy mavjudlik va narxlar ulanmagan."
+  },
+  "Choose dates": {
+    "ru": "Выбрать даты",
+    "uz": "Sanalarni tanlash"
+  },
+  "Airport transfer": {
+    "ru": "Трансфер из аэропорта",
+    "uz": "Aeroportdan transfer"
+  },
+  "Cleaning": {
+    "ru": "Уборка",
+    "uz": "Tozalash"
+  },
+  "Late check-out": {
+    "ru": "Поздний выезд",
+    "uz": "Kech ketish"
+  },
+  "Stay": {
+    "ru": "Проживание",
+    "uz": "Yashash"
+  },
+  "Services": {
+    "ru": "Услуги",
+    "uz": "Xizmatlar"
+  },
+  "Calculated when selected": {
+    "ru": "Расчёт после выбора",
+    "uz": "Tanlangach hisoblanadi"
+  },
+  "Total": {
+    "ru": "Итого",
+    "uz": "Jami"
+  },
+  "Continue": {
+    "ru": "Продолжить",
+    "uz": "Davom etish"
+  },
+  "Guest data": {
+    "ru": "Данные гостя",
+    "uz": "Mehmon maʼlumotlari"
+  },
+  "Full name": {
+    "ru": "Полное имя",
+    "uz": "Toʻliq ism"
+  },
+  "Primary guest": {
+    "ru": "Основной гость",
+    "uz": "Asosiy mehmon"
+  },
+  "Date of birth": {
+    "ru": "Дата рождения",
+    "uz": "Tugʻilgan sana"
+  },
+  "Nationality": {
+    "ru": "Гражданство",
+    "uz": "Fuqarolik"
+  },
+  "Uzbekistan": {
+    "ru": "Узбекистан",
+    "uz": "Oʻzbekiston"
+  },
+  "Other": {
+    "ru": "Другое",
+    "uz": "Boshqa"
+  },
+  "Passport / ID": {
+    "ru": "Паспорт / ID",
+    "uz": "Pasport / ID"
+  },
+  "Secure upload required": {
+    "ru": "Требуется защищённая загрузка",
+    "uz": "Himoyalangan yuklash talab qilinadi"
+  },
+  "Document upload remains disabled until encrypted file storage is connected.": {
+    "ru": "Загрузка документов отключена до подключения зашифрованного хранилища файлов.",
+    "uz": "Shifrlangan fayl ombori ulanmaguncha hujjat yuklash oʻchirilgan."
+  },
+  "Payment": {
+    "ru": "Оплата",
+    "uz": "Toʻlov"
+  },
+  "Bank card": {
+    "ru": "Банковская карта",
+    "uz": "Bank kartasi"
+  },
+  "VIEWS never collects raw card details. Checkout opens on the payment provider/bank page.": {
+    "ru": "VIEWS не собирает реквизиты карт. Оплата открывается на странице платёжного провайдера или банка.",
+    "uz": "VIEWS karta maʼlumotlarini yigʻmaydi. Toʻlov provayder yoki bank sahifasida ochiladi."
+  },
+  "Continue to secure payment": {
+    "ru": "Перейти к безопасной оплате",
+    "uz": "Xavfsiz toʻlovga oʻtish"
+  },
+  "Preview declined state": {
+    "ru": "Просмотр отказа в оплате",
+    "uz": "Toʻlov rad etilishi ekranini koʻrish"
+  },
+  "Preview confirmation state": {
+    "ru": "Просмотр подтверждения",
+    "uz": "Tasdiqlash ekranini koʻrish"
+  },
+  "Secure payment": {
+    "ru": "Безопасная оплата",
+    "uz": "Xavfsiz toʻlov"
+  },
+  "The bank/provider 3-D Secure page opens here. Timeout and back navigation are handled without marking payment successful.": {
+    "ru": "Здесь открывается страница 3-D Secure банка или провайдера. Тайм-аут и возврат назад не считаются успешной оплатой.",
+    "uz": "Bu yerda bank yoki provayderning 3-D Secure sahifasi ochiladi. Kutish vaqti tugashi va orqaga qaytish muvaffaqiyatli toʻlov hisoblanmaydi."
+  },
+  "Payment declined": {
+    "ru": "Оплата отклонена",
+    "uz": "Toʻlov rad etildi"
+  },
+  "The bank declined the payment. No booking confirmation is issued. Try again or choose another payment method.": {
+    "ru": "Банк отклонил платёж. Подтверждение брони не выдаётся. Повторите попытку или выберите другой способ оплаты.",
+    "uz": "Bank toʻlovni rad etdi. Bron tasdigʻi berilmaydi. Qayta urining yoki boshqa toʻlov usulini tanlang."
+  },
+  "Retry payment": {
+    "ru": "Повторить оплату",
+    "uz": "Toʻlovni qayta urinish"
+  },
+  "Confirmation screen preview": {
+    "ru": "Просмотр экрана подтверждения",
+    "uz": "Tasdiqlash ekranini koʻrish"
+  },
+  "Confirmation is shown only after a verified booking/payment response. Booking code and arrival instructions come from backend data.": {
+    "ru": "Подтверждение показывается только после проверенного ответа о брони и платеже. Код брони и инструкции по прибытию поступают с сервера.",
+    "uz": "Tasdiq faqat bron va toʻlov haqidagi tekshirilgan javobdan keyin koʻrsatiladi. Bron kodi va kelish yoʻriqnomasi serverdan olinadi."
+  },
+  "Booking details": {
+    "ru": "Детали брони",
+    "uz": "Bron tafsilotlari"
+  },
+  "Property": {
+    "ru": "Объект",
+    "uz": "Obyekt"
+  },
+  "Dates": {
+    "ru": "Даты",
+    "uz": "Sanalar"
+  },
+  "Select date": {
+    "ru": "Выберите дату",
+    "uz": "Sanani tanlang"
+  },
+  "Access code": {
+    "ru": "Код доступа",
+    "uz": "Kirish kodi"
+  },
+  "Available after backend confirmation": {
+    "ru": "Доступен после подтверждения сервером",
+    "uz": "Server tasdigʻidan keyin mavjud"
+  },
+  "Address": {
+    "ru": "Адрес",
+    "uz": "Manzil"
+  },
+  "NRG U-Tower, Tashkent": {
+    "ru": "NRG U-Tower, Ташкент",
+    "uz": "NRG U-Tower, Toshkent"
+  },
+  "Documents": {
+    "ru": "Документы",
+    "uz": "Hujjatlar"
+  },
+  "Registration / check-in documents": {
+    "ru": "Документы для регистрации и заселения",
+    "uz": "Roʻyxatdan oʻtish va joylashish hujjatlari"
+  },
+  "Change / cancel booking": {
+    "ru": "Изменить или отменить бронь",
+    "uz": "Bronni oʻzgartirish yoki bekor qilish"
+  },
+  "72+ hours": {
+    "ru": "Более 72 часов",
+    "uz": "72 soatdan ortiq"
+  },
+  "Refund according to booked rate plan": {
+    "ru": "Возврат по правилам забронированного тарифа",
+    "uz": "Bron qilingan tarif qoidalariga muvofiq qaytarish"
+  },
+  "24–72 hours": {
+    "ru": "24–72 часа",
+    "uz": "24–72 soat"
+  },
+  "Partial refund if rate plan allows": {
+    "ru": "Частичный возврат, если разрешён тарифом",
+    "uz": "Tarif ruxsat bersa, qisman qaytarish"
+  },
+  "<24 hours": {
+    "ru": "Менее 24 часов",
+    "uz": "24 soatdan kam"
+  },
+  "Exact backend policy required": {
+    "ru": "Нужны точные правила с сервера",
+    "uz": "Serverdan aniq qoidalar kerak"
+  },
+  "Refund calculation": {
+    "ru": "Расчёт возврата",
+    "uz": "Qaytarish hisob-kitobi"
+  },
+  "Calculated from live booking policy": {
+    "ru": "Рассчитывается по правилам реальной брони",
+    "uz": "Haqiqiy bron qoidalari boʻyicha hisoblanadi"
+  },
+  "No amount is fabricated in staging.": {
+    "ru": "В тестовой среде суммы не выдумываются.",
+    "uz": "Sinov muhitida summalar toʻqib chiqarilmaydi."
+  },
+  "Confirm cancellation": {
+    "ru": "Подтвердить отмену",
+    "uz": "Bekor qilishni tasdiqlash"
+  },
+  "Booking code": {
+    "ru": "Код брони",
+    "uz": "Bron kodi"
+  },
+  "City": {
+    "ru": "Город",
+    "uz": "Shahar"
+  },
+  "Not assigned": {
+    "ru": "Не назначен",
+    "uz": "Biriktirilmagan"
+  },
+  "Status": {
+    "ru": "Статус",
+    "uz": "Holat"
+  },
+  "Only details returned for this booking are shown. Access instructions and cancellation are not connected here.": {
+    "ru": "Показаны только полученные данные этой брони. Инструкции доступа и отмена здесь не подключены.",
+    "uz": "Faqat shu bron uchun olingan maʼlumotlar koʻrsatilgan. Kirish yoʻriqnomasi va bekor qilish bu yerda ulanmagan."
+  },
+  "SMS verification unavailable": {
+    "ru": "Проверка по SMS недоступна",
+    "uz": "SMS orqali tekshirish mavjud emas"
+  },
+  "SMS delivery is not connected. No code has been sent, and phone verification is unavailable.": {
+    "ru": "Отправка SMS не подключена. Код не отправлялся, подтверждение телефона недоступно.",
+    "uz": "SMS yuborish ulanmagan. Kod yuborilmadi, telefonni tasdiqlash mavjud emas."
+  },
+  "Close": {
+    "ru": "Закрыть",
+    "uz": "Yopish"
+  },
+  "SECURE ACCESS": {
+    "ru": "БЕЗОПАСНЫЙ ВХОД",
+    "uz": "XAVFSIZ KIRISH"
+  },
+  "Sign in to VIEWS": {
+    "ru": "Войти в VIEWS",
+    "uz": "VIEWS tizimiga kirish"
+  },
+  "Passwordless email access. Staff permissions are resolved server-side after authentication.": {
+    "ru": "Вход по email без пароля. Права сотрудников определяются сервером после входа.",
+    "uz": "Parolsiz email orqali kirish. Xodim huquqlari kirishdan keyin serverda aniqlanadi."
+  },
+  "Email": {
+    "ru": "Email",
+    "uz": "Email"
+  },
+  "Sending…": {
+    "ru": "Отправка…",
+    "uz": "Yuborilmoqda…"
+  },
+  "Continue with email": {
+    "ru": "Продолжить с email",
+    "uz": "Email bilan davom etish"
+  },
+  "Verification token": {
+    "ru": "Код подтверждения",
+    "uz": "Tasdiqlash kodi"
+  },
+  "Paste secure token": {
+    "ru": "Вставьте защищённый код",
+    "uz": "Himoyalangan kodni kiriting"
+  },
+  "Verifying…": {
+    "ru": "Проверка…",
+    "uz": "Tekshirilmoqda…"
+  },
+  "Verify & continue": {
+    "ru": "Подтвердить и продолжить",
+    "uz": "Tasdiqlash va davom etish"
+  },
+  "Use another email": {
+    "ru": "Другой email",
+    "uz": "Boshqa email"
+  },
+  "Explore": {
+    "ru": "Обзор",
+    "uz": "Koʻrish"
+  },
+  "Bookings": {
+    "ru": "Брони",
+    "uz": "Bronlar"
+  },
+  "Messages": {
+    "ru": "Сообщения",
+    "uz": "Xabarlar"
+  },
+  "Profile": {
+    "ru": "Профиль",
+    "uz": "Profil"
+  },
+  "Confirmed": {
+    "ru": "Подтверждена",
+    "uz": "Tasdiqlangan"
+  },
+  "Checked in": {
+    "ru": "Заселён",
+    "uz": "Joylashtirilgan"
+  },
+  "Checked out": {
+    "ru": "Выезд оформлен",
+    "uz": "Ketishi rasmiylashtirilgan"
+  },
+  "Cancelled": {
+    "ru": "Отменена",
+    "uz": "Bekor qilingan"
+  },
+  "Temporary hold": {
+    "ru": "Временный резерв",
+    "uz": "Vaqtinchalik bandlov"
+  },
+  "Pending": {
+    "ru": "Ожидается",
+    "uz": "Kutilmoqda"
+  },
+  "No-show": {
+    "ru": "Незаезд",
+    "uz": "Kelmagan"
+  },
+  "Unknown status": {
+    "ru": "Неизвестный статус",
+    "uz": "Nomaʼlum holat"
+  },
+  "Concierge": {
+    "ru": "Консьерж",
+    "uz": "Konsyerj"
+  },
+  "Laundry": {
+    "ru": "Прачечная",
+    "uz": "Kir yuvish"
+  },
+  "Mini-market": {
+    "ru": "Мини-маркет",
+    "uz": "Mini-market"
+  },
+  "Restaurant": {
+    "ru": "Ресторан",
+    "uz": "Restoran"
+  },
+  "Bar": {
+    "ru": "Бар",
+    "uz": "Bar"
+  },
+  "Rent Car": {
+    "ru": "Аренда авто",
+    "uz": "Avtomobil ijarasi"
+  },
+  "Spa & Wellness": {
+    "ru": "Спа и отдых",
+    "uz": "Spa va hordiq"
+  },
+  "Booking confirmed": {
+    "ru": "Бронь подтверждена",
+    "uz": "Bron tasdiqlangan"
+  },
+  "Your stay confirmation will appear here when backed by live data.": {
+    "ru": "Подтверждение проживания появится здесь после получения реальных данных.",
+    "uz": "Haqiqiy maʼlumotlar olingach, yashash tasdigʻi shu yerda koʻrinadi."
+  },
+  "Service updates": {
+    "ru": "Обновления услуг",
+    "uz": "Xizmat yangilanishlari"
+  },
+  "Cleaning and concierge updates are grouped here.": {
+    "ru": "Здесь собраны обновления уборки и консьерж-сервиса.",
+    "uz": "Tozalash va konsyerj xizmati yangilanishlari shu yerda jamlanadi."
+  },
+  "Service": {
+    "ru": "Услуга",
+    "uz": "Xizmat"
+  },
+  "Request created and routed to VIEWS staff.": {
+    "ru": "Запрос создан и направлен сотрудникам VIEWS.",
+    "uz": "Soʻrov yaratildi va VIEWS xodimlariga yuborildi."
+  },
+  "Request not confirmed. Check with staff before submitting again.": {
+    "ru": "Запрос не подтверждён. Перед повторной отправкой уточните статус у сотрудников.",
+    "uz": "Soʻrov tasdiqlanmadi. Qayta yuborishdan oldin holatni xodimlardan aniqlang."
+  },
+  "Staging-only verification token loaded. Production never exposes login tokens.": {
+    "ru": "Загружен код только для тестовой среды. Рабочая система не раскрывает коды входа.",
+    "uz": "Faqat sinov muhiti uchun kod yuklandi. Amaldagi tizim kirish kodlarini oshkor qilmaydi."
+  },
+  "Login request failed. Check your connection and try again.": {
+    "ru": "Запрос входа не выполнен. Проверьте соединение и повторите попытку.",
+    "uz": "Kirish soʻrovi bajarilmadi. Ulanishni tekshiring va qayta urining."
+  },
+  "Verification failed. Request a new link if the token has expired.": {
+    "ru": "Проверка не пройдена. Если код истёк, запросите новую ссылку.",
+    "uz": "Tekshiruv oʻtmadi. Kod muddati tugagan boʻlsa, yangi havola soʻrang."
+  },
+  "Back": {
+    "ru": "Назад",
+    "uz": "Orqaga"
+  },
+  "VIEWS GUEST JOURNEY": {
+    "ru": "ПУТЬ ГОСТЯ VIEWS",
+    "uz": "VIEWS MEHMONI BOSQICHLARI"
+  },
+  "Interface language": {
+    "ru": "Язык интерфейса",
+    "uz": "Interfeys tili"
+  },
+  "Checking secure session…": {
+    "ru": "Проверка защищённой сессии…",
+    "uz": "Himoyalangan seans tekshirilmoqda…"
+  },
+  "Light": {
+    "ru": "Светлая тема",
+    "uz": "Yorugʻ mavzu"
+  },
+  "Dark": {
+    "ru": "Тёмная тема",
+    "uz": "Tungi mavzu"
+  },
+  "Staff CRM": {
+    "ru": "Демо CRM",
+    "uz": "Demo CRM"
+  },
+  "Guest App": {
+    "ru": "Гостевое приложение",
+    "uz": "Mehmon ilovasi"
+  },
+  "Sign out": {
+    "ru": "Выйти",
+    "uz": "Chiqish"
+  },
+  "Views | Modern Design Apartment | Views": {
+    "ru": "VIEWS — апартамент с современным дизайном",
+    "uz": "VIEWS — zamonaviy dizayndagi apartament"
+  },
+  "Kitchen": {
+    "ru": "Кухня",
+    "uz": "Oshxona"
+  },
+  "Wi-Fi": {
+    "ru": "Wi-Fi",
+    "uz": "Wi-Fi"
+  },
+  "Free parking": {
+    "ru": "Бесплатная парковка",
+    "uz": "Bepul avtoturargoh"
+  },
+  "Pets": {
+    "ru": "С питомцами",
+    "uz": "Uy hayvonlari bilan"
+  },
+  "Smart TV": {
+    "ru": "Смарт-ТВ",
+    "uz": "Smart TV"
+  },
+  "Views | Luxury Apartment with Panoramic | Views": {
+    "ru": "VIEWS — роскошный апартамент с панорамой",
+    "uz": "VIEWS — panoramali hashamatli apartament"
+  },
+  "Workspace": {
+    "ru": "Рабочее место",
+    "uz": "Ish joyi"
+  },
+  "Balcony": {
+    "ru": "Балкон",
+    "uz": "Balkon"
+  },
+  "Views | Urban Garden Apartment with Balcony | Views": {
+    "ru": "VIEWS — апартамент с садом и балконом",
+    "uz": "VIEWS — bogʻ va balkonli apartament"
+  },
+  "Views | Peach & Cream Luxury Apartment | Views": {
+    "ru": "VIEWS — апартамент «Персик и сливки»",
+    "uz": "VIEWS — «Shaftoli va qaymoq» apartamenti"
+  },
+  "Static staging demo": {
+    "ru": "Статическая демоверсия",
+    "uz": "Statik demo"
+  },
+  "Live API": {
+    "ru": "Подключённый API",
+    "uz": "Ulangan API"
+  },
+  "Login link requested. Use the secure link/token delivered by the configured email provider.": {
+    "ru": "Ссылка для входа запрошена. Используйте защищённую ссылку или код от настроенного почтового сервиса.",
+    "uz": "Kirish havolasi soʻraldi. Sozlangan email xizmati yetkazgan himoyalangan havola yoki koddan foydalaning."
+  },
+  "Booking updates": {
+    "ru": "Обновления бронирования",
+    "uz": "Bron yangilanishlari"
+  },
+  "Not connected": {
+    "ru": "Не подключено",
+    "uz": "Ulanmagan"
+  },
+  "Booking changes are not connected in this interface. Contact the property through your confirmed booking channel.": {
+    "ru": "Изменение брони в этом интерфейсе не подключено. Свяжитесь с объектом через канал подтверждённой брони.",
+    "uz": "Bu interfeysda bronni oʻzgartirish ulanmagan. Tasdiqlangan bron kanali orqali obyekt bilan bogʻlaning."
+  },
+  "Support contact details have not been configured.": {
+    "ru": "Контакты поддержки ещё не настроены.",
+    "uz": "Yordam xizmati aloqa maʼlumotlari hali sozlanmagan."
+  },
+  "No help topics match your search.": {
+    "ru": "По вашему запросу ничего не найдено.",
+    "uz": "Qidiruvga mos yordam mavzusi topilmadi."
+  },
+  "Sign in": {
+    "ru": "Войти",
+    "uz": "Kirish"
+  },
+  "Local guest Core · test": {
+    "ru": "Гостевой Core · тест",
+    "uz": "Mehmon Core · sinov"
+  },
+  "Your next stay,": {
+    "ru": "Ваша следующая поездка,",
+    "uz": "Keyingi safaringiz,"
+  },
+  "beautifully considered.": {
+    "ru": "продуманная до мелочей.",
+    "uz": "har bir jihati o‘ylangan."
+  },
+  "Discover curated apartments. A quieter place to arrive, unwind and feel at home.": {
+    "ru": "Откройте для себя подобранные апартаменты. Место, где можно отдохнуть и почувствовать себя дома.",
+    "uz": "Saralangan apartamentlarni kashf eting. Dam olish va o‘zingizni uydagidek his qilish uchun sokin joy."
+  },
+  "Thoughtful spaces": {
+    "ru": "Продуманные пространства",
+    "uz": "Puxta o‘ylangan makonlar"
+  },
+  "Clear booking details": {
+    "ru": "Понятные условия брони",
+    "uz": "Tushunarli bron shartlari"
+  },
+  "A different view of the city.": {
+    "ru": "Другой взгляд на город.",
+    "uz": "Shaharga o‘zgacha nazar."
+  },
+  "Explore panoramic apartment": {
+    "ru": "Посмотреть панорамные апартаменты",
+    "uz": "Panoramali apartamentni ko‘rish"
+  },
+  "Samarkand": {
+    "ru": "Самарканд",
+    "uz": "Samarqand"
+  },
+  "Bukhara": {
+    "ru": "Бухара",
+    "uz": "Buxoro"
+  },
+  "Khiva": {
+    "ru": "Хива",
+    "uz": "Xiva"
+  },
+  "Amenities": {
+    "ru": "Удобства",
+    "uz": "Qulayliklar"
+  },
+  "Clear amenities": {
+    "ru": "Сбросить удобства",
+    "uz": "Qulayliklarni tozalash"
+  },
+  "Curated apartment": {
+    "ru": "Подобранные апартаменты",
+    "uz": "Saralangan apartament"
+  },
+  "Choose a stay": {
+    "ru": "Выберите жильё",
+    "uz": "Turar joyni tanlang"
+  },
+  "Select dates": {
+    "ru": "Выберите даты",
+    "uz": "Sanalarni tanlang"
+  },
+  "Add guests": {
+    "ru": "Добавьте гостей",
+    "uz": "Mehmonlarni qo‘shing"
+  },
+  "Review details": {
+    "ru": "Проверьте детали",
+    "uz": "Tafsilotlarni tekshiring"
+  },
+  "Confirmation": {
+    "ru": "Подтверждение",
+    "uz": "Tasdiqlash"
+  },
+  "Booking steps": {
+    "ru": "Этапы бронирования",
+    "uz": "Bronlash bosqichlari"
+  },
+  "SERVICE REQUEST": {
+    "ru": "ЗАЯВКА НА УСЛУГУ",
+    "uz": "XIZMAT SO‘ROVI"
+  },
+  "Quick help, right where you stay.": {
+    "ru": "Помощь рядом, где бы вы ни остановились.",
+    "uz": "Yashayotgan joyingizda tezkor yordam."
+  },
+  "Preview the request here. Sending and linking to an active booking require a connected guest account.": {
+    "ru": "Здесь можно проверить заявку. Отправка и привязка к действующей брони требуют подключённого гостевого аккаунта.",
+    "uz": "Bu yerda so‘rovni ko‘rib chiqing. Yuborish va faol bronga bog‘lash uchun ulangan mehmon hisobi kerak."
+  },
+  "Preferred date": {
+    "ru": "Желаемая дата",
+    "uz": "Istalgan sana"
+  },
+  "Preferred time": {
+    "ru": "Желаемое время",
+    "uz": "Istalgan vaqt"
+  },
+  "Preview request": {
+    "ru": "Проверить заявку",
+    "uz": "So‘rovni ko‘rib chiqish"
+  },
+  "Request preview — not sent": {
+    "ru": "Предпросмотр заявки — не отправлена",
+    "uz": "So‘rov ko‘rinishi — yuborilmagan"
+  },
+  "This draft stays on this screen only. No service order or message has been created.": {
+    "ru": "Черновик остаётся только на этом экране. Заказ услуги и сообщение не созданы.",
+    "uz": "Qoralama faqat shu ekranda qoladi. Xizmat buyurtmasi yoki xabar yaratilmagan."
+  },
+  "Up to {count} guests": {
+    "ru": "До {count} гостей",
+    "uz": "{count} tagacha mehmon"
+  },
+  "Bathrooms: {count}": {
+    "ru": "Ванных: {count}",
+    "uz": "Hammomlar: {count}"
+  },
+  "Plan your stay": {
+    "ru": "Спланируйте поездку",
+    "uz": "Safaringizni rejalang"
+  },
+  "Choose your dates to explore the booking steps. Live availability will be checked when connected.": {
+    "ru": "Выберите даты, чтобы посмотреть этапы бронирования. Реальная доступность будет проверяться после подключения.",
+    "uz": "Bronlash bosqichlarini ko‘rish uchun sanalarni tanlang. Ulangandan keyin haqiqiy mavjudlik tekshiriladi."
+  },
+  "Taxes and fees": {
+    "ru": "Налоги и сборы",
+    "uz": "Soliqlar va yig‘imlar"
+  },
+  "Requires live calculation": {
+    "ru": "Нужен расчёт сервера",
+    "uz": "Server hisobi kerak"
+  },
+  "Your dates are ready for the next preview step. No availability is reserved.": {
+    "ru": "Даты выбраны для следующего этапа предпросмотра. Жильё не резервируется.",
+    "uz": "Sanalar keyingi ko‘rish bosqichi uchun tanlandi. Turar joy band qilinmaydi."
+  },
+  "Choose a departure after arrival and a valid guest count to continue.": {
+    "ru": "Для продолжения выберите выезд после заезда и допустимое число гостей.",
+    "uz": "Davom etish uchun chiqish sanasini kirishdan keyin va ruxsat etilgan mehmonlar sonini tanlang."
+  },
+  "Illustrative map — locations are not live": {
+    "ru": "Условная карта — реальные координаты не подключены",
+    "uz": "Namunaviy xarita — haqiqiy joylashuvlar ulanmagan"
+  },
+  "View on preview map: {name}": {
+    "ru": "Открыть на условной карте: {name}",
+    "uz": "Namunaviy xaritada ko‘rish: {name}"
+  },
+  "No apartments match the selected filters.": {
+    "ru": "По выбранным фильтрам апартаменты не найдены.",
+    "uz": "Tanlangan filtrlarga mos apartamentlar topilmadi."
+  },
+  "Cleaning for your stay": {
+    "ru": "Уборка во время проживания",
+    "uz": "Yashash davrida tozalash"
+  },
+  "Care for your clothes": {
+    "ru": "Уход за вашими вещами",
+    "uz": "Kiyimlaringiz parvarishi"
+  },
+  "Everyday essentials": {
+    "ru": "Всё необходимое рядом",
+    "uz": "Kundalik zarur mahsulotlar"
+  },
+  "Help with your plans": {
+    "ru": "Поможем с планами",
+    "uz": "Rejalaringizga yordam"
+  },
+  "Transfers": {
+    "ru": "Трансферы",
+    "uz": "Transferlar"
+  },
+  "Airport and city journeys": {
+    "ru": "Встреча в аэропорту и поездки",
+    "uz": "Aeroport va shahar safarlari"
+  },
+  "A car for your dates": {
+    "ru": "Автомобиль на ваши даты",
+    "uz": "Sanangizga mos avtomobil"
+  },
+  "Excursions": {
+    "ru": "Экскурсии",
+    "uz": "Ekskursiyalar"
+  },
+  "Discover the city": {
+    "ru": "Откройте для себя город",
+    "uz": "Shaharni kashf eting"
+  },
+  "Flights & trains": {
+    "ru": "Авиа и ж/д",
+    "uz": "Avia va poyezd"
+  },
+  "Plan your onward journey": {
+    "ru": "Продолжение вашего путешествия",
+    "uz": "Keyingi safaringizni rejalang"
+  },
+  "Dining during your stay": {
+    "ru": "Питание во время проживания",
+    "uz": "Yashash davrida ovqatlanish"
+  },
+  "Drinks and refreshments": {
+    "ru": "Напитки и отдых",
+    "uz": "Ichimliklar va hordiq"
+  },
+  "Time to unwind": {
+    "ru": "Время для отдыха",
+    "uz": "Dam olish vaqti"
+  },
+  "More at the property": {
+    "ru": "Дополнительно на объекте",
+    "uz": "Obyektdagi boshqa xizmatlar"
+  },
+  "Not connected yet": {
+    "ru": "Пока не подключено",
+    "uz": "Hali ulanmagan"
+  },
+  "This service is not connected yet. Booking, payment and sending requests are unavailable.": {
+    "ru": "Услуга пока не подключена. Бронирование, оплата и отправка заявок недоступны.",
+    "uz": "Xizmat hali ulanmagan. Bronlash, toʻlov va soʻrov yuborish mavjud emas."
+  },
+  "V Market": {
+    "ru": "V Market",
+    "uz": "V Market"
+  }
+}

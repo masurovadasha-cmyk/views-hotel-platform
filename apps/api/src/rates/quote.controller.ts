@@ -27,7 +27,7 @@ export class QuoteController{
         membershipId:requireUuid(membershipId,"membership_id"),
         requestId:requestId||crypto.randomUUID()
       };
-      if(!body.propertyId||!body.unitId||!body.ratePlanId||!body.checkInAt||!body.checkOutAt||!body.guests){
+      if(!body.propertyId||!body.unitId||!body.ratePlanId||!body.checkInAt||!body.checkOutAt||!Array.isArray(body.guests)){
         throw new BadRequestException("Incomplete quote request");
       }
       const result=await this.quotes.createQuote({
@@ -37,8 +37,8 @@ export class QuoteController{
         ratePlanId:requireUuid(body.ratePlanId,"rate_plan_id"),
         checkInAt:body.checkInAt,checkOutAt:body.checkOutAt,
         guests:body.guests.map(x=>({
-          age:Number(x.age),
-          residency:x.residency==="nonresident"?"nonresident":"resident"
+          age:x?.age as number,
+          residency:x?.residency as "resident"|"nonresident"
         })),
         attribution:{
           bookingChannel:"staff_crm",

@@ -1,10 +1,10 @@
 import type { Apartment, ServiceOrder } from "../domain/types";
 
 export const apartments:Apartment[]=[
-{id:"modern",title:"Views | Modern Design Apartment | Views",property:"NRG U-Tower",city:"Tashkent",capacity:2,bedrooms:1,bathrooms:1,nightlyRate:null,currency:"USD",amenities:["Kitchen","Wi-Fi","Free parking","Pets","Smart TV"],image:"https://a0.muscache.com/im/pictures/hosting/Hosting-1772624665100620734/original/0ec7711f-2923-49dd-b4d1-40af11070247.png?im_w=720"},
-{id:"panoramic",title:"Views | Luxury Apartment with Panoramic | Views",property:"NRG U-Tower",city:"Tashkent",capacity:4,bedrooms:1,bathrooms:1,nightlyRate:null,currency:"USD",amenities:["Kitchen","Wi-Fi","Workspace","Free parking","Balcony"],image:"https://a0.muscache.com/im/pictures/hosting/Hosting-1768745438564501646/original/823f2e7c-73af-44e8-b692-67adac0a7f77.jpeg?im_w=720"},
-{id:"garden",title:"Views | Urban Garden Apartment with Balcony | Views",property:"NRG U-Tower",city:"Tashkent",capacity:4,bedrooms:1,bathrooms:1,nightlyRate:null,currency:"USD",amenities:["Kitchen","Wi-Fi","Free parking","Pets","Balcony"],image:"https://a0.muscache.com/im/pictures/hosting/Hosting-1771969006287092719/original/d54bac20-165f-455c-882d-1a3a6f9968fb.jpeg?im_w=720"},
-{id:"peach",title:"Views | Peach & Cream Luxury Apartment | Views",property:"NRG U-Tower",city:"Tashkent",capacity:3,bedrooms:1,bathrooms:1,nightlyRate:null,currency:"USD",amenities:["Kitchen","Wi-Fi","Free parking","Pets","Smart TV"],image:"https://a0.muscache.com/im/pictures/hosting/Hosting-1769878950462437449/original/ff6d6b99-f33b-42df-8901-a7eb8ca8651d.jpeg?im_w=720"}
+{id:"modern",title:"Views | Modern Design Apartment | Views",property:"NRG U-Tower",city:"Tashkent",capacity:2,bedrooms:1,bathrooms:1,nightlyRate:null,currency:"USD",amenities:["Kitchen","Wi-Fi","Free parking","Pets","Smart TV"],image:new URL("../assets/demo/modern.jpg",import.meta.url).href},
+{id:"panoramic",title:"Views | Luxury Apartment with Panoramic | Views",property:"NRG U-Tower",city:"Tashkent",capacity:4,bedrooms:1,bathrooms:1,nightlyRate:null,currency:"USD",amenities:["Kitchen","Wi-Fi","Workspace","Free parking","Balcony"],image:new URL("../assets/demo/panoramic.jpg",import.meta.url).href},
+{id:"garden",title:"Views | Urban Garden Apartment with Balcony | Views",property:"NRG U-Tower",city:"Tashkent",capacity:4,bedrooms:1,bathrooms:1,nightlyRate:null,currency:"USD",amenities:["Kitchen","Wi-Fi","Free parking","Pets","Balcony"],image:new URL("../assets/demo/garden.jpg",import.meta.url).href},
+{id:"peach",title:"Views | Peach & Cream Luxury Apartment | Views",property:"NRG U-Tower",city:"Tashkent",capacity:3,bedrooms:1,bathrooms:1,nightlyRate:null,currency:"USD",amenities:["Kitchen","Wi-Fi","Free parking","Pets","Smart TV"],image:new URL("../assets/demo/peach.jpg",import.meta.url).href}
 ];
 
 export const initialOrders:ServiceOrder[]=[

@@ -4,7 +4,10 @@ on:
   push:
     branches: ["stage7/core-egress-default-deny-v1"]
     paths:
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "apps/api/**"
+      - "db/**"
       - "docker-compose.core-tunnel*.yml"
       - "scripts/core-*gate*.mjs"
       - "scripts/core-egress-probe*.mjs"
@@ -34,11 +37,15 @@ jobs:
       VIEWS_EGRESS_PROOF_ACK: DISPOSABLE_DATABASE_ONLY
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.19.0
+          cache: pnpm
       - name: Install existing TypeScript parser and test dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Check policy and probe regressions
         run: npm test -- scripts/core-network-primitive-gate.test.mjs scripts/core-egress-probe.test.mjs
       - name: Generate ephemeral Ed25519 verification configuration

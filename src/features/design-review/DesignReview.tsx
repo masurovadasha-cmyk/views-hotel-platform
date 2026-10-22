@@ -1,0 +1,17 @@
+import {useEffect,useState} from 'react';
+import type {Locale} from '../../i18n/messages';
+import {designAsset,designRoles,designScreens,selectDesignScreens} from './model';
+import {designText} from './locale';
+import './design-review.css';
+export function DesignReview({locale,dark,onClose}:{locale:Locale;dark:boolean;onClose:()=>void}){
+ const t=(k:string)=>designText(locale,k),[query,setQuery]=useState(''),[role,setRole]=useState(''),[status,setStatus]=useState('');
+ const [id,setId]=useState(()=>{const requested=new URLSearchParams(location.search).get('screen');return designScreens.find(s=>s.id===requested)?.id??designScreens[0].id;}),[failed,setFailed]=useState(false),[retry,setRetry]=useState(0),[online,setOnline]=useState(navigator.onLine);
+ const matches=selectDesignScreens(query,role,status),selected=matches.find(s=>s.id===id)??matches[0],index=matches.findIndex(s=>s.id===selected?.id);
+ useEffect(()=>{const f=()=>setOnline(navigator.onLine);window.addEventListener('online',f);window.addEventListener('offline',f);return()=>{window.removeEventListener('online',f);window.removeEventListener('offline',f);};},[]);
+ useEffect(()=>{setFailed(false);if(!selected)return;const url=new URL(location.href);url.searchParams.set('design','140');url.searchParams.set('screen',selected.id);history.replaceState(null,'',url);},[selected?.id,dark]);
+ return <main className="designReview" data-testid="design-review"><header><div><h1>{t('title')}</h1><p>{t('notice')}</p></div><button onClick={onClose}>{t('back')}</button></header><p className="designDisclosure">{t('acceptance')} {t('theme')}</p>{!online&&<p role="status">{t('offline')}</p>}
+ <div className="designFilters"><label>{t('search')}<input type="search" value={query} maxLength={100} onChange={e=>setQuery(e.target.value)}/></label><label>{t('role')}<select aria-label={t('role')} value={role} onChange={e=>setRole(e.target.value)}><option value="">{t('all')}</option>{designRoles.map(r=><option key={r} value={r}>{t(r)}</option>)}</select></label><label>{t('status')}<select aria-label={t('status')} value={status} onChange={e=>setStatus(e.target.value)}><option value="">{t('all')}</option>{['partial','pending'].map(s=><option key={s} value={s}>{t(s)}</option>)}</select></label></div>
+ <p role="status">{t('results')}: {matches.length} / {designScreens.length}</p><div className="designReviewBody"><nav aria-label={t('title')}>{matches.map(s=><button key={s.id} aria-current={s.id===selected?.id?'page':undefined} onClick={()=>setId(s.id)}><small>{s.id} · {t(s.area)}</small><span lang="ru">{s.title}</span><em>{t(s.implementation)}</em></button>)}</nav>
+ {selected?<section className="designDetail" aria-label={selected.id}><header><h2 lang="ru">{selected.id} · {selected.title}</h2><p>{t(selected.implementation)} · {t('page')} {selected.pages[dark?'Dark':'Light']} · {dark?'Dark':'Light'}</p></header><div className="designPaging"><button disabled={index<=0} onClick={()=>setId(matches[index-1].id)}>{t('previous')}</button><button disabled={index>=matches.length-1} onClick={()=>setId(matches[index+1].id)}>{t('next')}</button><a href={designAsset(selected.id,dark)} target="_blank" rel="noreferrer">{t('open')}</a></div>
+ {failed?<div role="alert"><p>{t('error')}</p><button onClick={()=>{setFailed(false);setRetry(n=>n+1);}}>{t('retry')}</button></div>:<img key={selected.id+dark+retry} src={designAsset(selected.id,dark)} alt={selected.id+' · '+selected.title+' · '+(dark?'Dark':'Light')} onError={()=>setFailed(true)}/>}</section>:<p>{t('empty')}</p>}</div></main>;
+}

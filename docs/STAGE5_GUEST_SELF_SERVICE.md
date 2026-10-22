@@ -24,7 +24,7 @@ or unrestricted tenant-scoped APIs to a public browser.
 
 Migration:
 
-- `apps/api/db/migrations/0011_guest_access_sessions.sql`
+- `db/migrations/0011_guest_access_sessions.sql`
 
 Table:
 

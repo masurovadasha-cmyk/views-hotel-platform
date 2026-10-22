@@ -23,12 +23,16 @@ jobs:
       VIEWS_PAYME_PROOF_OUTPUT: /tmp/stage7.21-payme-expiry-proof.json
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.19.0
+          cache: pnpm
       - name: Install existing API test dependencies
         working-directory: apps/api
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Typecheck complete Core
         working-directory: apps/api
         run: npm run typecheck

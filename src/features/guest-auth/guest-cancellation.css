@@ -1,0 +1,5 @@
+.guestCancellation{border-top:1px solid #aaa08e;margin-top:24px;padding-top:24px;min-width:0}
+.guestCancellation h3{font-size:20px}.guestCancellation [data-testid="guest-cancellation-preview"],.guestCancellation [data-testid="guest-cancellation-result"]{margin-top:20px;padding:20px;background:#f5f1e8;border-radius:12px}
+.guestCancellation dd{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.dark .guestCancellation [data-testid="guest-cancellation-preview"],.dark .guestCancellation [data-testid="guest-cancellation-result"]{background:#37372c}
+@media(max-width:480px){.guestCancellation [data-testid="guest-cancellation-preview"],.guestCancellation [data-testid="guest-cancellation-result"]{padding:14px}}

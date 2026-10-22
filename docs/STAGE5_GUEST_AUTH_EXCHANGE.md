@@ -81,7 +81,7 @@ A replay, expired challenge, undelivered challenge or malformed token is rejecte
 
 Migration:
 
-- `apps/api/db/migrations/0012_guest_auth_challenges.sql`
+- `db/migrations/0012_guest_auth_challenges.sql`
 
 Adds:
 

@@ -1,0 +1,82 @@
+'use strict';
+const assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
+module.exports=async function({page,api,admin,identity}){
+ assert.equal((await admin.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker,'VIEWS_DISPOSABLE_CORE_TEST');
+ const org='10000000-0000-4000-8000-000000000001',property='10000000-0000-4000-8000-000000000002',profile=randomUUID(),unit=randomUUID(),type=randomUUID(),reservation='ffffffff-ffff-4fff-8fff-'+randomUUID().slice(-12);
+ const services=Object.fromEntries(['cleaning','laundry','concierge','market'].map(k=>[k,randomUUID()])),headers={'X-Views-Guest-CSRF':identity.csrf},when=new Date(Date.now()+24*3600000).toISOString();
+ await admin.query("INSERT INTO guest_profiles(id,user_id,organization_id,first_name,last_name) VALUES($1,$2,$3,'Synthetic','Order list')",[profile,identity.profile.userId,org]);
+ await admin.query("INSERT INTO unit_types(id,property_id,name,max_guests) VALUES($1,$2,'{}',2)",[type,property]);await admin.query("INSERT INTO units(id,property_id,unit_type_id,code) VALUES($1,$2,$3,'Synthetic order list')",[unit,property,type]);
+ await admin.query("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) VALUES($1,$2,$3,$4,$5,'ORDER-LIST-BROWSER','checked_in',now()-interval '1 day',now()+interval '5 days','UZS',0,'{}')",[reservation,org,property,unit,profile]);
+ for(const [kind,id] of Object.entries(services))await admin.query("INSERT INTO service_catalog(id,organization_id,property_id,code,name,currency,price_minor,active,execution_kind,duration_minutes) VALUES($1,$2,$3,$1::uuid::text,jsonb_build_object('en','Order list '||$4::text,'ru','Заказ '||$4::text,'uz','Buyurtma '||$4::text),'UZS',$5,true,$4,40)",[id,org,property,kind,kind==='concierge'?0:1200000]);
+ await admin.query("INSERT INTO supply_items(id,organization_id,property_id,sku,name,unit) VALUES($1,$2,$3,upper($1::uuid::text),'Synthetic list product','piece')",[services.market,org,property]);await admin.query('INSERT INTO supply_balances(organization_id,property_id,item_id,quantity) VALUES($1,$2,$3,3)',[org,property,services.market]);
+ await admin.query("INSERT INTO market_products(service_id,organization_id,property_id,currency,item_id) VALUES($1,$2,$3,'UZS',$1)",[services.market,org,property]);
+ async function post(route,body){const result=await api('services/'+route,'POST',body,{...headers,'Idempotency-Key':randomUUID()});assert.equal(result.status,200,JSON.stringify(result.body));return result.body;}
+ const cleaning=await post('orders',{reservationId:reservation,serviceId:services.cleaning,expectedRevision:1,expectedPriceMinor:'1200000',requestedFor:when});await post('orders/'+cleaning.orderId+'/actions',{action:'cancel',expectedRevision:cleaning.revision});
+ const laundry=[],concierge=[];for(let n=0;n<3;n++){laundry.push(await post('laundry',{reservationId:reservation,serviceId:services.laundry,expectedRevision:1,declaredCount:1,preferences:'Synthetic list '+n,pickupAt:when}));concierge.push(await post('concierge',{reservationId:reservation,category:'help',partySize:1,budgetMinor:'99999900',requestedFor:when,message:'Synthetic order list request '+n}));}
+ // Synthetic terminal projection only; no staff action, payment or completion is claimed.
+ await admin.query("UPDATE concierge_requests SET stage='closed',assigned_membership_id='76800000-0000-4000-8000-000000000001',answered_at=now() WHERE order_id=$1",[concierge[0].orderId]);
+ for(const status of ['accepted','in_progress','completed'])await admin.query('UPDATE service_orders SET status=$2 WHERE id=$1',[concierge[0].orderId,status]);
+ const market=await post('market',{reservationId:reservation,lines:[{serviceId:services.market,quantity:1,expectedRevision:1}],expectedTotalMinor:'1200000'});
+ const detailRoute=(kind,id,stay=reservation)=>'services/details/'+kind+'/'+id+'?reservationId='+stay;
+ for(const route of [detailRoute('cleaning',market.orderId),detailRoute('laundry',randomUUID()),detailRoute('market',market.orderId,randomUUID())])assert.equal((await api(route)).status,404,route);
+ for(const extra of ['&cursor='+randomUUID(),'&extra=1','&reservationId='+reservation])assert.equal((await api(detailRoute('market',market.orderId)+extra)).status,400,extra);
+ assert.ok([400,404].includes((await api(detailRoute('market',market.orderId),'POST',{},headers)).status),'DETAIL_ACCEPTED_POST');
+ const writes=async()=>((await admin.query('SELECT (SELECT count(*) FROM service_private.commands)::text commands,(SELECT count(*) FROM folio_entries e JOIN guest_folios f ON f.id=e.folio_id WHERE f.reservation_id=$1)::text charges',[reservation])).rows[0]);const before=await writes();
+ await page.locator('.guestLanguage select').selectOption('en');await page.reload();await page.locator(`[data-reservation-id="${reservation}"]`).getByRole('button',{name:'View trip',exact:true}).click();
+ const list=page.getByTestId('guest-order-list'),cards=list.locator('[data-order-summary]');await list.waitFor();assert.equal(await cards.count(),0);
+ async function ready(){await page.waitForFunction(()=>document.querySelector('[data-testid="guest-orders-load"]')?.disabled===false);}
+ async function load(){await page.getByTestId('guest-orders-load').click();await ready();}
+ const detail=page.getByTestId('guest-order-detail'),selected=detail.locator('[data-selected-order]'),reads=[];
+ const capture=request=>{const url=new URL(request.url());if(url.pathname.startsWith('/guest-api/services/'))reads.push({method:request.method(),path:url.pathname,reservation:url.searchParams.get('reservationId'),cursor:url.searchParams.get('cursor')});};page.on('request',capture);
+ async function openOrder(kind,id){
+  const start=reads.length;await list.locator(`[data-order-summary="${id}"]`).getByRole('button',{name:'Open order',exact:true}).click();await detail.locator(`[data-selected-order="${id}"]`).waitFor();
+  assert.equal(await selected.count(),1);assert.equal(await list.count(),0);assert.equal(await detail.locator('input,textarea,select').count(),0);
+  assert.deepEqual(reads.slice(start),[{method:'GET',path:'/guest-api/services/details/'+kind+'/'+id,reservation,cursor:null}]);
+ }
+ async function back(){await page.getByTestId('guest-order-detail-back').click();await list.waitFor();assert.equal(await cards.count(),0);}
+ async function loadAll(){await load();for(const kind of ['laundry','concierge']){await page.getByTestId('guest-orders-more-'+kind).click();await ready();}}
+ async function refreshDetail(){await page.getByTestId('guest-order-detail-refresh').click();await page.waitForFunction(()=>document.querySelector('[data-testid="guest-order-detail-refresh"]')?.disabled===false);}
+ await load();assert.equal(await cards.count(),6);await list.locator(`[data-order-summary="${market.orderId}"]`).getByText('Original order amount',{exact:false}).waitFor();assert.equal(await list.getByText('999,999',{exact:false}).count(),0);
+ for(const kind of ['laundry','concierge']){await page.getByTestId('guest-orders-more-'+kind).click();await ready();assert.equal(await page.getByTestId('guest-orders-more-'+kind).count(),0);}assert.equal(await cards.count(),8);
+ for(const [kind,expected] of [['cleaning',1],['laundry',3],['concierge',3],['market',1]]){await page.getByTestId('guest-orders-kind').selectOption(kind);assert.equal(await cards.count(),expected);}await page.getByTestId('guest-orders-kind').selectOption('all');
+ for(const [state,expected] of [['active',6],['completed',1],['cancelled',1],['all',8]]){await page.getByTestId('guest-orders-state').selectOption(state);assert.equal(await cards.count(),expected);}
+ await openOrder('market',market.orderId);await page.getByTestId('guest-order-detail-service').click();await page.getByTestId('guest-service-panel-market').waitFor();assert.equal(await detail.count(),0);await page.getByTestId('guest-services-back').click();assert.equal(await cards.count(),0);await load();
+ await page.route('**/guest-api/services/concierge?*',r=>r.fulfill({status:503,contentType:'application/json',body:'{"error":"SYNTHETIC_ORDER_LIST_FAILURE"}'}),{times:1});await load();await list.getByRole('alert').waitFor();assert.equal(await cards.count(),0);await load();assert.equal(await cards.count(),6);
+ let release,arrived;const held=new Promise(r=>{release=r;}),seen=new Promise(r=>{arrived=r;});
+ await page.route('**/guest-api/services/laundry?*',async route=>{const response=await route.fetch();arrived();await held;await route.fulfill({response});},{times:1});await page.getByTestId('guest-orders-load').click();await Promise.race([seen,new Promise((_,reject)=>setTimeout(()=>reject(Error('ORDER_LIST_HELD_READ_TIMEOUT')),15000))]);
+ await page.context().setOffline(true);await list.getByText('Offline. Reconnect and load orders again.',{exact:true}).waitFor();
+ await page.waitForFunction(()=>document.querySelector('[data-testid="guest-order-list"]')?.getAttribute('aria-busy')==='false');
+ assert.equal(await cards.count(),0);assert.equal(await page.getByTestId('guest-orders-load').isDisabled(),true);await page.context().setOffline(false);await ready();
+ const done=page.waitForResponse(r=>new URL(r.url()).pathname==='/guest-api/services/laundry');release();await(await done).finished();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));assert.equal(await cards.count(),0);await load();assert.equal(await cards.count(),6);
+ for(const language of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(language);for(const dark of [true,false]){await page.locator('[data-theme-toggle]').click();assert.equal(await page.locator('.app.dark').count(),dark?1:0);assert.equal(await cards.count(),6);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'ORDER_LIST_MOBILE_OVERFLOW');}}
+ await list.screenshot({path:'/tmp/views-guest-order-list.png'});await page.getByRole('button',{name:'Dark',exact:true}).click();await list.screenshot({path:'/tmp/views-guest-order-list-dark.png'});await page.getByRole('button',{name:'Light',exact:true}).click();
+ // Keep an unsent service draft across the read-only detail and its direction link.
+ await page.getByTestId('guest-service-laundry').click();const laundryPanel=page.getByTestId('guest-laundry');await laundryPanel.getByRole('button',{name:'Open laundry',exact:true}).click();await laundryPanel.getByLabel('Preferences',{exact:true}).fill('Synthetic retained draft');await page.getByTestId('guest-services-back').click();await loadAll();
+ const sortedLaundry=laundry.map(r=>r.intakeId).sort(),sortedConcierge=concierge.map(r=>r.orderId).sort();
+ for(const [kind,id] of [['cleaning',cleaning.orderId],['laundry',sortedLaundry[2]],['concierge',sortedConcierge[2]],['market',market.orderId]]){
+  await openOrder(kind,id);for(const other of [cleaning.orderId,...sortedLaundry,...sortedConcierge,market.orderId].filter(other=>other!==id))assert.equal((await detail.textContent()).includes(other),false,'OTHER_ORDER_IN_DETAIL');
+  for(const language of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(language);for(const dark of [true,false]){await page.locator('[data-theme-toggle]').click();assert.equal(await page.locator('.app.dark').count(),dark?1:0);assert.equal(await selected.count(),1);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'ORDER_DETAIL_MOBILE_OVERFLOW');}}
+  if(kind==='laundry'){await page.getByTestId('guest-order-detail-service').click();assert.equal(await laundryPanel.getByLabel('Preferences',{exact:true}).inputValue(),'Synthetic retained draft');await page.getByTestId('guest-services-back').click();assert.equal(await cards.count(),0);}else await back();await loadAll();
+ }
+ // Synthetic intake projection only; no physical collection or staff command is claimed.
+ await admin.query("UPDATE laundry_intakes SET stage='received',revision=revision+1 WHERE id=$1",[sortedLaundry[2]]);await openOrder('laundry',sortedLaundry[2]);await detail.getByText('Items received',{exact:true}).waitFor();
+ await page.route('**/guest-api/services/details/laundry/*?*',r=>r.fulfill({status:503,contentType:'application/json',body:'{"error":"SYNTHETIC_DETAIL_FAILURE"}'}),{times:1});await refreshDetail();await detail.getByRole('alert').waitFor();assert.equal(await selected.count(),0);await refreshDetail();assert.equal(await selected.count(),1);
+ await page.route('**/guest-api/services/details/laundry/*?*',r=>r.fulfill({status:200,contentType:'application/json',body:'{"items":[],"nextCursor":null}'}),{times:1});await refreshDetail();await detail.getByRole('alert').waitFor();assert.equal(await selected.count(),0);await refreshDetail();assert.equal(await selected.count(),1);
+ let releaseDetail,detailArrived;const detailHeld=new Promise(r=>{releaseDetail=r;}),detailSeen=new Promise(r=>{detailArrived=r;});
+ await page.route('**/guest-api/services/details/laundry/*?*',async route=>{const response=await route.fetch();detailArrived();await detailHeld;await route.fulfill({response});},{times:1});await page.getByTestId('guest-order-detail-refresh').click();await Promise.race([detailSeen,new Promise((_,reject)=>setTimeout(()=>reject(Error('ORDER_DETAIL_HELD_READ_TIMEOUT')),15000))]);
+ // Empty content and a disabled refresh also mean loading; wait for the actual offline transition.
+ await page.context().setOffline(true);await detail.getByText('Offline. Reconnect and refresh this order.',{exact:true}).waitFor();
+ await page.waitForFunction(()=>document.querySelector('[data-testid="guest-order-detail"]')?.getAttribute('aria-busy')==='false');
+ assert.equal(await selected.count(),0);assert.equal(await page.getByTestId('guest-order-detail-refresh').isDisabled(),true);await page.context().setOffline(false);
+ await page.waitForFunction(()=>document.querySelector('[data-testid="guest-order-detail-refresh"]')?.disabled===false);
+ const detailDone=page.waitForResponse(r=>new URL(r.url()).pathname==='/guest-api/services/details/laundry/'+sortedLaundry[2]);releaseDetail();await(await detailDone).finished();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));assert.equal(await selected.count(),0);await refreshDetail();assert.equal(await selected.count(),1);
+ await detail.screenshot({path:'/tmp/views-guest-order-detail.png'});await page.getByRole('button',{name:'Dark',exact:true}).click();await detail.screenshot({path:'/tmp/views-guest-order-detail-dark.png'});await page.getByRole('button',{name:'Light',exact:true}).click();
+ await admin.query('UPDATE guest_profiles SET user_id=NULL WHERE id=$1 AND user_id=$2',[profile,identity.profile.userId]);await refreshDetail();await detail.getByRole('alert').waitFor();assert.equal(await selected.count(),0);await back();await load();await list.getByRole('alert').waitFor();assert.equal(await cards.count(),0);assert.deepEqual(await writes(),before);assert.equal(reads.some(r=>r.method!=='GET'),false);page.off('request',capture);
+ console.log(JSON.stringify({proof:'guest_order_list_browser_core',result:'pass',checks:['detail_http_wrong_kind_absent_wrong_stay_strict_query_read_only','four_real_guest_endpoints_one_owned_stay','independent_cursor_append','kind_and_terminal_filters','open_service_explicit_reload','read_error_clears_manual_retry','offline_stale_read_ignored','three_languages_two_themes_mobile','four_exact_order_details_one_scoped_read','second_page_laundry_concierge_exact_id_without_cursor','fresh_detail_status_and_missing_id_clears','detail_offline_stale_read_ignored','service_draft_retained','detail_three_languages_two_themes_mobile','revoked_stay_ownership_clears_detail_and_list','no_ui_commands_or_folio_changes'],publicEnabled:false}));
+ await require('./guest-cleaning-detail-cancel-browser.cjs')({page,api,admin,identity});
+ await require('./guest-laundry-detail-cancel-browser.cjs')({page,api,admin,identity});
+ await require('./guest-laundry-detail-accept-browser.cjs')({page,api,admin,identity});
+ await require('./guest-laundry-detail-reject-browser.cjs')({page,api,admin,identity});
+ await require('./guest-laundry-detail-receipt-browser.cjs')({page,api,admin,identity});
+ await require('./guest-laundry-detail-claim-browser.cjs')({page,api,admin,identity});
+};

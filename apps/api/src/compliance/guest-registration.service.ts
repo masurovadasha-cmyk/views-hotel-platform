@@ -24,9 +24,9 @@ export class GuestRegistrationService{
       await assertComplianceRole(client,actor.membershipId,["host","owner","manager","front_desk"]);
 
       const reservationResult=await client.query<{
-        property_id:string;country_code:string;check_in_at:Date;check_out_at:Date;timezone:string;status:string;
+        property_id:string;country_code:string;check_in_at:Date;check_out_at:Date;timezone:string;status:string;quote_snapshot:{localStayPilot?:boolean};
       }>(
-        `SELECT r.property_id,p.country_code,r.check_in_at,r.check_out_at,p.timezone,r.status
+        `SELECT r.property_id,p.country_code,r.check_in_at,r.check_out_at,p.timezone,r.status,r.quote_snapshot
            FROM reservations r
            JOIN properties p ON p.id=r.property_id
           WHERE r.id=$1`,
@@ -34,6 +34,7 @@ export class GuestRegistrationService{
       );
       const reservation=reservationResult.rows[0];
       if(!reservation)throw new Error("RESERVATION_NOT_FOUND");
+      if(reservation.quote_snapshot?.localStayPilot===true)throw new Error("SYNTHETIC_REGISTRATION_FORBIDDEN");
       if(!["confirmed","checked_in"].includes(reservation.status))throw new Error("REGISTRATION_NOT_AVAILABLE");
 
       const access=await client.query<{allowed:boolean}>(
@@ -72,7 +73,7 @@ export class GuestRegistrationService{
                 EXISTS(
                   SELECT 1 FROM guest_document_records d
                   WHERE d.reservation_guest_id=rg.id
-                    AND d.verification_status='verified'
+                    AND d.verification_status='verified' AND d.vault_id<>'views-synthetic-document-v1'
                 ) AS has_verified_document
            FROM reservation_guests rg
           WHERE rg.reservation_id=$1
@@ -167,12 +168,12 @@ export class GuestRegistrationService{
 
       const rowResult=await client.query<{
         id:string;property_id:string;reservation_id:string;reservation_guest_id:string;provider:string;status:string;
-        country_code:string;policy_snapshot:{config:RegistrationPolicyConfig};attempt_count:number;
+        quote_snapshot:{localStayPilot?:boolean};country_code:string;policy_snapshot:{config:RegistrationPolicyConfig};attempt_count:number;
         check_in_at:Date;check_out_at:Date;first_name:string;last_name:string;date_of_birth:string;
         nationality_country_code:string;residency_country_code:string|null;
       }>(
         `SELECT c.id,c.property_id,c.reservation_id,c.reservation_guest_id,c.provider,c.status,c.country_code,c.policy_snapshot,c.attempt_count,
-                r.check_in_at,r.check_out_at,
+                r.check_in_at,r.check_out_at,r.quote_snapshot,
                 g.first_name,g.last_name,g.date_of_birth::text,g.nationality_country_code,g.residency_country_code
            FROM guest_registration_cases c
            JOIN reservations r ON r.id=c.reservation_id
@@ -183,6 +184,7 @@ export class GuestRegistrationService{
       );
       const row=rowResult.rows[0];
       if(!row)throw new Error("REGISTRATION_CASE_NOT_FOUND");
+      if(row.quote_snapshot?.localStayPilot===true)throw new Error("SYNTHETIC_REGISTRATION_FORBIDDEN");
 
       const access=await client.query<{allowed:boolean}>(
         "SELECT app.can_access_property($1::uuid) AS allowed",[row.property_id]
@@ -201,7 +203,7 @@ export class GuestRegistrationService{
         `SELECT id,storage_region,verification_status
            FROM guest_document_records
           WHERE reservation_guest_id=$1
-            AND verification_status='verified'
+            AND verification_status='verified' AND vault_id<>'views-synthetic-document-v1'
           ORDER BY verified_at DESC NULLS LAST,created_at DESC
           LIMIT 1`,
         [row.reservation_guest_id]

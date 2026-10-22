@@ -1,0 +1,1 @@
+export default {transpilePackages:['@views/shared'],poweredByHeader:false,reactStrictMode:true,experimental:{cpus:2},async redirects(){return [{source:'/',destination:'/ru/guest',permanent:false}];}};
