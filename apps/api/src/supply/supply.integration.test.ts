@@ -73,6 +73,36 @@ describe.sequential('separate procurement and warehouse / actual PostgreSQL',()=
   for(const itemId of created)expect(seen.has(itemId)).toBe(true);
   const first=await read.list(buyer,'items',property);await expect(read.list(buyer,'stock',property,first.nextCursor)).rejects.toThrow('SUPPLY_INPUT_INVALID');
  });
+ it('pages temporal supply queues newest-first without cursor gaps or duplicates',async()=>{
+  const orderItem=await item(),orderIds:string[]=[];
+  await db.withActor(buyer,async client=>{
+   for(let n=0;n<12;n++){
+    const orderId=randomUUID();orderIds.push(orderId);
+    const createdAt=new Date(Date.now()+3_600_000+n*1_000).toISOString();
+    await client.query("INSERT INTO supply_orders(id,organization_id,property_id,reference,created_at) VALUES($1,$2,$3,$4,$5)",[orderId,org,property,'Temporal order '+n,createdAt]);
+    await client.query("INSERT INTO supply_order_lines(organization_id,property_id,order_id,item_id,quantity) VALUES($1,$2,$3,$4,1)",[org,property,orderId,orderItem]);
+   }
+  });
+  const expectedOrders=[...orderIds].reverse(),firstOrders=await read.list(buyer,'orders',property);
+  expect(firstOrders.items.map(x=>x.id)).toEqual(expectedOrders.slice(0,10));expect(firstOrders.nextCursor).toBeTruthy();
+  const secondOrders=await read.list(buyer,'orders',property,firstOrders.nextCursor!);
+  expect(secondOrders.items.slice(0,2).map(x=>x.id)).toEqual(expectedOrders.slice(10,12));
+  expect(new Set([...firstOrders.items,...secondOrders.items].filter(x=>orderIds.includes(x.id)).map(x=>x.id)).size).toBe(12);
+
+  const stockFixture=await received('100'),movementIds:string[]=[];
+  await db.withActor(keeper,async client=>{
+   for(let n=0;n<52;n++){
+    const movementId=randomUUID();movementIds.push(movementId);
+    const createdAt=new Date(Date.now()+7_200_000+n*1_000).toISOString();
+    await client.query("INSERT INTO supply_movements(id,organization_id,property_id,item_id,kind,quantity,reference,actor_user_id,actor_membership_id,created_at) VALUES($1,$2,$3,$4,'issue',-1,$5,$6,$7,$8)",[movementId,org,property,stockFixture.itemId,'Temporal movement '+n,keeper.userId,keeper.membershipId,createdAt]);
+   }
+  });
+  const expectedMovements=[...movementIds].reverse(),firstMovements=await read.list(keeper,'movements',property);
+  expect(firstMovements.items.map(x=>x.id)).toEqual(expectedMovements.slice(0,50));expect(firstMovements.nextCursor).toBeTruthy();
+  const secondMovements=await read.list(keeper,'movements',property,firstMovements.nextCursor!);
+  expect(secondMovements.items.slice(0,2).map(x=>x.id)).toEqual(expectedMovements.slice(50,52));
+  expect(new Set([...firstMovements.items,...secondMovements.items].filter(x=>movementIds.includes(x.id)).map(x=>x.id)).size).toBe(52);
+ });
  it('rejects fractional/negative inputs and stays default-off in production',async()=>{
   const itemId=await item();for(const quantity of ['0','-1','1.5','9223372036854775808'])await expect(supply.issue(keeper,randomUUID(),{propertyId:property,itemId,quantity,reference:'Invalid'})).rejects.toThrow('SUPPLY_INPUT_INVALID');
   vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','false');await expect(read.properties(buyer)).rejects.toThrow('SUPPLY_DISABLED');
