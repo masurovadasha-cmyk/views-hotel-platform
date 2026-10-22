@@ -1,13 +1,13 @@
 const {spawnSync}=require("node:child_process");
 
 const exceptions={
-  "GHSA-86w9-cpqp-85rv":{
+  "GHSA-86W9-CPQP-85RV":{
     package:"node-forge",
     expiresAt:"2026-11-15T00:00:00Z",
     reason:"Unpatched upstream advisory reachable only through Expo CLI build tooling.",
     path:(p)=>p.startsWith("apps__mobile>expo>")&&p.includes("@expo/cli")&&p.endsWith(">node-forge")
   },
-  "GHSA-vfj7-8cjw-p6xm":{
+  "GHSA-VFJ7-8CJW-P6XM":{
     package:"braces",
     expiresAt:"2026-11-15T00:00:00Z",
     reason:"Unpatched upstream advisory reachable only through Expo Metro build tooling.",
