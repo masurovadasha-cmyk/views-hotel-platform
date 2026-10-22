@@ -1,3 +1,5 @@
+import {StayDateRange} from "../calendar/StayDateRange";
+import {stayNights} from "../../domain/bookingQuote";
 import {localeTags,localizedName,formatStaffMoney} from './staff-locale';
 import {useStaffLocale} from './StaffLocale';
 import {useEffect,useRef,useState} from "react";
@@ -79,11 +81,10 @@ export function LocalCoreWorkspace({staffCsrf}:{staffCsrf:string}){
       {data&&<div className="localColumns"><section className="localPanel"><h2>{t("1. Рассчитать стоимость")}</h2>
         <form onSubmit={calculate}><fieldset disabled={busy}><label>{t("Апартамент")}<select aria-label={t("Апартамент")} value={selection} onChange={e=>{invalidate();setSelection(e.target.value);}}>
           {data.units.map(u=><option key={u.unitId+u.ratePlanId} value={u.unitId+":"+u.ratePlanId}>{u.code} · {name(u.unitTypeName)}</option>)}</select></label>
-          <div className="localDates"><label>{t("Заезд")}<input aria-label={t("Заезд")} required type="date" min={day(0)} value={checkIn} onChange={e=>{invalidate();setCheckIn(e.target.value);}}/></label>
-          <label>{t("Выезд")}<input aria-label={t("Выезд")} required type="date" min={checkIn} value={checkOut} onChange={e=>{invalidate();setCheckOut(e.target.value);}}/></label></div>
+          <StayDateRange locale={locale} timezone={data.property.timezone} disabled={busy} maxNights={30} checkIn={checkIn} checkOut={checkOut} onChange={(a,b)=>{invalidate();setCheckIn(a);setCheckOut(b);}}/>
           <label>{t("Взрослые гости")}<select aria-label={t("Взрослые гости")} value={guests} onChange={e=>{invalidate();setGuests(Number(e.target.value));}}>{Array.from({length:unit?.maxGuests||1},(_,i)=><option key={i} value={i+1}>{i+1}</option>)}</select></label>
           <p className="localHint">{t("Заезд в 14:00, выезд в 12:00 по Ташкенту.")}{' '}{unit?t('Тестовая базовая цена: {price} за ночь.',{price:uzs(unit.baseNightlyMinor)}):''} {' '}{t("Сумма ниже рассчитывается Core, не браузером.")}</p>
-          <button className="primary" type="submit" disabled={!unit||busy}>{busy?t("Выполняется…"):t("Рассчитать через Core")}</button></fieldset></form>
+          <button className="primary" type="submit" disabled={!unit||busy||!stayNights(checkIn,checkOut)}>{busy?t("Выполняется…"):t("Рассчитать через Core")}</button></fieldset></form>
         </section><section className="localPanel"><h2>{t("2. Создать резерв")}</h2>
           {!quote?<p className="localHint">{t("Выберите апартамент и даты. Здесь появится реальный расчёт из локальной базы.")}</p>:<>
             <p>{t("Ночей:")}{' '}<strong>{quote.nights}</strong></p><div className="localAmount">{uzs(quote.totalMinor)}</div>
