@@ -36,7 +36,7 @@ export function reduceDemoMarket(s:DemoMarket,a:DemoAction):DemoMarket{
   if(s.pending)throw Error('pending');
   return {...s,orders:s.orders.map(o=>o.id===a.id&&o.status==='reserved'?{...o,status:a.type==='complete'?'completed':'cancelled'}:o)};
  }
- if(s.pending)throw Error('pending');
+ if(s.pending){if(a.type==='prepare')return s;throw Error('pending');}
  if(a.type==='clear')return {...s,cart:{}};
  if(a.type==='quantity'){
   if(!marketProducts.some(p=>p.id===a.id)||!Number.isInteger(a.quantity)||a.quantity<0||a.quantity>20)throw Error('quantity');
