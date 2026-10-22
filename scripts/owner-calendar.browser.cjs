@@ -1,9 +1,10 @@
+const {setStayRange}=require('./stay-calendar-browser-helper.cjs');
 // Calendar UI proof with synthetic HTTP responses. PostgreSQL tests prove exclusion.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {randomUUID}=require('node:crypto'),{chromium}=require('playwright');
 const origin='http://127.0.0.1:4173',property=randomUUID(),unit=randomUUID(),day=n=>new Date(Date.now()+5*3600000+n*86400000).toISOString().slice(0,10);
 (async()=>{
- const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium'}),page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],unexpected=[],writes=[],checks=[];
+ const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium'}),page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],unexpected=[],writes=[],checks=[],reads=[];
  let loseReply=true,conflict=false,failRead=false,acceptRemoval=false;
  let periods=[{id:randomUUID(),unitId:unit,kind:'payment_hold',start:day(0)+'T01:00+05:00',end:day(0)+'T02:00+05:00',expiresAt:'2020-01-01T00:00:00Z',canRemove:false}];const completed=new Map();
  const json=(r,b,status=200)=>r.fulfill({status,contentType:'application/json',body:JSON.stringify(b)});
@@ -14,6 +15,7 @@ const origin='http://127.0.0.1:4173',property=randomUUID(),unit=randomUUID(),day
   if(url.pathname==='/local-api/owner-inventory')return json(route,{properties:[{id:property,name:{ru:'Synthetic operating property'},city:'Tashkent',status:'active',unitCount:1}],truncated:false,draftOnly:true});
   if(url.pathname==='/local-api/owner-inventory/'+property+'/calendar'){
    if(route.request().method()==='GET'){
+    reads.push({from:url.searchParams.get('from'),to:url.searchParams.get('to')});
     if(failRead)return json(route,{error:'CORE_UNAVAILABLE'},502);
     assert.deepEqual([...url.searchParams.keys()].sort(),['from','to']);
     return json(route,{units:[{id:unit,code:'A1',status:'active'}],periods,unitsTruncated:false,periodsTruncated:true,window:{start:url.searchParams.get('from')+'T00:00+05:00',end:url.searchParams.get('to')+'T00:00+05:00'}});
@@ -31,6 +33,10 @@ const origin='http://127.0.0.1:4173',property=randomUUID(),unit=randomUUID(),day
  });
  try{
   await page.goto(origin+'/',{waitUntil:'networkidle'});await page.getByRole('button',{name:'Календарь занятости',exact:true}).click();const calendar=page.locator('.ownerCalendar');await calendar.getByRole('button',{name:'Закрыть номер',exact:true}).waitFor();
+  const before=reads.length;await setStayRange(page,calendar,day(10),day(20));assert.equal(reads.length,before);
+  await calendar.getByRole('button',{name:'Обновить календарь',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.ownerCalendar fieldset').disabled);assert.deepEqual(reads.at(-1),{from:day(10),to:day(20)});
+  await setStayRange(page,calendar,'','');assert.equal(await calendar.getByRole('button',{name:'Обновить календарь',exact:true}).isDisabled(),true);
+  await setStayRange(page,calendar,day(0),day(30));checks.push('shared_range_explicit_reload_clear_blocks_invalid_query');
   assert.equal(await calendar.getByRole('button',{name:'Снять блокировку',exact:true}).count(),0);await calendar.getByText('Ожидает освобождения холда',{exact:false}).waitFor();
   assert.ok((await calendar.innerText()).includes('Показана только часть календаря'));
   await calendar.getByLabel('Начало блокировки',{exact:true}).fill(day(3)+'T14:00');await calendar.getByLabel('Конец блокировки',{exact:true}).fill(day(4)+'T12:00');

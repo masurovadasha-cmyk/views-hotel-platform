@@ -1,3 +1,5 @@
+import {StayDateRange} from "../calendar/StayDateRange";
+import {stayNights} from "../../domain/bookingQuote";
 import {useEffect,useRef,useState} from 'react';
 import {request} from './LocalCoreWorkspace';
 import {useStaffLocale} from './StaffLocale';
@@ -44,9 +46,8 @@ export function OwnerCalendarWorkspace({propertyId,staffCsrf,onClose}:{propertyI
   <button disabled={busy||uncertain} onClick={onClose}>{t('Вернуться к объектам')}</button>
   {error&&<p role="alert" className="localError">{t(error)}</p>}{notice&&<p role="status" className="localSuccess">{t(notice)}</p>}
   <form onSubmit={e=>{e.preventDefault();void reload();}}><fieldset disabled={busy||uncertain}>
-   <label>{t('Показать с даты')}<input type="date" required value={from} onChange={e=>setFrom(e.target.value)}/></label>
-   <label>{t('До даты, не включая')}<input type="date" required value={to} onChange={e=>setTo(e.target.value)}/></label>
-   <button>{t('Обновить календарь')}</button>
+   <StayDateRange locale={locale} allowPast maxNights={62} disabled={busy||uncertain} checkIn={from} checkOut={to} onChange={(a,b)=>{setFrom(a);setTo(b);}}/>
+   <button disabled={!stayNights(from,to)}>{t('Обновить календарь')}</button>
   </fieldset></form>
   {data&&<><p>{t('Показан интервал: {start} — {end}',{start:format(data.window.start),end:format(data.window.end)})}</p>
    {(data.unitsTruncated||data.periodsTruncated)&&<p role="status" className="localWarning">{t('Показана только часть календаря: максимум 100 номеров и 1000 интервалов. Отсутствие записи не подтверждает доступность.')}</p>}

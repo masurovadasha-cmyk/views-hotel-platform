@@ -1,3 +1,4 @@
+const {setStayRange}=require('./stay-calendar-browser-helper.cjs');
 'use strict';
 const fs=require('fs'),path=require('path'),assert=require('assert/strict'),{spawnSync}=require('child_process');
 const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-state.cjs').localState();
@@ -65,7 +66,7 @@ const {chromium}=require('playwright'),{root}=require('../apps/api/ops/local-sta
   report.checks.push('three_languages_four_widths_no_overflow');
   await page.getByLabel('Apartment',{exact:true}).selectOption({index:1});
   const day=n=>new Date(Date.now()+(280+n)*86400000).toISOString().slice(0,10);
-  await page.getByLabel('Check-in',{exact:true}).fill(day(0));await page.getByLabel('Check-out',{exact:true}).fill(day(2));
+  await setStayRange(page,page,day(0),day(2));
   await page.getByRole('button',{name:'Calculate via Core',exact:true}).click();await page.getByRole('button',{name:'Create test hold',exact:true}).waitFor();
   const beforeQuoteSwitch=requests.length;await change('uz');assert.equal(await page.getByLabel('Kelish',{exact:true}).inputValue(),day(0));
   assert.equal(await page.getByRole('button',{name:'Sinov bandlovini yaratish',exact:true}).isEnabled(),true);assert.equal(requests.length,beforeQuoteSwitch);

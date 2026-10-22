@@ -1,3 +1,5 @@
+import {StayDateRange} from "../calendar/StayDateRange";
+import {calendarLabels} from "../calendar/labels";
 import {useLegacyStaffLocale,legacyDate} from './LegacyStaffLocale';
 import {useEffect,useMemo,useState} from "react";
 import type {HospitalityRole} from "../../domain/types";
@@ -14,6 +16,7 @@ export function LiveFrontDesk({role}:{role:HospitalityRole}){
   const [items,setItems]=useState<LiveFrontDeskReservation[]>([]);
   const [error,setError]=useState("");
   const [busy,setBusy]=useState("");
+  const [range,setRange]=useState<[string,string]>(["",""]);
 
   async function load(){
     try{
@@ -34,13 +37,15 @@ export function LiveFrontDesk({role}:{role:HospitalityRole}){
     finally{setBusy("")}
   }
 
-  const arrivals=useMemo(()=>items.filter(x=>["confirmed","assigned"].includes(x.status)),[items]);
-  const inHouse=useMemo(()=>items.filter(x=>x.status==="checked_in"),[items]);
-  const ready=useMemo(()=>items.filter(x=>["ready","available"].includes(x.unit_status||"")), [items]);
+  const filtered=useMemo(()=>range[0]&&range[1]?items.filter(x=>x.check_in_date.slice(0,10)<range[1]&&x.check_out_date.slice(0,10)>range[0]):items,[items,range]);
+  const arrivals=useMemo(()=>filtered.filter(x=>["confirmed","assigned"].includes(x.status)),[filtered]);
+  const inHouse=useMemo(()=>filtered.filter(x=>x.status==="checked_in"),[filtered]);
+  const ready=useMemo(()=>filtered.filter(x=>["ready","available"].includes(x.unit_status||"")), [filtered]);
 
   return <div className="staffBoard">
     <section className="panel">
       <header><small>{t("VIEWS LIVE FRONT DESK")}</small><h2>{t("Arrivals & active stays")}</h2></header>
+      <p>{calendarLabels[locale].filter}</p><StayDateRange locale={locale} allowPast checkIn={range[0]} checkOut={range[1]} onChange={(a,b)=>setRange([a,b])}/>
       <section className="kpis">
         <article><span>{t("Arrivals")}</span><b>{arrivals.length}</b></article>
         <article><span>{t("In house")}</span><b>{inHouse.length}</b></article>
@@ -49,8 +54,8 @@ export function LiveFrontDesk({role}:{role:HospitalityRole}){
       </section>
 
       {error&&<div className="notice">{t(String(error))}</div>}
-      {items.length===0?<div className="emptyLine">{t("No front-desk reservations in this property queue.")}</div>:
-      <div className="orderList">{items.map(item=><article className="order" key={item.id}>
+      {filtered.length===0?<div className="emptyLine">{t("No front-desk reservations in this property queue.")}</div>:
+      <div className="orderList">{filtered.map(item=><article className="order" key={item.id}>
         <div>
           <b>{item.first_name} {item.last_name}{item.vip?t(" · VIP"):""}</b>
           <span>{item.confirmation_code} {' '}{t("· Apt")}{' '}{item.unit_code??"—"} · {legacyDate(item.check_in_date,locale,true)} → {legacyDate(item.check_out_date,locale,true)}</span>

@@ -1,3 +1,4 @@
+const {setStayRange}=require('./stay-calendar-browser-helper.cjs');
 'use strict';
 const fs=require('fs'),path=require('path'),assert=require('assert/strict'),{spawnSync}=require('child_process');
 const {root}=require('../apps/api/ops/local-state.cjs').localState(),evidence=path.join(root,'evidence');
@@ -29,7 +30,7 @@ const {chromium}=require('playwright');
   const cookie=(await context.cookies()).find(c=>c.name==='views_staff_session');assert.ok(cookie?.httpOnly&&cookie.sameSite==='Strict');
   await page.getByLabel('Апартамент',{exact:true}).selectOption({index:1});
   const day=n=>new Date(Date.now()+(260+n)*86400000).toISOString().slice(0,10);
-  await page.getByLabel('Заезд',{exact:true}).fill(day(0));await page.getByLabel('Выезд',{exact:true}).fill(day(2));
+  await setStayRange(page,page,day(0),day(2));
   const [quoted]=await Promise.all([page.waitForResponse(r=>r.url().endsWith('/local-api/quotes')),page.getByRole('button',{name:'Рассчитать через Core',exact:true}).click()]);
   assert.equal(quoted.status(),200);assert.equal((await quoted.json()).totalMinor,'130000000');
   const [held]=await Promise.all([page.waitForResponse(r=>r.url().endsWith('/local-api/holds')),page.getByRole('button',{name:'Создать тестовый резерв',exact:true}).click()]);
