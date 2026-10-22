@@ -39,3 +39,13 @@ PR evidence, not this command list.
 Android uses the existing Expo template debug identity. No new key or release
 identity is generated. Physical-device and old-signature upgrade compatibility
 require separate verification.
+
+## Dependency gate follow-up
+
+The first CI run on 58f54ef was blocked by newly indexed Next.js advisories
+GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r. Pin Next 15.5.28 and retain the
+scoped PostCSS override; do not add audit exceptions. Upstream lists 15.5.28 as
+patched for both (https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw
+and https://github.com/vercel/next.js/security/advisories/GHSA-p3m5-59mp-jv5r).
+The existing unpatched node-forge/braces Expo-tooling exceptions remain scoped
+and expire 2026-11-15. They are accepted risks, not fixed vulnerabilities.
