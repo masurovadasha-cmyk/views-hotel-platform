@@ -5,6 +5,7 @@ No key is generated. No release signing settings or identities are read/changed.
 The bundled public-development identity is extracted only inside a temporary dir.
 """
 import hashlib, json, os, pathlib, re, subprocess, tarfile, tempfile
+from android_review_provenance import verify_apk_release
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 def run(args):
     result=subprocess.run([str(v) for v in args],cwd=ROOT,capture_output=True,text=True)
@@ -25,6 +26,10 @@ def main():
     if not evidence.get('compiledManifestVerified') or not evidence.get('assetsMatchWebBuild') or evidence.get('productionBackendConnected') is not False or evidence.get('productionPaymentsConnected') is not False:
         raise SystemExit('VERIFIED_DEMO_ONLY_REQUIRED')
     if hashlib.sha256(apk.read_bytes()).hexdigest()!=evidence['apkSha256']:raise SystemExit('DEBUG_APK_HASH_MISMATCH')
+    release=json.loads((ROOT/'release.config.json').read_text())
+    verify_apk_release(apk, release, source)
+    if evidence.get('versionName')!=release['version']+'-debug' or evidence.get('versionCode')!=release['androidVersionCode']:
+        raise SystemExit('DEBUG_RELEASE_IDENTITY_MISMATCH')
     template=(ROOT/'apps/mobile/node_modules/expo/template.tgz').resolve(strict=True)
     with tempfile.TemporaryDirectory(prefix='views-existing-debug-') as folder:
         temp=pathlib.Path(folder);key=temp/'debug.keystore';cert=temp/'debug.der';signed=temp/'debug.apk'

@@ -1,0 +1,567 @@
+{
+  "canonicalRepository": "masurovadasha-cmyk/views-hotel-platform",
+  "baseline": "9806762077d367baf642cab321fbe9d283fce48c",
+  "scope": "calendar/demo-market/Core compatibility review",
+  "pullRequests": [
+    {
+      "pr": 87,
+      "state": "open",
+      "mergedAt": null,
+      "head": "9806762077d367baf642cab321fbe9d283fce48c",
+      "headBranch": "stage7/demo-market-orders-20261022",
+      "baseBranch": "stage7/calendar-boundaries-20261022",
+      "ancestorOfBaseline": true,
+      "title": "VIEWS demo: idempotent market orders and stock accounting"
+    },
+    {
+      "pr": 85,
+      "state": "open",
+      "mergedAt": null,
+      "head": "0628bf661c90d6b3a5ea05fac74c06fcffb2982f",
+      "headBranch": "stage7/calendar-boundaries-20261022",
+      "baseBranch": "stage7/staff-email-delivery-v1",
+      "ancestorOfBaseline": true,
+      "title": "Unify stay calendars across VIEWS workspaces and verify debug demo"
+    },
+    {
+      "pr": 54,
+      "state": "open",
+      "mergedAt": null,
+      "head": "043f164f243ef97f99d0b038d2e7b0918caedc84",
+      "headBranch": "stage7/staff-email-delivery-v1",
+      "baseBranch": "stage7/staff-auth-pilot-v1",
+      "ancestorOfBaseline": true,
+      "title": "VIEWS: scoped service workflows, guest order details and workspace migration"
+    },
+    {
+      "pr": 86,
+      "state": "closed",
+      "mergedAt": "2026-10-22T08:20:20Z",
+      "head": "1d212da3ac713bc38649a8224e4f4e425821bdf4",
+      "headBranch": "stage7/temporal-queue-hardening-v1",
+      "baseBranch": "stage7/staff-email-delivery-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.31: harden temporal supply queues"
+    },
+    {
+      "pr": 84,
+      "state": "closed",
+      "mergedAt": "2026-10-22T08:09:42Z",
+      "head": "69e2e4424f7d6a047540f8f95dde192274c71174",
+      "headBranch": "stage7/audit-gate-stabilization-v1",
+      "baseBranch": "stage7/staff-email-delivery-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stabilize Stage 7 CI, Core isolation and V-Market queue"
+    },
+    {
+      "pr": 1,
+      "state": "open",
+      "mergedAt": null,
+      "head": "eae64e1a6d7fcddb28663fd1ba5fc9fe780123f0",
+      "headBranch": "staging/master-reference-v1",
+      "baseBranch": "main",
+      "ancestorOfBaseline": true,
+      "title": "VIEWS Master Reference v1 foundation"
+    },
+    {
+      "pr": 61,
+      "state": "open",
+      "mergedAt": null,
+      "head": "c106e68945f0ecfce5f27609bef8b86aaa3dd1ed",
+      "headBranch": "stage7/market-server-schema-20261009",
+      "baseBranch": "stage7/market-staff-card-20261009",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Stage 7: tenant-scoped V-Market server schema foundation"
+    },
+    {
+      "pr": 83,
+      "state": "open",
+      "mergedAt": null,
+      "head": "31b0b27819daaabc404669459cf78abf58f762ed",
+      "headBranch": "stage7/calendar-admin-20261011",
+      "baseBranch": "stage7/calendar-frontdesk-20261011",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Admin: shared date-range picker"
+    },
+    {
+      "pr": 82,
+      "state": "open",
+      "mergedAt": null,
+      "head": "02d1a0f4766a6dd5772b352c635bdeb34137f969",
+      "headBranch": "stage7/calendar-frontdesk-20261011",
+      "baseBranch": "stage7/calendar-host-20261011",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Front Desk: shared reservation date picker"
+    },
+    {
+      "pr": 81,
+      "state": "open",
+      "mergedAt": null,
+      "head": "a960bc30a1de3dce5782e6b8880bf37fef0a7e2b",
+      "headBranch": "stage7/calendar-host-20261011",
+      "baseBranch": "stage7/calendar-domain-tests-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Host: reuse unified stay date picker"
+    },
+    {
+      "pr": 80,
+      "state": "open",
+      "mergedAt": null,
+      "head": "1896bf7e4c5439e5d9329298a85b284486c27a57",
+      "headBranch": "stage7/calendar-staff-host-20261011",
+      "baseBranch": "stage7/calendar-domain-tests-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS: reuse unified date-range calendar in Front Desk and Host"
+    },
+    {
+      "pr": 79,
+      "state": "open",
+      "mergedAt": null,
+      "head": "ecfbda0377606bde3262d15cb3c45cb69b93d2e2",
+      "headBranch": "stage7/calendar-domain-tests-20261010",
+      "baseBranch": "stage7/unified-guest-calendar-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS calendar: shared date-range logic and regression tests"
+    },
+    {
+      "pr": 78,
+      "state": "open",
+      "mergedAt": null,
+      "head": "013af167089bd78061d259ca17b7cb15ffa75513",
+      "headBranch": "stage7/unified-guest-calendar-20261010",
+      "baseBranch": "stage7/canva-staff-sync-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS guest: unified scrolling stay calendar"
+    },
+    {
+      "pr": 77,
+      "state": "open",
+      "mergedAt": null,
+      "head": "9a34fd5b3c270d8871be15b6f52062a0b4de79c2",
+      "headBranch": "stage7/canva-staff-sync-20261010",
+      "baseBranch": "stage7/staff-d1-mapping-tests-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS: synchronize Stage 7 Staff CRM status with Canva"
+    },
+    {
+      "pr": 59,
+      "state": "open",
+      "mergedAt": null,
+      "head": "57e9fef2a4d647e35b6c946f61215edcd9ff937e",
+      "headBranch": "feat/views-service-core-stage-2-8",
+      "baseBranch": "main",
+      "ancestorOfBaseline": false,
+      "title": "WIP: VIEWS service core, market demo, inventory and CI"
+    },
+    {
+      "pr": 76,
+      "state": "open",
+      "mergedAt": null,
+      "head": "48a6f0bf6a25a0139be54fa8267bdf169bfe9294",
+      "headBranch": "stage7/staff-d1-mapping-tests-20261010",
+      "baseBranch": "stage7/staff-session-integration-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Staff CRM: exercise cookie and D1 identity/property mappings"
+    },
+    {
+      "pr": 75,
+      "state": "open",
+      "mergedAt": null,
+      "head": "bb457d3e3a6cc2c33b73db85bb1f4d66c2413b7a",
+      "headBranch": "stage7/staff-session-integration-20261010",
+      "baseBranch": "stage7/staff-cookie-auth-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Stage 7: cookie-backed Staff gateway integration tests"
+    },
+    {
+      "pr": 74,
+      "state": "open",
+      "mergedAt": null,
+      "head": "a7135773e00824ac2666bd578a53ffa4f6afae2c",
+      "headBranch": "stage7/staff-cookie-auth-20261010",
+      "baseBranch": "stage7/market-staff-demo-header-guard-20261010",
+      "ancestorOfBaseline": false,
+      "title": "Staff Core gateway: require real session, disable demo fallback"
+    },
+    {
+      "pr": 73,
+      "state": "open",
+      "mergedAt": null,
+      "head": "773cf23afd2413bb63f4070d1ec2d374a5b91c14",
+      "headBranch": "stage7/market-staff-demo-header-guard-20261010",
+      "baseBranch": "stage7/market-staff-inspector-stale-20261010",
+      "ancestorOfBaseline": false,
+      "title": "Security: reject demo identity headers on signed Staff Core gateway"
+    },
+    {
+      "pr": 72,
+      "state": "open",
+      "mergedAt": null,
+      "head": "0752a9c36ed29a4c0c6bc418d62ecc8334835e70",
+      "headBranch": "stage7/market-staff-inspector-stale-20261010",
+      "baseBranch": "stage7/market-bounded-core-response-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Staff CRM: clear stale server order details on lookup changes"
+    },
+    {
+      "pr": 71,
+      "state": "open",
+      "mergedAt": null,
+      "head": "de525de1d1d4b66e083ee4ee38aa26e0072b25fd",
+      "headBranch": "stage7/market-bounded-core-response-20261010",
+      "baseBranch": "review/web-apk-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Staff Gateway: bound Core response size before JSON parsing"
+    },
+    {
+      "pr": 70,
+      "state": "open",
+      "mergedAt": null,
+      "head": "5bfc965a9709e2e9c1ff7cbe4b7cd1d5d71d392a",
+      "headBranch": "stage7/market-staff-inspector-20261010",
+      "baseBranch": "stage7/market-staff-property-adapter-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Staff CRM: opt-in server order inspector"
+    },
+    {
+      "pr": 69,
+      "state": "open",
+      "mergedAt": null,
+      "head": "cb3b8f6f98968397bb814dc3cc550ffa9dbe6de1",
+      "headBranch": "stage7/market-staff-property-adapter-20261010",
+      "baseBranch": "stage7/market-core-response-guard-20261010",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Staff CRM: align browser property IDs with signed BFF mapping"
+    },
+    {
+      "pr": 68,
+      "state": "open",
+      "mergedAt": null,
+      "head": "6f6b6dd4a81bcee12aa3d49dfc644779214b7210",
+      "headBranch": "stage7/market-core-response-guard-20261010",
+      "baseBranch": "stage7/market-staff-bff-20261009",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Staff BFF: validate Core order detail before browser response"
+    },
+    {
+      "pr": 67,
+      "state": "open",
+      "mergedAt": null,
+      "head": "84298e646621d1069479ba3992b8e474362e6c01",
+      "headBranch": "stage7/market-staff-bff-20261009",
+      "baseBranch": "stage7/market-staff-gateway-adapter-20261009",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Stage 7: signed same-origin Staff CRM order gateway"
+    },
+    {
+      "pr": 66,
+      "state": "open",
+      "mergedAt": null,
+      "head": "5af40732ca04d1ba8e3de6412f42aa35e64a219a",
+      "headBranch": "stage7/market-staff-gateway-adapter-20261009",
+      "baseBranch": "stage7/market-staff-detail-http-20261009",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS: opt-in same-origin Staff CRM order adapter"
+    },
+    {
+      "pr": 65,
+      "state": "open",
+      "mergedAt": null,
+      "head": "f29ab3c4842d67763203581f5fda443c7331d1c7",
+      "headBranch": "stage7/market-staff-detail-http-20261009",
+      "baseBranch": "stage7/market-staff-detail-20261009",
+      "ancestorOfBaseline": false,
+      "title": "V-Market Staff CRM: correct missing order response"
+    },
+    {
+      "pr": 64,
+      "state": "open",
+      "mergedAt": null,
+      "head": "b1facf0cda6df07f9961e7152a59f4a4ed91eb80",
+      "headBranch": "stage7/market-staff-detail-20261009",
+      "baseBranch": "stage7/market-staff-role-20261009",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Stage 7: scoped Staff CRM order detail endpoint"
+    },
+    {
+      "pr": 63,
+      "state": "open",
+      "mergedAt": null,
+      "head": "2658714df04082221663e8f8445c2736dabaf02b",
+      "headBranch": "stage7/market-staff-role-20261009",
+      "baseBranch": "stage7/market-replay-scope-20261009",
+      "ancestorOfBaseline": false,
+      "title": "Security: require active staff role for V-Market CRM reads"
+    },
+    {
+      "pr": 62,
+      "state": "open",
+      "mergedAt": null,
+      "head": "5216affd0e6bf26745efc008a2a4058d6655693f",
+      "headBranch": "stage7/market-replay-scope-20261009",
+      "baseBranch": "stage7/market-server-schema-20261009",
+      "ancestorOfBaseline": false,
+      "title": "Security: check V-Market property access before idempotent replay"
+    },
+    {
+      "pr": 60,
+      "state": "open",
+      "mergedAt": null,
+      "head": "d92ea44ce76cca35a47b81fef9b7f245db9d8eab",
+      "headBranch": "stage7/market-staff-card-20261009",
+      "baseBranch": "stage7/market-integrity-20261009",
+      "ancestorOfBaseline": false,
+      "title": "VIEWS Stage 7: Staff CRM order card, assignment and SLA demo"
+    },
+    {
+      "pr": 58,
+      "state": "open",
+      "mergedAt": null,
+      "head": "3681e469e21ec7388da640f889b59cef901190f6",
+      "headBranch": "stage7/market-integrity-20261009",
+      "baseBranch": "review/web-apk-20261006",
+      "ancestorOfBaseline": false,
+      "title": "V-Market: safe checkout retries and inventory integrity"
+    },
+    {
+      "pr": 45,
+      "state": "open",
+      "mergedAt": null,
+      "head": "7105b9673927af0f8d8d660798a1f11a441dd447",
+      "headBranch": "review/web-apk-20261006",
+      "baseBranch": "stage7/core-egress-relay-v1",
+      "ancestorOfBaseline": false,
+      "title": "Review: VIEWS web preview + Android APK from the same frontend"
+    },
+    {
+      "pr": 57,
+      "state": "closed",
+      "mergedAt": "2026-10-09T11:36:04Z",
+      "head": "ddc3dee686975f8965a28fd604f066c9f568b27f",
+      "headBranch": "staging/photo-catalog-20261009",
+      "baseBranch": "review/web-apk-20261006",
+      "ancestorOfBaseline": false,
+      "title": "Photo-rich demo: product photography and real apartment galleries"
+    },
+    {
+      "pr": 56,
+      "state": "closed",
+      "mergedAt": "2026-10-09T10:58:56Z",
+      "head": "76db097b94aa5e26ee7d35870a6fdebfd84031aa",
+      "headBranch": "staging/market-demo-20261009",
+      "baseBranch": "review/web-apk-20261006",
+      "ancestorOfBaseline": false,
+      "title": "V-Market demo: cart, inventory, orders and Staff CRM"
+    },
+    {
+      "pr": 55,
+      "state": "open",
+      "mergedAt": null,
+      "head": "466029da51c0535c185d1ec14e78cabbbd8a4bd1",
+      "headBranch": "stage7/windows-passkey-rollout-v1",
+      "baseBranch": "stage7/staff-email-delivery-v1",
+      "ancestorOfBaseline": false,
+      "title": "Stage 7.31: full Windows upgrade rehearsal and precise passkey evidence"
+    },
+    {
+      "pr": 53,
+      "state": "open",
+      "mergedAt": null,
+      "head": "5ebafbebecaf96c99022436830d0abddb979838d",
+      "headBranch": "stage7/staff-auth-pilot-v1",
+      "baseBranch": "stage7/local-core-workspace-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.25: invitation-only staff authentication and revocable Core sessions"
+    },
+    {
+      "pr": 52,
+      "state": "open",
+      "mergedAt": null,
+      "head": "41f7261f2b5ec999691912f9022b0ac5251dd602",
+      "headBranch": "stage7/local-core-workspace-v1",
+      "baseBranch": "stage7/windows-local-rehearsal-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.24: local browser booking workspace connected to Core"
+    },
+    {
+      "pr": 51,
+      "state": "open",
+      "mergedAt": null,
+      "head": "1b4b76ee696031378d866316b018d294c37d656d",
+      "headBranch": "stage7/windows-local-rehearsal-v1",
+      "baseBranch": "stage7/staging-maintenance-control-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.23: Windows loopback rehearsal with real Core and backup restore"
+    },
+    {
+      "pr": 50,
+      "state": "open",
+      "mergedAt": null,
+      "head": "8f13085b8093ef1d612e0818f521343d847ca857",
+      "headBranch": "stage7/staging-maintenance-control-v1",
+      "baseBranch": "stage7/payme-expiry-maintenance-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.22: staging maintenance control, durable reports and Cloudflare diagnosis"
+    },
+    {
+      "pr": 49,
+      "state": "open",
+      "mergedAt": null,
+      "head": "4310c6c59edf128a036a0ce2e3813c1e5139ced7",
+      "headBranch": "stage7/payme-expiry-maintenance-v1",
+      "baseBranch": "stage7/payme-sandbox-adapter-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.21: bounded Payme expiry maintenance and actual SQL proof"
+    },
+    {
+      "pr": 48,
+      "state": "open",
+      "mergedAt": null,
+      "head": "e2e6e260da80414e1c05e95ea43804cc3054354b",
+      "headBranch": "stage7/payme-sandbox-adapter-v1",
+      "baseBranch": "stage7/provider-egress-audit-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.20: Payme Merchant API sandbox adapter"
+    },
+    {
+      "pr": 47,
+      "state": "open",
+      "mergedAt": null,
+      "head": "e8c267aa069515c4d34921396ee3ff2a7f223784",
+      "headBranch": "stage7/provider-egress-audit-v1",
+      "baseBranch": "stage7/provider-egress-client-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.19: durable provider audit and reconciliation"
+    },
+    {
+      "pr": 46,
+      "state": "open",
+      "mergedAt": null,
+      "head": "086cf18955b91ae13a276104e65eee1b1b87eed8",
+      "headBranch": "stage7/provider-egress-client-v1",
+      "baseBranch": "stage7/core-egress-relay-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.18: provider-bound HTTPS client and private-destination protection"
+    },
+    {
+      "pr": 44,
+      "state": "open",
+      "mergedAt": null,
+      "head": "5ec8f6b85b7574bfcb3698cbd0a03470f5b1f74d",
+      "headBranch": "stage7/core-egress-relay-v1",
+      "baseBranch": "stage7/core-egress-default-deny-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.17: controlled Core egress relay"
+    },
+    {
+      "pr": 43,
+      "state": "open",
+      "mergedAt": null,
+      "head": "5c0860f80251f66960496983d852f68c944a3411",
+      "headBranch": "stage7/core-egress-default-deny-v1",
+      "baseBranch": "stage7/core-origin-isolation-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.16: default-deny Core outbound egress"
+    },
+    {
+      "pr": 42,
+      "state": "open",
+      "mergedAt": null,
+      "head": "fc4e1407094b57776e90254024fa46e95665fa6c",
+      "headBranch": "stage7/core-origin-isolation-v1",
+      "baseBranch": "stage7/trusted-proxy-cidr-drift-gate-v1",
+      "ancestorOfBaseline": false,
+      "title": "Stage 7.15: isolate Core behind Cloudflare Tunnel"
+    },
+    {
+      "pr": 41,
+      "state": "open",
+      "mergedAt": null,
+      "head": "0e090e1a79abe29e942edb635bf2fe1a8ee63ca4",
+      "headBranch": "stage7/trusted-proxy-cidr-drift-gate-v1",
+      "baseBranch": "stage7/trusted-proxy-client-identity-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.14: trusted proxy CIDR drift gate"
+    },
+    {
+      "pr": 40,
+      "state": "open",
+      "mergedAt": null,
+      "head": "e7a17cce349d99404fdfdf837b1d59d4058869ab",
+      "headBranch": "stage7/trusted-proxy-client-identity-v1",
+      "baseBranch": "stage7/core-ingress-boundary-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.13: trusted-proxy client identity hardening"
+    },
+    {
+      "pr": 39,
+      "state": "open",
+      "mergedAt": null,
+      "head": "93f58e93391a7544520545017cf1793c78bcec41",
+      "headBranch": "stage7/core-ingress-boundary-v1",
+      "baseBranch": "stage7/signed-only-cutover-gate-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.12: Core trusted-service ingress boundary"
+    },
+    {
+      "pr": 38,
+      "state": "open",
+      "mergedAt": null,
+      "head": "3f085227d63204ae61eafcadfcb07a0e1bebf6e5",
+      "headBranch": "stage7/signed-only-cutover-gate-v1",
+      "baseBranch": "stage7/signed-only-enforcement-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.11: signed-only cutover evidence gate"
+    },
+    {
+      "pr": 37,
+      "state": "open",
+      "mergedAt": null,
+      "head": "e2aad6132de8c56c95df16b5a674935cf71f6a35",
+      "headBranch": "stage7/signed-only-enforcement-v1",
+      "baseBranch": "stage7/credential-posture-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.10: per-service signed-only authentication enforcement"
+    },
+    {
+      "pr": 36,
+      "state": "open",
+      "mergedAt": null,
+      "head": "fb2e7e50d9618c6f1985f71a97bd05fa22ef1d8d",
+      "headBranch": "stage7/credential-posture-v1",
+      "baseBranch": "stage7/signed-analytics-cron-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.9: trusted-service credential posture and rotation SLO"
+    },
+    {
+      "pr": 35,
+      "state": "open",
+      "mergedAt": null,
+      "head": "ad1ca06d822e3a707a71fa3ac896a39581bf2f0e",
+      "headBranch": "stage7/signed-analytics-cron-v1",
+      "baseBranch": "stage7/signed-service-tokens-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.8: signed analytics cron sender"
+    },
+    {
+      "pr": 34,
+      "state": "open",
+      "mergedAt": null,
+      "head": "2c40734f56c34bb344ae73289e6a84bdf026499b",
+      "headBranch": "stage7/signed-service-tokens-v1",
+      "baseBranch": "stage7/managed-secret-refs-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.7: short-lived signed service identity tokens"
+    },
+    {
+      "pr": 33,
+      "state": "open",
+      "mergedAt": null,
+      "head": "033fb0e3e124e7111958463650d68536a0159c96",
+      "headBranch": "stage7/managed-secret-refs-v1",
+      "baseBranch": "stage7/service-specific-keys-v1",
+      "ancestorOfBaseline": true,
+      "title": "Stage 7.6: managed internal service secret references"
+    }
+  ]
+}

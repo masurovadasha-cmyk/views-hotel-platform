@@ -21,10 +21,11 @@ jobs:
         run: node scripts/pnpm-audit-gate.cjs
       - name: Verify immutable migrations and clean versus upgrade schemas
         run: |
-          node --test scripts/migration-manifest.acceptance.cjs
+          node --test scripts/migration-manifest.acceptance.cjs scripts/integration-schema.acceptance.cjs
           node scripts/migration-upgrade-proof.cjs
       - name: Verify mobile build profile isolation
         run: |
+          python3 scripts/android-review-provenance.test.py
           node scripts/generate-native-tokens.cjs --check
           node --test scripts/mobile-config.acceptance.cjs scripts/mobile-dependencies.acceptance.cjs scripts/mobile-preferences.acceptance.cjs scripts/mobile-android-preflight.acceptance.cjs scripts/mobile-native-modules.acceptance.cjs
       - run: pnpm workspace:check
@@ -77,3 +78,5 @@ jobs:
         run: |
           node scripts/stay-calendar.browser.cjs
           node scripts/owner-calendar.browser.cjs
+      - name: Verify integrated calendar, market and role journey
+        run: node scripts/integration-journey.browser.cjs

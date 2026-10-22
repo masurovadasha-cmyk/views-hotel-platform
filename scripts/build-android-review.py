@@ -2,6 +2,7 @@
 """Package the existing VIEWS dist output. No second frontend or live backend."""
 import argparse, hashlib, json, os, pathlib, shutil, subprocess, tempfile, zipfile
 import xml.etree.ElementTree as ET
+from android_review_provenance import verify_release
 parser=argparse.ArgumentParser()
 parser.add_argument('--debug',action='store_true',help='Build a separately labelled, debuggable test package; signing remains separate')
 args=parser.parse_args()
@@ -24,6 +25,8 @@ marker=WEB/'android-build.json'
 assert marker.exists() and json.loads(marker.read_text())=={'schemaVersion':1,'target':'chrome74','mode':'static-demo'}, 'Android-compatible build required: npm run build:android'
 source=ROOT/'apps/android-review'
 release=json.loads((ROOT/'release.config.json').read_text())
+source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+verify_release(json.loads((WEB/'release.json').read_text()), release, source_commit, bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()))
 assert release['mode']=='static-demo' and release['androidApplicationId']=='uz.views.preview'
 assert isinstance(release['androidVersionCode'],int) and release['androidVersionCode']>738001
 if args.debug:
@@ -78,6 +81,8 @@ with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
             assert archive.read('assets/www/'+asset.relative_to(WEB).as_posix())==asset.read_bytes(), str(asset)
         assert not any(name.startswith('META-INF/') and name.endswith(('.RSA','.DSA','.EC')) for name in archive.namelist())
         assert 'classes.dex' in archive.namelist()
+    if subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()!=source_commit or subprocess.check_output(['git','status','--porcelain'],text=True).strip():
+        raise SystemExit('SOURCE_CHANGED_DURING_ANDROID_BUILD')
     sha=hashlib.sha256(apk.read_bytes()).hexdigest()
     (output/('DEBUG-SHA256SUMS.txt' if args.debug else 'SHA256SUMS.txt')).write_text(f'{sha}  {apk.name}\n')
     evidence={'debuggable':args.debug,'applicationId':release['androidApplicationId'],'versionName':release['version'],'versionCode':version,'minAndroid':'8.0','minSdk':26,'targetSdk':35,'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sourceDirty':bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),'apkSha256':sha,'apkSizeBytes':apk.stat().st_size,'signatureVerified':False,'compiledManifestVerified':True,'assetsMatchWebBuild':True,'verifiedAssetCount':len(assets),'physicalDeviceTested':False,'mode':'static-demo','productionBackendConnected':False,'productionPaymentsConnected':False,'signature':'unsigned; not installable until signing'}
