@@ -47,4 +47,4 @@ jobs:
         run: node scripts/core-origin-isolation-gate.mjs --file=/tmp/views-core-tunnel.json
 
       - name: Build production Core image
-        run: docker build -f apps/api/Dockerfile -t views-core:stage7.15 apps/api
+        run: docker build -f apps/api/Dockerfile -t views-core:stage7.15 .
