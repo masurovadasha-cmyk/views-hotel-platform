@@ -1,9 +1,10 @@
+import {StayDateRange} from "../calendar/StayDateRange";
 import {GuestServiceCatalogue} from './GuestServiceCatalogue';
 import {findGuestService,guestRequestCategory} from './service-catalog';
 import {GuestDialog} from './GuestDialog';
 import {GuestBookingProgress} from './GuestBookingProgress';
 import {GuestMarket} from './GuestMarket';
-import type {MarketCart} from './market-catalog';
+import {loadDemoStay,saveDemoStay,type DemoStay} from './demo-stay';
 import {GuestServicePreview} from './GuestServicePreview';
 import {filterGuestApartments} from './guest-experience';
 import './guest-canva.css';
@@ -36,12 +37,18 @@ const helpTopics=[
 ] as const;
 
 export function GuestApp({live=false}:{live?:boolean}){
-  const {t}=useGuestLocale();
+  const {t,locale}=useGuestLocale();
   const [bookingDetails,setBookingDetails]=useState<LiveBooking|null>(null);
   const [bookingsError,setBookingsError]=useState(false),[bookingsLoading,setBookingsLoading]=useState(false);
   const [tab,setTab]=useState<Tab>("explore");
-  const [checkIn,setCheckIn]=useState("");
-  const [checkOut,setCheckOut]=useState("");
+  const [[checkIn,checkOut],setStayDates]=useState<DemoStay>(()=>{
+    if(live)return ['',''];
+    try{return loadDemoStay(sessionStorage);}catch{return ['',''];}
+  });
+  function changeStayDates(start:string,end:string){
+    const value:DemoStay=[start,end];setStayDates(value);
+    if(!live)try{saveDemoStay(sessionStorage,value);}catch{/* Storage may be unavailable. */}
+  }
   const [guests,setGuests]=useState(2);
   const [city,setCity]=useState("Tashkent"),[amenities,setAmenities]=useState<string[]>([]);
   const [selected,setSelected]=useState<Apartment|null>(null);
@@ -51,7 +58,6 @@ export function GuestApp({live=false}:{live?:boolean}){
   const [view,setView]=useState<"list"|"map">("list");
   const [liveBookings,setLiveBookings]=useState<LiveBooking[]>([]);
   const [serviceBookingId,setServiceBookingId]=useState("");
-  const [marketCart,setMarketCart]=useState<MarketCart>({});
   const [serviceCategory,setServiceCategory]=useState("concierge");
   const [serviceDetails,setServiceDetails]=useState("");
   const [serviceMessage,setServiceMessage]=useState("");
@@ -97,8 +103,7 @@ export function GuestApp({live=false}:{live?:boolean}){
 
       <section className="searchBox">
         <label className="location guestDestination"><MapPin size={17}/><span><small>{t("Destination")}</small><select aria-label={t("Destination")} value={city} onChange={event=>setCity(event.target.value)}>{["Tashkent","Samarkand","Bukhara","Khiva"].map(value=><option value={value} key={value}>{t(value)}</option>)}</select></span></label>
-        <label><small>{t("Check-in")}</small><input type="date" value={checkIn} onChange={e=>setCheckIn(e.target.value)}/></label>
-        <label><small>{t("Check-out")}</small><input type="date" value={checkOut} onChange={e=>setCheckOut(e.target.value)}/></label>
+        <StayDateRange locale={locale} checkIn={checkIn} checkOut={checkOut} onChange={changeStayDates}/>
         <label><small>{t("Guests")}</small><input type="number" min={1} value={guests} onChange={e=>setGuests(Math.max(1,Number(e.target.value)||1))}/></label>
         <button className="primary" onClick={showResults}><Search size={16}/> {' '}{t("Show results")}</button>
       </section>
@@ -132,7 +137,7 @@ export function GuestApp({live=false}:{live?:boolean}){
       <div className="sectionHead"><div><small>{t("VIEWS SERVICES")}</small><h2>{t("Everything for your stay")}</h2></div></div>
       <GuestServiceCatalogue large selected={serviceCategory} onSelect={id=>{setServiceCategory(id);setServiceMessage("");}}/>
       {guestRequestCategory(serviceCategory)===null&&<p className="notice" role="status">{t("This service is not connected yet. Booking, payment and sending requests are unavailable.")}</p>}
-      {serviceCategory==="minimart"&&<GuestMarket cart={marketCart} onChange={setMarketCart}/>}
+      {serviceCategory==="minimart"&&<GuestMarket/>}
       {live&&guestRequestCategory(serviceCategory)!==null?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();const category=guestRequestCategory(serviceCategory);if(category===null)return;setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category,title:(findGuestService(serviceCategory)?.name??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch{setServiceMessage("Request not confirmed. Check with staff before submitting again.")}}}>
         <label>{t("Booking")}<select value={serviceBookingId} onChange={e=>setServiceBookingId(e.target.value)}>{liveBookings.map(b=><option key={b.id} value={b.id}>{b.confirmation_code} · {b.property_name}</option>)}</select></label>
         <label>{t("Details")}<textarea value={serviceDetails} onChange={e=>setServiceDetails(e.target.value)} placeholder={t("Tell us what you need…")}/></label>
@@ -172,7 +177,7 @@ export function GuestApp({live=false}:{live?:boolean}){
         <div className="guestDetailFacts"><span><BedDouble size={18}/>{t("Bedrooms: {count}",{count:selected.bedrooms})}</span><span><Users size={18}/>{t("Up to {count} guests",{count:selected.capacity})}</span><span><Bath size={18}/>{t("Bathrooms: {count}",{count:selected.bathrooms})}</span></div><h3 className="guestAmenitiesHeading">{t("Amenities")}</h3><div className="guestAmenities">{selected.amenities.map(x=><span key={x}>{x==="Wi-Fi"?<Wifi size={17}/>:<CheckCircle2 size={17}/>} {t(x)}</span>)}</div><p className="modalCopy">{t("Demo apartment with illustrative photos. Real availability and prices are not connected.")}</p><div className="guestAvailabilityNote"><CalendarDays size={20}/><div><b>{t("Plan your stay")}</b><p>{t("Choose your dates to explore the booking steps. Live availability will be checked when connected.")}</p></div></div><button className="primary wide" onClick={()=>go("booking")}>{t("Choose dates")}</button>
       </>}
 
-      {flow==="booking"&&<div className="flow"><h2>{t("Booking")}</h2><div className="two"><label>{t("Check-in")}<input type="date" value={checkIn} onChange={e=>setCheckIn(e.target.value)}/></label><label>{t("Check-out")}<input type="date" value={checkOut} onChange={e=>setCheckOut(e.target.value)}/></label></div><label>{t("Guests")}<input type="number" value={guests} min={1} max={selected.capacity} onChange={e=>setGuests(Number(e.target.value)||1)}/></label><div className="extras"><label><input type="checkbox"/> {' '}{t("Airport transfer")}</label><label><input type="checkbox"/> {' '}{t("Cleaning")}</label><label><input type="checkbox"/> {' '}{t("Late check-out")}</label></div><div className="priceSummary"><span>{t("Stay")}</span><b>{quote?.total===null?t("Live total unavailable"):selected.currency+" "+quote?.total}</b><span>{t("Services")}</span><b>{t("Calculated when selected")}</b><span>{t("Taxes and fees")}</span><b>{t("Requires live calculation")}</b><span>{t("Total")}</span><strong>{quote?.total===null?"—":selected.currency+" "+quote?.total}</strong></div><p className="guestBookingHint">{t(quote?.canContinue?"Your dates are ready for the next preview step. No availability is reserved.":"Choose a departure after arrival and a valid guest count to continue.")}</p><button className="primary wide" disabled={!quote?.canContinue} onClick={()=>go("guest-data")}>{t("Continue")}</button></div>}
+      {flow==="booking"&&<div className="flow"><h2>{t("Booking")}</h2><StayDateRange locale={locale} checkIn={checkIn} checkOut={checkOut} onChange={changeStayDates}/><label>{t("Guests")}<input type="number" value={guests} min={1} max={selected.capacity} onChange={e=>setGuests(Number(e.target.value)||1)}/></label><div className="extras"><label><input type="checkbox"/> {' '}{t("Airport transfer")}</label><label><input type="checkbox"/> {' '}{t("Cleaning")}</label><label><input type="checkbox"/> {' '}{t("Late check-out")}</label></div><div className="priceSummary"><span>{t("Stay")}</span><b>{quote?.total===null?t("Live total unavailable"):selected.currency+" "+quote?.total}</b><span>{t("Services")}</span><b>{t("Calculated when selected")}</b><span>{t("Taxes and fees")}</span><b>{t("Requires live calculation")}</b><span>{t("Total")}</span><strong>{quote?.total===null?"—":selected.currency+" "+quote?.total}</strong></div><p className="guestBookingHint">{t(quote?.canContinue?"Your dates are ready for the next preview step. No availability is reserved.":"Choose a departure after arrival and a valid guest count to continue.")}</p><button className="primary wide" disabled={!quote?.canContinue} onClick={()=>go("guest-data")}>{t("Continue")}</button></div>}
 
       {flow==="guest-data"&&<div className="flow"><h2>{t("Guest data")}</h2><label>{t("Full name")}<input placeholder={t("Primary guest")}/></label><label>{t("Date of birth")}<input type="date"/></label><label>{t("Nationality")}<select><option>{t("Uzbekistan")}</option><option>{t("Other")}</option></select></label><label>{t("Passport / ID")}<input placeholder={t("Secure upload required")} readOnly/></label><div className="notice">{t("Document upload remains disabled until encrypted file storage is connected.")}</div><button className="primary wide" onClick={()=>go("payment")}>{t("Continue")}</button></div>}
 

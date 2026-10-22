@@ -1,3 +1,4 @@
+const {setStayRange}=require('./stay-calendar-browser-helper.cjs');
 'use strict';
 // Bundled demo UI proof: real files over loopback, no API or provider mocks.
 const http=require('node:http'),fs=require('node:fs/promises'),path=require('node:path'),assert=require('node:assert/strict');
@@ -70,14 +71,14 @@ async function shot(page,name){const file='/tmp/views-canva-review-'+name+'.png'
  for(const locale of locales){
   phase='guest:'+locale;const t=key=>tr(guest,locale,key);await page.locator('.guestLanguage select').selectOption(locale);const nav=page.locator('.guestNav');assert.equal(await nav.locator('button').count(),5);
   for(const dark of [true,false]){await theme(page,dark);for(const tab of ['Explore','Bookings','Services','Messages','Profile']){await nav.getByRole('button',{name:t(tab),exact:true}).click();assert.equal(await nav.locator('[aria-current="page"]').count(),1);for(const width of widths){await page.setViewportSize({width,height:1000});await fits(page,phase+':'+tab+':'+dark+':'+width);if(tab==='Explore')for(const selector of ['.serviceGrid button b','.filterRow>button','.guestNav button.active span'])await contrast(page,phase+':'+dark+':'+width,selector);}}}
-  await nav.getByRole('button',{name:t('Explore'),exact:true}).click();const search=page.locator('.searchBox');await search.getByLabel(t('Check-in'),{exact:true}).fill('2027-06-10');await search.getByLabel(t('Check-out'),{exact:true}).fill('2027-06-12');await search.getByLabel(t('Guests'),{exact:true}).fill('2');
+  await nav.getByRole('button',{name:t('Explore'),exact:true}).click();const search=page.locator('.searchBox');await setStayRange(page,search,'2027-06-10','2027-06-12');await search.getByLabel(t('Guests'),{exact:true}).fill('2');
   await search.getByRole('button',{name:t('Show results'),exact:true}).click();assert.equal(await page.locator('#guest-results').evaluate(el=>el===document.activeElement),true);
   await search.getByRole('combobox',{name:t('Destination'),exact:true}).selectOption('Samarkand');assert.equal(await page.locator('.apartmentCard').count(),0);await search.getByRole('combobox',{name:t('Destination'),exact:true}).selectOption('Tashkent');assert.ok(await page.locator('.apartmentCard').count()>0);
   const filter=page.getByTestId('guest-amenity-filters').getByRole('button').first();await filter.click();assert.equal(await filter.getAttribute('aria-pressed'),'true');await filter.click();
   await page.getByRole('button',{name:t('Map'),exact:true}).click();await page.locator('.mapStage').waitFor();await fits(page,phase+':map');await page.getByRole('button',{name:t('List'),exact:true}).click();
   const trigger=page.locator('.photoButton').first(),dialog=page.getByRole('dialog');
   for(const dark of [true,false]){await theme(page,dark);await trigger.click();await dialog.waitFor();await trapped(page,dialog);for(const width of widths){await page.setViewportSize({width,height:1000});await fits(page,phase+':apartment:'+dark+':'+width,dialog);}await page.keyboard.press('Escape');await restored(page,trigger);}
-  await trigger.click();await dialog.getByRole('button',{name:t('Choose dates'),exact:true}).click();await dialog.getByTestId('guest-booking-progress').waitFor();await dialog.getByLabel(t('Check-in'),{exact:true}).fill('2027-06-10');await dialog.getByLabel(t('Check-out'),{exact:true}).fill('2027-06-12');await dialog.getByRole('button',{name:t('Continue'),exact:true}).click();await dialog.getByLabel(t('Full name'),{exact:true}).fill('Synthetic design preview');
+  await trigger.click();await dialog.getByRole('button',{name:t('Choose dates'),exact:true}).click();await dialog.getByTestId('guest-booking-progress').waitFor();await setStayRange(page,dialog,'2027-06-10','2027-06-12');await dialog.getByRole('button',{name:t('Continue'),exact:true}).click();await dialog.getByLabel(t('Full name'),{exact:true}).fill('Synthetic design preview');
   await dialog.getByRole('button',{name:t('Continue'),exact:true}).click();assert.equal(await dialog.getByRole('button',{name:t('Continue to secure payment'),exact:true}).isDisabled(),true);await fits(page,phase+':payment',dialog);
   await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);await restored(page,trigger);
   await nav.getByRole('button',{name:t('Services'),exact:true}).click();const form=page.getByTestId('guest-service-preview-form');await form.getByLabel(t('Details'),{exact:true}).fill('Synthetic airport transfer, no dispatch');await form.getByRole('button',{name:t('Preview request'),exact:true}).click();await page.getByTestId('guest-service-preview').waitFor();await fits(page,phase+':service-preview');
@@ -89,15 +90,17 @@ async function shot(page,name){const file='/tmp/views-canva-review-'+name+'.png'
   await shop.getByLabel(mt('Find a product'),{exact:true}).fill(mt('Still water'));assert.equal(await shop.locator('[data-product]').count(),1);
   await shop.getByRole('button',{name:mt('Add to list')+': '+mt('Still water'),exact:true}).click();
   await shop.getByRole('button',{name:mt('Increase')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'2');
-  await shop.getByRole('button',{name:mt('Review list'),exact:true}).click();await page.getByTestId('market-review').waitFor();
+  await shop.getByRole('button',{name:mt('Review demo order'),exact:true}).click();await page.getByTestId('market-review').waitFor();
+  await shop.getByRole('button',{name:mt('Back to basket'),exact:true}).click();
   await shop.getByRole('button',{name:mt('Decrease')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-review').count(),0);
   await shop.getByLabel(mt('Find a product'),{exact:true}).fill('no-such-market-item');assert.equal(await shop.locator('[data-product]').count(),0);
   await shop.getByLabel(mt('Find a product'),{exact:true}).fill('');await shop.getByRole('button',{name:mt('All'),exact:true}).click();
   for(const dark of [true,false]){await theme(page,dark);for(const width of widths){await page.setViewportSize({width,height:1000});await fits(page,phase+':market:'+dark+':'+width);await contrast(page,phase+':market:'+dark+':'+width,'.marketProduct h3');}}
   await nav.getByRole('button',{name:t('Profile'),exact:true}).click();await nav.getByRole('button',{name:t('Services'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'1');
-  await shop.getByRole('button',{name:mt('Review list'),exact:true}).click();await shop.getByTestId('market-review').waitFor();
+  await shop.getByRole('button',{name:mt('Review demo order'),exact:true}).click();await shop.getByTestId('market-review').waitFor();
   if(locale==='en'){await page.setViewportSize({width:390,height:844});await shot(page,'v-market-light-390');}
-  await shop.getByRole('button',{name:mt('Remove')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'0');assert.equal(await shop.getByRole('button',{name:mt('Review list'),exact:true}).isDisabled(),true);
+  await shop.getByRole('button',{name:mt('Back to basket'),exact:true}).click();
+  await shop.getByRole('button',{name:mt('Remove')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'0');assert.equal(await shop.getByRole('button',{name:mt('Review demo order'),exact:true}).isDisabled(),true);
   await page.locator('.serviceGrid.large').getByRole('button',{name:new RegExp(t('Concierge'))}).click();
   await nav.getByRole('button',{name:t('Messages'),exact:true}).click();assert.equal(await page.locator('.chatShell input').isDisabled(),true);assert.equal(await page.locator('.chatShell footer button').isDisabled(),true);
  }

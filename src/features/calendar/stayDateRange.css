@@ -1,0 +1,20 @@
+/* Continued from the unified scrolling calendar in PR #78; one shared surface. */
+.stayDateRange>button{min-height:44px;width:100%;white-space:normal;font:inherit;border:1px solid #96928b;border-radius:10px;padding:10px;background:var(--surface,#fff);color:inherit;text-align:start}
+.stayDateDialog{border:0;padding:0;width:min(580px,calc(100% - 24px));max-width:580px;max-height:92vh;max-height:92dvh;border-radius:16px;color:#1a1d24;background:#f6f5f2;box-shadow:0 24px 60px #0005}
+.stayDateDialog::backdrop{background:rgba(16,20,27,.66)}
+.stayDateDialogCard{display:flex;flex-direction:column;max-height:92vh;max-height:92dvh;padding:16px;box-sizing:border-box}
+.stayDateDialogCard header,.stayDateDialogCard footer{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-shrink:0}
+.stayDateDialogCard h2{font-size:20px;margin:0}.stayDateDialogCard small{font-size:12px;line-height:1.5}.stayDateSummary{margin:10px 0;font-size:14px}
+.stayDateDialogCard button{font:inherit;min-height:44px;cursor:pointer;color:inherit;background:transparent;border:1px solid #96928b;border-radius:9px;padding:8px}
+.stayDateMonths{overflow:auto;flex:1;min-height:0;margin-top:10px;overscroll-behavior:contain}
+.stayDateMonths section{padding:8px 0 20px}.stayDateMonths h3{text-align:center;text-transform:capitalize;font-size:18px}
+.stayDateGrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;text-align:center}
+.stayDateGrid small{padding:8px 0}.stayDateGrid button{border:0;border-radius:50%;aspect-ratio:1;min-height:36px;padding:0;justify-content:center;display:flex;align-items:center}
+.stayDateGrid button.edge{background:#282727;color:#fff}.stayDateGrid button.inside{background:#e2d5bb;border-radius:3px}.stayDateGrid button[aria-current=date]{text-decoration:underline}
+.stayDateDialog button:focus-visible{outline:3px solid #176a9c;outline-offset:-3px}.stayDateDialog button:disabled{opacity:.35;cursor:not-allowed}
+.stayDateDialogCard footer{padding-top:10px;border-top:1px solid #c5c0b7}.stayDateDialogCard footer button:last-child{background:#51432c;color:#fff;border:0;padding:12px}
+.demoStayCalendar{margin-bottom:16px}.demoStayCalendar p{font-size:13px}
+.searchBox .stayDateRange{grid-column:span 2;min-width:0}
+@media(max-width:480px){.stayDateDialogCard{padding:12px}.stayDateDialogCard h2{font-size:18px}.stayDateDialogCard header{gap:6px}.stayDateDialogCard header button{font-size:14px}}
+
+.stayDateDialog.dark{background:#242628;color:#f5f2eb}.stayDateDialog.dark .stayDateGrid button.edge{background:#ead7b1;color:#201c16}.stayDateDialog.dark .stayDateGrid button.inside{background:#554a36;color:#fff}.stayDateDialog.dark .stayDateDialogCard footer button:last-child{background:#ead7b1;color:#201c16}

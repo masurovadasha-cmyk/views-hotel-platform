@@ -4,6 +4,7 @@ on:
     branches: [main, "staging/**", "stage4/**", "stage5/**", "stage6/**", "stage7/**"]
     paths:
       - "pnpm-lock.yaml"
+      - "scripts/integration-schema.acceptance.cjs"
       - "pnpm-workspace.yaml"
       - "apps/api/**"
       - "db/**"
@@ -18,6 +19,7 @@ on:
     branches: [main, "staging/master-reference-v1"]
     paths:
       - "pnpm-lock.yaml"
+      - "scripts/integration-schema.acceptance.cjs"
       - "pnpm-workspace.yaml"
       - "apps/api/**"
       - "db/**"

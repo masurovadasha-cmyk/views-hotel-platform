@@ -21,3 +21,6 @@ diagnostic-evidence/
 apps/web/next-env.d.ts
 
 .expo/
+
+# Local Python verification bytecode
+__pycache__/

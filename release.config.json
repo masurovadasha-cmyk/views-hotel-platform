@@ -1,8 +1,8 @@
 {
-  "version": "0.15.0-preview",
-  "androidVersionCode": 1500001,
+  "version": "0.17.0-integration-demo",
+  "androidVersionCode": 1700001,
   "androidApplicationId": "uz.views.preview",
-  "androidLabel": "VIEWS Preview",
+  "androidLabel": "VIEWS Integration Demo",
   "mode": "static-demo",
   "designReference": "https://www.canva.com/d/gbOv6FX5RExR_JN",
   "designSources": {

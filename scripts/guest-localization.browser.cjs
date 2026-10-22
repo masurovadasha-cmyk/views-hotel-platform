@@ -1,3 +1,4 @@
+const {setStayRange}=require('./stay-calendar-browser-helper.cjs');
 // Offline browser fixtures only; no real guest authentication, booking or provider calls.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process');
 const {chromium}=require('playwright'),catalog=require('../src/features/guest/guest-translations.json');
@@ -43,9 +44,9 @@ const tr=(locale,key)=>locale==='en'?key:catalog[key][locale];
    await page.locator('.photoButton').first().click();let dialog=page.getByRole('dialog');
    for(const width of widths){await page.setViewportSize({width,height:1000});assert.ok(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth),'MODAL_OVERFLOW_'+locale+'_'+width);}
    await dialog.getByRole('button',{name:t('Choose dates'),exact:true}).click();
-   await dialog.getByLabel(t('Check-in'),{exact:true}).fill('');
+   await setStayRange(page,dialog,'','');
    assert.equal(await dialog.getByRole('button',{name:t('Continue'),exact:true}).isDisabled(),true);
-   await dialog.getByLabel(t('Check-in'),{exact:true}).fill('2027-03-10');await dialog.getByLabel(t('Check-out'),{exact:true}).fill('2027-03-12');
+   await setStayRange(page,dialog,'2027-03-10','2027-03-12');
    await dialog.getByRole('button',{name:t('Continue'),exact:true}).click();await dialog.getByLabel(t('Full name'),{exact:true}).fill('Synthetic Guest');
    // Context rerender must not replace the current form or send any request.
    const next=locale==='en'?'ru':'en';await page.locator('.guestLanguage select').selectOption(next);assert.equal(await dialog.getByLabel(tr(next,'Full name'),{exact:true}).inputValue(),'Synthetic Guest');

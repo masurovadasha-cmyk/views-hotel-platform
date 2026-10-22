@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Package the existing VIEWS dist output. No second frontend or live backend."""
-import hashlib, json, os, pathlib, shutil, subprocess, tempfile, zipfile
+import argparse, hashlib, json, os, pathlib, shutil, subprocess, tempfile, zipfile
 import xml.etree.ElementTree as ET
+from android_review_provenance import verify_release
+parser=argparse.ArgumentParser()
+parser.add_argument('--debug',action='store_true',help='Build a separately labelled, debuggable test package; signing remains separate')
+args=parser.parse_args()
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 WEB=ROOT/'dist-android'
 os.chdir(ROOT)
@@ -21,8 +25,13 @@ marker=WEB/'android-build.json'
 assert marker.exists() and json.loads(marker.read_text())=={'schemaVersion':1,'target':'chrome74','mode':'static-demo'}, 'Android-compatible build required: npm run build:android'
 source=ROOT/'apps/android-review'
 release=json.loads((ROOT/'release.config.json').read_text())
+source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+verify_release(json.loads((WEB/'release.json').read_text()), release, source_commit, bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()))
 assert release['mode']=='static-demo' and release['androidApplicationId']=='uz.views.preview'
 assert isinstance(release['androidVersionCode'],int) and release['androidVersionCode']>738001
+if args.debug:
+    release['version']+='-debug'
+    release['androidLabel']=release['androidLabel']+' Debug'
 output=ROOT/'review-output'
 output.mkdir(exist_ok=True)
 if not shutil.which('javac'):
@@ -36,6 +45,7 @@ with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
     manifest=manifest.replace('717001',str(version))
     manifest=manifest.replace('0.7.38-review',release['version']).replace('package="uz.views.review"','package="'+release['androidApplicationId']+'"')
     manifest=manifest.replace('android:name=".MainActivity"','android:name="uz.views.review.MainActivity"').replace('android:label="VIEWS Review"','android:label="'+release['androidLabel']+'"')
+    if args.debug:manifest=manifest.replace('<application ', '<application android:debuggable="true" ',1)
     (work/'AndroidManifest.xml').write_text(manifest)
     run(tools/'aapt2','compile','--dir',source/'res','-o',work/'resources.zip')
     run(tools/'aapt2','link','-o',work/'unsigned.apk','--manifest',work/'AndroidManifest.xml','-I',android,'-A',work/'assets','--min-sdk-version','26','--target-sdk-version','35',work/'resources.zip')
@@ -46,7 +56,7 @@ with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
         archive.write(work/'dex/classes.dex','classes.dex')
     run(tools/'zipalign','-f','4',work/'unsigned.apk',work/'aligned.apk')
     # Signing is a separate owner-approved release step; never rotate identity here.
-    apk=output/'VIEWS-Review-unsigned.apk'
+    apk=output/('VIEWS-Debug-unsigned.apk' if args.debug else 'VIEWS-Review-unsigned.apk')
     shutil.copyfile(work/'aligned.apk',apk)
     run(tools/'zipalign','-c','4',apk)
     badging=subprocess.check_output([str(tools/'aapt2'),'dump','badging',str(apk)],text=True)
@@ -57,6 +67,7 @@ with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
     (output/'apk-manifest.xml').write_text(compiled_xml)
     root=ET.fromstring(compiled_xml)
     A='{http://schemas.android.com/apk/res/android}'
+    assert root.find('application').get(A+'debuggable')==('true' if args.debug else None)
     assert root.get('package')==release['androidApplicationId']
     assert root.get(A+'versionName')==release['version']
     assert root.get(A+'versionCode')==str(version)
@@ -70,8 +81,10 @@ with tempfile.TemporaryDirectory(prefix='views-android-') as directory:
             assert archive.read('assets/www/'+asset.relative_to(WEB).as_posix())==asset.read_bytes(), str(asset)
         assert not any(name.startswith('META-INF/') and name.endswith(('.RSA','.DSA','.EC')) for name in archive.namelist())
         assert 'classes.dex' in archive.namelist()
+    if subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()!=source_commit or subprocess.check_output(['git','status','--porcelain'],text=True).strip():
+        raise SystemExit('SOURCE_CHANGED_DURING_ANDROID_BUILD')
     sha=hashlib.sha256(apk.read_bytes()).hexdigest()
-    (output/'SHA256SUMS.txt').write_text(f'{sha}  VIEWS-Review-unsigned.apk\n')
-    evidence={'applicationId':release['androidApplicationId'],'versionName':release['version'],'versionCode':version,'minAndroid':'8.0','minSdk':26,'targetSdk':35,'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sourceDirty':bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),'apkSha256':sha,'apkSizeBytes':apk.stat().st_size,'signatureVerified':False,'compiledManifestVerified':True,'assetsMatchWebBuild':True,'verifiedAssetCount':len(assets),'physicalDeviceTested':False,'mode':'static-demo','productionBackendConnected':False,'productionPaymentsConnected':False,'signature':'unsigned; not installable until signing'}
-    (output/'build-evidence.json').write_text(json.dumps(evidence,indent=2)+'\n')
+    (output/('DEBUG-SHA256SUMS.txt' if args.debug else 'SHA256SUMS.txt')).write_text(f'{sha}  {apk.name}\n')
+    evidence={'debuggable':args.debug,'applicationId':release['androidApplicationId'],'versionName':release['version'],'versionCode':version,'minAndroid':'8.0','minSdk':26,'targetSdk':35,'sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'sourceDirty':bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),'apkSha256':sha,'apkSizeBytes':apk.stat().st_size,'signatureVerified':False,'compiledManifestVerified':True,'assetsMatchWebBuild':True,'verifiedAssetCount':len(assets),'physicalDeviceTested':False,'mode':'static-demo','productionBackendConnected':False,'productionPaymentsConnected':False,'signature':'unsigned; not installable until signing'}
+    (output/('debug-build-evidence.json' if args.debug else 'build-evidence.json')).write_text(json.dumps(evidence,indent=2)+'\n')
     print(json.dumps(evidence))

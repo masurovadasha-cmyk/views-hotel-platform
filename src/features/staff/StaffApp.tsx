@@ -1,3 +1,4 @@
+import {DemoStayCalendar} from "../calendar/StayDateRange";
 import {useLegacyStaffLocale} from './LegacyStaffLocale';
 import {useEffect,useMemo,useState,useRef} from "react";
 import {
@@ -42,6 +43,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
   const [proofBefore,setProofBefore]=useState(false);
   const [proofAfter,setProofAfter]=useState(false);
   const [hostStep,setHostStep]=useState(1);
+  const [calendarRange,setCalendarRange]=useState<[string,string]>(["",""]);
 
   const userId=role==="cleaner"?"u-cleaner":role==="technician"?"u-tech":"u-manager";
   const visible=useMemo(()=>orders.filter(o=>canSeeServiceOrder(role,userId,o)),[orders,role,userId]);
@@ -105,6 +107,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
       <header className="staffHead" data-testid="staff-header"><div><small>{t("VIEWS OPERATIONS")}</small><h1>{t(String(labels[current]??current))}</h1></div>{allowRoleSwitch?<select aria-label={t("Demo staff role")} value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{t(String(r.replace(/_/g," ")))}</option>)}</select>:<span className="roleLock">{t(String(role.replace(/_/g," ")))}</span>}</header>
       <div className={"staffMode "+(live?"live":"demo")} role="note"><span/>{live?t("Connected workspace"):t("Demo workspace · sample data; changes are not saved")}</div>
       {liveError&&<div className="notice" role="alert">{t(String(liveError))}<button onClick={()=>void loadLiveOrders()}>{t("Refresh")}</button></div>}
+      {!live&&<DemoStayCalendar locale={locale} checkIn={calendarRange[0]} checkOut={calendarRange[1]} onChange={(a,b)=>setCalendarRange([a,b])}/>}
       {content()}
     </main>
     <StaffMobileDock tab={mobileTab} setTab={setMobileTab}/>
@@ -189,7 +192,7 @@ function HostDesk({step,setStep}:{step:number;setStep:(n:number)=>void}){
   return <div className="hostDesk">
     <div className="hostTabs">{["Listing wizard","Calendar & pricing","Bookings","Calendar sync","Host finance"].map((x,i)=><button className={step===i+1?"active":""} key={x} onClick={()=>setStep(i+1)}>{t(String(x))}</button>)}</div>
     {step===1&&<Panel title={t("Listing wizard")}><div className="wizardSteps"><span className="on">{t("1 Basics")}</span><span>{t("2 Photos")}</span><span>{t("3 Amenities")}</span><span>{t("4 Prices")}</span><span>{t("5 Rules")}</span></div><div className="hostForm"><label>{t("Property name")}<input placeholder={t("VIEWS apartment")}/></label><label>{t("Address")}<input value="Tashkent, NRG U-Tower" readOnly/></label><label>{t("Type")}<select><option>{t("Apartment")}</option></select></label><button className="primary" disabled title={t("Listing creation uses the owner workspace connected to Core.")}>{t("Next")}</button></div></Panel>}
-    {step===2&&<Panel title={t("Calendar & pricing")}><div className="calendarGrid">{Array.from({length:31},(_,i)=><span key={i} className={[5,6,12,13,14].includes(i)?"booked":[19,20].includes(i)?"blocked":""}>{i+1}</span>)}</div><div className="calendarLegend"><span className="available">{t("Available")}</span><span className="booked">{t("Booked")}</span><span className="blocked">{t("Blocked")}</span></div></Panel>}
+    {step===2&&<Panel title={t("Calendar & pricing")}><p>{t("Demo workspace · sample data; changes are not saved")}</p></Panel>}
     {step===3&&<Panel title={t("Bookings")}><div className="compactRows">{["Alex Johnson","Sarah Miller","David Kim"].map((n,i)=><div key={n}><span>{i===0?t("12–15 Oct"):t("Upcoming")}</span><b>{n}</b><small>{t("Live amount comes from booking source")}</small><i className={"status "+(i===2?"cancelled":"confirmed")}>{i===2?t("cancelled"):t("confirmed")}</i></div>)}</div></Panel>}
     {step===4&&<Panel title={t("Calendar sync")}><div className="syncCard"><RefreshCw/><div><b>{t("iCal / OTA synchronization")}</b><p>{t("Airbnb / Booking.com connectors appear here after partner authorization. No sync state is fabricated.")}</p></div><span className="status assigned">{t("not connected")}</span></div></Panel>}
     {step===5&&<Panel title={t("Host finance")}><section className="kpis"><article><span>{t("Gross revenue")}</span><b>—</b></article><article><span>{t("Paid out")}</span><b>—</b></article><article><span>{t("Commission")}</span><b>—</b></article><article><span>{t("Pending")}</span><b>—</b></article></section><div className="notice">{t("Financial values remain unavailable until backed by live captured transactions.")}</div></Panel>}
