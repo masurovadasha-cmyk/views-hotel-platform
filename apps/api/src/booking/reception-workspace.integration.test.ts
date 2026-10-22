@@ -39,6 +39,22 @@ describe.sequential('reception projection uses property-local dates and live sta
   const result=await controller.read(headers,property,'2035-01-02');if(!('arrivals' in result))throw Error('MISSING_RECEPTION');
   expect(result.arrivals.total).toBe(101);expect(result.arrivals.items).toHaveLength(100);expect(result.arrivals.truncated).toBe(true);
  });
+ it('uses a half-open property-local day for staying, excluding earlier and future stays',async()=>{
+  // Asia/Tashkent 2036-01-02 is [2036-01-01T19Z, 2036-01-02T19Z).
+  const endsAtStart=await insert('checked_in','2035-12-31T19:00:00Z','2036-01-01T19:00:00Z');
+  const startsAtEnd=await insert('checked_in','2036-01-02T19:00:00Z','2036-01-03T19:00:00Z');
+  const exactDay=await insert('checked_in','2036-01-01T19:00:00Z','2036-01-02T19:00:00Z');
+  const overlapsStart=await insert('checked_in','2035-12-31T19:00:00Z','2036-01-01T19:00:01Z');
+  const overlapsEnd=await insert('checked_in','2036-01-02T18:59:59Z','2036-01-03T19:00:00Z');
+  const confirmed=await insert('confirmed','2036-01-01T19:00:00Z','2036-01-02T19:00:00Z');
+  const result=await controller.read(headers,property,'2036-01-02');if(!('staying' in result))throw Error('MISSING_RECEPTION');
+  const staying=result.staying.items.map((r:{reservationId:string})=>r.reservationId);
+  expect(staying).toEqual(expect.arrayContaining([exactDay,overlapsStart,overlapsEnd]));
+  for(const id of [endsAtStart,startsAtEnd,confirmed])expect(staying).not.toContain(id);
+  expect(result.staying.total).toBe(3);
+  const empty=await controller.read(headers,property,'2036-01-10');if(!('staying' in empty))throw Error('MISSING_RECEPTION');
+  expect(empty.staying).toEqual({total:0,truncated:false,items:[]});
+ });
  it('defaults today to the property timezone and returns empty groups explicitly',async()=>{
   const result=await controller.read(headers,property,'today');if(!('arrivals' in result))throw Error('MISSING_RECEPTION');
   const expected=await db.query("SELECT (clock_timestamp() AT TIME ZONE 'Asia/Tashkent')::date::text AS day");

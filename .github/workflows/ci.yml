@@ -31,6 +31,8 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: "1"
           NEXT_TELEMETRY_DISABLED: "1"
+      - name: Verify booking dates across device timezones
+        run: node --test scripts/booking-calendar.acceptance.cjs
       - name: Verify distinct mobile profile bundles
         env:
           EXPO_NO_TELEMETRY: "1"
