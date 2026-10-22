@@ -1,8 +1,8 @@
 {
-  "version": "0.15.1-calendar-preview",
-  "androidVersionCode": 1501001,
+  "version": "0.16.0-market-demo",
+  "androidVersionCode": 1600001,
   "androidApplicationId": "uz.views.preview",
-  "androidLabel": "VIEWS Preview",
+  "androidLabel": "VIEWS Market Demo",
   "mode": "static-demo",
   "designReference": "https://www.canva.com/d/gbOv6FX5RExR_JN",
   "designSources": {

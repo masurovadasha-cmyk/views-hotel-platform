@@ -3,29 +3,37 @@ import {Coffee,Droplets,Apple,Package,ShoppingBag} from 'lucide-react';
 import {useGuestLocale} from './GuestLocale';
 import {translate} from '../../i18n/messages';
 import messages from './market-translations.json';
-import {marketProducts,marketCategories,marketCartLines,setMarketQuantity,type MarketCart,type MarketCategory} from './market-catalog';
+import {marketProducts,marketCategories,marketCartLines,type MarketCategory} from './market-catalog';
 import './guest-market.css';
+import {loadDemoMarket,transactDemoMarket,emptyDemoMarket,demoBalance,type DemoAction} from './demo-market';
 const icons={Drinks:Droplets,Breakfast:Coffee,Snacks:Apple,Essentials:Package};
-export function GuestMarket({cart,onChange}:{cart:MarketCart;onChange:(cart:MarketCart)=>void}){
+export function GuestMarket(){
  const {locale}=useGuestLocale(),t=(key:string)=>translate(messages,locale,key);
- const [category,setCategory]=useState<MarketCategory|'All'>('All'),[search,setSearch]=useState(''),[review,setReview]=useState(false);
+ const [category,setCategory]=useState<MarketCategory|'All'>('All'),[search,setSearch]=useState('');
+ const [loaded,setLoaded]=useState(()=>{try{return {state:loadDemoMarket(sessionStorage),blocked:false};}catch{return {state:emptyDemoMarket(),blocked:true};}}),[error,setError]=useState('');
+ const {state,blocked}=loaded,cart=state.cart,pending=state.pending;
+ function act(action:DemoAction){try{setLoaded({state:transactDemoMarket(sessionStorage,action),blocked:false});setError('');}catch(e){setError(e instanceof Error&&['stock','limit'].includes(e.message)?e.message:'storage');}}
  const lines=marketCartLines(cart),count=lines.reduce((sum,line)=>sum+line.quantity,0);
  const products=marketProducts.filter(product=>(category==='All'||product.category===category)&&`${t(product.name)} ${t(product.category)}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
- function change(id:string,quantity:number){onChange(setMarketQuantity(cart,id,quantity));setReview(false);}
+ function change(id:string,quantity:number){act({type:'quantity',id,quantity});}
  return <section className="guestMarket" data-testid="guest-market" aria-labelledby="market-title">
   <header className="marketHero"><div><small>VIEWS · V MARKET</small><h2 id="market-title">{t('Everyday essentials, close to you.')}</h2><p>{t('Build your shopping list for your stay.')}</p></div><ShoppingBag size={48} aria-hidden="true"/></header>
-  <p className="notice">{t('Demo assortment. Prices, stock and delivery are not connected. This list does not create an order or reserve goods.')}</p>
-  <label className="marketSearch">{t('Find a product')}<input type="search" maxLength={100} value={search} onChange={event=>setSearch(event.target.value)}/></label>
+  <p className="notice">{t('Local demo only. Each sample starts with 10 units. Orders and stock are simulated in this tab; no payment, delivery or real stock movement occurs.')}</p>
+  <p>{t('Prices are not configured. Currency: UZS. No amount is charged.')}</p><p>{t('Demo history survives reload in this tab session. Other tabs and devices are separate.')}</p>
+  {(blocked||error)&&<p role="alert">{t(error==='stock'?'Not enough demo stock. Reduce the quantity.':error==='limit'?'Demo history limit reached. No new orders can be created.':'Demo storage is unavailable or invalid. No change was confirmed. Restore storage access and reload; existing data has not been reset.')}</p>}
+  <fieldset disabled={blocked}><label className="marketSearch">{t('Find a product')}<input type="search" maxLength={100} value={search} onChange={event=>setSearch(event.target.value)}/></label>
   <div className="marketFilters" aria-label={t('Product categories')}>{(['All',...marketCategories] as const).map(value=><button key={value} aria-pressed={category===value} onClick={()=>setCategory(value)}>{t(value)}</button>)}</div>
   <div className="marketLayout"><div className="marketProducts">
    {!products.length&&<p role="status">{t('No matching products. Change the search or category.')}</p>}
-   {products.map(product=>{const Icon=icons[product.category];return <article className="marketProduct" key={product.id} data-product={product.id}><div className="marketIllustration"><Icon size={40} aria-hidden="true"/></div><small>{t(product.category)} · {t(product.size)}</small><h3>{t(product.name)}</h3><p>{t('Price not set')}</p><button onClick={()=>change(product.id,(cart[product.id]||0)+1)} disabled={(cart[product.id]||0)>=20} aria-label={t('Add to list')+': '+t(product.name)}>{t('Add to list')}</button></article>;})}
+   {products.map(product=>{const Icon=icons[product.category];return <article className="marketProduct" key={product.id} data-product={product.id}><div className="marketIllustration"><Icon size={40} aria-hidden="true"/></div><small>{t(product.category)} · {t(product.size)}</small><h3>{t(product.name)}</h3><p>{t('Price not set')} · UZS</p><p>{t('Demo available')}: <strong data-stock={product.id}>{demoBalance(state,product.id).available}</strong></p><button onClick={()=>change(product.id,(cart[product.id]||0)+1)} disabled={!!pending||(cart[product.id]||0)>=20} aria-label={t('Add to list')+': '+t(product.name)}>{t('Add to list')}</button></article>;})}
   </div><aside className="marketBasket" aria-labelledby="market-basket-title"><h3 id="market-basket-title">{t('Your shopping list')}</h3><p aria-live="polite">{t('Items')}: <strong data-testid="market-count">{count}</strong></p>
-   {!lines.length?<p>{t('Your list is empty. Add something from the catalogue.')}</p>:<ul>{lines.map(({product,quantity})=><li key={product.id}><b>{t(product.name)}</b><div className="marketQuantity"><button aria-label={t('Decrease')+': '+t(product.name)} onClick={()=>change(product.id,quantity-1)}>−</button><output aria-label={t('Quantity')+': '+t(product.name)}>{quantity}</output><button disabled={quantity>=20} aria-label={t('Increase')+': '+t(product.name)} onClick={()=>change(product.id,quantity+1)}>+</button><button className="marketRemove" aria-label={t('Remove')+': '+t(product.name)} onClick={()=>change(product.id,0)}>{t('Remove')}</button></div></li>)}</ul>}
-   <p>{t('Total')}: <strong>{t('Awaiting prices')}</strong></p><p>{t('Up to 20 of each sample item. The list stays in this session; reloading clears it.')}</p>
-   <button className="primary" disabled={!lines.length} onClick={()=>setReview(true)}>{t('Review list')}</button>
-   <button disabled={!lines.length} onClick={()=>{onChange({});setReview(false);}}>{t('Clear list')}</button>
-   {review&&<div className="marketReview" role="status" data-testid="market-review"><h4>{t('Shopping list — not sent')}</h4>{lines.map(({product,quantity})=><p key={product.id}>{t(product.name)} × {quantity}</p>)}<p>{t('Checkout will be available after the property connects its product catalogue, prices and fulfilment. No payment or stock movement has occurred.')}</p></div>}
+   {!lines.length?<p>{t('Your list is empty. Add something from the catalogue.')}</p>:<ul>{lines.map(({product,quantity})=><li key={product.id}><b>{t(product.name)}</b><div className="marketQuantity"><button aria-label={t('Decrease')+': '+t(product.name)} disabled={!!pending} onClick={()=>change(product.id,quantity-1)}>−</button><output aria-label={t('Quantity')+': '+t(product.name)}>{quantity}</output><button disabled={!!pending||quantity>=20} aria-label={t('Increase')+': '+t(product.name)} onClick={()=>change(product.id,quantity+1)}>+</button><button disabled={!!pending} className="marketRemove" aria-label={t('Remove')+': '+t(product.name)} onClick={()=>change(product.id,0)}>{t('Remove')}</button></div></li>)}</ul>}
+   <p>{t('Total')}: <strong>{t('Awaiting prices')}</strong></p><p>{t('Up to 20 per item. Demo availability is checked before confirmation.')}</p>
+   <button className="primary" disabled={!lines.length||!!pending} onClick={()=>act({type:'prepare'})}>{t('Review demo order')}</button>
+   <button disabled={!lines.length||!!pending} onClick={()=>act({type:'clear'})}>{t('Clear list')}</button>
+   {pending&&<div className="marketReview" data-testid="market-review"><h4>{t('Confirm local demo order')}</h4><p>{pending.id}</p>{marketCartLines(pending.lines).map(({product,quantity})=><p key={product.id}>{t(product.name)} × {quantity}</p>)}<p>{t('No payment or delivery. Confirm reserves demo quantities only.')}</p><button className="primary" onClick={()=>act({type:'confirm',id:pending.id})}>{t('Confirm demo order')}</button><button onClick={()=>act({type:'discard'})}>{t('Back to basket')}</button></div>}
   </aside></div>
+  <section className="marketHistory" data-testid="demo-market-history"><h3>{t('Demo order history')}</h3>{!state.orders.length&&<p>{t('No demo orders yet.')}</p>}{state.orders.map(order=><article className="marketBasket" key={order.id} data-demo-order={order.id}><h4>{order.id} · {t(order.status==='reserved'?'Demo reserved':order.status==='completed'?'Demo completed':'Demo cancelled')}</h4>{marketCartLines(order.lines).map(({product,quantity})=><p key={product.id}>{t(product.name)} × {quantity}</p>)}<p>{t('Not charged')} · UZS</p>{order.status==='reserved'&&<><button disabled={!!pending} onClick={()=>act({type:'complete',id:order.id})}>{t('Simulate fulfilment')}</button><button disabled={!!pending} onClick={()=>act({type:'cancel',id:order.id})}>{t('Cancel demo order')}</button></>}</article>)}</section>
+  <details data-testid="demo-market-accounting"><summary>{t('Demo stock accounting')}</summary><p>{t('Reserved units reduce availability. Cancellation releases them; simulated fulfilment consumes them. This does not update a real warehouse.')}</p>{marketProducts.map(product=>{const balance=demoBalance(state,product.id);return <p key={product.id}>{t(product.name)}: {t('Demo available')} {balance.available} · {t('Demo reserved')} {balance.reserved} · {t('Demo consumed')} {balance.consumed}</p>;})}</details></fieldset>
  </section>;
 }

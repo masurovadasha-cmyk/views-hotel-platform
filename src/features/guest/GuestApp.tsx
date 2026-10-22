@@ -4,7 +4,6 @@ import {findGuestService,guestRequestCategory} from './service-catalog';
 import {GuestDialog} from './GuestDialog';
 import {GuestBookingProgress} from './GuestBookingProgress';
 import {GuestMarket} from './GuestMarket';
-import type {MarketCart} from './market-catalog';
 import {GuestServicePreview} from './GuestServicePreview';
 import {filterGuestApartments} from './guest-experience';
 import './guest-canva.css';
@@ -52,7 +51,6 @@ export function GuestApp({live=false}:{live?:boolean}){
   const [view,setView]=useState<"list"|"map">("list");
   const [liveBookings,setLiveBookings]=useState<LiveBooking[]>([]);
   const [serviceBookingId,setServiceBookingId]=useState("");
-  const [marketCart,setMarketCart]=useState<MarketCart>({});
   const [serviceCategory,setServiceCategory]=useState("concierge");
   const [serviceDetails,setServiceDetails]=useState("");
   const [serviceMessage,setServiceMessage]=useState("");
@@ -132,7 +130,7 @@ export function GuestApp({live=false}:{live?:boolean}){
       <div className="sectionHead"><div><small>{t("VIEWS SERVICES")}</small><h2>{t("Everything for your stay")}</h2></div></div>
       <GuestServiceCatalogue large selected={serviceCategory} onSelect={id=>{setServiceCategory(id);setServiceMessage("");}}/>
       {guestRequestCategory(serviceCategory)===null&&<p className="notice" role="status">{t("This service is not connected yet. Booking, payment and sending requests are unavailable.")}</p>}
-      {serviceCategory==="minimart"&&<GuestMarket cart={marketCart} onChange={setMarketCart}/>}
+      {serviceCategory==="minimart"&&<GuestMarket/>}
       {live&&guestRequestCategory(serviceCategory)!==null?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();const category=guestRequestCategory(serviceCategory);if(category===null)return;setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category,title:(findGuestService(serviceCategory)?.name??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch{setServiceMessage("Request not confirmed. Check with staff before submitting again.")}}}>
         <label>{t("Booking")}<select value={serviceBookingId} onChange={e=>setServiceBookingId(e.target.value)}>{liveBookings.map(b=><option key={b.id} value={b.id}>{b.confirmation_code} · {b.property_name}</option>)}</select></label>
         <label>{t("Details")}<textarea value={serviceDetails} onChange={e=>setServiceDetails(e.target.value)} placeholder={t("Tell us what you need…")}/></label>

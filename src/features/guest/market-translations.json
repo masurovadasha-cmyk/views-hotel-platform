@@ -170,5 +170,101 @@
   "Checkout will be available after the property connects its product catalogue, prices and fulfilment. No payment or stock movement has occurred.": {
     "ru": "Оформление станет доступно после подключения каталога объекта, цен и обработки заказов. Оплата и движение товаров не выполнялись.",
     "uz": "Buyurtma berish obyekt katalogi, narxlar va buyurtmalarni bajarish ulangandan soʻng ochiladi. Toʻlov yoki ombor harakati amalga oshirilmadi."
+  },
+  "Local demo only. Each sample starts with 10 units. Orders and stock are simulated in this tab; no payment, delivery or real stock movement occurs.": {
+    "ru": "Только локальное демо. Начальный остаток каждого образца — 10 единиц. Заказы и остатки моделируются в этой вкладке; оплаты, доставки и реального движения товаров нет.",
+    "uz": "Faqat lokal demo. Har bir namunada dastlab 10 dona bor. Buyurtmalar va qoldiqlar shu varaqda modellashtiriladi; toʻlov, yetkazib berish yoki haqiqiy ombor harakati yoʻq."
+  },
+  "Prices are not configured. Currency: UZS. No amount is charged.": {
+    "ru": "Цены не настроены. Валюта: UZS. Деньги не списываются.",
+    "uz": "Narxlar sozlanmagan. Valyuta: UZS. Pul yechilmaydi."
+  },
+  "Not enough demo stock. Reduce the quantity.": {
+    "ru": "Недостаточно учебного остатка. Уменьшите количество.",
+    "uz": "Demo qoldiq yetarli emas. Miqdorni kamaytiring."
+  },
+  "Demo history limit reached. No new orders can be created.": {
+    "ru": "Достигнут лимит демоистории. Новые заказы создать нельзя.",
+    "uz": "Demo tarixi chegarasiga yetildi. Yangi buyurtma yaratib boʻlmaydi."
+  },
+  "Demo storage is unavailable or invalid. No change was confirmed. Restore storage access and reload; existing data has not been reset.": {
+    "ru": "Демохранилище недоступно или повреждено. Изменение не подтверждено. Восстановите доступ и перезагрузите страницу; существующие данные не сброшены.",
+    "uz": "Demo xotirasi mavjud emas yoki buzilgan. Oʻzgarish tasdiqlanmadi. Xotiraga kirishni tiklab, sahifani qayta yuklang; mavjud maʼlumotlar oʻchirilmagan."
+  },
+  "Demo available": {
+    "ru": "Демо: доступно",
+    "uz": "Demo: mavjud"
+  },
+  "Demo reserved": {
+    "ru": "Демо: зарезервировано",
+    "uz": "Demo: band"
+  },
+  "Demo completed": {
+    "ru": "Демо: выполнен",
+    "uz": "Demo: bajarildi"
+  },
+  "Demo cancelled": {
+    "ru": "Демо: отменён",
+    "uz": "Demo: bekor qilindi"
+  },
+  "Demo consumed": {
+    "ru": "Демо: израсходовано",
+    "uz": "Demo: sarflandi"
+  },
+  "Up to 20 per item. Demo availability is checked before confirmation.": {
+    "ru": "До 20 единиц товара. Учебный остаток проверяется перед подтверждением.",
+    "uz": "Har bir mahsulotdan 20 tagacha. Demo qoldiq tasdiqlashdan oldin tekshiriladi."
+  },
+  "Review demo order": {
+    "ru": "Проверить демозаказ",
+    "uz": "Demo buyurtmani tekshirish"
+  },
+  "Confirm local demo order": {
+    "ru": "Подтверждение локального демозаказа",
+    "uz": "Lokal demo buyurtmani tasdiqlash"
+  },
+  "No payment or delivery. Confirm reserves demo quantities only.": {
+    "ru": "Без оплаты и доставки. Подтверждение резервирует только учебное количество.",
+    "uz": "Toʻlov va yetkazib berishsiz. Tasdiqlash faqat demo miqdorni band qiladi."
+  },
+  "Confirm demo order": {
+    "ru": "Подтвердить демозаказ",
+    "uz": "Demo buyurtmani tasdiqlash"
+  },
+  "Back to basket": {
+    "ru": "Вернуться в корзину",
+    "uz": "Savatga qaytish"
+  },
+  "Demo order history": {
+    "ru": "История демозаказов",
+    "uz": "Demo buyurtmalar tarixi"
+  },
+  "No demo orders yet.": {
+    "ru": "Демозаказов пока нет.",
+    "uz": "Hali demo buyurtmalar yoʻq."
+  },
+  "Not charged": {
+    "ru": "Не оплачивается",
+    "uz": "Toʻlov olinmaydi"
+  },
+  "Simulate fulfilment": {
+    "ru": "Смоделировать выдачу",
+    "uz": "Topshirishni modellashtirish"
+  },
+  "Cancel demo order": {
+    "ru": "Отменить демозаказ",
+    "uz": "Demo buyurtmani bekor qilish"
+  },
+  "Demo stock accounting": {
+    "ru": "Учёт учебных остатков",
+    "uz": "Demo qoldiqlar hisobi"
+  },
+  "Reserved units reduce availability. Cancellation releases them; simulated fulfilment consumes them. This does not update a real warehouse.": {
+    "ru": "Резерв уменьшает доступный остаток. Отмена освобождает его; моделирование выдачи списывает. Реальный склад не изменяется.",
+    "uz": "Band miqdor mavjud qoldiqni kamaytiradi. Bekor qilish uni qaytaradi; topshirishni modellashtirish sarflaydi. Haqiqiy ombor oʻzgarmaydi."
+  },
+  "Demo history survives reload in this tab session. Other tabs and devices are separate.": {
+    "ru": "Демоистория сохраняется при перезагрузке в сеансе этой вкладки. Другие вкладки и устройства независимы.",
+    "uz": "Demo tarixi shu varaq seansida qayta yuklanganda saqlanadi. Boshqa varaqlar va qurilmalar mustaqil."
   }
 }
