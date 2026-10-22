@@ -40,7 +40,7 @@ def main():
         pins=re.findall(r'^Signer #\d+ certificate SHA-256 digest: ([0-9a-fA-F]+)$',verified,re.M)
         if [p.lower() for p in pins]!=[pin]:raise SystemExit('DEBUG_CERTIFICATE_MISMATCH')
         run([tools/'zipalign','-c','4',signed])
-        target=output/'VIEWS-Calendar-Debug.apk'
+        target=output/('VIEWS-'+evidence['versionName']+'-Debug.apk')
         if target.exists():raise SystemExit('DEBUG_CANDIDATE_ALREADY_EXISTS')
         target.write_bytes(signed.read_bytes())
         report={**evidence,'apkSha256':hashlib.sha256(target.read_bytes()).hexdigest(),'apkSizeBytes':target.stat().st_size,

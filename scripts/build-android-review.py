@@ -28,7 +28,7 @@ assert release['mode']=='static-demo' and release['androidApplicationId']=='uz.v
 assert isinstance(release['androidVersionCode'],int) and release['androidVersionCode']>738001
 if args.debug:
     release['version']+='-debug'
-    release['androidLabel']='VIEWS Calendar Debug'
+    release['androidLabel']=release['androidLabel']+' Debug'
 output=ROOT/'review-output'
 output.mkdir(exist_ok=True)
 if not shutil.which('javac'):

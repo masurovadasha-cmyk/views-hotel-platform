@@ -90,15 +90,17 @@ async function shot(page,name){const file='/tmp/views-canva-review-'+name+'.png'
   await shop.getByLabel(mt('Find a product'),{exact:true}).fill(mt('Still water'));assert.equal(await shop.locator('[data-product]').count(),1);
   await shop.getByRole('button',{name:mt('Add to list')+': '+mt('Still water'),exact:true}).click();
   await shop.getByRole('button',{name:mt('Increase')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'2');
-  await shop.getByRole('button',{name:mt('Review list'),exact:true}).click();await page.getByTestId('market-review').waitFor();
+  await shop.getByRole('button',{name:mt('Review demo order'),exact:true}).click();await page.getByTestId('market-review').waitFor();
+  await shop.getByRole('button',{name:mt('Back to basket'),exact:true}).click();
   await shop.getByRole('button',{name:mt('Decrease')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-review').count(),0);
   await shop.getByLabel(mt('Find a product'),{exact:true}).fill('no-such-market-item');assert.equal(await shop.locator('[data-product]').count(),0);
   await shop.getByLabel(mt('Find a product'),{exact:true}).fill('');await shop.getByRole('button',{name:mt('All'),exact:true}).click();
   for(const dark of [true,false]){await theme(page,dark);for(const width of widths){await page.setViewportSize({width,height:1000});await fits(page,phase+':market:'+dark+':'+width);await contrast(page,phase+':market:'+dark+':'+width,'.marketProduct h3');}}
   await nav.getByRole('button',{name:t('Profile'),exact:true}).click();await nav.getByRole('button',{name:t('Services'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'1');
-  await shop.getByRole('button',{name:mt('Review list'),exact:true}).click();await shop.getByTestId('market-review').waitFor();
+  await shop.getByRole('button',{name:mt('Review demo order'),exact:true}).click();await shop.getByTestId('market-review').waitFor();
   if(locale==='en'){await page.setViewportSize({width:390,height:844});await shot(page,'v-market-light-390');}
-  await shop.getByRole('button',{name:mt('Remove')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'0');assert.equal(await shop.getByRole('button',{name:mt('Review list'),exact:true}).isDisabled(),true);
+  await shop.getByRole('button',{name:mt('Back to basket'),exact:true}).click();
+  await shop.getByRole('button',{name:mt('Remove')+': '+mt('Still water'),exact:true}).click();assert.equal(await page.getByTestId('market-count').innerText(),'0');assert.equal(await shop.getByRole('button',{name:mt('Review demo order'),exact:true}).isDisabled(),true);
   await page.locator('.serviceGrid.large').getByRole('button',{name:new RegExp(t('Concierge'))}).click();
   await nav.getByRole('button',{name:t('Messages'),exact:true}).click();assert.equal(await page.locator('.chatShell input').isDisabled(),true);assert.equal(await page.locator('.chatShell footer button').isDisabled(),true);
  }
