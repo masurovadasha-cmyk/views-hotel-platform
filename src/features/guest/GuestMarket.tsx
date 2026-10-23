@@ -6,20 +6,22 @@ import messages from './market-translations.json';
 import {marketProducts,marketCategories,marketCartLines,type MarketCategory} from './market-catalog';
 import './guest-market.css';
 import {demoBalance,demoAvailable} from './demo-market';
+import {DemoMarketRecovery} from './DemoMarketRecovery';
 import {useDemoMarket} from './useDemoMarket';
 const icons={Drinks:Droplets,Breakfast:Coffee,Snacks:Apple,Essentials:Package};
 export function GuestMarket(){
  const {locale}=useGuestLocale(),t=(key:string)=>translate(messages,locale,key);
  const [category,setCategory]=useState<MarketCategory|'All'>('All'),[search,setSearch]=useState('');
- const {state,blocked,error,act}=useDemoMarket(),cart=state.cart,pending=state.pending;
+ const market=useDemoMarket(),{state,blocked,error,act}=market,cart=state.cart,pending=state.pending;
  const lines=marketCartLines(cart),count=lines.reduce((sum,line)=>sum+line.quantity,0);
  const products=marketProducts.filter(product=>(category==='All'||product.category===category)&&`${t(product.name)} ${t(product.category)}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
  function change(id:string,quantity:number){act({type:'quantity',id,quantity});}
+ if(market.loading||(blocked&&error==='storage'))return <section className="guestMarket" data-testid="guest-market"><DemoMarketRecovery {...market} locale={locale}/></section>;
  return <section className="guestMarket" data-testid="guest-market" aria-labelledby="market-title">
   <header className="marketHero"><div><small>VIEWS · V MARKET</small><h2 id="market-title">{t('Everyday essentials, close to you.')}</h2><p>{t('Build your shopping list for your stay.')}</p></div><ShoppingBag size={48} aria-hidden="true"/></header>
-  <p className="notice">{t('Local demo only. Each sample starts with 10 units. Orders and stock are simulated in this tab; no payment, delivery or real stock movement occurs.')}</p>
-  <p>{t('Prices are not configured. Currency: UZS. No amount is charged.')}</p><p>{t('Demo history survives reload in this tab session. Other tabs and devices are separate.')}</p>
-  {(blocked||error)&&<p role="alert">{t(error==='stock'?'Not enough demo stock. Reduce the quantity.':error==='limit'?'Demo history limit reached. No new orders can be created.':'Demo storage is unavailable or invalid. No change was confirmed. Restore storage access and reload; existing data has not been reset.')}</p>}
+  <p className="notice">{t('Local demo only. Each sample starts with 10 units. Orders and stock are simulated on this device; no payment, delivery or real stock movement occurs.')}</p>
+  <p>{t('Prices are not configured. Currency: UZS. No amount is charged.')}</p><DemoMarketRecovery {...market} locale={locale}/>
+  {(!market.loading&&!market.busy&&!market.conflict&&error&&error!=='changed'&&error!=='storage')&&<p role="alert">{t(error==='stock'?'Not enough demo stock. Reduce the quantity.':error==='limit'?'Demo history limit reached. No new orders can be created.':'Demo storage is unavailable or invalid. No change was confirmed. Restore storage access and reload; existing data has not been reset.')}</p>}
   <fieldset disabled={blocked}><label className="marketSearch">{t('Find a product')}<input type="search" maxLength={100} value={search} onChange={event=>setSearch(event.target.value)}/></label>
   <div className="marketFilters" aria-label={t('Product categories')}>{(['All',...marketCategories] as const).map(value=><button key={value} aria-pressed={category===value} onClick={()=>setCategory(value)}>{t(value)}</button>)}</div>
   <div className="marketLayout"><div className="marketProducts">

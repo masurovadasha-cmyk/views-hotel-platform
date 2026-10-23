@@ -1,11 +1,18 @@
-import {useEffect,useState} from 'react';
-import {emptyDemoMarket,type DemoAction} from './demo-market';
-import {commitDemoMarket,readDemoMarket,subscribeDemoMarket} from './demo-market-store';
-function read(){try{return readDemoMarket(sessionStorage);}catch{return {state:emptyDemoMarket(),blocked:true};}}
-/** Mount only in explicitly local demo surfaces. No storage access at module import. */
+import {useEffect,useRef,useState} from 'react';
+import {demoMarketKey,emptyDemoMarket,type DemoAction} from './demo-market';
+import {commitDemoMarket,readDemoMarket,resolveDemoMarket,subscribeDemoMarket} from './demo-market-store';
+const initial=()=>({state:emptyDemoMarket(),revision:0,conflict:false,raw:'',legacy:null as string|null,legacySources:[] as string[],blocked:true});
+/** Mount only in local demo surfaces; module import never reads storage. */
 export function useDemoMarket(){
- const [loaded,setLoaded]=useState(read),[error,setError]=useState('');
- useEffect(()=>{const refresh=()=>setLoaded(read());const unsubscribe=subscribeDemoMarket(refresh);refresh();return unsubscribe;},[]);
- function act(action:DemoAction){try{const state=commitDemoMarket(sessionStorage,action);setLoaded({state,blocked:false});setError('');return true;}catch(e){setError(e instanceof Error&&['stock','limit','pending','stale'].includes(e.message)?e.message:'storage');return false;}}
- return {...loaded,error,act};
+ const [loaded,setLoaded]=useState(initial),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const alive=useRef(false),lock=useRef(false),generation=useRef(0);
+ async function refresh(){const own=++generation.current;try{const next=await readDemoMarket(indexedDB,sessionStorage.getItem(demoMarketKey));if(alive.current&&own===generation.current)setLoaded({...next,blocked:next.conflict});}catch{if(alive.current&&own===generation.current){setLoaded(s=>({...s,blocked:true}));setError('storage');}}}
+ useEffect(()=>{alive.current=true;const notify=()=>{void refresh();},unsubscribe=subscribeDemoMarket(notify);window.addEventListener('focus',notify);document.addEventListener('visibilitychange',notify);void refresh();return ()=>{alive.current=false;generation.current++;unsubscribe();window.removeEventListener('focus',notify);document.removeEventListener('visibilitychange',notify);};},[]);
+ async function run(action?:DemoAction){
+  if(lock.current)return false;lock.current=true;setBusy(true);generation.current++;
+  try{const legacy=sessionStorage.getItem(demoMarketKey),next=action?await commitDemoMarket(indexedDB,legacy,action,loaded.revision):await resolveDemoMarket(indexedDB,legacy,loaded.revision);if(alive.current){setLoaded({...next,blocked:next.conflict});setError('');}return true;}
+  catch(e){if(alive.current){setError(e instanceof Error&&['stock','limit','pending','stale','changed','conflict'].includes(e.message)?e.message:'storage');await refresh();}return false;}
+  finally{lock.current=false;if(alive.current)setBusy(false);}
+ }
+ return {...loaded,loading:loaded.revision===0&&!error,blocked:loaded.blocked||busy,busy,error,act:(action:DemoAction)=>run(action),resolveConflict:()=>run()};
 }
