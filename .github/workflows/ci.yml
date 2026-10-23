@@ -80,3 +80,7 @@ jobs:
           node scripts/owner-calendar.browser.cjs
       - name: Verify integrated calendar, market and role journey
         run: node scripts/integration-journey.browser.cjs
+      - name: Verify demo orders and atomic replacement across upgrades
+        run: |
+          node scripts/demo-market.browser.cjs
+          node scripts/demo-market-replacement.browser.cjs
