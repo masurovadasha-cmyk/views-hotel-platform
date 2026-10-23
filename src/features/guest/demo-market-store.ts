@@ -55,7 +55,12 @@ export async function transactDurableMarket(factory:IDBFactory,legacy:string|nul
  });
 }
 const listeners=new Set<()=>void>();let channel:BroadcastChannel|null=null;
-function publish(){for(const listener of listeners)listener();channel?.postMessage('updated');}
+function publish(){
+ // The IDB transaction has already committed. Notification failures must never
+ // turn that success into a storage failure; other views can refresh on focus.
+ for(const listener of listeners){try{listener();}catch{/* Keep notifying other mounted views. */}}
+ try{channel?.postMessage('updated');}catch{/* Focus/visibility refresh is the fallback. */}
+}
 export function subscribeDemoMarket(listener:()=>void){
  listeners.add(listener);
  if(!channel&&typeof BroadcastChannel!=='undefined'){try{channel=new BroadcastChannel('views-demo-market-changes');channel.onmessage=()=>{for(const notify of listeners)notify();};}catch{/* Focus refresh still works. */}}
