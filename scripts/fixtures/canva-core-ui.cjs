@@ -9,7 +9,7 @@ function response(path,state){
  if(path==='/local-api/owner-inventory')return {properties:[],truncated:false,draftOnly:true};
  if(path==='/local-api/refund-reconciliation')return {items:[],nextCursor:null};
  if(path==='/local-api/housekeeping')return {items:[{taskId:id,unitCode:'TEST-101',createdAt:'2026-10-01T10:00:00Z',assignment:'mine'}],truncated:false,syntheticData:true};
- if(path==='/local-api/workspace')return {property,units:[],reservations:[],reservationsTruncated:false,databaseTime:'2026-10-10T10:00:00Z',syntheticData:true,realPayments:false};
+ if(path==='/local-api/workspace')return {recoveryScope:{organizationId:id,userId:id,membershipId:id,propertyId:property.id},property,units:[],reservations:[],reservationsTruncated:false,databaseTime:'2026-10-10T10:00:00Z',syntheticData:true,realPayments:false};
  if(path==='/local-api/reception'){const group={total:0,truncated:false,items:[]};return {property,day:'2026-10-10',databaseTime:'2026-10-10T10:00:00Z',arrivals:group,departures:group,staying:group,cleaning:group};}
  if(['/local-api/supply/properties','/local-api/folios/properties'].includes(path))return {items:[property],nextCursor:null};
  if(path==='/local-api/supply/items')return {items:[{id:itemId,sku:'TEST-WATER',name:'Synthetic water',unit:'piece'}],nextCursor:null};

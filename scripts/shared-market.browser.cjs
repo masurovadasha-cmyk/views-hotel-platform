@@ -1,4 +1,5 @@
 'use strict';
+const durable=require('./demo-market-storage-browser-helper.cjs');
 // Shared guest/staff demo ledger proof. Static artifact only; network writes forbidden.
 const assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),path=require('node:path');
 const {chromium}=require('playwright');
@@ -35,39 +36,39 @@ const server=http.createServer((req,res)=>{
    const tr=(catalog,k)=>catalog[k]?.[locale]||k,t=k=>tr(messages,k),gt=k=>tr(guest,k),st=k=>tr(staff,k);
    const shop=page.getByTestId('guest-market'),queue=page.getByTestId('demo-market-queue');
    const button=k=>shop.getByRole('button',{name:t(k),exact:true}),row=id=>queue.locator('[data-demo-staff-order="'+id+'"]');
-   const state=()=>page.evaluate(k=>JSON.parse(sessionStorage.getItem(k)),key);
-   const raw=()=>page.evaluate(k=>sessionStorage.getItem(k),key);
-   async function guestMarket(){await page.getByRole('button',{name:/V Market/}).first().click();await shop.waitFor();}
+   const state=()=>durable.state(page);
+   const raw=()=>durable.record(page).then(r=>r.raw);
+   async function guestMarket(){await page.getByRole('button',{name:/V Market/}).first().click();await durable.ready(page);await shop.waitFor();await durable.ready(page);}
    async function open(){await page.goto(origin+'/?api=demo');await guestMarket();}
-   async function seed(value){await page.evaluate(({key,value})=>sessionStorage.setItem(key,JSON.stringify(value)),{key,value});await open();}
-   async function staffQueue(){await page.getByRole('button',{name:gt('Staff CRM'),exact:true}).click();await page.getByTestId('demo-market-nav').click();await queue.waitFor();}
-   async function guestReturn(){await page.getByRole('button',{name:st('Гостевое приложение'),exact:true}).click();await guestMarket();}
+   async function seed(value){await durable.seed(page,value);await open();}
+   async function staffQueue(){await page.getByRole('button',{name:gt('Staff CRM'),exact:true}).click();await durable.ready(page);await page.getByTestId('demo-market-nav').click();await durable.ready(page);await queue.waitFor();}
+   async function guestReturn(){await page.getByRole('button',{name:st('Гостевое приложение'),exact:true}).click();await durable.ready(page);await guestMarket();}
    await page.goto(origin+'/?api=demo');
    await setStayRange(page,page.locator('.searchBox'),'2026-11-30','2026-12-02');
-   await guestMarket();await shop.getByRole('button',{name:t('Add to list')+': '+t('Still water'),exact:true}).click();
-   await button('Review demo order').click();await button('Confirm demo order').click();
+   await guestMarket();await shop.getByRole('button',{name:t('Add to list')+': '+t('Still water'),exact:true}).click();await durable.ready(page);
+   await button('Review demo order').click();await durable.ready(page);await button('Confirm demo order').click();await durable.ready(page);
    await staffQueue();await row('DEMO-1').waitFor();assert.equal((await state()).orders[0].status,'reserved');
-   await row('DEMO-1').getByTestId('demo-staff-complete').click();await page.getByTestId('demo-staff-back').click();assert.equal((await state()).orders[0].status,'reserved');
+   await row('DEMO-1').getByTestId('demo-staff-complete').click();await durable.ready(page);await page.getByTestId('demo-staff-back').click();await durable.ready(page);assert.equal((await state()).orders[0].status,'reserved');
    // Changing role while a confirmation is open must revoke that confirmation.
-   await row('DEMO-1').getByTestId('demo-staff-complete').click();await page.locator('.staffHead select').selectOption('cleaner');
+   await row('DEMO-1').getByTestId('demo-staff-complete').click();await durable.ready(page);await page.locator('.staffHead select').selectOption('cleaner');
    assert.equal(await page.getByTestId('demo-market-nav').count(),0);assert.equal(await page.getByTestId('demo-staff-confirm').count(),0);
    await page.locator('.staffHead select').selectOption('technician');assert.equal(await page.getByTestId('demo-market-nav').count(),0);
-   await page.locator('.staffHead select').selectOption('front_desk');await page.getByTestId('demo-market-nav').click();await row('DEMO-1').getByTestId('demo-staff-complete').click();
+   await page.locator('.staffHead select').selectOption('front_desk');await page.getByTestId('demo-market-nav').click();await durable.ready(page);await row('DEMO-1').getByTestId('demo-staff-complete').click();await durable.ready(page);
    // Atomic write failure retains the reservation and permits a safe retry.
    const before=await raw();
-   await page.evaluate(()=>{window.qaSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==='views.demo-market.v1')throw Error('quota');return window.qaSetItem.call(this,k,v);};});
-   await page.getByTestId('demo-staff-confirm').click();await queue.getByRole('alert').waitFor();assert.equal(await raw(),before);
-   await page.evaluate(()=>{Storage.prototype.setItem=window.qaSetItem;});
-   await page.getByTestId('demo-staff-confirm').evaluate(b=>{b.click();b.click();});assert.equal((await state()).orders[0].status,'completed');assert.equal((await state()).orders.length,1);
+   await durable.failWrites(page);
+   await page.getByTestId('demo-staff-confirm').click();await durable.ready(page);await queue.getByRole('alert').waitFor();assert.equal(await raw(),before);
+   await durable.restoreWrites(page);
+   await page.getByTestId('demo-staff-confirm').evaluate(b=>{b.click();b.click();});await durable.ready(page);assert.equal((await state()).orders[0].status,'completed');assert.equal((await state()).orders.length,1);
    await guestReturn();assert.equal(await shop.locator('[data-stock="sample-water"]').innerText(),'9');assert.equal(await button('Cancel demo order').count(),0);
-   await page.locator('.guestNav').getByRole('button',{name:gt('Explore'),exact:true}).click();assert.match(await page.locator('.searchBox').getByTestId('stay-date-range').innerText(),/2026-11-30.*2026-12-02/);
+   await page.locator('.guestNav').getByRole('button',{name:gt('Explore'),exact:true}).click();await durable.ready(page);assert.match(await page.locator('.searchBox').getByTestId('stay-date-range').innerText(),/2026-11-30.*2026-12-02/);
    await open();assert.equal((await state()).orders[0].status,'completed');
    // Literal pre-upgrade state, replacement chain and in-progress edits survive role remounts.
    const chained={version:1,sequence:2,cart:{},pending:null,orders:[{id:'DEMO-2',lines:{'sample-water':2},status:'reserved',replacesOrderId:'DEMO-1'},{id:'DEMO-1',lines:{'sample-water':1},status:'cancelled',replacedByOrderId:'DEMO-2'}]};
    await seed(chained);await staffQueue();assert.equal(await queue.locator('[data-demo-staff-order]').count(),2);
-   for(const role of ['concierge','super_admin','general_manager']){await page.locator('.staffHead select').selectOption(role);await page.getByTestId('demo-market-nav').click();assert.equal(await row('DEMO-2').getByTestId('demo-staff-complete').isEnabled(),true);assert.deepEqual(await state(),chained);}
+   for(const role of ['concierge','super_admin','general_manager']){await page.locator('.staffHead select').selectOption(role);await page.getByTestId('demo-market-nav').click();await durable.ready(page);assert.equal(await row('DEMO-2').getByTestId('demo-staff-complete').isEnabled(),true);assert.deepEqual(await state(),chained);}
    assert.equal(await row('DEMO-1').getByTestId('demo-staff-cancel').count(),0);
-   await row('DEMO-2').getByTestId('demo-staff-cancel').click();await page.getByTestId('demo-staff-confirm').evaluate(b=>{b.click();b.click();});
+   await row('DEMO-2').getByTestId('demo-staff-cancel').click();await durable.ready(page);await page.getByTestId('demo-staff-confirm').evaluate(b=>{b.click();b.click();});await durable.ready(page);
    await guestReturn();assert.equal(await shop.locator('[data-stock="sample-water"]').innerText(),'10');assert.equal((await state()).orders.length,2);
    for(const extra of [
     {cart:{'sample-water':9},editingOrderId:'DEMO-1'},
@@ -79,15 +80,15 @@ const server=http.createServer((req,res)=>{
     await guestReturn();assert.deepEqual(await state(),saved);
    }
    // Staff's stale visible confirmation must not resurrect an externally completed order.
-   await seed(legacy);await staffQueue();await row('DEMO-1').getByTestId('demo-staff-cancel').click();
+   await seed(legacy);await staffQueue();await row('DEMO-1').getByTestId('demo-staff-cancel').click();await durable.ready(page);
    const completed={...legacy,orders:[{...legacy.orders[0],status:'completed'}]};
-   await page.evaluate(({key,value})=>sessionStorage.setItem(key,JSON.stringify(value)),{key,value:completed});
-   await page.getByTestId('demo-staff-confirm').click();assert.deepEqual(await state(),completed);
+   await durable.seed(page,completed);
+   await page.getByTestId('demo-staff-confirm').click();await durable.ready(page);assert.deepEqual(await state(),completed);
    // Owner demo is read-only even with a still-actionable reserved order.
-   await page.evaluate(({key,value})=>sessionStorage.setItem(key,JSON.stringify(value)),{key,value:legacy});
-   await page.goto(origin+'/?api=demo&entry=staff&staffRole=owner');await page.getByRole('button',{name:tr(roleMessages,'Explore this role’s demo'),exact:true}).click();await page.getByTestId('demo-market-nav').click();await queue.waitFor();
+   await durable.seed(page,legacy);
+   await page.goto(origin+'/?api=demo&entry=staff&staffRole=owner');await page.getByRole('button',{name:tr(roleMessages,'Explore this role’s demo'),exact:true}).click();await durable.ready(page);await page.getByTestId('demo-market-nav').click();await durable.ready(page);await queue.waitFor();
    assert.equal(await queue.getByTestId('demo-staff-complete').count(),0);assert.equal(await queue.getByTestId('demo-staff-cancel').count(),0);assert.deepEqual(await state(),legacy);
-   for(const width of [360,768,1440]){await page.setViewportSize({width,height:900});for(let n=0;n<2;n++){await page.locator('[data-theme-toggle]').click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}}
+   for(const width of [360,768,1440]){await page.setViewportSize({width,height:900});for(let n=0;n<2;n++){await page.locator('[data-theme-toggle]').click();await durable.ready(page);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}}
    // The delivered review bundle must not activate Core by query-string manipulation.
    for(const mode of ['live','guest-core','local-core']){await page.goto(origin+'/?api='+mode);assert.equal(await page.locator('[data-runtime]').getAttribute('data-runtime'),'static-demo');assert.deepEqual(await state(),legacy);}
    checks.push(locale+': guest-staff-ledger/confirm-back/role-revoke/role-denial/quota-retry/double-confirm/calendar/reload/old-v1/chain/cancel/pending-edit-lock/stale-action/owner-readonly/3-widths/2-themes/review-core-isolation');

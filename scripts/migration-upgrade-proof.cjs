@@ -15,7 +15,7 @@ function docker(args){
 (async()=>{
  try{
   const migrations=readMigrations(path.join(REPO,'db/migrations'),path.join(REPO,'db/migrations.sha256'));
-  assert.equal(migrations.length,132,'Update the checkpoint deliberately when adding migrations');
+  assert.equal(migrations.length,133,'Update the checkpoint deliberately when adding migrations');
   docker(['run','-d','--name',name,'--publish','127.0.0.1::5432','--env','POSTGRES_PASSWORD',
    'postgres@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4']);created=true;
   const binding=JSON.parse(docker(['inspect',name]))[0].NetworkSettings.Ports['5432/tcp'][0];
@@ -35,14 +35,15 @@ function docker(args){
    await c.query(fs.readFileSync(path.join(REPO,'infra/postgres/init/001_extensions.sql'),'utf8'));
   }
   const [,clean,upgrade]=clients;
-  assert.equal(await applyMigrations(clean,migrations),132);
+  assert.equal(await applyMigrations(clean,migrations),133);
   assert.equal(await applyMigrations(upgrade,migrations.slice(0,46)),46);
   await upgrade.query(`INSERT INTO organizations(id,type,legal_name,country_code,default_currency,timezone)
    VALUES('a0000000-0000-4000-8000-000000000001','platform','SYNTHETIC upgrade canary','UZ','UZS','Asia/Tashkent')`);
   const before=(await upgrade.query('SELECT to_jsonb(o) AS value FROM organizations o')).rows;
   assert.equal(await applyMigrations(upgrade,migrations.slice(0,130)),84);
-  // Exercise the published 0.18 checkpoint before the additive cancellation fix.
+  // Exercise both published checkpoints before the additive booking recovery fix.
   assert.equal(await applyMigrations(upgrade,migrations.slice(0,131)),1);
+  assert.equal(await applyMigrations(upgrade,migrations.slice(0,132)),1);
   assert.equal(await applyMigrations(upgrade,migrations),1);
   assert.deepEqual((await upgrade.query('SELECT to_jsonb(o) AS value FROM organizations o')).rows,before);
   const history=(await upgrade.query('SELECT * FROM views_local_migrations ORDER BY name')).rows;
@@ -56,11 +57,11 @@ function docker(args){
   await upgrade.query('UPDATE views_local_migrations SET sha256=$1 WHERE name=$2',[migrations[0].sha256,migrations[0].name]);
   await assert.rejects(applyMigrations(upgrade,migrations.slice(1)),/MIGRATION_HISTORY_UNKNOWN/);
   const sql="BEGIN; CREATE TABLE rollback_probe(id int); SELECT nonexistent_migration_function(); COMMIT;";
-  const broken={name:'0133_synthetic_failure.sql',sql,sha256:createHash('sha256').update(sql).digest('hex')};
+  const broken={name:'0134_synthetic_failure.sql',sql,sha256:createHash('sha256').update(sql).digest('hex')};
   await assert.rejects(applyMigrations(upgrade,[...migrations,broken]));
   assert.equal((await upgrade.query("SELECT to_regclass('rollback_probe') AS table_name")).rows[0].table_name,null);
-  assert.equal((await upgrade.query('SELECT count(*)::int AS n FROM views_local_migrations')).rows[0].n,132);
-  console.log(JSON.stringify({result:'pass',migrations:132,upgradeFrom:46,intermediateCheckpoint:131,appliedOnUpgrade:86,appliedFromCheckpoint:1,
+  assert.equal((await upgrade.query('SELECT count(*)::int AS n FROM views_local_migrations')).rows[0].n,133);
+  console.log(JSON.stringify({result:'pass',migrations:133,upgradeFrom:46,intermediateCheckpoint:132,appliedOnUpgrade:87,appliedFromCheckpoint:1,
    organizationPreserved:true,schemaEquivalent:true,replayNoop:true,checksumMismatchRejected:true,
    missingHistoryRejected:true,failedMigrationRolledBack:true,persistentDatabaseTouched:false}));
  }finally{

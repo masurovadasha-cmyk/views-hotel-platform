@@ -18,9 +18,11 @@ describe('guest localization',()=>{
   const files=import.meta.glob<string>(['./*.tsx','../auth/AuthPanel.tsx','../../App.tsx'],{query:'?raw',import:'default',eager:true});
   for(const [file,content]of Object.entries(files)){
    const tree=ts.createSourceFile(file,content,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+   const usesMarket=tree.statements.some(n=>ts.isImportDeclaration(n)&&ts.isStringLiteral(n.moduleSpecifier)&&n.moduleSpecifier.text==='./market-translations.json');
+   if(usesMarket)expect(['./GuestMarket.tsx','./DemoMarketRecovery.tsx']).toContain(file);
    function visit(node:ts.Node){
     if(ts.isCallExpression(node)&&node.arguments[0]&&ts.isStringLiteral(node.arguments[0])&&node.expression.getText(tree)===(file.endsWith('/App.tsx')?'guestT':'t')){
-     const key=node.arguments[0].text;expect(Object.hasOwn(file.endsWith('/GuestMarket.tsx')?marketCatalog:catalog,key),file+': '+key).toBe(true);
+     const key=node.arguments[0].text;expect(Object.hasOwn(usesMarket?marketCatalog:catalog,key),file+': '+key).toBe(true);
     }ts.forEachChild(node,visit);
    }visit(tree);
   }

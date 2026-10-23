@@ -187,8 +187,10 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    }
    const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');
    if(route==='/local-api/holds'){
-    exactKeys(body,['quoteId']);if(!s.quotes.has(body.quoteId))fail(403,'QUOTE_OUTSIDE_SESSION');if(s.quotes.get(body.quoteId)<=Date.now())fail(409,'QUOTE_EXPIRED');
-    const value=await core('/v1/bookings/holds','POST',{quoteId:body.quoteId,ttlSeconds:900},key,token,identity);
+    exactKeys(body,body&&Object.hasOwn(body,'recoveryOnly')?['quoteId','recoveryOnly']:['quoteId']);if(body.recoveryOnly!==undefined&&body.recoveryOnly!==true)fail(400,'INVALID_RECOVERY_MODE');if(!UUID.test(body.quoteId||''))fail(400,'INVALID_QUOTE_ID');
+    // A missing in-memory quote may be a reload/relogin after a committed request.
+    // Only Core may recover it; cache miss must never authorize a new hold.
+    const value=await core('/v1/bookings/holds','POST',{quoteId:body.quoteId,ttlSeconds:900,propertyId:config.fixture.propertyId,...(body.recoveryOnly===true||!s.quotes.has(body.quoteId)?{recoveryOnly:true}:{})},key,token,identity);
     if(!UUID.test(value.reservationId||''))fail(502,'CORE_RESPONSE_INVALID');s.reservations.add(value.reservationId);json(res,200,value);return true;
    }
    exactKeys(body,route==='/local-api/guest'?['reservationId','guest']:route==='/local-api/document-view'?['reservationId','documentId']:route==='/local-api/document-review'?['reservationId','documentId','decision','reviewToken']:['reservationId']);if(!UUID.test(body.reservationId||'')||!s.reservations.has(body.reservationId))fail(403,'RESERVATION_OUTSIDE_WORKSPACE');

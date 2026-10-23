@@ -84,10 +84,16 @@ const ROOT=path.join(process.env.LOCALAPPDATA||'','VIEWS-Staging'),BASE='http://
      const r=await raw('/local-api/holds',{body:{quoteId:competing.quoteId},key:randomUUID()});assert.equal(r.status,409,JSON.stringify(r.body));
      const q=await raw('/local-api/quotes',{body:input});assert.equal(q.status,400);assert.equal(q.body.error,'UNIT_NOT_AVAILABLE');
    });
-   await check('other_session_cannot_take_our_quote',async()=>{
-     const s=await raw('/local-api/session',{session:false});
-     const r=await raw('/local-api/holds',{body:{quoteId:quote.quoteId},key:randomUUID(),headers:{cookie:s.headers.get('set-cookie').split(';')[0],'x-csrf-token':s.body.csrf}});
-     assert.equal(r.status,403);assert.equal(r.body.error,'QUOTE_OUTSIDE_SESSION');
+   await check('other_session_cache_miss_records_absence_without_creating_hold',async()=>{
+     const s=await raw('/local-api/session',{session:false}),key=randomUUID();
+     const r=await raw('/local-api/holds',{body:{quoteId:quote.quoteId},key,headers:{cookie:s.headers.get('set-cookie').split(';')[0],'x-csrf-token':s.body.csrf}});
+     assert.equal(r.status,409);assert.equal(r.body.error,'HOLD_NOT_CREATED');
+     const count=async()=>(await db.query('SELECT count(*)::int AS n FROM reservations WHERE organization_id=$1 AND idempotency_key=$2',[fixture.organizationId,key])).rows[0].n;
+     assert.equal(await count(),0);
+     // A delayed original request still has its quote in this session's cache.
+     // It must honor the recorded absence rather than creating after recovery.
+     const late=await raw('/local-api/holds',{body:{quoteId:quote.quoteId},key});
+     assert.equal(late.status,409);assert.equal(late.body.error,'HOLD_NOT_CREATED');assert.equal(await count(),0);
    });
    await check('reservation_survives_independent_workspace_fetch',async()=>{
      const data=await current();const r=data.reservations.find(v=>v.reservationId===reservationId);assert.ok(r);assert.equal(r.status,'hold');assert.equal(r.totalMinor,quote.totalMinor);

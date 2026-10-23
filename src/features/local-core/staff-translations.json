@@ -1626,5 +1626,57 @@
   "Последние 100 записей. История не удаляется и не меняет статус возврата.": {
     "en": "Latest 100 records. History cannot be deleted and does not change refund status.",
     "uz": "Oxirgi 100 ta yozuv. Tarix oʻchirilmaydi va pulni qaytarish holatini oʻzgartirmaydi."
+  },
+  "Результат операции получен из Core.": {
+    "en": "The operation result was received from Core.",
+    "uz": "Operatsiya natijasi Core’dan olindi."
+  },
+  "Хранилище попытки недоступно или повреждено. Новые резервы заблокированы; сохранённые данные не удалены. Восстановите доступ и обновите список.": {
+    "en": "Attempt storage is unavailable or invalid. New holds are blocked; saved data has not been deleted. Restore access and refresh the list.",
+    "uz": "Urinish xotirasi mavjud emas yoki buzilgan. Yangi bandlar bloklangan; saqlangan maʼlumotlar oʻchirilmagan. Kirishni tiklang va roʻyxatni yangilang."
+  },
+  "Операция подтверждена Core, но список не обновлён. Обновите список; повторять создание резерва не нужно.": {
+    "en": "Core confirmed the operation, but the list did not refresh. Refresh the list; do not create the hold again.",
+    "uz": "Core operatsiyani tasdiqladi, ammo roʻyxat yangilanmadi. Roʻyxatni yangilang; bandni qayta yaratmang."
+  },
+  "Проверить результат резерва": {
+    "en": "Check the hold result",
+    "uz": "Band natijasini tekshirish"
+  },
+  "Core вернул результат. Сохранённую отметку попытки ещё нужно проверить.": {
+    "en": "Core returned a result. The saved attempt marker still needs to be checked.",
+    "uz": "Core natijani qaytardi. Saqlangan urinish belgisini hali tekshirish kerak."
+  },
+  "Ответ на создание резерва не подтверждён. Даты и новый расчёт заблокированы до проверки результата.": {
+    "en": "The hold response is unconfirmed. Dates and a new quote are blocked until the result is checked.",
+    "uz": "Band yaratish javobi tasdiqlanmagan. Natija tekshirilguncha sanalar va yangi hisob-kitob bloklangan."
+  },
+  "Повтор использует тот же расчёт и ключ, даже если срок расчёта истёк. Он не создаёт отдельную новую операцию.": {
+    "en": "Retry uses the same quote and key, even after the quote expires. It does not create a separate new operation.",
+    "uz": "Takrorlash hisob muddati tugagan boʻlsa ham, oʻsha hisob va kalitdan foydalanadi. U alohida yangi operatsiya yaratmaydi."
+  },
+  "Проверить тем же ключом": {
+    "en": "Check with the same key",
+    "uz": "Oʻsha kalit bilan tekshirish"
+  },
+  "Резерв изменён. Проверьте актуальный статус в списке.": {
+    "en": "The reservation has changed. Check its current status in the list.",
+    "uz": "Band oʻzgargan. Roʻyxatdagi joriy holatini tekshiring."
+  },
+  "Результат получен из Core; оплата не выполняется.": {
+    "en": "Result received from Core; no payment is made.",
+    "uz": "Natija Core’dan olindi; toʻlov amalga oshirilmaydi."
+  },
+  "Результат получен": {
+    "en": "Result received",
+    "uz": "Natija olindi"
+  },
+  "Core подтвердил, что резерв не создан. Эта попытка закрыта; можно выполнить новый расчёт.": {
+    "en": "Core confirmed that no hold was created. This attempt is closed; you can request a new quote.",
+    "uz": "Core band yaratilmaganini tasdiqladi. Bu urinish yopildi; yangi hisob-kitob soʻrashingiz mumkin."
+  },
+  "Ответ ещё не завершает попытку. Проверьте результат тем же ключом перед новым расчётом.": {
+    "en": "This response does not close the attempt yet. Check the result with the same key before requesting a new quote.",
+    "uz": "Bu javob urinishni hali yakunlamaydi. Yangi hisob-kitobdan oldin natijani oʻsha kalit bilan tekshiring."
   }
 }

@@ -4,6 +4,7 @@ import {translate,type Locale} from '../../i18n/messages';
 import messages from '../guest/market-translations.json';
 import {marketProducts,marketCartLines} from '../guest/market-catalog';
 import {demoBalance} from '../guest/demo-market';
+import {DemoMarketRecovery} from '../guest/DemoMarketRecovery';
 import {useDemoMarket} from '../guest/useDemoMarket';
 import {demoMarketAccess} from './demo-market-policy';
 import '../guest/guest-market.css';
@@ -14,19 +15,20 @@ export function DemoMarketQueue({role,locale}:{role:HospitalityRole;locale:Local
  return access==='none'?null:<Queue key={role} role={role} locale={locale}/>;
 }
 function Queue({role,locale}:{role:HospitalityRole;locale:Locale}){
- const t=(key:string)=>translate(messages,locale,key),{state,blocked,error,act}=useDemoMarket();
+ const t=(key:string)=>translate(messages,locale,key),market=useDemoMarket(),{state,blocked,error,act}=market;
  const [review,setReview]=useState<{id:string;action:'complete'|'cancel'}|null>(null);
  const readOnly=demoMarketAccess(role)!=='operate',busy=blocked||!!state.pending||!!state.editingOrderId;
  const target=state.orders.find(o=>o.id===review?.id);
- function confirm(){if(!review||readOnly||busy)return;if(act({type:'staff-confirm',id:review.id,action:review.action}))setReview(null);}
+ async function confirm(){if(!review||readOnly||busy)return;if(await act({type:'staff-confirm',id:review.id,action:review.action}))setReview(null);}
+ if(market.loading||(blocked&&error==='storage'))return <section className="guestMarket" data-testid="demo-market-queue"><DemoMarketRecovery {...market} locale={locale}/></section>;
  return <section className="guestMarket" data-testid="demo-market-queue">
   <h2>{t('Demo market queue')}</h2>
-  <p className="notice">{t('Local demo only. Each sample starts with 10 units. Orders and stock are simulated in this tab; no payment, delivery or real stock movement occurs.')}</p>
+  <p className="notice">{t('Local demo only. Each sample starts with 10 units. Orders and stock are simulated on this device; no payment, delivery or real stock movement occurs.')}</p>
   <p>{t('Demo roles only. This screen does not authenticate staff or grant access to Core.')}</p>
-  <p>{t('Demo history survives reload in this tab session. Other tabs and devices are separate.')}</p>
+  <DemoMarketRecovery {...market} locale={locale}/>
   {readOnly&&<p>{t('Read-only demo role. Order changes are unavailable.')}</p>}
   {(state.pending||state.editingOrderId)&&<p role="status">{t('Return to the guest market to finish or cancel the current review or edit. Staff actions are paused.')}</p>}
-  {(blocked||error)&&<p role="alert">{t(error==='stale'?'This demo order has already changed. Return to the queue.':error==='pending'?'Return to the guest market to finish or cancel the current review or edit. Staff actions are paused.':'Demo storage is unavailable or invalid. No change was confirmed. Restore storage access and reload; existing data has not been reset.')}</p>}
+  {(!market.loading&&!market.busy&&!market.conflict&&error&&error!=='changed'&&error!=='storage')&&<p role="alert">{t(error==='stale'?'This demo order has already changed. Return to the queue.':error==='pending'?'Return to the guest market to finish or cancel the current review or edit. Staff actions are paused.':'Demo storage is unavailable or invalid. No change was confirmed. Restore storage access and reload; existing data has not been reset.')}</p>}
   {review&&<section className="marketBasket" data-testid="demo-staff-confirmation" aria-label={t('Confirm demo action')}><h3>{t('Confirm demo action')}</h3><p>{review.id} · {t(review.action==='complete'?'Simulate fulfilment':'Cancel demo order')}</p>
    {target&&marketCartLines(target.lines).map(({product,quantity})=><p key={product.id}>{t(product.name)} × {quantity}</p>)}
    <p>{t('No payment, delivery or real stock movement. This updates the shared demo history only.')}</p>

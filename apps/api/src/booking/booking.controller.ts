@@ -2,11 +2,11 @@ import {
   BadRequestException,Body,ConflictException,Controller,ForbiddenException,Headers,HttpCode,NotFoundException,Param,Post,UnauthorizedException
 } from "@nestjs/common";
 import {requireUuid} from "../identity/actor-context";
-import {BookingConflictError,HoldExpiredError,IdempotencyConflictError} from "./booking.errors";
+import {BookingConflictError,HoldExpiredError,HoldNotCreatedError,IdempotencyConflictError} from "./booking.errors";
 import {BookingHoldService} from "./booking-hold.service";
 import {BookingLifecycleService} from "./booking-lifecycle.service";
 
-type HoldBody={quoteId?:string;ttlSeconds?:number};
+type HoldBody={quoteId?:string;ttlSeconds?:number;recoveryOnly?:boolean;propertyId?:string};
 
 @Controller("v1/bookings")
 export class BookingController{
@@ -19,17 +19,23 @@ export class BookingController{
     @Headers("x-membership-id") membershipId:string|undefined,
     @Headers("x-request-id") requestId:string|undefined,
     @Headers("idempotency-key") idempotencyKey:string|undefined,
-    @Body() body:HoldBody
+    @Body() body:HoldBody,
+    @Headers("x-views-service-id") serviceId?:string,
+    @Headers("x-views-staff-session") staffSession?:string
   ){
     try{
       const actor=this.actor(organizationId,userId,membershipId,requestId);
       if(!idempotencyKey)throw new BadRequestException("Idempotency-Key is required");
       if(!body.quoteId)throw new BadRequestException("quoteId is required");
+      if(body.recoveryOnly!==undefined&&typeof body.recoveryOnly!=="boolean")throw new BadRequestException("INVALID_RECOVERY_ONLY");
       const result=await this.holds.createHold({
         actor,
         quoteId:requireUuid(body.quoteId,"quote_id"),
         idempotencyKey,
-        ttlSeconds:body.ttlSeconds
+        ttlSeconds:body.ttlSeconds,
+        recoveryOnly:body.recoveryOnly,
+        propertyId:body.propertyId===undefined?undefined:requireUuid(body.propertyId,"property_id"),
+        staffSession:serviceId==="local-workspace"?(staffSession??""):undefined
       });
       return serialize(result);
     }catch(error){throw mapError(error)}
@@ -84,10 +90,11 @@ function mapError(error:unknown){
   if(error instanceof BadRequestException||error instanceof UnauthorizedException)return error;
   if(error instanceof BookingConflictError)return new ConflictException(error.message);
   if(error instanceof IdempotencyConflictError)return new ConflictException(error.message);
+  if(error instanceof HoldNotCreatedError)return new ConflictException(error.message);
   if(error instanceof HoldExpiredError)return new ConflictException(error.message);
   if(error instanceof Error&&error.message==="PROPERTY_FORBIDDEN")return new ForbiddenException(error.message);
   if(error instanceof Error&&["UNIT_OR_RATE_NOT_FOUND","QUOTE_NOT_FOUND"].includes(error.message))return new NotFoundException(error.message);
-  if(error instanceof Error&&error.message==="QUOTE_EXPIRED")return new ConflictException(error.message);
+  if(error instanceof Error&&["QUOTE_EXPIRED","HOLD_RECOVERY_NOT_FOUND"].includes(error.message))return new ConflictException(error.message);
   if(error instanceof Error&&error.message.startsWith("INVALID_"))return new BadRequestException(error.message);
   return error;
 }
