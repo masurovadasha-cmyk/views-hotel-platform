@@ -1,3 +1,5 @@
+import {DemoMarketQueue} from './DemoMarketQueue';
+import {demoMarketAccess} from './demo-market-policy';
 import {DemoStayCalendar} from "../calendar/StayDateRange";
 import {useLegacyStaffLocale} from './LegacyStaffLocale';
 import {useEffect,useMemo,useState,useRef} from "react";
@@ -26,7 +28,7 @@ import "./staff-canva.css";
 
 const roles:HospitalityRole[]=["cleaner","concierge","technician","front_desk","general_manager","super_admin"];
 const labels:Record<string,string>={
-  overview:"Overview","my-tasks":"My Tasks",inbox:"Inbox",operations:"Operations","front-desk":"Front Desk",guests:"Guests CRM",
+  "demo-market":"Demo market queue",overview:"Overview","my-tasks":"My Tasks",inbox:"Inbox",operations:"Operations","front-desk":"Front Desk",guests:"Guests CRM",
   housekeeping:"Housekeeping",maintenance:"Maintenance",host:"Host Desk",finance:"Finance",admin:"Admin",integrations:"Integrations",
   team:"Team",messages:"Messages",handover:"Shift Handover",exceptions:"Exceptions","stay-card":"Stay Card",timeline:"Apartment Timeline"
 };
@@ -47,7 +49,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
 
   const userId=role==="cleaner"?"u-cleaner":role==="technician"?"u-tech":"u-manager";
   const visible=useMemo(()=>orders.filter(o=>canSeeServiceOrder(role,userId,o)),[orders,role,userId]);
-  const nav=roleNavigation[role];
+  const nav=!live&&demoMarketAccess(role)!=='none'?[...roleNavigation[role],'demo-market']:roleNavigation[role];
   const current=nav.includes(active)?active:nav[0];
 
   async function loadLiveOrders(){
@@ -81,6 +83,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
   };
 
   const content=()=>{
+    if(current==="demo-market"&&!live)return <DemoMarketQueue role={role} locale={locale}/>;
     if(current==="overview")return live?<LiveDashboard role={role}/>:<Dashboard orders={visible} role={role} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/>;
     if(current==="my-tasks")return <><div className="sectionHead"><div><small>{t("OPERATIONS QUEUE")}</small><h2>{t("My Tasks")}</h2></div></div><Orders orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/></>;
     if(current==="inbox")return <UnifiedInbox orders={visible} act={act} onOpen={o=>{setSelectedOrder(o);setMobileTab("detail")}}/>;
@@ -102,10 +105,10 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
   };
 
   return <div className="staffLayout canvaStaff">
-    <aside className="sidebar"><div className="sideBrand">VIEWS <small>{t("OPERATIONS")}</small></div><nav aria-label={t("Staff sections")}>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} aria-label={t(labels[id]??id)} onClick={()=>setActive(id)}><Icon size={17}/><span>{t(String(labels[id]??id))}</span></button>})}</nav></aside>
+    <aside className="sidebar"><div className="sideBrand">VIEWS <small>{t("OPERATIONS")}</small></div><nav aria-label={t("Staff sections")}>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} data-testid={id==='demo-market'?'demo-market-nav':undefined} aria-label={t(labels[id]??id)} onClick={()=>setActive(id)}><Icon size={17}/><span>{t(String(labels[id]??id))}</span></button>})}</nav></aside>
     <main className="staffMain">
       <header className="staffHead" data-testid="staff-header"><div><small>{t("VIEWS OPERATIONS")}</small><h1>{t(String(labels[current]??current))}</h1></div>{allowRoleSwitch?<select aria-label={t("Demo staff role")} value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{t(String(r.replace(/_/g," ")))}</option>)}</select>:<span className="roleLock">{t(String(role.replace(/_/g," ")))}</span>}</header>
-      <div className={"staffMode "+(live?"live":"demo")} role="note"><span/>{live?t("Connected workspace"):t("Demo workspace · sample data; changes are not saved")}</div>
+      <div className={"staffMode "+(live?"live":"demo")} role="note"><span/>{live?t("Connected workspace"):t("Demo workspace · sample tasks are not saved; demo market history is saved in this tab")}</div>
       {liveError&&<div className="notice" role="alert">{t(String(liveError))}<button onClick={()=>void loadLiveOrders()}>{t("Refresh")}</button></div>}
       {!live&&<DemoStayCalendar locale={locale} checkIn={calendarRange[0]} checkOut={calendarRange[1]} onChange={(a,b)=>setCalendarRange([a,b])}/>}
       {content()}
@@ -192,7 +195,7 @@ function HostDesk({step,setStep}:{step:number;setStep:(n:number)=>void}){
   return <div className="hostDesk">
     <div className="hostTabs">{["Listing wizard","Calendar & pricing","Bookings","Calendar sync","Host finance"].map((x,i)=><button className={step===i+1?"active":""} key={x} onClick={()=>setStep(i+1)}>{t(String(x))}</button>)}</div>
     {step===1&&<Panel title={t("Listing wizard")}><div className="wizardSteps"><span className="on">{t("1 Basics")}</span><span>{t("2 Photos")}</span><span>{t("3 Amenities")}</span><span>{t("4 Prices")}</span><span>{t("5 Rules")}</span></div><div className="hostForm"><label>{t("Property name")}<input placeholder={t("VIEWS apartment")}/></label><label>{t("Address")}<input value="Tashkent, NRG U-Tower" readOnly/></label><label>{t("Type")}<select><option>{t("Apartment")}</option></select></label><button className="primary" disabled title={t("Listing creation uses the owner workspace connected to Core.")}>{t("Next")}</button></div></Panel>}
-    {step===2&&<Panel title={t("Calendar & pricing")}><p>{t("Demo workspace · sample data; changes are not saved")}</p></Panel>}
+    {step===2&&<Panel title={t("Calendar & pricing")}><p>{t("Demo workspace · sample tasks are not saved; demo market history is saved in this tab")}</p></Panel>}
     {step===3&&<Panel title={t("Bookings")}><div className="compactRows">{["Alex Johnson","Sarah Miller","David Kim"].map((n,i)=><div key={n}><span>{i===0?t("12–15 Oct"):t("Upcoming")}</span><b>{n}</b><small>{t("Live amount comes from booking source")}</small><i className={"status "+(i===2?"cancelled":"confirmed")}>{i===2?t("cancelled"):t("confirmed")}</i></div>)}</div></Panel>}
     {step===4&&<Panel title={t("Calendar sync")}><div className="syncCard"><RefreshCw/><div><b>{t("iCal / OTA synchronization")}</b><p>{t("Airbnb / Booking.com connectors appear here after partner authorization. No sync state is fabricated.")}</p></div><span className="status assigned">{t("not connected")}</span></div></Panel>}
     {step===5&&<Panel title={t("Host finance")}><section className="kpis"><article><span>{t("Gross revenue")}</span><b>—</b></article><article><span>{t("Paid out")}</span><b>—</b></article><article><span>{t("Commission")}</span><b>—</b></article><article><span>{t("Pending")}</span><b>—</b></article></section><div className="notice">{t("Financial values remain unavailable until backed by live captured transactions.")}</div></Panel>}
