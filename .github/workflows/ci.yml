@@ -85,7 +85,10 @@ jobs:
           node scripts/demo-market.browser.cjs
           node scripts/demo-market-replacement.browser.cjs
 
-      - name: Verify shared guest staff and host demo state
+      - name: Verify booking recovery with interrupted responses
+        run: node scripts/booking-recovery.browser.cjs
+      - name: Verify durable shared guest staff and host demo state
         run: |
           npm run build:review
           node scripts/shared-market.browser.cjs
+          node scripts/durable-market.browser.cjs

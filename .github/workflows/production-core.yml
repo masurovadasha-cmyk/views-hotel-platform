@@ -220,7 +220,7 @@ jobs:
       - name: Build API
         working-directory: apps/api
         run: npm run build
-      - name: Verify cancellation access after administrative revocation
+      - name: Verify cancellation and booking recovery after administrative revocation
         env:
           VIEWS_CANCEL_PROOF_OWNER_URL: postgresql://views:views_test@localhost:5432/views
         run: |
@@ -231,6 +231,7 @@ jobs:
             try{
               await admin.connect();
               await require('./apps/api/db/tests/market-cancel-authorization.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
+              await require('./apps/api/db/tests/booking-hold-authorization.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
             }finally{await admin.end();}
           })().catch(error=>{console.error(error.message);process.exitCode=1;});
           JS
