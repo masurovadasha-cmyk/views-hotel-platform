@@ -5,6 +5,7 @@ on:
     paths:
       - "pnpm-lock.yaml"
       - "scripts/integration-schema.acceptance.cjs"
+      - "scripts/migration-upgrade-proof.cjs"
       - "pnpm-workspace.yaml"
       - "apps/api/**"
       - "db/**"
@@ -20,6 +21,7 @@ on:
     paths:
       - "pnpm-lock.yaml"
       - "scripts/integration-schema.acceptance.cjs"
+      - "scripts/migration-upgrade-proof.cjs"
       - "pnpm-workspace.yaml"
       - "apps/api/**"
       - "db/**"
