@@ -266,5 +266,37 @@
   "Demo history survives reload in this tab session. Other tabs and devices are separate.": {
     "ru": "Демоистория сохраняется при перезагрузке в сеансе этой вкладки. Другие вкладки и устройства независимы.",
     "uz": "Demo tarixi shu varaq seansida qayta yuklanganda saqlanadi. Boshqa varaqlar va qurilmalar mustaqil."
+  },
+  "Editing demo order": {
+    "ru": "Редактирование демозаказа",
+    "uz": "Demo buyurtmani tahrirlash"
+  },
+  "The original stays reserved until you confirm its replacement.": {
+    "ru": "Исходный демозаказ остаётся в резерве до подтверждения замены.",
+    "uz": "Almashtirish tasdiqlanmaguncha asl demo buyurtma band holda qoladi."
+  },
+  "Cancel editing": {
+    "ru": "Отменить редактирование",
+    "uz": "Tahrirlashni bekor qilish"
+  },
+  "Available for replacement": {
+    "ru": "Доступно для замены",
+    "uz": "Almashtirish uchun mavjud"
+  },
+  "Replaces demo order": {
+    "ru": "Заменяет демозаказ",
+    "uz": "Almashtirilayotgan demo buyurtma"
+  },
+  "Replaced by demo order": {
+    "ru": "Заменён демозаказом",
+    "uz": "Oʻrniga yaratilgan demo buyurtma"
+  },
+  "Edit demo order": {
+    "ru": "Изменить демозаказ",
+    "uz": "Demo buyurtmani oʻzgartirish"
+  },
+  "To edit an order, first clear or confirm your current shopping list.": {
+    "ru": "Чтобы изменить заказ, сначала очистите или подтвердите текущий список покупок.",
+    "uz": "Buyurtmani oʻzgartirish uchun avval joriy xarid roʻyxatini tozalang yoki tasdiqlang."
   }
 }
