@@ -1,5 +1,6 @@
 name: VIEWS Production Core
 on:
+  workflow_dispatch:
   push:
     branches: [main, "staging/**", "stage4/**", "stage5/**", "stage6/**", "stage7/**"]
     paths:
@@ -219,6 +220,20 @@ jobs:
       - name: Build API
         working-directory: apps/api
         run: npm run build
+      - name: Verify cancellation access after administrative revocation
+        env:
+          VIEWS_CANCEL_PROOF_OWNER_URL: postgresql://views:views_test@localhost:5432/views
+        run: |
+          node <<'JS'
+          const {Client}=require('./apps/api/node_modules/pg');
+          (async()=>{
+            const admin=new Client({connectionString:process.env.VIEWS_CANCEL_PROOF_OWNER_URL});
+            try{
+              await admin.connect();
+              await require('./apps/api/db/tests/market-cancel-authorization.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
+            }finally{await admin.end();}
+          })().catch(error=>{console.error(error.message);process.exitCode=1;});
+          JS
       - name: Build guest browser and install isolated browser test runtime
         run: |
           npm run build

@@ -2283,5 +2283,13 @@
   "maintenance": {
     "ru": "Техническое обслуживание",
     "uz": "Texnik xizmat"
+  },
+  "Demo market queue": {
+    "ru": "Очередь демомаркета",
+    "uz": "Demo market navbati"
+  },
+  "Demo workspace · sample tasks are not saved; demo market history is saved in this tab": {
+    "ru": "Демо · примерные задачи не сохраняются; история демомаркета сохраняется в этой вкладке",
+    "uz": "Demo · namunaviy vazifalar saqlanmaydi; demo market tarixi shu ichki oynada saqlanadi"
   }
 }
