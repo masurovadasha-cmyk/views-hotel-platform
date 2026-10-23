@@ -36,3 +36,13 @@ The 0.19 APK and preview remain independently available. This milestone does not
 claim completion of the wider platform, physical-device certification or all
 roadmap stages. Existing node-forge/braces exceptions remain unpatched tooling
 risks under their previous scope and expiry; they are not vulnerability fixes.
+
+## Integration regressions
+
+The Core browser fixture now includes the required synthetic recovery scope.
+The Canva basket proof waits for committed IndexedDB writes before asserting
+exact quantities. Neither change relaxes application authorization or counts.
+An existing service-command race was also corrected: the parent navigation
+guard is notified before transport starts, rather than depending on a later
+React effect. A real Chromium/React regression verifies this ordering and that
+an uncertain retry never unlocks navigation; existing laundry assertions remain.

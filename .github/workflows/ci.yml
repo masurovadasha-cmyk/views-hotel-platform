@@ -86,7 +86,9 @@ jobs:
           node scripts/demo-market-replacement.browser.cjs
 
       - name: Verify booking recovery with interrupted responses
-        run: node scripts/booking-recovery.browser.cjs
+        run: |
+          node scripts/booking-recovery.browser.cjs
+          node scripts/use-cleaning-pending-browser.cjs
       - name: Verify durable shared guest staff and host demo state
         run: |
           npm run build:review
