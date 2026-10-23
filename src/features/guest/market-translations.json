@@ -330,5 +330,53 @@
   "Back to queue": {
     "ru": "Назад к очереди",
     "uz": "Navbatga qaytish"
+  },
+  "Demo data is saved on this browser or app installation. Tabs on the same origin share it. Clearing app or browser data removes it; other devices and preview origins are separate.": {
+    "ru": "Демоданные сохраняются в этом браузере или установленном приложении и доступны вкладкам того же адреса. Очистка данных удаляет их; другие устройства и адреса превью независимы.",
+    "uz": "Demo maʼlumotlar shu brauzer yoki oʻrnatilgan ilovada saqlanadi va bir xil manzildagi ichki oynalar uchun umumiydir. Ilova yoki brauzer maʼlumotlarini tozalash ularni oʻchiradi; boshqa qurilmalar va koʻrib chiqish manzillari alohida."
+  },
+  "Loading saved demo data…": {
+    "ru": "Загружаем сохранённые демоданные…",
+    "uz": "Saqlangan demo maʼlumotlar yuklanmoqda…"
+  },
+  "Another view changed the demo data. Your action was not applied. Review the refreshed state and try again.": {
+    "ru": "Демоданные изменились в другом окне. Ваше действие не применено. Проверьте обновлённые данные и повторите.",
+    "uz": "Demo maʼlumotlar boshqa oynada oʻzgargan. Amalingiz bajarilmadi. Yangilangan holatni tekshirib, qayta urinib koʻring."
+  },
+  "Two demo histories need your review": {
+    "ru": "Нужно сравнить две демоистории",
+    "uz": "Ikkita demo tarixni koʻrib chiqing"
+  },
+  "This tab has an older separate history. No histories were merged or overwritten. Download both copies before choosing the saved device history; the old copy will remain archived.": {
+    "ru": "У этой вкладки есть отдельная старая история. Истории не объединены и не перезаписаны. Скачайте обе копии перед выбором сохранённой истории устройства; старая копия останется в архиве.",
+    "uz": "Bu ichki oynada alohida eski tarix bor. Tarixlar birlashtirilmagan yoki ustiga yozilmagan. Qurilmadagi saqlangan tarixni tanlashdan oldin ikkala nusxani yuklab oling; eski nusxa arxivda qoladi."
+  },
+  "Download saved device history": {
+    "ru": "Скачать историю устройства",
+    "uz": "Qurilma tarixini yuklab olish"
+  },
+  "Download old tab history": {
+    "ru": "Скачать старую историю вкладки",
+    "uz": "Ichki oynaning eski tarixini yuklab olish"
+  },
+  "Use saved device history and archive old tab copy": {
+    "ru": "Использовать историю устройства и сохранить старую копию",
+    "uz": "Qurilma tarixidan foydalanish va eski nusxani saqlash"
+  },
+  "Preserved old tab copies": {
+    "ru": "Сохранённые старые копии",
+    "uz": "Saqlangan eski nusxalar"
+  },
+  "Local demo only. Each sample starts with 10 units. Orders and stock are simulated on this device; no payment, delivery or real stock movement occurs.": {
+    "ru": "Только локальное демо. Начальный остаток каждого образца — 10 единиц. Заказы и остатки моделируются на этом устройстве; оплаты, доставки и реального движения товаров нет.",
+    "uz": "Faqat mahalliy demo. Har bir namuna 10 donadan boshlanadi. Buyurtmalar va qoldiqlar shu qurilmada modellashtiriladi; toʻlov, yetkazib berish yoki haqiqiy tovar harakati yoʻq."
+  },
+  "View saved device JSON": {
+    "ru": "Посмотреть JSON истории устройства",
+    "uz": "Qurilma tarixining JSON nusxasini koʻrish"
+  },
+  "View old tab JSON": {
+    "ru": "Посмотреть JSON старой вкладки",
+    "uz": "Eski ichki oynaning JSON nusxasini koʻrish"
   }
 }

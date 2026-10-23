@@ -2291,5 +2291,9 @@
   "Demo workspace · sample tasks are not saved; demo market history is saved in this tab": {
     "ru": "Демо · примерные задачи не сохраняются; история демомаркета сохраняется в этой вкладке",
     "uz": "Demo · namunaviy vazifalar saqlanmaydi; demo market tarixi shu ichki oynada saqlanadi"
+  },
+  "Demo workspace · sample tasks are not saved; demo market history is saved on this device": {
+    "ru": "Демо · примерные задачи не сохраняются; история демомаркета сохраняется на этом устройстве",
+    "uz": "Demo · namunaviy vazifalar saqlanmaydi; demo market tarixi shu qurilmada saqlanadi"
   }
 }
