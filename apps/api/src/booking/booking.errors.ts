@@ -7,3 +7,7 @@ export class IdempotencyConflictError extends Error{
 export class HoldExpiredError extends Error{
   constructor(){super("HOLD_EXPIRED");this.name="HoldExpiredError"}
 }
+
+export class HoldNotCreatedError extends Error{
+  constructor(){super("HOLD_NOT_CREATED");this.name="HoldNotCreatedError"}
+}

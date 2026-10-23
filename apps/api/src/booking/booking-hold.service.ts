@@ -1,14 +1,15 @@
 import {createHash,randomBytes,randomUUID} from "node:crypto";
-import {Injectable} from "@nestjs/common";
+import {Injectable,UnauthorizedException} from "@nestjs/common";
 import type {PoolClient} from "pg";
 import {DatabaseService} from "../database/database.service";
-import {BookingConflictError,HoldExpiredError,IdempotencyConflictError} from "./booking.errors";
+import {BookingConflictError,HoldNotCreatedError,IdempotencyConflictError} from "./booking.errors";
 import type {CreateHoldInput,HoldResult} from "./booking.types";
 import {validateHoldInput} from "./booking.validation";
 
 function requestHash(input:CreateHoldInput,ttl:number){
   return createHash("sha256").update(JSON.stringify({quoteId:input.quoteId,ttl})).digest("hex");
 }
+type NotCreated={notCreated:true};
 function confirmationCode(){return "VW-"+randomBytes(6).toString("hex").toUpperCase()}
 
 @Injectable()
@@ -21,12 +22,10 @@ export class BookingHoldService{
 
     for(let attempt=0;attempt<3;attempt++){
       try{
-        return await this.db.withActor(input.actor,async client=>{
-        const authorized=await client.query<{allowed:boolean}>(
-          `SELECT app.registry_access(organization_id,property_id,'reservation.manage') AS allowed
-           FROM booking_quotes WHERE id=$1 AND organization_id=$2`,[input.quoteId,input.actor.organizationId]);
-        if(!authorized.rows[0])throw new Error('QUOTE_NOT_FOUND');
-        if(!authorized.rows[0].allowed)throw new Error('PROPERTY_FORBIDDEN');
+        const outcome=await this.db.withActor(input.actor,async(client):Promise<HoldResult|NotCreated>=>{
+        const property=await this.authorize(client,input);
+        await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[input.actor.organizationId+':create_hold:'+input.idempotencyKey]);
+        await this.authorize(client,input,property);
         const inserted=await client.query<{id:string}>(
           `INSERT INTO booking_commands(id,organization_id,idempotency_key,command_type,request_hash)
            VALUES(gen_random_uuid(),$1,$2,'create_hold',$3)
@@ -36,9 +35,16 @@ export class BookingHoldService{
         );
 
         if(!inserted.rowCount){
-          return this.replayExisting(client,input.actor.organizationId,input.idempotencyKey,hash);
+          return this.replayExisting(client,input,hash,property);
         }
 
+        await this.authorize(client,input,property);
+        if(input.recoveryOnly){
+          await client.query(`UPDATE booking_commands SET result_snapshot='{"notCreated":true}'::jsonb,completed_at=clock_timestamp()
+            WHERE organization_id=$1 AND idempotency_key=$2 AND command_type='create_hold'`,[input.actor.organizationId,input.idempotencyKey]);
+          await this.authorize(client,input,property);
+          return {notCreated:true};
+        }
         const quoteResult=await client.query<{
           id:string;property_id:string;unit_id:string;rate_plan_id:string;check_in_at:Date;check_out_at:Date;
           currency:string;accommodation_minor:string;total_minor:string;cancellation_policy_snapshot:Record<string,unknown>;
@@ -157,12 +163,16 @@ export class BookingHoldService{
           ]
         );
 
+        await this.authorize(client,input,property);
         return {
-          reservationId,confirmationCode:code,status:"hold",
+          reservationId,confirmationCode:code,status:"hold",activeHold:expires.getTime()>Date.now(),
           holdExpiresAt:expires.toISOString(),totalMinor:BigInt(quote.total_minor),
           currency:quote.currency,idempotentReplay:false
         };
         });
+        // The durable absence result must commit before returning a terminal response.
+        if('notCreated' in outcome)throw new HoldNotCreatedError();
+        return outcome;
       }catch(error){
         if(isPgCode(error,"23P01"))throw new BookingConflictError();
         if(isRetryableTransactionError(error)){
@@ -178,33 +188,50 @@ export class BookingHoldService{
     throw new BookingConflictError();
   }
 
+  private async authorize(client:PoolClient,input:CreateHoldInput,expectedProperty?:string){
+    const row=(await client.query<{property_id:string;allowed:boolean}>(
+      `SELECT property_id,app.registry_access(organization_id,property_id,'reservation.manage') allowed
+       FROM booking_quotes WHERE id=$1 AND organization_id=$2`,[input.quoteId,input.actor.organizationId])).rows[0];
+    if(!row)throw new Error('QUOTE_NOT_FOUND');
+    if(!row.allowed||(expectedProperty&&row.property_id!==expectedProperty)||(input.propertyId&&row.property_id!==input.propertyId))throw new Error('PROPERTY_FORBIDDEN');
+    if(input.staffSession!==undefined){
+      if(!/^[a-f0-9]{64}$/.test(input.staffSession))throw new UnauthorizedException('STAFF_SESSION_REQUIRED');
+      const allowed=(await client.query<{allowed:boolean}>('SELECT app.booking_hold_authorize($1,$2) allowed',
+        [createHash('sha256').update(input.staffSession).digest('hex'),row.property_id])).rows[0]?.allowed;
+      if(!allowed)throw new UnauthorizedException('STAFF_SESSION_REQUIRED');
+    }
+    return row.property_id;
+  }
+
   private async replayExisting(
-    client:PoolClient,organizationId:string,idempotencyKey:string,hash:string
-  ):Promise<HoldResult>{
-    const command=await client.query<{request_hash:string;reservation_id:string|null}>(
-      `SELECT request_hash,reservation_id FROM booking_commands
+    client:PoolClient,input:CreateHoldInput,hash:string,property:string
+  ):Promise<HoldResult|NotCreated>{
+    const {organizationId}=input.actor,{idempotencyKey}=input;
+    const command=await client.query<{request_hash:string;reservation_id:string|null;result_snapshot:{notCreated?:boolean}|null}>(
+      `SELECT request_hash,reservation_id,result_snapshot FROM booking_commands
         WHERE organization_id=$1 AND idempotency_key=$2 AND command_type='create_hold'`,
       [organizationId,idempotencyKey]
     );
-    if(!command.rows[0])throw new Error("IDEMPOTENCY_STATE_MISSING");
+    if(!command.rows[0])throw new Error(input.recoveryOnly?"HOLD_RECOVERY_NOT_FOUND":"IDEMPOTENCY_STATE_MISSING");
     if(command.rows[0].request_hash!==hash)throw new IdempotencyConflictError();
+    await this.authorize(client,input,property);
+    if(command.rows[0].result_snapshot?.notCreated===true&&!command.rows[0].reservation_id)return {notCreated:true};
     if(!command.rows[0].reservation_id)throw new Error("IDEMPOTENCY_IN_PROGRESS");
 
     const row=await client.query<{
-      id:string;confirmation_code:string;status:string;hold_expires_at:Date;total_minor:string;currency:string;
+      id:string;confirmation_code:string;status:HoldResult["status"];hold_expires_at:Date|null;total_minor:string;currency:string;
     }>(
       `SELECT id,confirmation_code,status,hold_expires_at,total_minor::text,currency
-         FROM reservations WHERE id=$1`,
-      [command.rows[0].reservation_id]
+         FROM reservations WHERE id=$1 AND organization_id=$2 AND property_id=$3 FOR UPDATE`,
+      [command.rows[0].reservation_id,organizationId,property]
     );
     const reservation=row.rows[0];
     if(!reservation)throw new Error("IDEMPOTENCY_RESERVATION_MISSING");
-    if(reservation.status!=="hold")throw new Error("IDEMPOTENCY_RESULT_NOT_HOLD");
-    if(reservation.hold_expires_at.getTime()<=Date.now())throw new HoldExpiredError();
-
+    await this.authorize(client,input,property);
+    const active=(await client.query<{active:boolean}>("SELECT ($1::text='hold' AND $2::timestamptz>clock_timestamp()) IS TRUE active",[reservation.status,reservation.hold_expires_at])).rows[0].active;
     return {
-      reservationId:reservation.id,confirmationCode:reservation.confirmation_code,status:"hold",
-      holdExpiresAt:reservation.hold_expires_at.toISOString(),totalMinor:BigInt(reservation.total_minor),
+      reservationId:reservation.id,confirmationCode:reservation.confirmation_code,status:reservation.status,activeHold:active,
+      holdExpiresAt:reservation.hold_expires_at?.toISOString()??null,totalMinor:BigInt(reservation.total_minor),
       currency:reservation.currency,idempotentReplay:true
     };
   }

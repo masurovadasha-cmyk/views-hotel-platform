@@ -73,7 +73,7 @@ export class BookingWorkspaceController{
             FROM ranked GROUP BY bucket
           ) summaries`,[actor.organizationId,propertyId,day,property.timezone,stayPilotEnabled(actor.organizationId)])).rows[0];
         const empty={total:0,truncated:false,items:[]};
-        return {property,day:result.day,databaseTime:result.databaseTime,
+        return {recoveryScope:{organizationId:actor.organizationId,userId:actor.userId,membershipId:actor.membershipId,propertyId},property,day:result.day,databaseTime:result.databaseTime,
           arrivals:result.groups.arrivals||empty,departures:result.groups.departures||empty,staying:result.groups.staying||empty,cleaning:result.groups.cleaning||empty};
       }
       const units=(await client.query(`SELECT u.id AS "unitId",u.code,ut.name AS "unitTypeName",ut.max_guests AS "maxGuests",
@@ -88,7 +88,7 @@ export class BookingWorkspaceController{
         (r.status='hold' AND r.hold_expires_at>now()) AS "activeHold"
         FROM reservations r JOIN units u ON u.id=r.unit_id
         WHERE r.organization_id=$1 AND r.property_id=$2 ORDER BY r.created_at DESC,r.id DESC LIMIT 51`,[actor.organizationId,propertyId])).rows;
-      return {property,units:units.slice(0,200),unitsTruncated:units.length>200,
+      return {recoveryScope:{organizationId:actor.organizationId,userId:actor.userId,membershipId:actor.membershipId,propertyId},property,units:units.slice(0,200),unitsTruncated:units.length>200,
         reservations:rows.slice(0,50),reservationsTruncated:rows.length>50,
         databaseTime:(await client.query("SELECT clock_timestamp() AS time")).rows[0].time};
     });
