@@ -298,5 +298,37 @@
   "To edit an order, first clear or confirm your current shopping list.": {
     "ru": "Чтобы изменить заказ, сначала очистите или подтвердите текущий список покупок.",
     "uz": "Buyurtmani oʻzgartirish uchun avval joriy xarid roʻyxatini tozalang yoki tasdiqlang."
+  },
+  "Demo market queue": {
+    "ru": "Очередь демомаркета",
+    "uz": "Demo market navbati"
+  },
+  "Demo roles only. This screen does not authenticate staff or grant access to Core.": {
+    "ru": "Только демонстрация ролей. Этот экран не авторизует сотрудников и не предоставляет доступ к Core.",
+    "uz": "Faqat demo rollar. Bu ekran xodimlarni autentifikatsiya qilmaydi va Core tizimiga kirish huquqini bermaydi."
+  },
+  "Read-only demo role. Order changes are unavailable.": {
+    "ru": "Демонстрационная роль только для просмотра. Изменение заказов недоступно.",
+    "uz": "Faqat koʻrish uchun demo rol. Buyurtmalarni oʻzgartirish mumkin emas."
+  },
+  "Return to the guest market to finish or cancel the current review or edit. Staff actions are paused.": {
+    "ru": "Вернитесь в гостевой маркет и завершите или отмените текущее подтверждение или редактирование. Действия сотрудников приостановлены.",
+    "uz": "Joriy tasdiqlash yoki tahrirlashni tugatish yoki bekor qilish uchun mehmon marketiga qayting. Xodim amallari toʻxtatilgan."
+  },
+  "This demo order has already changed. Return to the queue.": {
+    "ru": "Этот демозаказ уже изменился. Вернитесь к очереди.",
+    "uz": "Bu demo buyurtma allaqachon oʻzgargan. Navbatga qayting."
+  },
+  "Confirm demo action": {
+    "ru": "Подтвердить демодействие",
+    "uz": "Demo amalni tasdiqlash"
+  },
+  "No payment, delivery or real stock movement. This updates the shared demo history only.": {
+    "ru": "Без оплаты, доставки и движения реальных товаров. Обновляется только общая демонстрационная история.",
+    "uz": "Toʻlov, yetkazib berish yoki haqiqiy tovar harakati yoʻq. Faqat umumiy demo tarixi yangilanadi."
+  },
+  "Back to queue": {
+    "ru": "Назад к очереди",
+    "uz": "Navbatga qaytish"
   }
 }

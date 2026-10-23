@@ -5,14 +5,13 @@ import {translate} from '../../i18n/messages';
 import messages from './market-translations.json';
 import {marketProducts,marketCategories,marketCartLines,type MarketCategory} from './market-catalog';
 import './guest-market.css';
-import {loadDemoMarket,transactDemoMarket,emptyDemoMarket,demoBalance,demoAvailable,type DemoAction} from './demo-market';
+import {demoBalance,demoAvailable} from './demo-market';
+import {useDemoMarket} from './useDemoMarket';
 const icons={Drinks:Droplets,Breakfast:Coffee,Snacks:Apple,Essentials:Package};
 export function GuestMarket(){
  const {locale}=useGuestLocale(),t=(key:string)=>translate(messages,locale,key);
  const [category,setCategory]=useState<MarketCategory|'All'>('All'),[search,setSearch]=useState('');
- const [loaded,setLoaded]=useState(()=>{try{return {state:loadDemoMarket(sessionStorage),blocked:false};}catch{return {state:emptyDemoMarket(),blocked:true};}}),[error,setError]=useState('');
- const {state,blocked}=loaded,cart=state.cart,pending=state.pending;
- function act(action:DemoAction){try{setLoaded({state:transactDemoMarket(sessionStorage,action),blocked:false});setError('');}catch(e){setError(e instanceof Error&&['stock','limit'].includes(e.message)?e.message:'storage');}}
+ const {state,blocked,error,act}=useDemoMarket(),cart=state.cart,pending=state.pending;
  const lines=marketCartLines(cart),count=lines.reduce((sum,line)=>sum+line.quantity,0);
  const products=marketProducts.filter(product=>(category==='All'||product.category===category)&&`${t(product.name)} ${t(product.category)}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
  function change(id:string,quantity:number){act({type:'quantity',id,quantity});}

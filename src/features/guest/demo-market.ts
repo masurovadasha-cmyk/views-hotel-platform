@@ -4,7 +4,7 @@ export const demoMarketKey='views.demo-market.v1';
 export const demoOpeningStock=10;
 export type DemoOrder={id:string;lines:MarketCart;status:'reserved'|'completed'|'cancelled';replacesOrderId?:string;replacedByOrderId?:string};
 export type DemoMarket={version:1;sequence:number;cart:MarketCart;pending:{id:string;lines:MarketCart;replacesOrderId?:string}|null;orders:DemoOrder[];editingOrderId?:string};
-export type DemoAction={type:'quantity';id:string;quantity:number}|{type:'clear'|'prepare'|'discard'|'stop-edit'}|{type:'edit';id:string}|{type:'complete'|'cancel'|'confirm';id:string};
+export type DemoAction={type:'staff-confirm';id:string;action:'complete'|'cancel'}|{type:'quantity';id:string;quantity:number}|{type:'clear'|'prepare'|'discard'|'stop-edit'}|{type:'edit';id:string}|{type:'complete'|'cancel'|'confirm';id:string};
 export const emptyDemoMarket=():DemoMarket=>({version:1,sequence:0,cart:{},pending:null,orders:[]});
 function validLines(value:unknown):value is MarketCart{
  return !!value&&typeof value==='object'&&!Array.isArray(value)&&Object.entries(value).every(([id,q])=>marketProducts.some(p=>p.id===id)&&Number.isInteger(q)&&Number(q)>0&&Number(q)<=20);
@@ -36,6 +36,14 @@ export function parseDemoMarket(raw:string|null):DemoMarket{
  return s;
 }
 export function reduceDemoMarket(s:DemoMarket,a:DemoAction):DemoMarket{
+ if(a.type==='staff-confirm'){
+  if(s.pending||s.editingOrderId)throw Error('pending');
+  const order=s.orders.find(o=>o.id===a.id);
+  const status=a.action==='complete'?'completed':'cancelled';
+  if(order?.status===status)return s; // Replayed same terminal operation.
+  if(order?.status!=='reserved')throw Error('stale');
+  return {...s,orders:s.orders.map(o=>o.id===a.id?{...o,status}:o)};
+ }
  if(a.type==='confirm'){
   if(!s.pending||s.pending.id!==a.id)return s; // A repeat after a committed confirmation cannot create another order.
   const old=s.editingOrderId?s.orders.find(o=>o.id===s.editingOrderId&&o.status==='reserved'&&!o.replacedByOrderId):undefined;
