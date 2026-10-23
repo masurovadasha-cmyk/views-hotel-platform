@@ -17,3 +17,48 @@ describe('local demo market transaction boundaries',()=>{
  it('storage failure cannot publish a success; retry uses the same pending token',()=>{let raw=JSON.stringify(prepare()),fail=true;const storage={getItem:()=>raw,setItem:(_k:string,v:string)=>{if(fail)throw Error('quota');raw=v;}};expect(()=>transactDemoMarket(storage,{type:'confirm',id:'DEMO-1'})).toThrow('quota');expect(parseDemoMarket(raw).orders).toHaveLength(0);fail=false;expect(transactDemoMarket(storage,{type:'confirm',id:'DEMO-1'}).orders).toHaveLength(1);expect(transactDemoMarket(storage,{type:'confirm',id:'DEMO-1'}).orders).toHaveLength(1);expect(demoMarketKey).toContain('demo');});
  it('accounts for mixed baskets without negative stock',()=>{let s=act(basket(10),{type:'quantity',id:'sample-tea',quantity:2});s=confirm(prepare(s));expect(demoBalance(s,'sample-water').available).toBe(0);expect(demoBalance(s,'sample-tea').available).toBe(8);expect(()=>prepare(act(s,{type:'quantity',id:'sample-water',quantity:1}))).toThrow('stock');});
 });
+
+describe('atomic demo order replacement',()=>{
+ const edit=(s=confirm(prepare(basket(10))))=>act(s,{type:'edit',id:s.orders[0].id});
+ it('reads old v1 without losing data, reserves continuously, and credits only own held units',()=>{
+  const old=confirm(prepare(basket(10))),legacy=parseDemoMarket(JSON.stringify(old));expect(legacy).toEqual(old);
+  let s=edit(legacy);expect(s.orders).toEqual(old.orders);expect(demoBalance(s,'sample-water').available).toBe(0);
+  s=prepare(act(s,{type:'quantity',id:'sample-water',quantity:9}));expect(s.pending?.replacesOrderId).toBe('DEMO-1');expect(demoBalance(s,'sample-water').reserved).toBe(10);
+  const done=confirm(parseDemoMarket(JSON.stringify(s)));expect(done.orders[0]).toMatchObject({id:'DEMO-2',replacesOrderId:'DEMO-1',status:'reserved'});expect(done.orders[1]).toMatchObject({id:'DEMO-1',replacedByOrderId:'DEMO-2',status:'cancelled'});expect(demoBalance(done,'sample-water')).toEqual({available:1,reserved:9,consumed:0});expect(parseDemoMarket(JSON.stringify(done))).toEqual(done);expect(act(done,{type:'confirm',id:'DEMO-2'})).toEqual(done);
+ });
+ it('keeps draft and review after reload and repeated review, cancels edit without releasing original',()=>{
+  const draft=act(edit(),{type:'quantity',id:'sample-water',quantity:7});expect(parseDemoMarket(JSON.stringify(draft))).toEqual(draft);
+  const pending=prepare(draft);expect(prepare(parseDemoMarket(JSON.stringify(pending)))).toEqual(pending);
+  const back=act(pending,{type:'discard'});expect(back.editingOrderId).toBe('DEMO-1');expect(back.cart).toEqual(draft.cart);
+  const stop=act(back,{type:'stop-edit'});expect(stop.cart).toEqual({});expect(stop.editingOrderId).toBeUndefined();expect(demoBalance(stop,'sample-water').reserved).toBe(10);
+ });
+ it('rejects unrelated basket, active draft mutations of history, stale targets and overstock',()=>{
+  const old=confirm();expect(()=>edit(act(old,{type:'quantity',id:'sample-tea',quantity:1}))).toThrow('basket');
+  const editing=edit(old);for(const type of ['complete','cancel'] as const)expect(()=>act(editing,{type,id:'DEMO-1'})).toThrow('pending');
+  expect(()=>act(act(old,{type:'cancel',id:'DEMO-1'}),{type:'edit',id:'DEMO-1'})).toThrow('stale');
+  const tooMuch=act(editing,{type:'quantity',id:'sample-water',quantity:11});expect(()=>prepare(tooMuch)).toThrow('stock');expect(tooMuch.orders).toEqual(old.orders);
+  const pending=prepare(editing);expect(()=>confirm({...pending,orders:pending.orders.map(o=>({...o,status:'cancelled' as const}))})).toThrow('stale');
+  expect(act(pending,{type:'confirm',id:'DEMO-1'})).toEqual(pending);
+ });
+ it('rejects malformed persisted replacement backlinks, cycles and mismatched pending target',()=>{
+  const done=confirm(prepare(edit()));
+  const variants=[{...done,orders:done.orders.map(o=>({...o,replacedByOrderId:'DEMO-404'}))},{...done,orders:done.orders.map(o=>({...o,replacesOrderId:o.id}))},{...done,editingOrderId:'DEMO-1'},{...prepare(edit()),pending:{...prepare(edit()).pending!,replacesOrderId:'DEMO-404'}}];
+  for(const bad of variants)expect(()=>parseDemoMarket(JSON.stringify(bad))).toThrow('storage');
+ });
+ it('replaces chains and retains accounting after cancellation or fulfilment of successor',()=>{
+  const second=confirm(prepare(edit())),third=confirm(prepare(edit(second)));expect(parseDemoMarket(JSON.stringify(third))).toEqual(third);
+  expect(demoBalance(act(third,{type:'cancel',id:'DEMO-3'}),'sample-water').available).toBe(10);
+  expect(demoBalance(act(third,{type:'complete',id:'DEMO-3'}),'sample-water').consumed).toBe(10);
+ });
+ it('never credits another order or accepts backward pending replacement IDs',()=>{
+  let s=confirm(prepare(basket(4)));s=confirm(prepare(act(s,{type:'quantity',id:'sample-water',quantity:6})));
+  const editing=act(s,{type:'edit',id:'DEMO-1'});expect(()=>prepare(act(editing,{type:'quantity',id:'sample-water',quantity:5}))).toThrow('stock');
+  const pending=prepare(edit(s));const malformed={...pending,pending:{...pending.pending!,id:'DEMO-1'},orders:pending.orders.filter(o=>o.id!=='DEMO-1')};expect(()=>parseDemoMarket(JSON.stringify(malformed))).toThrow('storage');
+ });
+ it('failed atomic storage write preserves old reservation and pending token, retries exactly once',()=>{
+  let raw=JSON.stringify(prepare(edit())),fail=true;const original=raw;
+  const storage={getItem:()=>raw,setItem:(_k:string,v:string)=>{if(fail)throw Error('quota');raw=v;}};
+  expect(()=>transactDemoMarket(storage,{type:'confirm',id:'DEMO-2'})).toThrow('quota');expect(raw).toBe(original);expect(parseDemoMarket(raw).orders).toHaveLength(1);
+  fail=false;const done=transactDemoMarket(storage,{type:'confirm',id:'DEMO-2'});expect(done.orders).toHaveLength(2);expect(transactDemoMarket(storage,{type:'confirm',id:'DEMO-2'})).toEqual(done);
+ });
+});
