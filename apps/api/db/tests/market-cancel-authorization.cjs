@@ -5,8 +5,14 @@ const {randomUUID,randomBytes,createHash}=require('node:crypto');
 const {Client}=require('pg');
 module.exports=async function({admin,runtimeUrl}){
  assert.equal((await admin.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker,'VIEWS_DISPOSABLE_CORE_TEST');
- const org='10000000-0000-4000-8000-000000000001',property='10000000-0000-4000-8000-000000000002',item='76910000-0000-4000-8000-000000000047';
+ const org='10000000-0000-4000-8000-000000000001',property='10000000-0000-4000-8000-000000000002',item=randomUUID();
  const q=(sql,args=[])=>admin.query(sql,args);
+ // Own complete product fixture: no dependency on another test suite's stock or activation.
+ const name={en:'Synthetic cancellation proof item',ru:'Тестовый товар отмены',uz:'Bekor qilish sinov mahsuloti'};
+ await q("INSERT INTO supply_items(id,organization_id,property_id,sku,name,unit) VALUES($1,$2,$3,upper($1::uuid::text),$4,'piece')",[item,org,property,name.en]);
+ await q('INSERT INTO supply_balances(organization_id,property_id,item_id,quantity) VALUES($1,$2,$3,100)',[org,property,item]);
+ await q("INSERT INTO service_catalog(id,organization_id,property_id,code,name,currency,price_minor,active,execution_kind) VALUES($1,$2,$3,$1::uuid::text,$4,'UZS',100,false,'market')",[item,org,property,name]);
+ await q("INSERT INTO market_products(service_id,organization_id,property_id,currency,item_id) VALUES($1,$2,$3,'UZS',$1)",[item,org,property]);
  async function fixture(){
   const who=randomUUID(),oid=randomUUID(),r=randomUUID(),g=randomUUID(),u=randomUUID(),t=randomUUID(),key=randomUUID(),hash=createHash('sha256').update(randomBytes(32)).digest('hex');
   await q("INSERT INTO users(id,email,display_name) VALUES($1,$1::uuid::text||'@views.invalid','Synthetic cancel actor')",[who]);
@@ -18,9 +24,13 @@ module.exports=async function({admin,runtimeUrl}){
   await q("INSERT INTO unit_types(id,property_id,name,max_guests) VALUES($1,$2,'{}',2)",[t,property]);
   await q('INSERT INTO units(id,property_id,unit_type_id,code) VALUES($1,$2,$3,$1::uuid::text)',[u,property,t]);
   await q("INSERT INTO reservations(id,organization_id,property_id,unit_id,primary_guest_id,confirmation_code,status,check_in_at,check_out_at,currency,total_minor,cancellation_policy_snapshot) VALUES($1,$2,$3,$4,$5,$1::uuid::text,'checked_in',now()-interval '1 day',now()+interval '5 days','UZS',0,'{}')",[r,org,property,u,g]);
-  await q("INSERT INTO service_orders(id,organization_id,property_id,service_id,reservation_id,guest_profile_id,currency,quantity,total_minor,commission_minor,requested_for,snapshot,idempotency_key) VALUES($1,$2,$3,$4,$5,$6,'UZS',1,100,0,now(),jsonb_build_object('execution','market','lines',jsonb_build_array(jsonb_build_object('serviceId',$4::uuid::text,'itemId',$4::uuid::text,'quantity',1,'priceMinor','100'))),$1::uuid::text)",[oid,org,property,item,r,g]);
+  await q("INSERT INTO service_orders(id,organization_id,property_id,service_id,reservation_id,guest_profile_id,currency,quantity,total_minor,commission_minor,requested_for,snapshot,idempotency_key) VALUES($1,$2,$3,$4,$5,$6,'UZS',1,100,0,now(),jsonb_build_object('execution','market','name',$7::jsonb,'substitutions',false,'deliveryMinor','0','paymentMode','folio_after_guest_receipt','lines',jsonb_build_array(jsonb_build_object('serviceId',$4::uuid::text,'itemId',$4::uuid::text,'name',$7::jsonb,'quantity',1,'priceMinor','100','catalogRevision',1))),$1::uuid::text)",[oid,org,property,item,r,g,name]);
   await q('INSERT INTO market_orders(order_id,organization_id,property_id) VALUES($1,$2,$3)',[oid,org,property]);
   await q('INSERT INTO market_order_lines(order_id,organization_id,property_id,item_id,quantity) VALUES($1,$2,$3,$4,1)',[oid,org,property,item]);
+  // Validate the receipt consumed by the staff browser, not just SQL write acceptance.
+  const receipt=(await q('SELECT service_private.market_receipt($1) value',[oid])).rows[0].value;
+  assert.equal(receipt.currency,'UZS');assert.equal(receipt.totalMinor,'100');
+  assert.deepEqual(receipt.lines,[{serviceId:item,itemId:item,name,quantity:1,priceMinor:'100',catalogRevision:1}]);
   return {who,oid,r,key,hash,body:{action:'cancel',expectedRevision:1}};
  }
  async function snapshot(f){return (await q(`SELECT to_jsonb(m) market,to_jsonb(o) orders,

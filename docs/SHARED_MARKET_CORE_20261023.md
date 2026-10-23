@@ -89,3 +89,20 @@ Full aggregate checks, complete Core suite and exact-SHA CI belong to the parent
 integration run. This slice makes no claim of live external synchronization,
 physical delivery, real payments or a new APK. No live data, credentials or
 production settings changed.
+
+## Follow-up: self-contained administrative fixture
+
+The first remote Production Core run passed all 752 API tests and 14 revocation
+races, but the later staff browser proof failed. Administrative proof orders had
+incomplete line snapshots (missing localized `name`), which the staff order card
+renders through `localizedName`. Those malformed fixtures remained visible in the
+shared disposable staff listing. The helper also depended on another suite
+raising product 47 stock above the seed's five units.
+
+The helper now owns a unique synthetic UUID product with 100 units, UZS pricing,
+a schema-valid SKU and complete canonical snapshots (localized name and catalogue
+revision). It asserts the exact emitted receipt shape for every created order.
+A run selecting only `market.input.test.ts` now passes all 14 administrative races
+without any cancellation suite setup. No migration or application code changes
+are needed; this correction makes test fixtures valid consumers of the same UI
+contract as ordinary Core orders.
