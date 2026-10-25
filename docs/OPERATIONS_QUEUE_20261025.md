@@ -14,9 +14,9 @@ Existing keysets are preserved per service: cleaning/laundry/concierge UUID asce
 
 `OperationsQueue` mounts only in authenticated local `StaffWorkspaceGate` when existing service permissions are present. Translation dictionary is separate, RU/UZ/EN. Open/close, refresh, service paging and read-only selected summary use the same endpoint. Refresh/close, offline, revocation and identity replacement clear selection; generation + abort guards prevent delayed responses restoring revoked/stale data. GET timeout is 15 seconds. No demo ledger reads, no new write requests, no public Core activation.
 
-Root-owned wiring required:
+Root-owned wiring integrated:
 
-- `app.module.ts`: import/register `OperationsQueueService` provider and `OperationsQueueController` controller from `service-orders/operations-queue.*`.
+- `service-order.module.ts`: import/register `OperationsQueueService` provider and `OperationsQueueController` controller from `service-orders/operations-queue.*`.
 - Local gateway: authenticated GET `service-orders/queue`; only optional kind/cursor from client, trusted configured propertyId and existing authenticated staff actor/session forwarded to `/v1/service-orders/queue`. Preserve no-store, body bounds, origin/session checks. No client-selectable property or permission expansion.
 - No shared translation changes required.
 

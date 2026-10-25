@@ -232,6 +232,7 @@ jobs:
               await admin.connect();
               await require('./apps/api/db/tests/market-cancel-authorization.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
               await require('./apps/api/db/tests/booking-hold-authorization.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
+              await require('./apps/api/db/tests/owner-calendar-recovery.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
             }finally{await admin.end();}
           })().catch(error=>{console.error(error.message);process.exitCode=1;});
           JS

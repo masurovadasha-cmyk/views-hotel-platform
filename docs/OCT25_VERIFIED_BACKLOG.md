@@ -40,13 +40,17 @@
 
 ## Внешние решения и ограничения
 
-Нужны отдельные согласования/доступы для живого Core/БД/хостинга, реальных цен и фонда, платежей/фискализации, SMTP/SMS, E-mehmon/документов, партнёрских договоров/выплат/депозитов, release signing/физической проверки. Реальные каталожные фото требуют подтверждённых исходников/лицензий и соответствия SKU. Новые ключи, доступ, платные ресурсы, живые данные, production merge и внешние отправки запрещены текущим scope. Действующие node-forge/braces исключения до2026-11-15 — неисправленные tooling риски, не security fixes.
+Нужны отдельные согласования/доступы для живого Core/БД/хостинга, реальных цен и фонда, платежей/фискализации, SMTP/SMS, E-mehmon/документов, партнёрских договоров/выплат/депозитов, release signing/физической проверки. Реальные каталожные фото требуют подтверждённых исходников/лицензий и соответствия SKU. Новые ключи, доступ, платные ресурсы, живые данные, production merge и внешние отправки запрещены текущим scope. Свежий аудит25октября: body-parser/multer/nodemailer и узко ограниченный ExpoCLI zod обновлены с compatibility proofs. Advisory braces отозван, obsolete exception удалён — это не package fix. Node-forge остаётся активным неисправленным tooling риском с прежним исключением до2026-11-15.
 
 ## Контракт для Canva supplement
 
 LocalCoreWorkspace/booking-recovery: recoveryScope, property timezone, unit/ratePlan, quoteId/expiry, immutable idempotency key, authoritative receipt. OwnerCalendarWorkspace: scope/permission, range, period revision/current state, unknown command recovery. ReceptionWorkspace: arrivals/departures/stay/turnover. GuestTrips/GuestReservationLink/GuestCancellation: guest reservation ownership, explicit acceptance/cancel, denied/revoked/expired. Q1: four permission-filtered service sections, separate cursors, minimal readonly detail; no assumed global chronology. Folio/Supply: operational charge/credit/stock separate from payments/delivery.
 
 Каждому нужны loading/empty/offline/error; stale revision/conflict; unknown outcome/retry; revoked scope; storage corrupt/blocked; success+refresh failure; Back/Cancel/reload. RU/UZ/EN, UZS, Light/Dark/mobile. SH-GN-001–004 — услуги/комиссии/заказы/доход, не property/booking management. Старый Guest9pages/AED не канонический booking flow.
+
+## Кандидат первой волны0.21
+
+Интегрированы M1/M2/Q1/H1, независимые browser proofs и семь offline лицензированных иллюстративных фото. Миграции0134–0136 добавлены,1–133 immutable. Full aggregate/Core/CI/Android ещё должны пройти на итоговом SHA; никакие140-ID статусы этим не повышаются. Публичный Core по-прежнему отключён; CRM/owner сценарии проверяются на disposable Core и normal-build браузере, не выдаются за подключённую функцию публичного APK. Точные фото SKU/воды остаются открытыми.
 
 ## Все 140 ID: исходный статус, существующее доказательство
 

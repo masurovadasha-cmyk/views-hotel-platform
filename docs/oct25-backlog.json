@@ -12,7 +12,7 @@
     {
       "id": "M1",
       "priority": "P0",
-      "status": "В работе",
+      "status": "Интегрирован в кандидат0.21; общий прогон ожидается",
       "acceptance": "Освобождение lot-reserve при guest/staff cancel; auth/replay/rollback/races; runtime закрыт",
       "owner": "core_integration",
       "migration": "0134"
@@ -20,7 +20,7 @@
     {
       "id": "Q1",
       "priority": "P0",
-      "status": "В работе",
+      "status": "Интегрирован в кандидат0.21; общий прогон ожидается",
       "acceptance": "Read-only четыре секции CRM; независимые cursors, scope, актуальный минимальный detail",
       "owner": "frontend_integration",
       "migration": "нет"
@@ -28,7 +28,7 @@
     {
       "id": "H1",
       "priority": "P0",
-      "status": "В работе",
+      "status": "Интегрирован в кандидат0.21; общий прогон ожидается",
       "acceptance": "Durable block/unblock: intent до POST, current receipt, terminal absence, reload/cross-scope",
       "owner": "booking_recovery_ui",
       "migration": "0135"
@@ -36,7 +36,7 @@
     {
       "id": "M2",
       "priority": "P0",
-      "status": "После M1",
+      "status": "Интегрирован в кандидат0.21; общий прогон ожидается",
       "acceptance": "Освобождение/перенос lot-reserve при replacement; old/successor атомарность, без runtime activation",
       "owner": "core_integration",
       "migration": "после0135"
@@ -100,7 +100,7 @@
     {
       "id": "PHOTO",
       "priority": "P1",
-      "status": "Инвентаризация",
+      "status": "7иллюстративных фото интегрированы; точныеSKU/вода открыты",
       "acceptance": "Проверить оригиналы/лицензии по каждому из8товаров; не подменять SKU общим стоковым фото",
       "owner": "market_media",
       "migration": "нет"
@@ -2363,5 +2363,6 @@
       "publicCoreEnabled": false,
       "evidence": null
     }
-  ]
+  ],
+  "securityUpdate": "body-parser/multer/nodemailer and scoped ExpoCLI zod patched with compatibility proofs; braces advisory withdrawn, exception removed; node-forge remains unpatched until2026-11-15 exception expiry"
 }
