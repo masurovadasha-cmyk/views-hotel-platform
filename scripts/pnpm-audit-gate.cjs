@@ -6,12 +6,6 @@ const exceptions={
     expiresAt:"2026-11-15T00:00:00Z",
     reason:"Unpatched upstream advisory reachable only through Expo CLI build tooling.",
     path:(p)=>p.startsWith("apps__mobile>expo>")&&p.includes("@expo/cli")&&p.endsWith(">node-forge")
-  },
-  "GHSA-VFJ7-8CJW-P6XM":{
-    package:"braces",
-    expiresAt:"2026-11-15T00:00:00Z",
-    reason:"Unpatched upstream advisory reachable only through Expo Metro build tooling.",
-    path:(p)=>p.startsWith("apps__mobile>expo>")&&p.includes("@expo/metro")&&p.endsWith(">braces")
   }
 };
 
