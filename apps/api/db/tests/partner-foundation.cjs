@@ -85,6 +85,110 @@ module.exports=async function({admin,runtimeUrl}){
   assert.equal((await decide(fencedDecision,fencedOffer,fencedKey)).outcome,'not_applied');
   assert.equal((await admin.query('SELECT status FROM partner_private.assignments WHERE id=$1',[fencedOffer.assignmentId])).rows[0].status,'offered');
   const concurrent=await fixture(),concurrentKey=randomUUID(),outcomes=await Promise.all([service.offer(s.actor,s.raw,concurrentKey,{...concurrent.body,recoveryOnly:true}),service.offer(s.actor,s.raw,concurrentKey,concurrent.body)]);assert.equal(outcomes[0].outcome,outcomes[1].outcome);
+  // Staff can reconcile historical commands after partner eligibility is revoked.
+  // Recovery never restores partner access or authorizes a new assignment.
+  const offerEffects=async x=>(await admin.query(`
+   SELECT
+    (SELECT count(*)::int FROM partner_private.assignments WHERE order_id=$1) assignments,
+    (SELECT count(*)::int FROM audit_log WHERE entity_type='partner_assignment'
+      AND entity_id IN (SELECT id FROM partner_private.assignments WHERE order_id=$1)) audits,
+    (SELECT count(*)::int FROM outbox_events WHERE aggregate_type='partner_assignment'
+      AND aggregate_id IN (SELECT id FROM partner_private.assignments WHERE order_id=$1)) events
+  `,[x.order])).rows[0];
+  for(const authority of ['grant','provider','catalog']){
+   const x=await fixture(),appliedKey=randomUUID(),missingKey=randomUUID();
+   const applied=await service.offer(s.actor,s.raw,appliedKey,x.body);
+   const sourceBefore=await snapshot(x),effectsBefore=await offerEffects(x);
+   const table=authority==='grant'?'partner_private.grants':
+    authority==='provider'?'partner_private.providers':'public.service_catalog';
+   const authorityId=authority==='grant'?x.grant:
+    authority==='provider'?x.provider:x.catalog;
+   await admin.query(`UPDATE ${table} SET active=false WHERE id=$1`,[authorityId]);
+
+   assert.deepEqual(
+    await service.offer(s.actor,s.raw,appliedKey,{...x.body,recoveryOnly:true}),
+    {...applied,idempotentReplay:true}
+   );
+   assert.deepEqual(
+    await service.offer(s.actor,s.raw,appliedKey,x.body),
+    {...applied,idempotentReplay:true}
+   );
+   await assert.rejects(
+    service.offer(s.actor,s.raw,appliedKey,
+     {...x.body,expectedOrderRevision:2,recoveryOnly:true}),
+    /PARTNER_IDEMPOTENCY_CONFLICT/
+   );
+   await assert.rejects(
+    service.offer(s.actor,s.raw,randomUUID(),x.body),
+    /PARTNER_NOT_FOUND/
+   );
+   await assert.rejects(service.list(x.raw,{}),/PARTNER_SESSION_REQUIRED/);
+   await assert.rejects(decide(x,applied),/PARTNER_SESSION_REQUIRED/);
+
+   const notApplied={outcome:'not_applied',assignmentId:null,synthetic:true,
+    idempotentReplay:false,commandKey:missingKey};
+   assert.deepEqual(
+    await service.offer(s.actor,s.raw,missingKey,{...x.body,recoveryOnly:true}),
+    notApplied
+   );
+   assert.deepEqual(
+    await service.offer(s.actor,s.raw,missingKey,x.body),
+    {...notApplied,idempotentReplay:true}
+   );
+   assert.deepEqual(
+    await service.offer(s.actor,s.raw,missingKey,{...x.body,recoveryOnly:true}),
+    {...notApplied,idempotentReplay:true}
+   );
+
+   // Neither staff permissions nor order/grant scope is relaxed for recovery.
+   await assert.rejects(
+    service.offer(denied.actor,denied.raw,randomUUID(),
+     {...x.body,recoveryOnly:true}),
+    /PARTNER_NOT_FOUND/
+   );
+   await assert.rejects(
+    service.offer(s.actor,s.raw,randomUUID(),
+     {...x.body,grantId:foreign.grant,recoveryOnly:true}),
+    /PARTNER_NOT_FOUND/
+   );
+   const revokedReader=await staff();
+   await admin.query(
+    'UPDATE staff_private.sessions SET revoked_at=clock_timestamp() WHERE token_hash=$1',
+    [sha(revokedReader.raw)]
+   );
+   await assert.rejects(
+    service.offer(revokedReader.actor,revokedReader.raw,randomUUID(),
+     {...x.body,recoveryOnly:true}),
+    /PARTNER_SESSION_REQUIRED/
+   );
+   assert.deepEqual(await snapshot(x),sourceBefore);
+   assert.deepEqual(await offerEffects(x),effectsBefore);
+   assert.deepEqual((await admin.query(`
+    SELECT outcome,assignment_id,payload FROM partner_private.commands
+    WHERE actor_kind='staff' AND actor_id=$1 AND command_key=$2
+   `,[s.who,missingKey])).rows,
+   [{outcome:'not_applied',assignment_id:null,payload:x.body}]);
+
+   // Even after eligibility returns and the original slot is freed,
+   // the delayed original must not create a new assignment.
+   await admin.query(`UPDATE ${table} SET active=true WHERE id=$1`,[authorityId]);
+   await admin.query(
+    "UPDATE partner_private.assignments SET status='withdrawn',revision=revision+1 WHERE id=$1",
+    [applied.assignmentId]
+   );
+   const freedEffects=await offerEffects(x);
+   assert.deepEqual(
+    await service.offer(s.actor,s.raw,missingKey,x.body),
+    {...notApplied,idempotentReplay:true}
+   );
+   assert.deepEqual(await offerEffects(x),freedEffects);
+   assert.equal((await admin.query(
+    "SELECT count(*)::int n FROM partner_private.assignments WHERE order_id=$1 AND status IN ('offered','accepted')",
+    [x.order]
+   )).rows[0].n,0);
+   if(authority!=='catalog')
+    await assert.rejects(service.list(x.raw,{}),/PARTNER_SESSION_REQUIRED/);
+  }
   // Stable bounded UUID paging; history fixtures are synthetic rejected offers.
   for(let i=0;i<23;i++)await admin.query("INSERT INTO partner_private.assignments(organization_id,property_id,order_id,grant_id,grant_version,source_revision,status,requested_for,expires_at) VALUES($1,$2,$3,$4,1,1,'rejected',clock_timestamp()+interval '1 day',clock_timestamp()+interval '10 minutes')",[org,property,duplicate.order,duplicate.grant]);
   const first=await service.list(duplicate.raw,{}),second=await service.list(duplicate.raw,{after:first.nextCursor});assert.equal(first.items.length,20);assert.equal(second.items.length,4);assert.equal(second.nextCursor,null);assert(second.items.every(row=>row.assignmentId>first.nextCursor&&!first.items.some(old=>old.assignmentId===row.assignmentId)));
