@@ -1,18 +1,22 @@
 import {useEffect,useRef,useState} from 'react';
+import {registerDraftNavigationGuard} from '../service-builder/navigation';
 import {request} from '../local-core/LocalCoreWorkspace';
 import {useStaffLocale} from '../local-core/StaffLocale';
 import {parseRecoveryScope,recoveryScopeKey,type RecoveryScope} from '../local-core/booking-recovery';
 import {kinds,stages,zones,defaults,parsePolicy,parseVersion,parseReceipt,parseSimulation,loadIntent,claimIntent,clearIntent,type Policy,type Version,type Intent,type Simulation} from './model';
 import {translator,weekdays} from './locale';
 import './sla-policy.css';
-type Props={propertyId:string;staffCsrf:string};
+type Props={propertyId:string;staffCsrf:string;onUnresolvedChange?:(pending:boolean)=>void};
 const clock=(n:number)=>`${Math.floor(n/60).toString().padStart(2,'0')}:${(n%60).toString().padStart(2,'0')}`;
 const minute=(s:string)=>/^([01]\d|2[0-3]):[0-5]\d$/.test(s)?Number(s.slice(0,2))*60+Number(s.slice(3)):s==='24:00'?1440:NaN;
 export function SlaPolicyWorkspace(props:Props){return <Workspace key={props.propertyId+':'+props.staffCsrf} {...props}/>;}
-function Workspace({propertyId,staffCsrf}:Props){
+function Workspace({propertyId,staffCsrf,onUnresolvedChange}:Props){
  const {locale}=useStaffLocale(),t=translator(locale),[rows,setRows]=useState<Version[]>([]),[scope,setScope]=useState<RecoveryScope|null>(null),[form,setForm]=useState<Policy>(defaults()),[revision,setRevision]=useState(0),[pending,setPending]=useState<Intent|null>(null),[busy,setBusy]=useState(true),[storage,setStorage]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[receiptInfo,setReceiptInfo]=useState<{applied:number|null;current:number}|null>(null),[epoch,setEpoch]=useState(0),[startLocal,setStartLocal]=useState(''),[simulation,setSimulation]=useState<Simulation|null>(null);
  const alive=useRef(true),mutating=useRef(false),dirty=useRef(false),identity=useRef('');
  const locked=busy||!!pending||storage||!scope;
+ useEffect(()=>registerDraftNavigationGuard(()=>{if(mutating.current||pending)return false;return !dirty.current||window.confirm(t('discard'));}),[pending,t]);
+ useEffect(()=>{onUnresolvedChange?.(!!pending||mutating.current);return()=>onUnresolvedChange?.(false);},[pending,busy,onUnresolvedChange]);
+ useEffect(()=>{const guard=(event:BeforeUnloadEvent)=>{if(pending||mutating.current||dirty.current){event.preventDefault();event.returnValue='';}};window.addEventListener('beforeunload',guard);return()=>window.removeEventListener('beforeunload',guard);},[pending]);
  const apply=(value:Version|null,p:Policy=form)=>{setEpoch(e=>e+1);setForm(value?.config||defaults(p.serviceKind,p.milestone));setRevision(value?.revision||0);setSimulation(null);dirty.current=false;};
  async function load(reset=false){
   const raw=await request<{draftOnly:boolean;approved:boolean;recoveryScope:unknown;policies:unknown[]}>('sla-policy?propertyId='+encodeURIComponent(propertyId),staffCsrf);

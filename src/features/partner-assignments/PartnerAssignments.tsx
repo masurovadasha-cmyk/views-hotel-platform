@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {assignment,dispatchOrder,page,receipt,PartnerApiError,scopeValid,uuid,type Assignment,type DispatchOrder,type Command,type Journal,type Locale,type PartnerAssignmentsApi,type PartnerDispatchApi,type Receipt} from './model';
+import {assignment,dispatchOrder,page,receipt,scopeValid,uuid,type Assignment,type DispatchOrder,type Command,type Journal,type Locale,type PartnerAssignmentsApi,type PartnerDispatchApi,type AppliedReceipt} from './model';
 import {transactJournal} from './journal';
 import {translate} from './messages';
 import './partner-assignments.css';
@@ -9,11 +9,10 @@ type Common={locale:Locale;onUnresolvedChange?:(pending:boolean)=>void};
 export function PartnerAssignments(props:Common&{session:PartnerSession|null;api:PartnerAssignmentsApi|null}){return <Coordination {...props} mode="partner"/>;}
 export function PartnerDispatch(props:Common&{session:DispatchSession|null;api:PartnerDispatchApi|null}){return <Coordination {...props} mode="dispatch"/>;}
 type Review={kind:'decision';assignment:Assignment;action:'accept'|'reject'}|{kind:'offer';order:DispatchOrder};
-const definitive=new Set(['PARTNER_REVISION_CHANGED','PARTNER_EXPIRED','PARTNER_TRANSITION_INVALID','PARTNER_ALREADY_ASSIGNED']);
 function Coordination({locale,session,api,mode,onUnresolvedChange}:Common&{session:(PartnerSession&{propertyId?:string})|null;api:PartnerDispatchApi|PartnerAssignmentsApi|null;mode:'partner'|'dispatch'}){
  const t=(s:string)=>translate(locale,s),candidate=session&&scopeValid(session.scope)&&api&&(mode==='partner'||uuid(session.propertyId))?`${mode}:${session.scope}${mode==='dispatch'?':'+session.propertyId:''}`:'';
  const scope=scopeValid(candidate)?candidate:'';
- const [items,setItems]=useState<(Assignment|DispatchOrder)[]>([]),[next,setNext]=useState<string|null>(null),[journal,setJournal]=useState<Journal|null>(null),[loadedScope,setLoadedScope]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[online,setOnline]=useState(()=>navigator.onLine),[review,setReview]=useState<Review|null>(null),[grant,setGrant]=useState(''),[expiry,setExpiry]=useState(''),[result,setResult]=useState<Receipt|null>(null);
+ const [items,setItems]=useState<(Assignment|DispatchOrder)[]>([]),[next,setNext]=useState<string|null>(null),[journal,setJournal]=useState<Journal|null>(null),[loadedScope,setLoadedScope]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[online,setOnline]=useState(()=>navigator.onLine),[review,setReview]=useState<Review|null>(null),[grant,setGrant]=useState(''),[expiry,setExpiry]=useState(''),[result,setResult]=useState<AppliedReceipt|null>(null);
  const current=useRef(scope);current.current=scope;const generation=useRef(0),sending=useRef(false);
  const visible=loadedScope===scope&&!!scope,pending=visible?journal?.command:null,locked=busy||!online||!visible||!journal||!!pending||error==='journal';
  useEffect(()=>{const update=()=>setOnline(navigator.onLine);window.addEventListener('online',update);window.addEventListener('offline',update);return()=>{window.removeEventListener('online',update);window.removeEventListener('offline',update);};},[]);
@@ -38,14 +37,14 @@ function Coordination({locale,session,api,mode,onUnresolvedChange}:Common&{sessi
   }
   if(current.current!==startScope)return; // Intent stays durable; never send through a changed session.
   setJournal(active);setReview(null);
-  const raw=cmd.kind==='offer'?await(startApi as PartnerDispatchApi).offer(cmd.body,cmd.key):await(startApi as PartnerAssignmentsApi).decide(cmd.assignmentId,cmd.body,cmd.key);
-  const answer=receipt(raw);if(cmd.kind==='decision'&&answer.assignmentId!==cmd.assignmentId)throw Error('invalid-response');
+  const raw=cmd.kind==='offer'?await(startApi as PartnerDispatchApi).offer(cmd.body,cmd.key,recover):await(startApi as PartnerAssignmentsApi).decide(cmd.assignmentId,cmd.body,cmd.key,recover);
+  const answer=receipt(raw,cmd.key);if(answer.outcome==='applied'&&cmd.kind==='decision'&&answer.assignmentId!==cmd.assignmentId)throw Error('invalid-response');
   const settled=await transactJournal(indexedDB,startScope,{kind:'settle',revision:active.revision,key:cmd.key});
-  if(current.current===startScope){setJournal(settled);setResult(answer);setItems([]);setNext(null);}
+  if(current.current===startScope){setJournal(settled);setResult(answer.outcome==='applied'?answer:null);setError(answer.outcome==='not_applied'?'not-applied':'');setItems([]);setNext(null);}
  }catch(e){
-  if(cmd&&e instanceof PartnerApiError&&e.status===409&&definitive.has(e.code)){
-   try{const settled=await transactJournal(indexedDB,startScope,{kind:'settle',revision:active.revision,key:cmd.key});if(current.current===startScope){setJournal(settled);setItems([]);setNext(null);setError('not-applied');}}catch{if(current.current===startScope)setError('journal');}
-  }else if(current.current===startScope)setError(e instanceof Error&&e.message==='changed'?'changed':e instanceof Error&&e.message==='journal'?'journal':'request');
+  // A rollback is not a durable fence against a delayed original request.
+  // Retain every unsuccessful intent until a same-key receipt settles it.
+  if(current.current===startScope)setError(e instanceof Error&&e.message==='changed'?'changed':e instanceof Error&&e.message==='journal'?'journal':'request');
  }finally{sending.current=false;if(current.current===startScope)setBusy(false);}
  }
  const format=(iso:string)=>new Intl.DateTimeFormat({ru:'ru-RU',uz:'uz-Latn-UZ',en:'en-GB'}[locale],{dateStyle:'medium',timeStyle:'short'}).format(new Date(iso));
