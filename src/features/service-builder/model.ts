@@ -17,7 +17,11 @@ export function validateDraft(value:unknown):Draft{
   if(!object(f)||Object.keys(f).sort().join()!=='id,labels,options,required,type'||!text(f.id,32)||!/^field-[1-9][0-9]{0,7}$/.test(f.id)||ids.has(f.id)||!labels(f.labels)||!fieldTypes.includes(f.type as Field['type'])||typeof f.required!=='boolean'||!Array.isArray(f.options)||f.options.length>6||!f.options.every(labels)||(f.type!=='choice'&&f.options.length))throw Error('invalid');
   ids.add(f.id);
  }
- return structuredClone(value) as Draft;
+ // The validated shape contains only strings, booleans, arrays and plain records.
+ // Copy every mutable level explicitly: Android API 29 WebView lacks structuredClone.
+ const source=value as unknown as Draft;
+ const copyLabels=(v:Labels):Labels=>({ru:v.ru,uz:v.uz,en:v.en});
+ return {code:source.code,names:copyLabels(source.names),category:source.category,fields:source.fields.map(f=>({id:f.id,labels:copyLabels(f.labels),type:f.type,required:f.required,options:f.options.map(copyLabels)}))};
 }
 export function parseRecord(value:unknown):RecordValue{
  if(!object(value)||Object.keys(value).sort().join()!=='draft,format,revision'||value.format!==1||!Number.isSafeInteger(value.revision)||Number(value.revision)<1)throw Error('invalid');

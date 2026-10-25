@@ -1,8 +1,21 @@
-import {describe,it,expect} from 'vitest';
+import {describe,it,expect,vi} from 'vitest';
 import {emptyDraft,blankLabels,decide,validateDraft,parseRecord,draftIssues,dryRun,type Draft} from './model';
 const names={ru:'Уборка',uz:'Tozalash',en:'Cleaning'};
 const valid=():Draft=>({code:'DEMO-1',names,category:'cleaning',fields:[{id:'field-1',labels:names,type:'text',required:true,options:[]}]});
 describe('local service draft contract',()=>{
+ it('deep-copies nested choices and saves/reloads/dry-runs without structuredClone',()=>{
+  vi.stubGlobal('structuredClone',undefined);
+  try{
+   const d:Draft={code:'CHOICE',names:{ru:'Услуга',uz:'Xizmat',en:'Service'},category:'cleaning',fields:[{id:'field-1',labels:{ru:'Вариант',uz:'Variant',en:'Option'},type:'choice',required:true,options:[{ru:'Первый',uz:'Birinchi',en:'First'},{ru:'Второй',uz:'Ikkinchi',en:'Second'}]}]};
+   const copy=validateDraft(d);expect(copy).toEqual(d);
+   expect(copy.names).not.toBe(d.names);expect(copy.fields).not.toBe(d.fields);expect(copy.fields[0]).not.toBe(d.fields[0]);expect(copy.fields[0].labels).not.toBe(d.fields[0].labels);expect(copy.fields[0].options).not.toBe(d.fields[0].options);expect(copy.fields[0].options[0]).not.toBe(d.fields[0].options[0]);
+   const saved=decide(undefined,0,d);expect(saved.revision).toBe(1);
+   d.names.en='Changed';d.fields[0].labels.en='Changed';d.fields[0].options[0].en='Changed';d.fields[0].options.push({ru:'Третий',uz:'Uchinchi',en:'Third'});
+   expect(saved.draft).toEqual(copy);
+   const reloaded=parseRecord(JSON.parse(JSON.stringify(saved)));expect(reloaded).toEqual(saved);expect(dryRun(reloaded.draft,{'field-1':'1'})).toEqual({ok:true,configuration:[],fields:[]});
+   reloaded.draft.fields[0].options[1].en='Reload edit';expect(saved.draft.fields[0].options[1].en).toBe('Second');expect(globalThis.structuredClone).toBeUndefined();
+  }finally{vi.unstubAllGlobals();}
+ });
  it('starts empty without persisting and preserves incomplete drafts',()=>{
   expect(decide(undefined,undefined)).toEqual({format:1,revision:0,draft:emptyDraft()});
   const d=emptyDraft();d.code='DRAFT';const saved=decide(undefined,0,d);
