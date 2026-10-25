@@ -1,3 +1,4 @@
+import {ServiceBuilder} from '../service-builder/ServiceBuilder';
 import {DemoMarketQueue} from './DemoMarketQueue';
 import {demoMarketAccess} from './demo-market-policy';
 import {DemoStayCalendar} from "../calendar/StayDateRange";
@@ -98,7 +99,7 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
     if(current==="timeline")return live?<ApartmentTimelineLive/>:<ApartmentTimeline/>;
     if(current==="host")return <HostDesk step={hostStep} setStep={setHostStep}/>;
     if(current==="finance")return live?<LiveFinance/>:<Finance/>;
-    if(current==="admin")return <AdminPanel orders={orders} act={act}/>;
+    if(current==="admin")return <AdminPanel orders={orders} act={act} localDraft={!live}/>;
     if(current==="integrations")return live?<IntegrationHubLive/>:<IntegrationHub/>;
     if(current==="team")return live?<TeamWorkloadLive role={role}/>:<TeamPanel orders={orders}/>;
     return <Panel title={labels[current]??current}><div className="notice">{t("Module foundation ready for the next backend slice.")}</div></Panel>;
@@ -207,9 +208,9 @@ function Finance(){
   return <div className="staffBoard"><Panel title={t("Finance & invoices")}><div className="compactRows"><div><span>{t("Payment")}</span><b>{t("Booking invoice")}</b><small>{t("Live data required")}</small><i className="status assigned">{t("pending")}</i></div><div><span>{t("Refund")}</span><b>{t("Cancellation refund")}</b><small>{t("Exact policy calculation required")}</small><i className="status assigned">{t("review")}</i></div></div></Panel><Panel title={t("Financial controls")}><div className="notice">{t("No financial KPIs are invented. Revenue, ADR, RevPAR and balances are rendered only from persisted transactions.")}</div></Panel></div>;
 }
 
-function AdminPanel({orders,act}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>}){
+function AdminPanel({orders,act,localDraft}:{orders:ServiceOrder[];act:(id:string,a:"accept"|"start"|"complete")=>void|Promise<void>;localDraft:boolean}){
   const {t,locale}=useLegacyStaffLocale();
-  return <div className="adminGrid"><Panel title={t("Object moderation")}><div className="compactRows">{["Sunrise Apartments","City Loft","Urban Garden"].map((n,i)=><div key={n}><span>{i===0?t("Pending"):t("Published")}</span><b>{n}</b><small>{t("Listing quality / content check")}</small><i className={"status "+(i===0?"assigned":"done")}>{i===0?t("review"):t("active")}</i></div>)}</div></Panel><Panel title={t("Disputes & refunds")}><div className="compactRows"><div><span>{t("Case")}</span><b>{t("Cancellation dispute")}</b><small>{t("Awaiting evidence")}</small><i className="status assigned">{t("open")}</i></div><div><span>{t("Refund")}</span><b>{t("Booking adjustment")}</b><small>{t("Provider-backed calculation required")}</small><i className="status assigned">{t("review")}</i></div></div></Panel><Panel title={t("All service orders")}><Orders orders={orders} act={act}/></Panel></div>;
+  return <div className="adminGrid">{localDraft&&<ServiceBuilder locale={locale}/>}<Panel title={t("Object moderation")}><div className="compactRows">{["Sunrise Apartments","City Loft","Urban Garden"].map((n,i)=><div key={n}><span>{i===0?t("Pending"):t("Published")}</span><b>{n}</b><small>{t("Listing quality / content check")}</small><i className={"status "+(i===0?"assigned":"done")}>{i===0?t("review"):t("active")}</i></div>)}</div></Panel><Panel title={t("Disputes & refunds")}><div className="compactRows"><div><span>{t("Case")}</span><b>{t("Cancellation dispute")}</b><small>{t("Awaiting evidence")}</small><i className="status assigned">{t("open")}</i></div><div><span>{t("Refund")}</span><b>{t("Booking adjustment")}</b><small>{t("Provider-backed calculation required")}</small><i className="status assigned">{t("review")}</i></div></div></Panel><Panel title={t("All service orders")}><Orders orders={orders} act={act}/></Panel></div>;
 }
 
 function IntegrationHub(){
