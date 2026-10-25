@@ -65,11 +65,15 @@ export class BookingController{
     @Headers("x-user-id") userId:string|undefined,
     @Headers("x-membership-id") membershipId:string|undefined,
     @Headers("x-request-id") requestId:string|undefined,
-    @Headers("idempotency-key") idempotencyKey:string|undefined
+    @Headers("idempotency-key") idempotencyKey:string|undefined,
+    @Body() body:{recoveryOnly?:boolean;propertyId?:string}={},
+    @Headers("x-views-service-id") serviceId?:string,
+    @Headers("x-views-staff-session") staffSession?:string
   ){
     try{
       if(!idempotencyKey)throw new BadRequestException("Idempotency-Key is required");
-      return await this.lifecycle.releaseHold(this.actor(organizationId,userId,membershipId,requestId),requireUuid(id,"reservation_id"),idempotencyKey);
+      if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['recoveryOnly','propertyId'].includes(k))||(body.recoveryOnly!==undefined&&body.recoveryOnly!==true))throw new BadRequestException('INVALID_RECOVERY_ONLY');
+      return await this.lifecycle.releaseHold(this.actor(organizationId,userId,membershipId,requestId),requireUuid(id,"reservation_id"),idempotencyKey,{recoveryOnly:body.recoveryOnly,propertyId:body.propertyId===undefined?undefined:requireUuid(body.propertyId,"property_id"),staffSession:serviceId==="local-workspace"?(staffSession??""):undefined});
     }catch(error){throw mapError(error)}
   }
 
@@ -93,8 +97,8 @@ function mapError(error:unknown){
   if(error instanceof HoldNotCreatedError)return new ConflictException(error.message);
   if(error instanceof HoldExpiredError)return new ConflictException(error.message);
   if(error instanceof Error&&error.message==="PROPERTY_FORBIDDEN")return new ForbiddenException(error.message);
-  if(error instanceof Error&&["UNIT_OR_RATE_NOT_FOUND","QUOTE_NOT_FOUND"].includes(error.message))return new NotFoundException(error.message);
-  if(error instanceof Error&&["QUOTE_EXPIRED","HOLD_RECOVERY_NOT_FOUND"].includes(error.message))return new ConflictException(error.message);
+  if(error instanceof Error&&["UNIT_OR_RATE_NOT_FOUND","QUOTE_NOT_FOUND","RESERVATION_NOT_FOUND"].includes(error.message))return new NotFoundException(error.message);
+  if(error instanceof Error&&["QUOTE_EXPIRED","HOLD_RECOVERY_NOT_FOUND","RESERVATION_NOT_ON_HOLD"].includes(error.message))return new ConflictException(error.message);
   if(error instanceof Error&&error.message.startsWith("INVALID_"))return new BadRequestException(error.message);
   return error;
 }

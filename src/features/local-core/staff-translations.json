@@ -1706,5 +1706,25 @@
   "Повторить загрузку": {
     "en": "Retry loading",
     "uz": "Qayta yuklash"
+  },
+  "Проверить результат снятия резерва": {
+    "en": "Check hold release outcome",
+    "uz": "Bandni bekor qilish natijasini tekshirish"
+  },
+  "Ответ на снятие резерва не подтверждён. Новые действия заблокированы до проверки результата.": {
+    "en": "The hold release response is unconfirmed. New actions are blocked until the outcome is checked.",
+    "uz": "Bandni bekor qilish javobi tasdiqlanmagan. Natija tekshirilmaguncha yangi amallar bloklangan."
+  },
+  "Снятие резерва подтверждено. Доступность проверяется новым расчётом.": {
+    "en": "Hold release is confirmed. Availability requires a new quote.",
+    "uz": "Bandni bekor qilish tasdiqlandi. Mavjudlik yangi hisob-kitob bilan tekshiriladi."
+  },
+  "Команда снятия не была применена. Проверьте актуальный статус брони.": {
+    "en": "The release command was not applied. Check the current reservation status.",
+    "uz": "Bekor qilish buyrug‘i bajarilmadi. Bronning joriy holatini tekshiring."
+  },
+  "Последние 50 записей тестового объекта. Снятие удаляет только этот временный резерв; доступность проверяется заново. Финансовая операция не создаётся.": {
+    "en": "The latest 50 records for the test property. Release removes only this temporary hold; availability is checked again. No financial transaction is created.",
+    "uz": "Sinov obyekti uchun so‘nggi 50 yozuv. Bekor qilish faqat shu vaqtinchalik bandni olib tashlaydi; mavjudlik qayta tekshiriladi. Moliyaviy operatsiya yaratilmaydi."
   }
 }
