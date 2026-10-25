@@ -1,0 +1,8 @@
+import {BadRequestException} from '@nestjs/common';
+export const invalid=():never=>{throw new BadRequestException('PARTNER_INPUT_INVALID');};
+export function id(value:unknown):string{if(typeof value!=='string'||! /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value))return invalid();return value.toLowerCase();}
+function object(value:unknown,keys:string[]){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join(',')!==keys.sort().join(','))return invalid();return value as Record<string,unknown>;}
+function revision(value:unknown){if(!Number.isInteger(value)||Number(value)<1||Number(value)>999999999)return invalid();return value as number;}
+export function query(value:Record<string,unknown>,keys:string[]){if(Object.keys(value).some(k=>!keys.includes(k)))invalid();}
+export function offerInput(value:unknown){const v=object(value,['orderId','grantId','expectedOrderRevision','expiresAt']);if(typeof v.expiresAt!=='string'||!/^20\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?Z$/.test(v.expiresAt)||!Number.isFinite(Date.parse(v.expiresAt)))return invalid();if(new Date(v.expiresAt).toISOString()!==(v.expiresAt.includes('.')?v.expiresAt:v.expiresAt.replace('Z','.000Z')))return invalid();return {orderId:id(v.orderId),grantId:id(v.grantId),expectedOrderRevision:revision(v.expectedOrderRevision),expiresAt:new Date(v.expiresAt).toISOString()};}
+export function decisionInput(value:unknown){const v=object(value,['action','expectedRevision','termsVersion']);if(!['accept','reject'].includes(v.action as string)||v.termsVersion!==1)return invalid();return {action:v.action as 'accept'|'reject',expectedRevision:revision(v.expectedRevision),termsVersion:1};}
