@@ -207,3 +207,7 @@ New portable Chromium proofs use synthetic HTTP fixtures only; they cannot estab
 Candidate dist metadata truthfully reports dirty baseline `20decdfff77b2fb59e73496e6e374d1e42e7638b`, since workers built before committing. Runtime-to-commit correspondence above is worker-confirmed; final integrated clean-SHA build, CI, remote release, and APK must be independently rerun by the release owner. These runs do **not** mark any of the 140 screens accepted and do not constitute visual pixel comparison to Canva WebPs.
 
 Remaining independent evidence gaps: H1 true two-page simultaneous claim and lost-origin/Core tombstone races require transaction/backend proofs; Q1 actual actor permission/session revocation and source paging require real disposable Core tests; Android lifecycle/update and queue/calendar smoke await the final integrated APK. M1 private cancellation has no new user-facing screen; its Core test evidence belongs to the Core worker. No live database was used by these browser proofs.
+
+## Обновление 0.22
+
+Начальные 56/84 выше — исторический baseline0.20. После ограниченных H2/A1 реестр содержит 61partial/79pending,0fullyaccepted. По-ID визуальная приёмка не повышена. 0.21 завершена af65312; кандидат 0.22 ещё ждёт итоговыхCI/Android. Семь иллюстративных фото проверены в 0.21, точныеSKU/вода открыты. ДевятьID отдельно исследованы в NINE_SCREEN_VISUAL_AUDIT_20261025.md;84layout-проверки безoverflow неравныvisualparity.

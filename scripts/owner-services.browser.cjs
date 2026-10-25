@@ -2,7 +2,7 @@
 // UI boundary proof with synthetic HTTP responses, not a real Core integration claim.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{chromium}=require('playwright');
 const fixture=require('./fixtures/canva-core-ui.cjs'),root=path.resolve(process.env.VIEWS_JOURNEY_DIST||'dist'),origin='http://127.0.0.1:4173';
-(async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.VIEWS_BROWSER_EXECUTABLE||'/usr/bin/chromium'});try{
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.VIEWS_BROWSER_EXECUTABLE||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined)});try{
  for(const locale of ['ru','uz','en']){
   const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();await page.addInitScript(l=>localStorage.setItem('views.staff.locale',l),locale);
   let fail=false,delayed,delay=false;const errors=[];page.on('pageerror',e=>errors.push(e.message));

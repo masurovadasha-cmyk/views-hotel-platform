@@ -90,6 +90,8 @@ jobs:
       - name: Verify booking recovery with interrupted responses
         run: |
           node scripts/booking-recovery.browser.cjs
+          node scripts/booking-release-recovery.browser.cjs
+          node scripts/owner-services.browser.cjs
           node scripts/use-cleaning-pending-browser.cjs
           node scripts/owner-calendar-recovery.browser.cjs
           node scripts/service-queue.browser.cjs
@@ -99,3 +101,8 @@ jobs:
           node scripts/shared-market.browser.cjs
           node scripts/durable-market.browser.cjs
           node scripts/market-photos.browser.cjs
+      - name: Verify local service draft persistence and navigation
+        run: |
+          node src/features/service-builder/browser.cjs
+          node src/features/service-builder/navigation.browser.cjs
+          node scripts/design-review.browser.cjs
