@@ -1,0 +1,652 @@
+{
+  "sourceCommit": "af653127d781d452aee7c98477eaa9dcb04891d7",
+  "sourceDirty": false,
+  "acceptedScreenIds": [],
+  "referenceFilesUnmodified": true,
+  "records": [
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "ru",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "file": "SG-MK-001-catalogue-ru-390-light.jpg",
+      "sha256": "c14efdff196398e5fb9db60c6da993506805b2e1177e0cb98b32e9974b1b0509"
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "ru",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SG-MK-001-catalogue-ru-390-dark.jpg",
+      "sha256": "e8675515468725684d93c42792b95033b57c8566f0eb06ab4162bb4093aaf4b6"
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "file": "SG-MK-001-catalogue-ru-1440-light.jpg",
+      "sha256": "713e52666ff7bb591e35e2c78512109780a96493b275e6eae6d0c7c7d8361a11"
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SG-MK-001-catalogue-ru-1440-dark.jpg",
+      "sha256": "99f80df03bc076553e0f5a373adcd1ef2d4bda86a3f0e8def91879e281001a00"
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "ru",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "file": "SG-MK-002-review-ru-390-light.jpg",
+      "sha256": "954c14a575d0e55a21effaaee2436e4f14c128be004150699856874396f399b0"
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "ru",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SG-MK-002-review-ru-390-dark.jpg",
+      "sha256": "b1f22b1ba52682c5e4967c7de00a23fd830c758e1496227c45f2618526a70610"
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "file": "SG-MK-002-review-ru-1440-light.jpg",
+      "sha256": "87672460cb550f93578c0d007b4a0fc83dcb9efa80cb95a8640daf8485ffe3a0"
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SG-MK-002-review-ru-1440-dark.jpg",
+      "sha256": "8565314e953c2489603b542def671f7ff2ab15684946f8773e694fe858fa4901"
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "ru",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "file": "SG-MK-004-demo-order-ru-390-light.jpg",
+      "sha256": "891d28e11d9d66b2348a7cef2e3b23099b9155557392780a46583aa5e4ea69f6"
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "ru",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SG-MK-004-demo-order-ru-390-dark.jpg",
+      "sha256": "071cce1b0d69fac119922168f2d20abce5da1af7adada957b1390f873102baa0"
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "file": "SG-MK-004-demo-order-ru-1440-light.jpg",
+      "sha256": "b815b267edc33cf5eb6306869c7d6eb6194963d09fe21f71527db27356f8d042"
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SG-MK-004-demo-order-ru-1440-dark.jpg",
+      "sha256": "c27eb2fc27968ae0ef667e36427ecdaf866ed57ecea38dca79486eed72c7bc12"
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "ru",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "file": "SD-MK-001-002-SS-MK-001-queue-analogue-ru-390-light.jpg",
+      "sha256": "8a98f0fb404aba4d240e794d29961aae66c0e210fd3c58efed20fc0b506f9d29"
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "ru",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SD-MK-001-002-SS-MK-001-queue-analogue-ru-390-dark.jpg",
+      "sha256": "cc97ee8ab01ffca13c8e42748dd6600800f214b3cea748c517d0314db21c6a2c"
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "file": "SD-MK-001-002-SS-MK-001-queue-analogue-ru-1440-light.jpg",
+      "sha256": "a052b5f8b3db64dd0adf01c6add2e0a4ce79159c4fc872e1b78bc79f5d7435d8"
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SD-MK-001-002-SS-MK-001-queue-analogue-ru-1440-dark.jpg",
+      "sha256": "a26f9cb741bcfcd40dc70c7c10914a80fea2c01f509eb198ba316f9f28051279"
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "ru",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "file": "SS-MK-002-confirm-analogue-ru-390-light.jpg",
+      "sha256": "3622123226a6e0dfcac1d6f169e91e45ab361e7017544a06902eee645afede94"
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "ru",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SS-MK-002-confirm-analogue-ru-390-dark.jpg",
+      "sha256": "d2c0b29fed17569a5cfeff8659774e77505135e04296bc4224727adb5cf5e843"
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "file": "SS-MK-002-confirm-analogue-ru-1440-light.jpg",
+      "sha256": "884fc263484454ee3a5b977548aeae0dbeb28149953e2aafc545d6f57410cfe5"
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SS-MK-002-confirm-analogue-ru-1440-dark.jpg",
+      "sha256": "70aa5089aa1f721c7146c898b660b52bdcf80a7eca377fcdffd7e1c78e72efb6"
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "en",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "en",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "en",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "en",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "en",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "en",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "en",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "en",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "en",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "en",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "en",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "en",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "en",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "en",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "en",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "en",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "en",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "en",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "en",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "en",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "uz",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "uz",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-001-catalogue",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "uz",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "uz",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-002-review",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "uz",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "uz",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SG-MK-004-demo-order",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "uz",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "uz",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-MK-001-002-SS-MK-001-queue-analogue",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "uz",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "uz",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SS-MK-002-confirm-analogue",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "en",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "en",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "en",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "en",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "en",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "en",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "en",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "en",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "ru",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "file": "SD-GN-001-core-queue-ru-390-light.jpg",
+      "sha256": "c1790076388314503337edfb75ca9fd5935098d274fc690536f4d0f94fb2f699"
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "ru",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SD-GN-001-core-queue-ru-390-dark.jpg",
+      "sha256": "d1964b3e33218d910d9bb46e840209e35c91a6c67e017c1ad78a40f09ecd76e1"
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "file": "SD-GN-001-core-queue-ru-1440-light.jpg",
+      "sha256": "bc6b0b89ec6a3b1bf6f1628da7c66fd8aca57b45d88a1f58d852546748d8a869"
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SD-GN-001-core-queue-ru-1440-dark.jpg",
+      "sha256": "ec45e58988031aaa4c67b7aaea2d1092e3aab3504254f6d9dfe2df2b03952f29"
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "ru",
+      "width": 390,
+      "theme": "light",
+      "overflow": false,
+      "file": "SD-GN-004-core-summary-ru-390-light.jpg",
+      "sha256": "c13e84bf34c820e9fe74b671898f66242148919351acc6d472dea325753fceef"
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "ru",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SD-GN-004-core-summary-ru-390-dark.jpg",
+      "sha256": "54edb9147a7253e7bce81397d30179fb8ac52c3eb2811d236ef807e380b464be"
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false,
+      "file": "SD-GN-004-core-summary-ru-1440-light.jpg",
+      "sha256": "714634daf1276bc8586a044dcdbd98d3dede07704bac25f1fc556cbfc8c79fdb"
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "ru",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false,
+      "file": "SD-GN-004-core-summary-ru-1440-dark.jpg",
+      "sha256": "85e8d2ec005d37d5ce0549e630ada6fd2d77afa9700522ec8fdfbd3ccba626ca"
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "uz",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "uz",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-001-core-queue",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "uz",
+      "width": 390,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "uz",
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "light",
+      "overflow": false
+    },
+    {
+      "label": "SD-GN-004-core-summary",
+      "locale": "uz",
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    }
+  ]
+}
