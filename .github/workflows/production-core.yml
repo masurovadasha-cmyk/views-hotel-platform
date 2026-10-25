@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, "staging/**", "stage4/**", "stage5/**", "stage6/**", "stage7/**"]
     paths:
+      # Every release candidate must carry exact-SHA Core evidence.
+      - "release.config.json"
       - "pnpm-lock.yaml"
       - "scripts/integration-schema.acceptance.cjs"
       - "scripts/migration-upgrade-proof.cjs"
@@ -15,11 +17,15 @@ on:
       - "docker-compose.core-tunnel.yml"
       - "scripts/core-origin-isolation-gate.mjs"
       - "scripts/guest-email-http-proof.cjs"
+      - "scripts/operations-queue-http-proof.cjs"
+      - "scripts/wave2-core-http-proof.cjs"
       - "scripts/fixtures/guest-email-smtp.cjs"
       - ".github/workflows/production-core.yml"
   pull_request:
     branches: [main, "staging/master-reference-v1"]
     paths:
+      # Every release candidate must carry exact-SHA Core evidence.
+      - "release.config.json"
       - "pnpm-lock.yaml"
       - "scripts/integration-schema.acceptance.cjs"
       - "scripts/migration-upgrade-proof.cjs"
@@ -30,6 +36,8 @@ on:
       - "docker-compose.core-tunnel.yml"
       - "scripts/core-origin-isolation-gate.mjs"
       - "scripts/guest-email-http-proof.cjs"
+      - "scripts/operations-queue-http-proof.cjs"
+      - "scripts/wave2-core-http-proof.cjs"
       - "scripts/fixtures/guest-email-smtp.cjs"
 
 jobs:
