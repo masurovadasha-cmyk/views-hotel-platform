@@ -15,6 +15,7 @@ async function safe<T>(fn:()=>Promise<T>):Promise<T>{try{return await fn();}catc
 @Injectable()
 export class PartnerService{
  constructor(private readonly db:DatabaseService){}
+ async session(token:unknown){partnerEnabled();const session=hash(token);return safe(async()=>(await this.db.query('SELECT app.partner_session($1) result',[session])).rows[0].result);}
  async dispatch(actor:RequestActorContext,token:unknown,q:Record<string,unknown>){partnerEnabled();query(q,['propertyId','after']);const session=hash(token),property=id(q.propertyId),after=q.after===undefined?null:id(q.after);return safe(()=>this.db.withActor(actor,async c=>{await c.query("SET LOCAL statement_timeout='5s'");return (await c.query('SELECT app.partner_dispatch_list($1,$2,$3) result',[session,property,after])).rows[0].result;}));}
  async offer(actor:RequestActorContext,token:unknown,key:unknown,raw:unknown){partnerEnabled();const session=hash(token),command=id(key),body=offerInput(raw);return safe(()=>this.db.withActor(actor,async c=>{await c.query("SET LOCAL statement_timeout='10s'");return (await c.query('SELECT app.partner_offer($1,$2,$3) result',[session,command,body])).rows[0].result;}));}
  async list(token:unknown,q:Record<string,unknown>){partnerEnabled();query(q,['after']);const session=hash(token),after=q.after===undefined?null:id(q.after);return safe(()=>this.db.withOrganization('',async c=>{await c.query("SET LOCAL statement_timeout='5s'");return (await c.query('SELECT app.partner_assignment_list($1,$2) result',[session,after])).rows[0].result;}));}

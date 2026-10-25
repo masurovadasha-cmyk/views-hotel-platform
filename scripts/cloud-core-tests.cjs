@@ -112,9 +112,12 @@ const run = args => {
       await require('../apps/api/db/tests/booking-hold-authorization.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
       await require('../apps/api/db/tests/owner-calendar-recovery.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
       await require('../apps/api/db/tests/booking-release-recovery.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
+      await require('../apps/api/db/tests/sla-policy-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
+      await require('../apps/api/db/tests/partner-foundation.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
       await require('../apps/api/db/tests/owner-services.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
     }
     if(exitCode===0&&process.env.VIEWS_HOUSEKEEPING_HTTP_PROOF==='true')await require('./housekeeping-connected-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
+    if(exitCode===0)await require('./wave3-http-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
     if(exitCode===0&&process.env.VIEWS_GUEST_EMAIL_HTTP_PROOF==='true')await require('./guest-email-http-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
   } finally {
     if (runtime) await runtime.end();

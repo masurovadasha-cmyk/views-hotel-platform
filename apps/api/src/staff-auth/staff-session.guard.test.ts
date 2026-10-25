@@ -108,3 +108,13 @@ describe('staff session enforcement on the trusted local gateway',()=>{
   expect(()=>requireStaffPermission({...identity,role:'manager',permissions:[]},'reservation.manage')).toThrow('STAFF_PERMISSION_DENIED');
  });
 });
+
+describe('wave3 exact staff route boundary',()=>{
+ it('admits only SLA drafts/simulation and partner dispatch, never partner identity routes',async()=>{
+  const guard=new StaffSessionGuard({resolve:async()=>identity} as never),reader=new StaffSessionGuard({resolve:async()=>({...identity,permissions:['reservation.read']})} as never);
+  for(const [path,method] of [['/v1/sla-policy','GET'],['/v1/sla-policy/drafts','POST'],['/v1/sla-policy/simulate','POST'],['/v1/partner-dispatch','GET'],['/v1/partner-dispatch/offers','POST']]){
+   expect(await guard.canActivate(context(request(path,method)))).toBe(true);await expect(reader.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  }
+  for(const [path,method] of [['/v1/partner-assignments','GET'],['/v1/partner-assignments/session','GET'],['/v1/sla-policy/publish','POST'],['/v1/partner-dispatch/offers','GET'],['/v1/partner-dispatch','POST']])await expect(guard.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_ROUTE_DENIED');
+ });
+});

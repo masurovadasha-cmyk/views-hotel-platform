@@ -37,8 +37,8 @@ CREATE UNIQUE INDEX partner_assignment_active_order ON partner_private.assignmen
 CREATE INDEX partner_assignment_grant_page ON partner_private.assignments(grant_id,id);
 CREATE TABLE partner_private.commands(
  actor_kind text NOT NULL CHECK(actor_kind IN ('staff','partner')),actor_id uuid NOT NULL,command_key uuid NOT NULL,
- payload jsonb NOT NULL,assignment_id uuid NOT NULL REFERENCES partner_private.assignments(id),created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
- PRIMARY KEY(actor_kind,actor_id,command_key)
+ payload jsonb NOT NULL,assignment_id uuid REFERENCES partner_private.assignments(id),outcome text NOT NULL DEFAULT 'applied' CHECK(outcome IN ('applied','not_applied')),created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(actor_kind,actor_id,command_key),CHECK((outcome='applied')=(assignment_id IS NOT NULL))
 );
 REVOKE ALL ON ALL TABLES IN SCHEMA partner_private FROM PUBLIC;
 
@@ -93,12 +93,12 @@ $$;
 CREATE FUNCTION partner_private.record(actor_kind text,actor_id uuid,key uuid,payload jsonb,a partner_private.assignments) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
 BEGIN
- INSERT INTO partner_private.commands VALUES(actor_kind,actor_id,key,payload,a.id,clock_timestamp());
+ INSERT INTO partner_private.commands(actor_kind,actor_id,command_key,payload,assignment_id) VALUES(actor_kind,actor_id,key,payload,a.id);
  INSERT INTO public.audit_log(organization_id,actor_user_id,actor_membership_id,action,entity_type,entity_id,after_state)
  VALUES(a.organization_id,CASE WHEN actor_kind='staff' THEN actor_id ELSE NULL END,CASE WHEN actor_kind='staff' THEN app.current_membership_id() ELSE NULL END,'partner.assignment.'||a.status,'partner_assignment',a.id,jsonb_build_object('status',a.status,'revision',a.revision,'synthetic',true));
  INSERT INTO public.outbox_events(organization_id,aggregate_type,aggregate_id,event_type,idempotency_key,payload)
  VALUES(a.organization_id,'partner_assignment',a.id,'partner.assignment.'||a.status,'partner:'||actor_kind||':'||actor_id||':'||key,partner_private.receipt(a));
- RETURN partner_private.receipt(a)||jsonb_build_object('idempotentReplay',false);
+ RETURN partner_private.receipt(a)||jsonb_build_object('idempotentReplay',false,'outcome','applied','commandKey',key);
 END $$;
 
 CREATE FUNCTION app.partner_dispatch_list(session_hash text,property uuid,after_id uuid) RETURNS jsonb
@@ -120,8 +120,10 @@ END $$;
 
 CREATE FUNCTION app.partner_offer(session_hash text,key uuid,body jsonb) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=pg_catalog AS $$
-DECLARE o public.service_orders;c public.concierge_requests;g partner_private.grants;a partner_private.assignments;prior partner_private.commands;who uuid;expiry timestamptz;result jsonb;
+DECLARE o public.service_orders;c public.concierge_requests;g partner_private.grants;a partner_private.assignments;prior partner_private.commands;who uuid;expiry timestamptz;result jsonb;recovery boolean:=body->'recoveryOnly'='true'::jsonb;
 BEGIN
+ IF body ? 'recoveryOnly' AND body->'recoveryOnly' IS DISTINCT FROM 'true'::jsonb THEN RAISE EXCEPTION 'PARTNER_INPUT_INVALID' USING ERRCODE='22023'; END IF;
+ body:=body-'recoveryOnly';
  IF key IS NULL OR jsonb_typeof(body) IS DISTINCT FROM 'object' OR (SELECT array_agg(k ORDER BY k) FROM jsonb_object_keys(body) k) IS DISTINCT FROM ARRAY['expectedOrderRevision','expiresAt','grantId','orderId']
  OR jsonb_typeof(body->'expectedOrderRevision') IS DISTINCT FROM 'number' OR body->>'expectedOrderRevision' !~ '^[1-9][0-9]{0,8}$' THEN RAISE EXCEPTION 'PARTNER_INPUT_INVALID' USING ERRCODE='22023'; END IF;
  SELECT * INTO o FROM public.service_orders WHERE id=(body->>'orderId')::uuid;
@@ -137,9 +139,16 @@ BEGIN
  SELECT * INTO prior FROM partner_private.commands WHERE actor_kind='staff' AND actor_id=who AND command_key=key;
  IF prior.command_key IS NOT NULL THEN
   IF prior.payload IS DISTINCT FROM body THEN RAISE EXCEPTION 'PARTNER_IDEMPOTENCY_CONFLICT' USING ERRCODE='23514'; END IF;
+  IF prior.outcome='not_applied' THEN RETURN jsonb_build_object('outcome','not_applied','assignmentId',NULL,'synthetic',true,'idempotentReplay',true,'commandKey',key); END IF;
   SELECT * INTO a FROM partner_private.assignments WHERE id=prior.assignment_id;
   PERFORM partner_private.staff_authorize(session_hash,o.organization_id,o.property_id);
-  RETURN partner_private.receipt(a)||jsonb_build_object('idempotentReplay',true);
+  IF prior.outcome='not_applied' THEN RETURN jsonb_build_object('outcome','not_applied','assignmentId',NULL,'synthetic',true,'idempotentReplay',true,'commandKey',key); END IF;
+  RETURN partner_private.receipt(a)||jsonb_build_object('idempotentReplay',true,'outcome','applied','commandKey',key);
+ END IF;
+ IF recovery THEN
+  INSERT INTO partner_private.commands(actor_kind,actor_id,command_key,payload,outcome) VALUES('staff',who,key,body,'not_applied');
+  PERFORM partner_private.staff_authorize(session_hash,o.organization_id,o.property_id);
+  RETURN jsonb_build_object('outcome','not_applied','assignmentId',NULL,'synthetic',true,'idempotentReplay',false,'commandKey',key);
  END IF;
  IF c.revision<>(body->>'expectedOrderRevision')::integer THEN RAISE EXCEPTION 'PARTNER_REVISION_CHANGED' USING ERRCODE='23514'; END IF;
  IF c.stage IN ('closed','cancelled') OR EXISTS(SELECT 1 FROM public.service_orders WHERE id=o.id AND status IN ('completed','cancelled')) THEN RAISE EXCEPTION 'PARTNER_TRANSITION_INVALID' USING ERRCODE='23514'; END IF;
@@ -168,9 +177,11 @@ BEGIN
 END $$;
 CREATE FUNCTION app.partner_decide(session_hash text,assignment uuid,key uuid,body jsonb) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=pg_catalog AS $$
-DECLARE g partner_private.grants;a partner_private.assignments;c public.concierge_requests;prior partner_private.commands;who uuid;payload jsonb;result jsonb;
+DECLARE g partner_private.grants;a partner_private.assignments;c public.concierge_requests;prior partner_private.commands;who uuid;payload jsonb;result jsonb;recovery boolean:=body->'recoveryOnly'='true'::jsonb;
 BEGIN
  g:=partner_private.session_grant(session_hash);
+ IF body ? 'recoveryOnly' AND body->'recoveryOnly' IS DISTINCT FROM 'true'::jsonb THEN RAISE EXCEPTION 'PARTNER_INPUT_INVALID' USING ERRCODE='22023'; END IF;
+ body:=body-'recoveryOnly';
  IF key IS NULL OR jsonb_typeof(body) IS DISTINCT FROM 'object' OR (SELECT array_agg(k ORDER BY k) FROM jsonb_object_keys(body) k) IS DISTINCT FROM ARRAY['action','expectedRevision','termsVersion']
  OR body->>'action' NOT IN ('accept','reject') OR body->>'action' IS NULL OR jsonb_typeof(body->'expectedRevision') IS DISTINCT FROM 'number' OR body->>'expectedRevision' !~ '^[1-9][0-9]{0,8}$' OR body->'termsVersion' IS DISTINCT FROM '1'::jsonb THEN RAISE EXCEPTION 'PARTNER_INPUT_INVALID' USING ERRCODE='22023'; END IF;
  SELECT principal_id INTO who FROM partner_private.sessions WHERE token_hash=session_hash;
@@ -187,7 +198,13 @@ BEGIN
  IF prior.command_key IS NOT NULL THEN
   IF prior.payload IS DISTINCT FROM payload THEN RAISE EXCEPTION 'PARTNER_IDEMPOTENCY_CONFLICT' USING ERRCODE='23514'; END IF;
   PERFORM partner_private.session_grant(session_hash);
-  RETURN partner_private.receipt(a)||jsonb_build_object('idempotentReplay',true);
+  IF prior.outcome='not_applied' THEN RETURN jsonb_build_object('outcome','not_applied','assignmentId',NULL,'synthetic',true,'idempotentReplay',true,'commandKey',key); END IF;
+  RETURN partner_private.receipt(a)||jsonb_build_object('idempotentReplay',true,'outcome','applied','commandKey',key);
+ END IF;
+ IF recovery THEN
+  INSERT INTO partner_private.commands(actor_kind,actor_id,command_key,payload,outcome) VALUES('partner',who,key,payload,'not_applied');
+  PERFORM partner_private.session_grant(session_hash);
+  RETURN jsonb_build_object('outcome','not_applied','assignmentId',NULL,'synthetic',true,'idempotentReplay',false,'commandKey',key);
  END IF;
  IF a.revision<>(body->>'expectedRevision')::integer THEN RAISE EXCEPTION 'PARTNER_REVISION_CHANGED' USING ERRCODE='23514'; END IF;
  IF a.expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'PARTNER_EXPIRED' USING ERRCODE='23514'; END IF;
@@ -199,6 +216,15 @@ BEGIN
  PERFORM partner_private.session_grant(session_hash);
  RETURN result;
 END $$;
+CREATE FUNCTION app.partner_session(session_hash text) RETURNS jsonb
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE g partner_private.grants;result jsonb;
+BEGIN
+ g:=partner_private.session_grant(session_hash);
+ SELECT jsonb_build_object('principalId',principal_id,'grantId',g.id,'expiresAt',expires_at,'synthetic',true) INTO result FROM partner_private.sessions WHERE token_hash=session_hash;
+ PERFORM partner_private.session_grant(session_hash);RETURN result;
+END $$;
+REVOKE ALL ON FUNCTION app.partner_session(text) FROM PUBLIC;
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA partner_private FROM PUBLIC;
 REVOKE ALL ON FUNCTION app.partner_dispatch_list(text,uuid,uuid),app.partner_offer(text,uuid,jsonb),app.partner_assignment_list(text,uuid),app.partner_decide(text,uuid,uuid,jsonb) FROM PUBLIC;
 COMMIT;

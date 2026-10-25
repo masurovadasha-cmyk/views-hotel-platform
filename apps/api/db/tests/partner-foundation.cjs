@@ -33,7 +33,7 @@ module.exports=async function({admin,runtimeUrl}){
  try{
   assert.deepEqual((await pool.query('SELECT rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user')).rows[0],{rolsuper:false,rolbypassrls:false});
   const s=await staff(),f=await fixture(),before=await snapshot(f),key=randomUUID(),a=await service.offer(s.actor,s.raw,key,f.body);
-  assert.equal(a.status,'offered');assert.deepEqual(Object.keys(a).sort(),['assignmentId','kind','status','revision','termsVersion','requestedFor','expiresAt','synthetic','idempotentReplay'].sort());
+  assert.equal(a.status,'offered');assert.deepEqual(Object.keys(a).sort(),['assignmentId','kind','status','revision','termsVersion','requestedFor','expiresAt','synthetic','idempotentReplay','outcome','commandKey'].sort());
   assert.equal((await service.offer(s.actor,s.raw,key,f.body)).idempotentReplay,true);
   await assert.rejects(service.offer(s.actor,s.raw,key,{...f.body,expectedOrderRevision:2}),/PARTNER_IDEMPOTENCY_CONFLICT/);
   const acceptedKey=randomUUID(),accepted=await decide(f,a,acceptedKey);assert.equal(accepted.status,'accepted');assert.equal(accepted.revision,2);
@@ -73,6 +73,18 @@ module.exports=async function({admin,runtimeUrl}){
   await admin.query(`CREATE TRIGGER partner_proof_failure BEFORE INSERT ON outbox_events FOR EACH ROW WHEN (NEW.aggregate_id='${rollbackOffer.assignmentId}'::uuid AND NEW.event_type='partner.assignment.accepted') EXECUTE FUNCTION pg_temp.partner_fail()`);
   try{await assert.rejects(decide(rollback,rollbackOffer,rollbackKey),/SYNTHETIC_OUTBOX_FAILURE/);}finally{await admin.query('DROP TRIGGER partner_proof_failure ON outbox_events');}
   assert.equal((await admin.query('SELECT status FROM partner_private.assignments WHERE id=$1',[rollbackOffer.assignmentId])).rows[0].status,'offered');assert.equal((await admin.query('SELECT count(*)::int n FROM partner_private.commands WHERE command_key=$1',[rollbackKey])).rows[0].n,0);assert.equal((await decide(rollback,rollbackOffer,rollbackKey)).status,'accepted');
+  // A 409 is not terminal: fence recovery before an incumbent can reject and free the slot.
+  const fenced=await fixture(),incumbent=await service.offer(s.actor,s.raw,randomUUID(),fenced.body),lateKey=randomUUID();
+  await assert.rejects(service.offer(s.actor,s.raw,lateKey,fenced.body),/PARTNER_ALREADY_ASSIGNED/);
+  assert.deepEqual(await service.offer(s.actor,s.raw,lateKey,{...fenced.body,recoveryOnly:true}),{outcome:'not_applied',assignmentId:null,synthetic:true,idempotentReplay:false,commandKey:lateKey});
+  await decide(fenced,incumbent,randomUUID(),{action:'reject',expectedRevision:1,termsVersion:1});
+  assert.equal((await service.offer(s.actor,s.raw,lateKey,fenced.body)).outcome,'not_applied');
+  assert.equal((await admin.query("SELECT count(*)::int n FROM partner_private.assignments WHERE order_id=$1 AND status IN ('offered','accepted')",[fenced.order])).rows[0].n,0);
+  const fencedDecision=await fixture(),fencedOffer=await service.offer(s.actor,s.raw,randomUUID(),fencedDecision.body),fencedKey=randomUUID();
+  assert.equal((await decide(fencedDecision,fencedOffer,fencedKey,{action:'accept',expectedRevision:1,termsVersion:1,recoveryOnly:true})).outcome,'not_applied');
+  assert.equal((await decide(fencedDecision,fencedOffer,fencedKey)).outcome,'not_applied');
+  assert.equal((await admin.query('SELECT status FROM partner_private.assignments WHERE id=$1',[fencedOffer.assignmentId])).rows[0].status,'offered');
+  const concurrent=await fixture(),concurrentKey=randomUUID(),outcomes=await Promise.all([service.offer(s.actor,s.raw,concurrentKey,{...concurrent.body,recoveryOnly:true}),service.offer(s.actor,s.raw,concurrentKey,concurrent.body)]);assert.equal(outcomes[0].outcome,outcomes[1].outcome);
   // Stable bounded UUID paging; history fixtures are synthetic rejected offers.
   for(let i=0;i<23;i++)await admin.query("INSERT INTO partner_private.assignments(organization_id,property_id,order_id,grant_id,grant_version,source_revision,status,requested_for,expires_at) VALUES($1,$2,$3,$4,1,1,'rejected',clock_timestamp()+interval '1 day',clock_timestamp()+interval '10 minutes')",[org,property,duplicate.order,duplicate.grant]);
   const first=await service.list(duplicate.raw,{}),second=await service.list(duplicate.raw,{after:first.nextCursor});assert.equal(first.items.length,20);assert.equal(second.items.length,4);assert.equal(second.nextCursor,null);assert(second.items.every(row=>row.assignmentId>first.nextCursor&&!first.items.some(old=>old.assignmentId===row.assignmentId)));
@@ -100,6 +112,6 @@ module.exports=async function({admin,runtimeUrl}){
   await admin.query('UPDATE partner_private.grants SET active=false WHERE id=$1',[httpFixture.grant]);await admin.query('UPDATE partner_private.grants SET active=true WHERE id=$1',[httpFixture.grant]);await assert.rejects(service.list(httpFixture.raw,{}),/PARTNER_SESSION_REQUIRED/);
   const noPublic=(await admin.query("SELECT count(*)::int n FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace, LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE (n.nspname='partner_private' OR n.nspname='app' AND p.proname LIKE 'partner_%') AND a.grantee=0 AND a.privilege_type='EXECUTE'")).rows[0].n;assert.equal(noPublic,0);
   await assert.rejects(pool.query('SELECT * FROM partner_private.sessions'),/permission denied/);
-  console.log('Partner foundation: real SQL scope/PII projection, idempotency, competing decisions, eight observed-wait revocations, bounded pagination, atomic rollback, unchanged source/stock/folio and loopback Nest HTTP input isolation PASS.');
+  console.log('Partner foundation: real SQL scope/PII projection, idempotency, competing decisions, eight observed-wait revocations, bounded pagination, atomic rollback, delayed-original recovery fences, unchanged source/stock/folio and loopback Nest HTTP input isolation PASS.');
  }finally{if(app)await app.close();await pool.end();for(const k of ['NODE_ENV','VIEWS_LOCAL_REHEARSAL','VIEWS_PARTNER_PILOT_ENABLED'])if(old[k]===undefined)delete process.env[k];else process.env[k]=old[k];}
 };
