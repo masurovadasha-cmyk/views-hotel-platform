@@ -1,0 +1,13 @@
+import {describe,it,expect} from 'vitest';
+import {parseCalendarAttempt,parseCalendarBody,parseCalendarReceipt} from './owner-calendar-recovery';
+import {recoveryScopeKey} from './booking-recovery';
+const id='00000000-0000-4000-8000-000000000001',scope={organizationId:id,userId:id,membershipId:id,propertyId:id};
+const body={action:'block' as const,unitId:id,kind:'maintenance' as const,start:'2027-01-01T14:00+05:00',end:'2027-01-02T12:00+05:00'},attempt={version:1 as const,scope,body,key:id};
+describe('owner calendar recovery boundary',()=>{
+ it('preserves exact immutable command without credentials',()=>{expect(parseCalendarAttempt(attempt,scope)).toEqual(attempt);for(const patch of [{token:'secret'},{csrf:'secret'},{version:2}])expect(()=>parseCalendarAttempt({...attempt,...patch},scope)).toThrow();expect(()=>parseCalendarAttempt({...attempt,body:{...body,recoveryOnly:true}},scope)).toThrow();});
+ it('isolates all authoritative scope fields',()=>{for(const key of Object.keys(scope)){const other={...scope,[key]:'00000000-0000-4000-8000-000000000002'};expect(recoveryScopeKey(other)).not.toBe(recoveryScopeKey(scope));expect(()=>parseCalendarAttempt(attempt,other)).toThrow();}});
+ it('validates dates and limits without silently correcting the request',()=>{for(const patch of [{start:'2027-02-30T14:00+05:00'},{end:body.start},{end:'2029-01-02T12:00+05:00'},{kind:'payment_hold'},{start:'2027-01-01T09:00Z'}])expect(()=>parseCalendarBody({...body,...patch})).toThrow();});
+ it('accepts current absence and changed interval without claiming an active block',()=>{for(const currentState of ['blocked','absent','changed'])expect(parseCalendarReceipt({propertyId:id,periodId:id,status:'blocked',currentState,idempotentReplay:true},attempt).currentState).toBe(currentState);});
+ it('accepts only explicit definitive not-applied receipts',()=>{const receipt={propertyId:id,periodId:null,status:'not_applied',currentState:'absent',idempotentReplay:false};expect(parseCalendarReceipt(receipt,attempt).status).toBe('not_applied');for(const patch of [{propertyId:'other'},{currentState:'blocked'},{periodId:id},{status:'unknown'},{idempotentReplay:undefined}])expect(()=>parseCalendarReceipt({...receipt,...patch},attempt)).toThrow();});
+ it('requires matching action and removal target',()=>{const remove={...attempt,body:{action:'unblock' as const,periodId:id}},receipt={propertyId:id,periodId:id,status:'unblocked',currentState:'absent',idempotentReplay:true};expect(parseCalendarReceipt(receipt,remove)).toEqual(receipt);expect(()=>parseCalendarReceipt(receipt,attempt)).toThrow();expect(()=>parseCalendarReceipt({...receipt,periodId:'00000000-0000-4000-8000-000000000002'},remove)).toThrow();});
+});

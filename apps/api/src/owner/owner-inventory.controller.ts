@@ -20,9 +20,9 @@ export class OwnerInventoryController{
  @Post(':propertyId/rates/:rateId') @Header('Cache-Control','no-store')
  ratesUpdate(@Headers() h:IncomingHttpHeaders,@Param('propertyId') id:string,@Param('rateId') rate:string,@Body() body:unknown){return this.rates.update(actor(h),id,rate,body,single(h['idempotency-key'])||'');}
  @Get(':propertyId/calendar') @Header('Cache-Control','no-store')
- calendarList(@Headers() h:IncomingHttpHeaders,@Param('propertyId') id:string,@Query('from') from:unknown,@Query('to') to:unknown){return this.calendar.list(actor(h),id,from,to);}
+ calendarList(@Headers() h:IncomingHttpHeaders,@Param('propertyId') id:string,@Query('from') from:unknown,@Query('to') to:unknown){return this.calendar.list(actor(h),id,from,to,single(h['x-views-service-id'])==='local-workspace'?(single(h['x-views-staff-session'])||''):undefined);}
  @Post(':propertyId/calendar') @Header('Cache-Control','no-store')
- calendarMutate(@Headers() h:IncomingHttpHeaders,@Param('propertyId') id:string,@Body() body:unknown){return this.calendar.mutate(actor(h),id,body,single(h['idempotency-key'])||'');}
+ calendarMutate(@Headers() h:IncomingHttpHeaders,@Param('propertyId') id:string,@Body() body:unknown){return this.calendar.mutate(actor(h),id,body,single(h['idempotency-key'])||'',single(h['x-views-service-id'])==='local-workspace'?(single(h['x-views-staff-session'])||''):undefined);}
  @Get() @Header('Cache-Control','no-store')
  list(@Headers() h:IncomingHttpHeaders){return this.inventory.list(actor(h));}
  @Get(':propertyId') @Header('Cache-Control','no-store')

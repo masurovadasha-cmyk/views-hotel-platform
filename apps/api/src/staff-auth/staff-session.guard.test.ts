@@ -83,6 +83,22 @@ describe('staff session enforcement on the trusted local gateway',()=>{
    await expect(guard.canActivate(context(request(path)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
   }
  });
+ it('admits only the read-only grouped queue for existing service permissions',async()=>{
+  const path='/v1/service-orders/queue';
+  for(const permission of ['reservation.manage','housekeeping.work','stock.manage','concierge.work']){
+   const guard=new StaffSessionGuard({resolve:async()=>({...identity,permissions:[permission]})} as never);
+   expect(await guard.canActivate(context(request(path+'?propertyId='+identity.organizationId)))).toBe(true);
+   for(const method of ['POST','DELETE','PATCH'])await expect(guard.canActivate(context(request(path,method)))).rejects.toThrow('STAFF_ROUTE_DENIED');
+   await expect(guard.canActivate(context(request(path+'/export')))).rejects.toThrow('STAFF_ROUTE_DENIED');
+   await expect(guard.canActivate(context(request(path,'GET',{'x-user-id':identity.membershipId})))).rejects.toThrow('STAFF_ACTOR_MISMATCH');
+  }
+  for(const permissions of [['finance.read'],['reservation.read'],[]]){
+   const guard=new StaffSessionGuard({resolve:async()=>({...identity,permissions})} as never);
+   await expect(guard.canActivate(context(request(path)))).rejects.toThrow('STAFF_PERMISSION_DENIED');
+  }
+  const revoked=new StaffSessionGuard({resolve:async()=>{throw Error('STAFF_SESSION_REQUIRED');}} as never);
+  await expect(revoked.canActivate(context(request(path)))).rejects.toThrow('STAFF_SESSION_REQUIRED');
+ });
  it('default-off production boundary is not an implicit release',()=>{
   const old={...process.env};try{process.env.NODE_ENV='production';process.env.VIEWS_STAFF_AUTH_PILOT_ENABLED='true';process.env.VIEWS_LOCAL_REHEARSAL='true';
    expect(()=>new StaffAuthService({} as never).scope()).toThrow('STAFF_AUTH_NOT_ACTIVATED');

@@ -2,6 +2,8 @@
 
 Standalone hospitality platform for VIEWS.
 
+Current verified baseline and the 26 October work queue: [25 October backlog](docs/OCT25_VERIFIED_BACKLOG.md), [per-screen QA matrix](docs/OCT25_QA_MATRIX.md). Older stage documents are historical checkpoints, not the current release status.
+
 **Master Reference v1.0** — premium black / warm ivory / white / champagne-gold experience with strict Guest vs Staff/Admin separation.
 
 ## Stack

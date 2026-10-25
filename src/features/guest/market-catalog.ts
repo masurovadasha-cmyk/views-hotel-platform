@@ -1,15 +1,26 @@
+import photoSources from '../../assets/market/sources.json';
+import teaPhoto from '../../assets/market/tea.webp';
+import coffeePhoto from '../../assets/market/coffee.webp';
+import oatsPhoto from '../../assets/market/oats.webp';
+import fruitPhoto from '../../assets/market/fruit.webp';
+import nutsPhoto from '../../assets/market/nuts.webp';
+import toothbrushPhoto from '../../assets/market/toothbrush.webp';
+import tissuesPhoto from '../../assets/market/tissues.webp';
 // Illustrative assortment only. IDs are not warehouse SKUs; no availability or price is asserted.
 export type MarketCategory='Drinks'|'Breakfast'|'Snacks'|'Essentials';
-export type MarketProduct={id:string;name:string;category:MarketCategory;size:string};
+const photoFiles:Record<string,string>={'sample-tea':teaPhoto,'sample-coffee':coffeePhoto,'sample-oats':oatsPhoto,'sample-fruit':fruitPhoto,'sample-nuts':nutsPhoto,'sample-toothbrush':toothbrushPhoto,'sample-tissues':tissuesPhoto};
+export const marketPhotos=photoSources.map(source=>({...source,src:photoFiles[source.productId]}));
+export type MarketPhoto=typeof marketPhotos[number];
+export type MarketProduct={id:string;name:string;category:MarketCategory;size:string;photo?:MarketPhoto};
 export const marketProducts:readonly MarketProduct[]=[
  {id:'sample-water',name:'Still water',category:'Drinks',size:'1 L'},
- {id:'sample-tea',name:'Green tea',category:'Drinks',size:'20 bags'},
- {id:'sample-coffee',name:'Ground coffee',category:'Breakfast',size:'250 g'},
- {id:'sample-oats',name:'Oat flakes',category:'Breakfast',size:'500 g'},
- {id:'sample-fruit',name:'Seasonal fruit',category:'Snacks',size:'1 kg'},
- {id:'sample-nuts',name:'Mixed nuts',category:'Snacks',size:'200 g'},
- {id:'sample-toothbrush',name:'Toothbrush',category:'Essentials',size:'1 piece'},
- {id:'sample-tissues',name:'Paper tissues',category:'Essentials',size:'1 pack'}
+ {id:'sample-tea',photo:marketPhotos.find(photo=>photo.productId==='sample-tea'),name:'Green tea',category:'Drinks',size:'20 bags'},
+ {id:'sample-coffee',photo:marketPhotos.find(photo=>photo.productId==='sample-coffee'),name:'Ground coffee',category:'Breakfast',size:'250 g'},
+ {id:'sample-oats',photo:marketPhotos.find(photo=>photo.productId==='sample-oats'),name:'Oat flakes',category:'Breakfast',size:'500 g'},
+ {id:'sample-fruit',photo:marketPhotos.find(photo=>photo.productId==='sample-fruit'),name:'Seasonal fruit',category:'Snacks',size:'1 kg'},
+ {id:'sample-nuts',photo:marketPhotos.find(photo=>photo.productId==='sample-nuts'),name:'Mixed nuts',category:'Snacks',size:'200 g'},
+ {id:'sample-toothbrush',photo:marketPhotos.find(photo=>photo.productId==='sample-toothbrush'),name:'Toothbrush',category:'Essentials',size:'1 piece'},
+ {id:'sample-tissues',photo:marketPhotos.find(photo=>photo.productId==='sample-tissues'),name:'Paper tissues',category:'Essentials',size:'1 pack'}
 ];
 export const marketCategories:readonly MarketCategory[]=['Drinks','Breakfast','Snacks','Essentials'];
 export type MarketCart=Readonly<Record<string,number>>;

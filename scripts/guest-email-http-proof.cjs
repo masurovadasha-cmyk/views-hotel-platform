@@ -54,6 +54,7 @@ module.exports=async function guestEmailHttpProof({admin,runtimeUrl}){
   assert.equal((await admin.query('SELECT count(*)::int n FROM organization_memberships WHERE user_id=$1',[verified.body.userId])).rows[0].n,0);
   const staff=await fetch(origin+'/v1/staff-auth/session',{headers:{Authorization:'Bearer '+verified.body.token}});
   assert.ok([401,404].includes(staff.status));checks.push('single_use_guest_session_no_staff_membership_or_session');
+  await require('./operations-queue-http-proof.cjs')({admin,coreOrigin:origin,internalKey});
   await require('./laundry-http-proof.cjs')({admin,rpc,session:verified.body,coreOrigin:origin,internalKey});
   assert.equal((await rpc('logout',{},verified.body.token)).status,200);
   assert.equal((await rpc('session',undefined,verified.body.token)).status,401);

@@ -1,0 +1,11 @@
+# Illustrative demo market photographs
+
+These seven real photographs illustrate the existing generic sample assortment, **not verified supplier SKUs, packaging, weights, availability or prices**. Exact supplier photographs remain an open catalog requirement. Still water intentionally has no photograph: the candidate bottle PNG could not be decoded during review. No glass-of-water substitution was made.
+
+`sources.json` records each Wikimedia Commons file page, credited photographer, license URL, original and bundled SHA-256, dimensions and transformations. The file pages, authors and license statements were reviewed on 2026-10-25. All seven images were visually inspected. The tea photo includes its original canister; it does not identify a supplier in VIEWS. The fruit basket is illustrative, not a seasonal availability promise. The nuts source is a focus stack of two real photographs, per its source description.
+
+Bundled files are reduced to at most 640 × 640 without cropping and encoded as WebP. EXIF orientation was applied and metadata removed. No depicted content was replaced or generated. Each photo retains the exact source license, including CC BY-SA 2.5/3.0/4.0 where applicable. Credits and license/source links are available in each product card. These licenses apply to the photo derivatives; they do not change the application code's license. No additional restrictions are imposed on reuse of these photo files.
+
+The app loads only bundled assets: no Wikimedia requests, analytics, tokens or CDN startup dependency. Missing or failed photos have an explicit localized placeholder. Product IDs, sample pack sizes, stock accounting, persisted state and apartment photographs are unchanged.
+
+Validation: `npm run build:review`; `npx vitest run src/features/guest/market-photos.test.ts src/features/guest/market-catalog.test.ts src/features/guest/demo-market.test.ts`; `node scripts/market-photos.browser.cjs`. Browser proof covers RU/UZ/EN, light/dark, 360/390/1440 widths, seven decoded photos, attribution disclosure, water placeholder, blocked-image fallback and cart preservation after reload. Full integration CI and Android testing belong to the parent integration release.

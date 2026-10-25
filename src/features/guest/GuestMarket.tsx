@@ -3,12 +3,16 @@ import {Coffee,Droplets,Apple,Package,ShoppingBag} from 'lucide-react';
 import {useGuestLocale} from './GuestLocale';
 import {translate} from '../../i18n/messages';
 import messages from './market-translations.json';
-import {marketProducts,marketCategories,marketCartLines,type MarketCategory} from './market-catalog';
+import {marketProducts,marketCategories,marketCartLines,type MarketCategory,type MarketProduct} from './market-catalog';
 import './guest-market.css';
 import {demoBalance,demoAvailable} from './demo-market';
 import {DemoMarketRecovery} from './DemoMarketRecovery';
 import {useDemoMarket} from './useDemoMarket';
 const icons={Drinks:Droplets,Breakfast:Coffee,Snacks:Apple,Essentials:Package};
+function MarketPhoto({product,t}:{product:MarketProduct;t:(key:string)=>string}){
+ const [failed,setFailed]=useState(false),photo=product.photo,Icon=icons[product.category];
+ return <figure className="marketPhoto"><div className="marketIllustration">{photo&&!failed?<img src={photo.src} alt={t('Illustrative demo photo')+': '+t(product.name)} onError={()=>setFailed(true)} width={photo.dimensions[0]} height={photo.dimensions[1]} decoding="async"/>:<><Icon size={40} aria-hidden="true"/><span>{t('Photo unavailable')}</span></>}</div><figcaption>{t('Illustrative demo photo. Packaging and quantity may differ; not a supplier SKU photo.')}{photo&&<details><summary>{t('Photo credit and license')}</summary><a href={photo.source} target="_blank" rel="noreferrer">{photo.title}</a> · {photo.author} · <a href={photo.licenseUrl} target="_blank" rel="noreferrer">{photo.license}</a><p>{t('Resized and converted to WebP. The photo retains its original license.')}</p></details>}</figcaption></figure>;
+}
 export function GuestMarket(){
  const {locale}=useGuestLocale(),t=(key:string)=>translate(messages,locale,key);
  const [category,setCategory]=useState<MarketCategory|'All'>('All'),[search,setSearch]=useState('');
@@ -26,7 +30,7 @@ export function GuestMarket(){
   <div className="marketFilters" aria-label={t('Product categories')}>{(['All',...marketCategories] as const).map(value=><button key={value} aria-pressed={category===value} onClick={()=>setCategory(value)}>{t(value)}</button>)}</div>
   <div className="marketLayout"><div className="marketProducts">
    {!products.length&&<p role="status">{t('No matching products. Change the search or category.')}</p>}
-   {products.map(product=>{const Icon=icons[product.category];return <article className="marketProduct" key={product.id} data-product={product.id}><div className="marketIllustration"><Icon size={40} aria-hidden="true"/></div><small>{t(product.category)} · {t(product.size)}</small><h3>{t(product.name)}</h3><p>{t('Price not set')} · UZS</p><p>{t('Demo available')}: <strong data-stock={product.id}>{demoBalance(state,product.id).available}</strong></p>{state.editingOrderId&&<p>{t('Available for replacement')}: <strong data-edit-stock={product.id}>{demoAvailable(state,product.id)}</strong></p>}<button onClick={()=>change(product.id,(cart[product.id]||0)+1)} disabled={!!pending||(cart[product.id]||0)>=20} aria-label={t('Add to list')+': '+t(product.name)}>{t('Add to list')}</button></article>;})}
+   {products.map(product=>{return <article className="marketProduct" key={product.id} data-product={product.id}><MarketPhoto product={product} t={t}/><small>{t(product.category)} · {t(product.size)}</small><h3>{t(product.name)}</h3><p>{t('Price not set')} · UZS</p><p>{t('Demo available')}: <strong data-stock={product.id}>{demoBalance(state,product.id).available}</strong></p>{state.editingOrderId&&<p>{t('Available for replacement')}: <strong data-edit-stock={product.id}>{demoAvailable(state,product.id)}</strong></p>}<button onClick={()=>change(product.id,(cart[product.id]||0)+1)} disabled={!!pending||(cart[product.id]||0)>=20} aria-label={t('Add to list')+': '+t(product.name)}>{t('Add to list')}</button></article>;})}
   </div><aside className="marketBasket" aria-labelledby="market-basket-title"><h3 id="market-basket-title">{t('Your shopping list')}</h3><p aria-live="polite">{t('Items')}: <strong data-testid="market-count">{count}</strong></p>
    {!lines.length?<p>{t('Your list is empty. Add something from the catalogue.')}</p>:<ul>{lines.map(({product,quantity})=><li key={product.id}><b>{t(product.name)}</b><div className="marketQuantity"><button aria-label={t('Decrease')+': '+t(product.name)} disabled={!!pending} onClick={()=>change(product.id,quantity-1)}>−</button><output aria-label={t('Quantity')+': '+t(product.name)}>{quantity}</output><button disabled={!!pending||quantity>=20} aria-label={t('Increase')+': '+t(product.name)} onClick={()=>change(product.id,quantity+1)}>+</button><button disabled={!!pending} className="marketRemove" aria-label={t('Remove')+': '+t(product.name)} onClick={()=>change(product.id,0)}>{t('Remove')}</button></div></li>)}</ul>}
    {state.editingOrderId&&<div data-testid="demo-market-editing"><p>{t('Editing demo order')}: {state.editingOrderId}</p><p>{t('The original stays reserved until you confirm its replacement.')}</p><button disabled={!!pending} onClick={()=>act({type:'stop-edit'})}>{t('Cancel editing')}</button></div>}

@@ -21,12 +21,32 @@ describe.sequential('owner calendar unified inventory',()=>{
   expect(period.canRemove).toBe(true);expect(Object.keys(period).sort()).toEqual(['canRemove','end','expiresAt','id','kind','start','unitId']);
   const releaseKey=randomUUID(),released=await service.mutate(actor,property,{action:'unblock',periodId:r.periodId},releaseKey);
   expect(await service.mutate(actor,property,{action:'unblock',periodId:r.periodId},releaseKey)).toEqual({...released,idempotentReplay:true});
-  expect(await service.mutate(actor,property,input,key)).toEqual({...r,idempotentReplay:true});
+  expect(await service.mutate(actor,property,input,key)).toEqual({...r,currentState:'absent',idempotentReplay:true});
   expect((await service.list(actor,property,'2027-05-01','2027-05-10')).periods.some(p=>p.id===r.periodId)).toBe(false);
   await db.withActor(actor,async c=>{
    expect((await c.query('SELECT count(*)::int n FROM audit_log WHERE entity_id=$1',[r.periodId])).rows[0].n).toBe(2);
    expect((await c.query('SELECT count(*)::int n FROM outbox_events WHERE aggregate_id=$1',[r.periodId])).rows[0].n).toBe(2);
   });
+ });
+ it('commits absence before late original and preserves immutable payload',async()=>{
+  const id=await unit(),key=randomUUID(),input=block(id);
+  expect(await service.mutate(actor,property,{...input,recoveryOnly:true},key)).toMatchObject({status:'not_applied',periodId:null,currentState:'absent'});
+  expect(await service.mutate(actor,property,input,key)).toMatchObject({status:'not_applied',idempotentReplay:true});
+  await expect(service.mutate(actor,property,{...input,kind:'host_block'},key)).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+  await db.withActor(actor,async c=>expect((await c.query('SELECT count(*)::int n FROM inventory_periods WHERE unit_id=$1',[id])).rows[0].n).toBe(0));
+ });
+ it('racing recovery and original resolve one outcome; removed or changed intervals never replay as blocked',async()=>{
+  const id=await unit(),key=randomUUID(),input=block(id),results=await Promise.all([service.mutate(actor,property,input,key),service.mutate(actor,property,{...input,recoveryOnly:true},key)]);
+  expect(results[0].status).toBe(results[1].status);
+  const next=await unit(),otherKey=randomUUID(),r=await service.mutate(actor,property,block(next),otherKey);
+  await db.withActor(actor,c=>c.query("UPDATE inventory_periods SET stay_period=tstzrange('2027-05-01T14:01+05','2027-05-03T12:00+05','[)') WHERE id=$1",[r.periodId]));
+  expect(await service.mutate(actor,property,{...block(next),recoveryOnly:true},otherKey)).toMatchObject({status:'blocked',currentState:'changed',idempotentReplay:true});
+ });
+ it('recovery of an absent unblock command fences late removal without releasing the period',async()=>{
+  const id=await unit(),r=await service.mutate(actor,property,block(id),randomUUID()),key=randomUUID(),body={action:'unblock',periodId:r.periodId};
+  expect(await service.mutate(actor,property,{...body,recoveryOnly:true},key)).toMatchObject({status:'not_applied'});
+  expect(await service.mutate(actor,property,body,key)).toMatchObject({status:'not_applied',idempotentReplay:true});
+  expect((await service.list(actor,property,'2027-05-01','2027-05-10')).periods.some(p=>p.id===r.periodId)).toBe(true);
  });
  it('allows adjacent half-open blocks and rejects overlap for both manual kinds',async()=>{
   const id=await unit();await service.mutate(actor,property,block(id),randomUUID());

@@ -110,6 +110,7 @@ const run = args => {
       const built=spawnSync(process.execPath,[path.join(REPO,'apps/api/node_modules/@nestjs/cli/bin/nest.js'),'build'],{cwd:path.join(REPO,'apps/api'),stdio:'inherit',timeout:120000});
       if(built.error||built.status!==0)throw Error('BOOKING_PROOF_BUILD_FAILED');
       await require('../apps/api/db/tests/booking-hold-authorization.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
+      await require('../apps/api/db/tests/owner-calendar-recovery.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
     }
     if(exitCode===0&&process.env.VIEWS_HOUSEKEEPING_HTTP_PROOF==='true')await require('./housekeeping-connected-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});
     if(exitCode===0&&process.env.VIEWS_GUEST_EMAIL_HTTP_PROOF==='true')await require('./guest-email-http-proof.cjs')({admin,runtimeUrl:`postgresql://views_app:${runtimePassword}@127.0.0.1:${port}/views`});

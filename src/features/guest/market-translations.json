@@ -378,5 +378,25 @@
   "View old tab JSON": {
     "ru": "Посмотреть JSON старой вкладки",
     "uz": "Eski ichki oynaning JSON nusxasini koʻrish"
+  },
+  "Illustrative demo photo": {
+    "ru": "Иллюстративное демофото",
+    "uz": "Demo uchun namunaviy surat"
+  },
+  "Photo unavailable": {
+    "ru": "Фото пока нет",
+    "uz": "Surat hozircha yoʻq"
+  },
+  "Illustrative demo photo. Packaging and quantity may differ; not a supplier SKU photo.": {
+    "ru": "Фото для демокаталога. Упаковка и количество могут отличаться; это не фото артикула поставщика.",
+    "uz": "Demo katalog uchun surat. Qadoq va miqdor farq qilishi mumkin; bu yetkazib beruvchi artikulining surati emas."
+  },
+  "Photo credit and license": {
+    "ru": "Автор и лицензия фото",
+    "uz": "Surat muallifi va litsenziyasi"
+  },
+  "Resized and converted to WebP. The photo retains its original license.": {
+    "ru": "Размер уменьшен, формат изменён на WebP. Исходная лицензия фото сохранена.",
+    "uz": "Oʻlcham kichraytirilib, WebP formatiga oʻtkazilgan. Suratning asl litsenziyasi saqlangan."
   }
 }

@@ -13,6 +13,7 @@ export class StaffSessionGuard implements CanActivate{
     if(req.headers['x-views-service-id']!=='local-workspace')return true;
     const path=new URL(req.originalUrl||req.url,'http://views.internal').pathname;
     if(path.startsWith('/v1/staff-auth/'))return true; // controller validates gateway key
+    const queueRoute=req.method==='GET'&&path==='/v1/service-orders/queue';
     const serviceRoute=req.method==='GET'&&['/v1/service-orders','/v1/service-orders/assignees'].includes(path)||req.method==='POST'&&/^\/v1\/service-orders\/[a-f0-9-]{36}\/actions$/i.test(path);
     const conciergeRoute=req.method==='GET'&&(path==='/v1/service-orders/concierge'||path==='/v1/service-orders/concierge/overdue'||path==='/v1/service-orders/concierge/knowledge'||/^\/v1\/service-orders\/concierge\/[a-f0-9-]{36}\/profile$/i.test(path))||req.method==='POST'&&/^\/v1\/service-orders\/concierge\/[a-f0-9-]{36}\/actions$/i.test(path);
     const folioRoute=/^\/v1\/folios(?:\/properties|\/reservations\/[a-f0-9-]{36}(?:\/(?:charges|reversals))?)?$/i.test(path)||path==='/v1/night-audit';
@@ -26,11 +27,13 @@ export class StaffSessionGuard implements CanActivate{
       ['GET','POST'].includes(req.method)&&(/^\/v1\/owner-inventory(?:\/[a-f0-9-]{36}(?:\/(?:calendar|rates(?:\/[a-f0-9-]{36})?))?)?$/i.test(path))?'property.manage':
       req.method==='GET'&&['/v1/booking-workspace','/v1/inventory-search'].includes(path)?'reservation.read':
       req.method==='POST'&&(/^\/v1\/bookings\/[a-f0-9-]{36}\/guest-link(?:\/revoke)?$/.test(path)||path==='/v1/quotes'||path==='/v1/bookings/holds'||/^\/v1\/bookings\/[a-f0-9-]{36}\/(release|cancel)$/.test(path)||/^\/v1\/bookings\/[a-f0-9-]{36}\/stay\/(check-in|check-out|guest|document-view|document-review|cleaning-complete)$/.test(path))?'reservation.manage':null);
-    if(!permission&&!serviceRoute&&!conciergeRoute)throw new ForbiddenException('STAFF_ROUTE_DENIED');
+    if(!permission&&!serviceRoute&&!conciergeRoute&&!queueRoute)throw new ForbiddenException('STAFF_ROUTE_DENIED');
     const identity=await this.auth.resolve(req.headers['x-views-staff-session']);
     for(const [header,key] of [['x-organization-id','organizationId'],['x-user-id','userId'],['x-membership-id','membershipId']] as const)
       if(req.headers[header]!==identity[key])throw new UnauthorizedException('STAFF_ACTOR_MISMATCH');
-    requireStaffPermission(identity,conciergeRoute?(identity.permissions.includes('reservation.manage')?'reservation.manage':'concierge.work'):serviceRoute?(identity.permissions.includes('reservation.manage')?'reservation.manage':'housekeeping.work'):permission!);
+    const queuePermission=queueRoute?['reservation.manage','housekeeping.work','stock.manage','concierge.work'].find(value=>identity.permissions.includes(value)):undefined;
+    if(queueRoute&&!queuePermission)throw new ForbiddenException('STAFF_PERMISSION_DENIED');
+    requireStaffPermission(identity,queueRoute?queuePermission!:conciergeRoute?(identity.permissions.includes('reservation.manage')?'reservation.manage':'concierge.work'):serviceRoute?(identity.permissions.includes('reservation.manage')?'reservation.manage':'housekeeping.work'):permission!);
     return true;
   }
 }

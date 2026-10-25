@@ -1678,5 +1678,33 @@
   "Ответ ещё не завершает попытку. Проверьте результат тем же ключом перед новым расчётом.": {
     "en": "This response does not close the attempt yet. Check the result with the same key before requesting a new quote.",
     "uz": "Bu javob urinishni hali yakunlamaydi. Yangi hisob-kitobdan oldin natijani oʻsha kalit bilan tekshiring."
+  },
+  "Команда не была применена. Можно выбрать новое действие.": {
+    "en": "The command was not applied. You can choose a new action.",
+    "uz": "Buyruq bajarilmadi. Yangi amalni tanlashingiz mumkin."
+  },
+  "Интервал изменён другим процессом. Проверьте календарь.": {
+    "en": "The interval was changed by another process. Check the calendar.",
+    "uz": "Oraliq boshqa jarayon tomonidan o‘zgartirilgan. Taqvimni tekshiring."
+  },
+  "Ручной интервал отсутствует. Доступность проверяется отдельно.": {
+    "en": "The manual interval is absent. Availability is checked separately.",
+    "uz": "Qo‘lda yaratilgan oraliq mavjud emas. Mavjudlik alohida tekshiriladi."
+  },
+  "Ручная блокировка подтверждена. Актуальное состояние — в календаре.": {
+    "en": "The manual block is confirmed. Check the calendar for its current state.",
+    "uz": "Qo‘lda bloklash tasdiqlandi. Joriy holatni taqvimdan tekshiring."
+  },
+  "Хранилище восстановления недоступно. Изменения заблокированы; сохранённые попытки не удалены.": {
+    "en": "Recovery storage is unavailable. Changes are blocked; saved attempts have not been deleted.",
+    "uz": "Tiklash xotirasi mavjud emas. O‘zgartirishlar bloklangan; saqlangan urinishlar o‘chirilmagan."
+  },
+  "Проверьте результат предыдущего действия перед изменением календаря.": {
+    "en": "Check the previous action’s outcome before changing the calendar.",
+    "uz": "Taqvimni o‘zgartirishdan oldin oldingi amal natijasini tekshiring."
+  },
+  "Повторить загрузку": {
+    "en": "Retry loading",
+    "uz": "Qayta yuklash"
   }
 }

@@ -18,3 +18,10 @@ export function calendarCommand(value:unknown):CalendarCommand{
  const start=calendarTime(v.start),end=calendarTime(v.end),duration=Date.parse(end)-Date.parse(start);
  if(duration<=0||duration>366*86400000)return invalid();return {action:'block',unitId:calendarId(v.unitId),kind:v.kind as 'host_block'|'maintenance',start,end};
 }
+
+export function calendarRequest(value:unknown){
+ if(!value||typeof value!=='object'||Array.isArray(value))return invalid();
+ const {recoveryOnly,...body}=value as Record<string,unknown>;
+ if(recoveryOnly!==undefined&&recoveryOnly!==true)return invalid();
+ return {input:calendarCommand(body),recoveryOnly:recoveryOnly===true};
+}

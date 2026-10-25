@@ -18,7 +18,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Audit production dependencies with reviewed unpatched exceptions
-        run: node scripts/pnpm-audit-gate.cjs
+        run: |
+          node scripts/pnpm-audit-gate.cjs
+          node --test scripts/pnpm-audit-gate.compatibility.cjs scripts/pnpm-audit-gate.policy.cjs
       - name: Verify immutable migrations and clean versus upgrade schemas
         run: |
           node --test scripts/migration-manifest.acceptance.cjs scripts/integration-schema.acceptance.cjs
@@ -89,8 +91,11 @@ jobs:
         run: |
           node scripts/booking-recovery.browser.cjs
           node scripts/use-cleaning-pending-browser.cjs
+          node scripts/owner-calendar-recovery.browser.cjs
+          node scripts/service-queue.browser.cjs
       - name: Verify durable shared guest staff and host demo state
         run: |
           npm run build:review
           node scripts/shared-market.browser.cjs
           node scripts/durable-market.browser.cjs
+          node scripts/market-photos.browser.cjs
