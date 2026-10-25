@@ -94,7 +94,7 @@ export class BookingLifecycleService{
         if(existing.result_snapshot?.status==='cancelled'||existing.result_snapshot?.notApplied)return this.releaseReceipt(client,actor,reservationId,options,existing.result_snapshot.notApplied?'not_applied':'released',true);
         throw Error('IDEMPOTENCY_IN_PROGRESS');
       }
-      await client.query(`INSERT INTO booking_commands(id,organization_id,idempotency_key,command_type,reservation_id,request_hash) VALUES(gen_random_uuid(),$1,$2,'release_hold',$3::uuid,$3::uuid::text)`,[actor.organizationId,idempotencyKey,reservationId]);
+      await client.query(`INSERT INTO booking_commands(id,organization_id,idempotency_key,command_type,reservation_id,request_hash) VALUES(gen_random_uuid(),$1,$2,'release_hold',$3::text::uuid,$3::text)`,[actor.organizationId,idempotencyKey,reservationId]);
       if(options.recoveryOnly){
         await client.query("UPDATE booking_commands SET result_snapshot=$1::jsonb,completed_at=clock_timestamp() WHERE organization_id=$2 AND idempotency_key=$3 AND command_type='release_hold'",[JSON.stringify({reservationId,notApplied:true}),actor.organizationId,idempotencyKey]);
         return this.releaseReceipt(client,actor,reservationId,options,'not_applied',false);
