@@ -82,3 +82,5 @@ provisioned by runtime code. Proof credentials exist only in the disposable DB.
 
 Final integrated SHA/CI/web/APK are coordinator responsibilities. This isolated
 slice does not establish production readiness or alter the released 0.21 APK.
+
+Wave3 integrated receipt binding: saved/not_applied/replay responses echo the exact canonical commandKey. UI must match the persisted key before settling; when current.revision equals appliedRevision, its policy must match the pending intent. A later current revision may legitimately contain a different policy.

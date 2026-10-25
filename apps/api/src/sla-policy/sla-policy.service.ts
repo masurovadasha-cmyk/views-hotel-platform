@@ -43,7 +43,7 @@ export class SlaPolicyService{
    }
    await c.query('INSERT INTO sla_policy_draft_commands(organization_id,command_key,property_id,request_hash,outcome,applied_revision) VALUES($1,$2,$3,$4,$5,$6)',[a.organizationId,k,v.propertyId,hash,outcome,appliedRevision]);
   }
-  await this.authorize(c,a,v.propertyId,token);return {draftOnly:true,approved:false,propertyId:v.propertyId,serviceKind:v.policy.serviceKind,milestone:v.policy.milestone,outcome,appliedRevision,current,idempotentReplay:!!prior};
+  await this.authorize(c,a,v.propertyId,token);return {commandKey:k,draftOnly:true,approved:false,propertyId:v.propertyId,serviceKind:v.policy.serviceKind,milestone:v.policy.milestone,outcome,appliedRevision,current,idempotentReplay:!!prior};
  });}
  async preview(a:RequestActorContext,token:string,raw:unknown){this.enabled();const v=exact(raw,['propertyId','serviceKind','milestone','revision','startLocal']),id=uuid(v.propertyId);if(!Number.isSafeInteger(v.revision)||Number(v.revision)<1||typeof v.startLocal!=='string')throw new BadRequestException('INVALID_SLA_SIMULATION');return this.db.withActor(a,async c=>{await this.authorize(c,a,id,token);const row=(await c.query('SELECT config FROM sla_policy_draft_versions WHERE organization_id=$1 AND property_id=$2 AND service_kind=$3 AND milestone=$4 AND revision=$5',[a.organizationId,id,v.serviceKind,v.milestone,v.revision])).rows[0];if(!row)throw new NotFoundException('SLA_DRAFT_NOT_FOUND');const result=simulate(policy(row.config),v.startLocal as string);await this.authorize(c,a,id,token);return {...result,propertyId:id,serviceKind:v.serviceKind,milestone:v.milestone,revision:v.revision};});}
 }
