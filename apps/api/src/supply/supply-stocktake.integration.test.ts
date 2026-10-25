@@ -13,14 +13,33 @@ const foreign:Actor={...buyer,organizationId:'10000000-0000-4000-8000-0000000000
 const query=(sql:string,p:unknown[]=[],actor=keeper)=>db.withActor(actor,c=>c.query(sql,p));
 async function item(){return (await supply.createItem(buyer,randomUUID(),{propertyId:property,sku:randomUUID().toUpperCase(),name:'Synthetic stocktake',unit:'piece'})).itemId as string;}
 async function preview(itemId:string,countedQuantity:string){const p=await counts.preview(keeper,{propertyId:property,itemId,countedQuantity,reason:'Synthetic physical count'});return {propertyId:p.propertyId,itemId:p.itemId,countedQuantity:p.countedQuantity,reason:p.reason,expectedQuantity:p.expectedQuantity,expectedRevision:p.expectedRevision};}
+async function stockRow(itemId:string){
+ const read=new SupplyReadService(db),cursors=new Set<string>();let cursor:string|undefined;
+ do{
+  const page=await read.list(keeper,'stock',property,cursor);
+  expect(page.items.length).toBeLessThanOrEqual(50);
+  const found=page.items.find(row=>row.itemId===itemId);if(found)return found;
+  cursor=page.nextCursor??undefined;
+  if(cursor){expect(cursors.has(cursor)).toBe(false);cursors.add(cursor);}
+ }while(cursor);
+ throw Error('TEST_STOCK_ITEM_NOT_FOUND:'+itemId);
+}
 async function balance(itemId:string){return (await query('SELECT quantity::text,revision::text FROM supply_balances WHERE item_id=$1',[itemId])).rows[0];}
 async function receive(itemId:string,quantity:string){const order=await supply.createOrder(buyer,randomUUID(),{propertyId:property,reference:'Synthetic receipt',lines:[{itemId,quantity}]});await supply.receive(keeper,order.orderId,randomUUID(),{});}
-beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker).toBe('VIEWS_DISPOSABLE_CORE_TEST'));
+beforeAll(async()=>{
+ expect((await db.query("SELECT shobj_description((SELECT oid FROM pg_database WHERE datname=current_database()),'pg_database') marker")).rows[0].marker).toBe('VIEWS_DISPOSABLE_CORE_TEST');
+ // All generated v4 item IDs sort after these 51 rows: projection reads must
+ // follow the public stock cursor even when this file runs alone.
+ await query(`INSERT INTO supply_items(id,organization_id,property_id,sku,name,unit)
+  SELECT ('00000000-0000-0000-0000-'||lpad((20000+n)::text,12,'0'))::uuid,$1,$2,'STOCKTAKE_PAGE_'||n,'Synthetic pagination sentinel','piece'
+  FROM generate_series(1,51) n`,[org,property],buyer);
+});
 beforeEach(()=>{vi.stubEnv('NODE_ENV','test');vi.stubEnv('VIEWS_LOCAL_REHEARSAL','true');vi.stubEnv('VIEWS_SUPPLY_PILOT_ENABLED','true');});afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('physical stocktake / actual PostgreSQL',()=>{
  it('issues tracked quantities against one immutable ledger version and rejects a stale race',async()=>{
   const itemId=await item();await receive(itemId,'5');const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'5'),lots:[{lotCode:'LIVE',expiresOn:'2028-01-01',quantity:'5'}]});
-  const current=async()=>(await new SupplyReadService(db).list(keeper,'stock',property)).items.find(x=>x.itemId===itemId)!.lotProjection;
+  const firstPage=await new SupplyReadService(db).list(keeper,'stock',property);expect(firstPage.items).toHaveLength(50);expect(firstPage.nextCursor).toBeTruthy();expect(firstPage.items.some(row=>row.itemId===itemId)).toBe(false);
+  const current=async()=>(await stockRow(itemId)).lotProjection;
   let p=await current();expect(p.ledgerReady).toBe(true);const body={propertyId:property,itemId,quantity:'2',reference:'Tracked issue',lotAllocation:{snapshotId:snap.stocktakeId,movementId:p.movementId,lotCode:'LIVE',expiresOn:'2028-01-01'}};
   const race=await Promise.allSettled([supply.issue(keeper,randomUUID(),body),supply.issue(keeper,randomUUID(),body)]);expect(race.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(race.find(r=>r.status==='rejected')).toMatchObject({reason:{message:'STOCKTAKE_STALE'}});
   p=await current();expect(p.totalQuantity).toBe('3');const key=randomUUID(),next={...body,lotAllocation:{...body.lotAllocation,movementId:p.movementId}};await supply.issue(keeper,key,next);expect((await supply.issue(keeper,key,next)).idempotentReplay).toBe(true);p=await current();expect(p.totalQuantity).toBe('1');
@@ -31,7 +50,7 @@ describe.sequential('physical stocktake / actual PostgreSQL',()=>{
  });
  it('projects counted lots through known moves and fails closed on unallocated issues',async()=>{
   const itemId=await item();await receive(itemId,'10');const snap=await counts.confirm(keeper,randomUUID(),{...await preview(itemId,'10'),lots:[{lotCode:'PROJECTION',expiresOn:'2028-01-01',quantity:'10'}]});
-  const projection=async()=>(await new SupplyReadService(db).list(keeper,'stock',property)).items.find(x=>x.itemId===itemId)!.lotProjection;
+  const projection=async()=>(await stockRow(itemId)).lotProjection;
   expect(await projection()).toMatchObject({status:'reconciled',totalQuantity:'10',lots:[{lotCode:'PROJECTION',quantity:'10'}]});
   const key=randomUUID(),body={propertyId:property,itemId,quantity:'2',reference:'Projection issue',lotAllocation:{snapshotId:snap.stocktakeId,lotCode:'PROJECTION',expiresOn:'2028-01-01'}};await supply.issue(keeper,key,body);await supply.issue(keeper,key,body);
   expect(await projection()).toMatchObject({status:'reconciled',totalQuantity:'8',lots:[{quantity:'8'}]});
@@ -74,7 +93,7 @@ describe.sequential('physical stocktake / actual PostgreSQL',()=>{
   const itemId=await item();await receive(itemId,'10');const lots=[{lotCode:'A',expiresOn:'2028-02-29',quantity:'7'},{lotCode:null,expiresOn:null,quantity:'3'}];
   const p={...await preview(itemId,'10'),lots},key=randomUUID();
   const replies=await Promise.all([counts.confirm(keeper,key,p),counts.confirm(keeper,key,p)]);expect(replies.filter(r=>!r.idempotentReplay)).toHaveLength(1);
-  const read=new SupplyReadService(db),snapshot=async()=>{let cursor:string|undefined;do{const page=await read.list(keeper,'stock',property,cursor),found=page.items.find(r=>r.itemId===itemId);if(found)return found.lotSnapshot;cursor=page.nextCursor??undefined;}while(cursor);throw Error('ITEM_NOT_FOUND');};
+  const snapshot=async()=>(await stockRow(itemId)).lotSnapshot;
   expect((await query('SELECT j.status FROM supply_lot_movement_intake j JOIN supply_movements m ON m.id=j.movement_id WHERE m.stocktake_id=$1',[replies[0].stocktakeId])).rows).toEqual([{status:'snapshot_recorded'}]);
   expect(await snapshot()).toMatchObject({lots,current:true});expect((await balance(itemId)).quantity).toBe('10');
   await expect(counts.confirm(keeper,key,{...p,lots:[{...lots[0],quantity:'6'},{...lots[1],quantity:'4'}]})).rejects.toThrow('SUPPLY_COMMAND_CONFLICT');
