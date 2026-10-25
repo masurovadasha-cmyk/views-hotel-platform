@@ -1,5 +1,6 @@
 'use strict';
 const durable=require('./demo-market-storage-browser-helper.cjs');
+const views=require('./market-view-browser-helper.cjs');
 // Cross-feature regression, complementary to individual calendar/market proofs.
 // Serve only a built static demo; fail on any network mutation or external request.
 const assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),path=require('node:path');
@@ -38,11 +39,11 @@ const translated=(catalog,locale,key)=>catalog[key]?.[locale]||key;
    });
    const gt=k=>translated(guest,locale,k),mt=k=>translated(market,locale,k);
    const search=page.locator('.searchBox'),range=()=>search.getByTestId('stay-date-range').getByRole('button');
-   const shop=page.getByTestId('guest-market'),marketButton=k=>shop.getByRole('button',{name:mt(k),exact:true});
+   const shop=page.getByTestId('guest-market'),marketButton=k=>views.button(page,k,mt);
    const nav=page.locator('.guestNav');
-   async function marketTab(){await nav.getByRole('button',{name:gt('Services'),exact:true}).click();await durable.ready(page);await page.getByRole('button',{name:/V Market/}).first().click();await durable.ready(page);await shop.waitFor();await durable.ready(page);}
+   async function marketTab(){await nav.getByRole('button',{name:gt('Services'),exact:true}).click();await durable.ready(page);await page.getByTestId('guest-market-shortcut').click();await durable.ready(page);await shop.waitFor();await durable.ready(page);}
    async function explore(){await nav.getByRole('button',{name:gt('Explore'),exact:true}).click();await durable.ready(page);await search.waitFor();}
-   const stock=()=>shop.locator('[data-stock="sample-water"]').innerText();
+   const stock=()=>views.readIn(page,'catalogue',()=>shop.locator('[data-stock="sample-water"]').innerText());
    const demoState=()=>durable.state(page);
    await page.goto(origin+'/?api=demo');
    const photo=page.locator('.apartmentCard img').first();await photo.waitFor();
@@ -79,7 +80,7 @@ const translated=(catalog,locale,key)=>catalog[key]?.[locale]||key;
     await page.setViewportSize({width,height:900});
     for(let theme=0;theme<2;theme++){await page.locator('[data-theme-toggle]').click();await durable.ready(page);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.equal(await stock(),'9');}
    }
-   await page.reload();await search.waitFor();assert.match(await range().innerText(),/2026-11-30.*2026-12-02/);
+   await page.reload();await explore();await search.waitFor();assert.match(await range().innerText(),/2026-11-30.*2026-12-02/);
    await marketTab();assert.equal(await stock(),'9');assert.equal((await demoState()).orders.length,1);
    await marketButton('Cancel demo order').click();await durable.ready(page);assert.equal(await stock(),'10');assert.equal((await demoState()).orders[0].status,'cancelled');
    await explore();await setStayRange(page,search,'','');await page.reload();assert.doesNotMatch(await range().innerText(),/2026-11-30/);

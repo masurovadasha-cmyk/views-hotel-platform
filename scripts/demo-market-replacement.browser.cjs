@@ -1,5 +1,6 @@
 'use strict';
 const durable=require('./demo-market-storage-browser-helper.cjs');
+const views=require('./market-view-browser-helper.cjs');
 // Upgrade and atomic replacement proof against the actual built UI, without Core/network writes.
 const assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),path=require('node:path');
 const {chromium}=require('playwright');
@@ -28,31 +29,31 @@ const server=http.createServer((req,res)=>{
    page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/*',route=>{const r=route.request(),u=new URL(r.url());if(u.origin!==origin||r.method()!=='GET'||/^\/(api|local-api|guest-api)\//.test(u.pathname)){requests.push(r.method()+' '+u.pathname);return route.abort();}return route.continue();});
    const t=k=>messages[k]?.[locale]||k,shop=page.getByTestId('guest-market');
-   const button=k=>shop.getByRole('button',{name:t(k),exact:true});
-   const order=id=>shop.locator('[data-demo-order="'+id+'"]');
+   const button=k=>views.button(page,k,t);
+   const order=id=>views.action(page,'history',()=>shop.locator('[data-demo-order="'+id+'"]'));
    const state=()=>durable.state(page);
-   const stock=()=>shop.locator('[data-stock="sample-water"]').innerText();
-   async function open(){await page.goto(origin+'/?api=demo');await page.getByRole('button',{name:/V Market/}).first().click();await durable.ready(page);await shop.waitFor();await durable.ready(page);}
+   const stock=()=>views.readIn(page,'catalogue',()=>shop.locator('[data-stock="sample-water"]').innerText());
+   async function open(){await page.goto(origin+'/?api=demo');await page.getByTestId('guest-market-shortcut').click();await durable.ready(page);await shop.waitFor();await durable.ready(page);}
    async function seed(value){await durable.seed(page,value);await open();}
    await open();await seed(legacy);
    assert.equal(await stock(),'0');assert.equal(await order('DEMO-1').count(),1);
    await order('DEMO-1').getByRole('button',{name:t('Edit demo order'),exact:true}).click();await durable.ready(page);
-   assert.equal(await page.getByTestId('market-count').innerText(),'10');
+   assert.equal(await views.readIn(page,'basket',()=>page.getByTestId('market-count').innerText()),'10');
    assert.equal((await state()).orders[0].status,'reserved');
-   assert.equal(await shop.locator('[data-edit-stock="sample-water"]').innerText(),'10');
-   await shop.getByRole('button',{name:t('Increase')+': '+t('Still water'),exact:true}).click();await durable.ready(page);
+   assert.equal(await views.readIn(page,'catalogue',()=>shop.locator('[data-edit-stock="sample-water"]').innerText()),'10');
+   await views.view(page,'basket');await shop.getByRole('button',{name:t('Increase')+': '+t('Still water'),exact:true}).click();await durable.ready(page);
    await button('Review demo order').click();await durable.ready(page);await shop.getByRole('alert').waitFor();
    assert.equal((await state()).pending,null);assert.deepEqual((await state()).orders,legacy.orders);
-   await shop.getByRole('button',{name:t('Decrease')+': '+t('Still water'),exact:true}).click();await durable.ready(page);
-   await open();assert.equal(await page.getByTestId('market-count').innerText(),'10');
+   await views.view(page,'basket');await shop.getByRole('button',{name:t('Decrease')+': '+t('Still water'),exact:true}).click();await durable.ready(page);
+   await open();assert.equal(await views.readIn(page,'basket',()=>page.getByTestId('market-count').innerText()),'10');
    await button('Clear list').click();await durable.ready(page);assert.deepEqual((await state()).cart,{});assert.deepEqual((await state()).orders,legacy.orders);
    await button('Cancel editing').click();await durable.ready(page);assert.deepEqual((await state()).orders,legacy.orders);assert.deepEqual((await state()).cart,{});
    await order('DEMO-1').getByRole('button',{name:t('Edit demo order'),exact:true}).click();await durable.ready(page);
-   await shop.getByRole('button',{name:t('Decrease')+': '+t('Still water'),exact:true}).click();await durable.ready(page);
+   await views.view(page,'basket');await shop.getByRole('button',{name:t('Decrease')+': '+t('Still water'),exact:true}).click();await durable.ready(page);
    await button('Review demo order').evaluate(b=>{b.click();b.click();});await durable.ready(page);
    const pending=(await state()).pending;assert.ok(pending);assert.equal(await shop.getByRole('alert').count(),0);
    assert.deepEqual((await state()).orders,legacy.orders);
-   await button('Back to basket').click();await durable.ready(page);assert.equal((await state()).pending,null);assert.equal(await page.getByTestId('market-count').innerText(),'9');
+   await button('Back to basket').click();await durable.ready(page);assert.equal((await state()).pending,null);assert.equal(await views.readIn(page,'basket',()=>page.getByTestId('market-count').innerText()),'9');
    await button('Review demo order').click();await durable.ready(page);const token=(await state()).pending.id;
    await open();assert.equal((await state()).pending.id,token);assert.deepEqual((await state()).orders,legacy.orders);
    // A failed durable write must not release the original reservation or claim success.
