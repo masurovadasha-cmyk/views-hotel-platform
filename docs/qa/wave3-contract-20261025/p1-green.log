@@ -1,0 +1,2 @@
+Partner foundation: real SQL scope/PII projection, idempotency, competing decisions, eight observed-wait revocations, bounded pagination, atomic rollback, delayed-original recovery fences, unchanged source/stock/folio and loopback Nest HTTP input isolation PASS.
+P1 negative standalone disposable migrations=140 PASS; no live database used.

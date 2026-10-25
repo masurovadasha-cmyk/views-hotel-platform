@@ -2,11 +2,11 @@ import type {Locale} from '../../i18n/messages';
 import {translate} from '../../i18n/messages';
 import messages from './market-translations.json';
 function download(raw:string,name:string){const url=URL.createObjectURL(new Blob([raw],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-type Props={locale:Locale;loading:boolean;busy:boolean;blocked:boolean;conflict:boolean;raw:string;legacy:string|null;legacySources:string[];error:string;resolveConflict:()=>Promise<boolean>};
+type Props={compact?:boolean;locale:Locale;loading:boolean;busy:boolean;blocked:boolean;conflict:boolean;raw:string;legacy:string|null;legacySources:string[];error:string;resolveConflict:()=>Promise<boolean>};
 export function DemoMarketRecovery(p:Props){
  const t=(key:string)=>translate(messages,p.locale,key);
  return <div data-testid="demo-market-storage" data-ready={!p.loading&&!p.busy} data-conflict={p.conflict} data-blocked={p.blocked}>
-  <p>{t('Demo data is saved on this browser or app installation. Tabs on the same origin share it. Clearing app or browser data removes it; other devices and preview origins are separate.')}</p>
+  {p.compact?<details className="marketStorageNotice"><summary>{t('Saved on this device')}</summary><p>{t('Demo data is saved on this browser or app installation. Tabs on the same origin share it. Clearing app or browser data removes it; other devices and preview origins are separate.')}</p></details>:<p>{t('Demo data is saved on this browser or app installation. Tabs on the same origin share it. Clearing app or browser data removes it; other devices and preview origins are separate.')}</p>}
   {p.loading&&<p role="status">{t('Loading saved demo data…')}</p>}
   {p.error==='storage'&&<p role="alert">{t('Demo storage is unavailable or invalid. No change was confirmed. Restore storage access and reload; existing data has not been reset.')}</p>}
   {p.error==='changed'&&<p role="alert">{t('Another view changed the demo data. Your action was not applied. Review the refreshed state and try again.')}</p>}

@@ -26,7 +26,7 @@ function requireSameOrigin(req,write){
  if(req.headers.origin!==undefined&&req.headers.origin!==expected)fail(403,'ORIGIN_DENIED');
  if(write&&req.headers.origin!==expected)fail(403,'ORIGIN_REQUIRED');
  if(req.headers['x-views-local-workspace']!=='1')fail(403,'LOCAL_HEADER_REQUIRED');
- if(Object.keys(req.headers).some(k=>/^(?:x-views-(?:internal|service|staff)|x-(?:organization|user|membership)-id)/.test(k)))fail(403,'ACTOR_OVERRIDE_DENIED');
+ if(Object.keys(req.headers).some(k=>/^(?:x-views-(?:internal|service|staff|partner)|x-(?:organization|user|membership)-id)/.test(k)))fail(403,'ACTOR_OVERRIDE_DENIED');
 }
 function same(a,b){return typeof a==='string'&&typeof b==='string'&&Buffer.byteLength(a)===Buffer.byteLength(b)&&timingSafeEqual(Buffer.from(a),Buffer.from(b));}
 function exactKeys(v,keys){if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).length!==keys.length||!keys.every(k=>Object.hasOwn(v,k)))fail(400,'INVALID_REQUEST');}
@@ -86,7 +86,9 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    const rateDetail=ratesRoute&&!u.pathname.endsWith('/rates');
    const catalogSearch=u.pathname==='/local-api/inventory-search'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['from','to','guests','city','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
    const refundSearch=u.pathname==='/local-api/refund-reconciliation'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['status','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
-   const validSearch=ownerServicesSearch||require('./service-order-gateway.cjs').validSearch(u,req.method)||require('./supply-gateway.cjs').validSearch(u,req.method)||require('./folio-gateway.cjs').validSearch(u,req.method)||refundSearch||catalogSearch||((calendarRoute||rateDetail)?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1);
+   const partnerSearch=u.pathname==='/local-api/partner-dispatch'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['propertyId','after'].includes(k)&&u.searchParams.getAll(k).length===1);
+   const slaSearch=u.pathname==='/local-api/sla-policy'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='propertyId'&&u.searchParams.getAll(k).length===1);
+   const validSearch=slaSearch||partnerSearch||ownerServicesSearch||require('./service-order-gateway.cjs').validSearch(u,req.method)||require('./supply-gateway.cjs').validSearch(u,req.method)||require('./folio-gateway.cjs').validSearch(u,req.method)||refundSearch||catalogSearch||((calendarRoute||rateDetail)?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1);
    if(u.pathname+u.search!==req.url||u.hash||(u.search&&!validSearch))fail(400,'INVALID_ROUTE');
    const route=u.pathname,token=tokenFrom(req);
    if(req.method==='GET'&&route==='/local-api/session'){
@@ -130,6 +132,18 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    if(await require('./service-order-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,propertyId:config.fixture.propertyId}))return true;
    if(await require('./supply-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,exactKeys}))return true;
    if(await require('./folio-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,exactKeys}))return true;
+   if(['/local-api/sla-policy','/local-api/sla-policy/drafts','/local-api/sla-policy/simulate'].includes(route)){
+    if(process.env.NODE_ENV!=='test'||process.env.VIEWS_LOCAL_REHEARSAL!=='true'||process.env.VIEWS_SLA_POLICY_DRAFT_ENABLED!=='true')fail(404,'SLA_POLICY_DISABLED');
+    if(!identity.permissions.includes('reservation.manage'))fail(403,'STAFF_PERMISSION_DENIED');
+    if(route==='/local-api/sla-policy'){if(req.method!=='GET')fail(405,'METHOD_DENIED');if(u.searchParams.has('propertyId')&&u.searchParams.get('propertyId')!==config.fixture.propertyId)fail(403,'PROPERTY_FORBIDDEN');json(res,200,await core('/v1/sla-policy?propertyId='+config.fixture.propertyId,'GET',undefined,undefined,token,identity));}
+    else{if(req.method!=='POST')fail(405,'METHOD_DENIED');const body=await readJson(req,16384);if(body?.propertyId!==config.fixture.propertyId)fail(403,'PROPERTY_FORBIDDEN');const key=req.headers['idempotency-key'];if(route.endsWith('/drafts')&&(typeof key!=='string'||!UUID.test(key)))fail(400,'IDEMPOTENCY_KEY_REQUIRED');json(res,200,await core(route.replace('/local-api/','/v1/'),'POST',body,key,token,identity));}return true;
+   }
+   if(['/local-api/partner-dispatch','/local-api/partner-dispatch/offers'].includes(route)){
+    if(process.env.NODE_ENV!=='test'||process.env.VIEWS_LOCAL_REHEARSAL!=='true'||process.env.VIEWS_PARTNER_PILOT_ENABLED!=='true')fail(404,'PARTNER_PILOT_DISABLED');
+    if(!identity.permissions.includes('reservation.manage'))fail(403,'STAFF_PERMISSION_DENIED');
+    if(route.endsWith('/offers')){if(req.method!=='POST')fail(405,'METHOD_DENIED');const key=req.headers['idempotency-key'];if(typeof key!=='string'||!UUID.test(key))fail(400,'IDEMPOTENCY_KEY_REQUIRED');json(res,200,await core('/v1/partner-dispatch/offers','POST',await readJson(req),key,token,identity));}
+    else{if(req.method!=='GET')fail(405,'METHOD_DENIED');const requested=u.searchParams.get('propertyId');if(requested&&requested!==config.fixture.propertyId)fail(403,'PROPERTY_FORBIDDEN');const params=new URLSearchParams(u.search);params.set('propertyId',config.fixture.propertyId);json(res,200,await core('/v1/partner-dispatch?'+params.toString(),'GET',undefined,undefined,token,identity));}return true;
+   }
    if(ownerServicesRoute){
     if(process.env.NODE_ENV!=='test'||process.env.VIEWS_LOCAL_REHEARSAL!=='true'||process.env.VIEWS_OWNER_SERVICES_ENABLED!=='true')fail(404,'OWNER_SERVICES_DISABLED');
     if(req.method!=='GET')fail(405,'METHOD_DENIED');

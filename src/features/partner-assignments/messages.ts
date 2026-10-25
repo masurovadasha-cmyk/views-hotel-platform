@@ -1,0 +1,23 @@
+import type {Locale} from './model';
+export const messages:Record<string,[string,string]>={
+ 'Only part of the eligible grant list is shown. This is not a complete partner registry.':['Показана только часть подходящих разрешений. Это не полный реестр партнёров.','Mos ruxsatlarning faqat bir qismi koʻrsatilgan. Bu hamkorlarning toʻliq roʻyxati emas.'],
+ 'Partner dispatch':['Предложения партнёрам','Hamkorlarga takliflar'],'Partner inbox':['Входящие партнёра','Hamkor kiruvchi takliflari'],
+ 'Disconnected. A separately authenticated local test session is required. No partner login or real service execution is available here.':['Не подключено. Нужен отдельно подтверждённый локальный тестовый сеанс. Вход партнёра и реальное исполнение услуг здесь недоступны.','Ulanmagan. Alohida tasdiqlangan mahalliy sinov seansi kerak. Hamkor kirishi va haqiqiy xizmat bajarilishi bu yerda mavjud emas.'],
+ 'Synthetic coordination only. Acceptance is not fulfilment, delivery or a payment. No amounts or guest personal data are shown.':['Только тестовое согласование. Принятие не означает исполнение, доставку или платёж. Суммы и персональные данные гостей не показываются.','Faqat sinov muvofiqlashtirishi. Qabul qilish bajarish, yetkazib berish yoki toʻlov emas. Summalar va mehmonlarning shaxsiy maʼlumotlari koʻrsatilmaydi.'],
+ 'Loading…':['Загрузка…','Yuklanmoqda…'],'Refresh':['Обновить','Yangilash'],'Next page':['Следующая страница','Keyingi sahifa'],'No eligible items.':['Подходящих записей нет.','Mos yozuvlar yoʻq.'],
+ 'Request failed. Existing command, if any, is retained.':['Запрос не выполнен. Существующая команда, если есть, сохранена.','Soʻrov bajarilmadi. Mavjud buyruq boʻlsa, saqlangan.'],
+ 'Local recovery storage is unavailable or invalid. Sending is blocked; nothing was reset.':['Локальное хранилище восстановления недоступно или повреждено. Отправка заблокирована; ничего не сброшено.','Mahalliy tiklash xotirasi mavjud emas yoki yaroqsiz. Yuborish bloklangan; hech narsa oʻchirilmagan.'],
+ 'The recovery record changed in another tab. Reload it before continuing.':['Запись восстановления изменилась в другой вкладке. Загрузите её перед продолжением.','Tiklash yozuvi boshqa varaqda oʻzgargan. Davom etishdan oldin uni yuklang.'],
+ 'Offline. Reconnect before sending or recovering.':['Нет сети. Подключитесь перед отправкой или восстановлением.','Tarmoq yoʻq. Yuborish yoki tiklashdan oldin ulaning.'],
+ 'Unresolved command. Its result may already be committed. Recover using the same command; do not create a replacement.':['Команда не согласована. Результат уже мог быть сохранён сервером. Восстановите результат той же команды; не создавайте замену.','Buyruq natijasi aniqlanmagan. Natija serverda saqlangan boʻlishi mumkin. Shu buyruq bilan tiklang; oʻrniga yangi buyruq yaratmang.'],
+ 'Recover same command':['Восстановить ту же команду','Shu buyruqni tiklash'],'Reload recovery record':['Загрузить запись восстановления','Tiklash yozuvini yuklash'],
+ 'Offer assignment':['Предложить назначение','Topshiriqni taklif qilish'],'Accept offer':['Принять предложение','Taklifni qabul qilish'],'Reject offer':['Отклонить предложение','Taklifni rad etish'],
+ 'Review synthetic command':['Проверить тестовую команду','Sinov buyrugʻini tekshirish'],'Confirm synthetic command':['Подтвердить тестовую команду','Sinov buyrugʻini tasdiqlash'],'Cancel':['Отмена','Bekor qilish'],
+ 'Partner grant':['Разрешение партнёра','Hamkor ruxsati'],'Choose a grant':['Выберите разрешение','Ruxsatni tanlang'],'Offer expires at':['Срок действия предложения','Taklifning amal qilish muddati'],'Browser time zone':['Часовой пояс браузера','Brauzer vaqt mintaqasi'],
+ 'Requested for':['Запрошено на','Soʻralgan vaqt'],'Expires':['Истекает','Tugaydi'],'Revision':['Ревизия','Tahrir'],'Terms version':['Версия условий','Shartlar versiyasi'],
+ 'Current server receipt':['Текущее подтверждение сервера','Serverning joriy tasdigʻi'],'Idempotent replay':['Повтор без дублирования','Takror yaratmasdan qayta soʻrov'],
+ 'Command was not applied. Refresh before reviewing a new command.':['Команда не применена. Обновите данные перед новой командой.','Buyruq qoʻllanmagan. Yangi buyruqdan oldin maʼlumotlarni yangilang.'],
+ 'offered':['Предложено','Taklif qilingan'],'accepted':['Принято','Qabul qilingan'],'rejected':['Отклонено','Rad etilgan'],'withdrawn':['Отозвано','Qaytarib olingan'],'expired':['Истекло','Muddati tugagan'],'concierge':['Консьерж','Konsyerj'],
+ 'accept':['Принять','Qabul qilish'],'reject':['Отклонить','Rad etish'],'offer':['Предложить','Taklif qilish']
+};
+export const translate=(locale:Locale,key:string)=>locale==='en'?key:messages[key]?.[locale==='ru'?0:1]??key;

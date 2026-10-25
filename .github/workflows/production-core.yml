@@ -19,6 +19,7 @@ on:
       - "scripts/guest-email-http-proof.cjs"
       - "scripts/operations-queue-http-proof.cjs"
       - "scripts/wave2-core-http-proof.cjs"
+      - "scripts/wave3-http-proof.cjs"
       - "scripts/fixtures/guest-email-smtp.cjs"
       - ".github/workflows/production-core.yml"
   pull_request:
@@ -38,6 +39,7 @@ on:
       - "scripts/guest-email-http-proof.cjs"
       - "scripts/operations-queue-http-proof.cjs"
       - "scripts/wave2-core-http-proof.cjs"
+      - "scripts/wave3-http-proof.cjs"
       - "scripts/fixtures/guest-email-smtp.cjs"
 
 jobs:
@@ -103,6 +105,7 @@ jobs:
           GRANT USAGE ON SCHEMA public,app TO views_app;
           GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO views_app;
           REVOKE INSERT,UPDATE,DELETE ON provider_egress_attempts,provider_egress_reconciliation_queue FROM views_app;
+          REVOKE UPDATE,DELETE ON sla_policy_draft_versions,sla_policy_draft_commands FROM views_app;
           GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app;
           SQL
           psql -h localhost -U views -d views -v ON_ERROR_STOP=1 <<'SQL'
@@ -243,6 +246,9 @@ jobs:
               await require('./apps/api/db/tests/owner-calendar-recovery.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
               await require('./apps/api/db/tests/booking-release-recovery.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
               await require('./apps/api/db/tests/owner-services.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
+              await require('./apps/api/db/tests/sla-policy-proof.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
+              await require('./apps/api/db/tests/partner-foundation.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
+              await require('./scripts/wave3-http-proof.cjs')({admin,runtimeUrl:process.env.DATABASE_URL});
             }finally{await admin.end();}
           })().catch(error=>{console.error(error.message);process.exitCode=1;});
           JS

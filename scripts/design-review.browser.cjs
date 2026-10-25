@@ -19,7 +19,7 @@ const android=process.argv.includes('--android'),directory=path.resolve(android?
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    }
   }
-  await main.getByLabel('Audience',{exact:true}).selectOption('');await main.getByLabel('Implementation',{exact:true}).selectOption('pending');assert.equal(await main.locator('nav button').count(),79); // Five newly partial H2/A1 IDs; full acceptance remains pending.
+  await main.getByLabel('Audience',{exact:true}).selectOption('');await main.getByLabel('Implementation',{exact:true}).selectOption('pending');assert.equal(await main.locator('nav button').count(),73); // Six newly partial P1/S1 IDs; full acceptance remains pending.
   await main.getByLabel('Find by name or screen ID',{exact:true}).fill('no-such-screen');await main.getByText('No matching screens',{exact:true}).waitFor();
   await main.getByLabel('Find by name or screen ID',{exact:true}).fill('');await main.getByLabel('Implementation',{exact:true}).selectOption('');
   for(const lang of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(lang);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}

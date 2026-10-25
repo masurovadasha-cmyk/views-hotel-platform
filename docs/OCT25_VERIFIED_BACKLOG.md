@@ -2,7 +2,7 @@
 
 База после fresh fetch: PR #91, `20decdfff77b2fb59e73496e6e374d1e42e7638b`, четыре CI success. Все открытые PR проверены: новая конкурирующая работа после #91 не обнаружена. Canonical repository только masurovadasha-cmyk/views-hotel-platform. Дедлайн запроса: 26 октября Asia/Tashkent (UTC+05), точный час не указан.
 
-Это полный по-ID инвентарь существующих 140 services screens плюс отдельные платформенные сценарии, а не обещание закончить всю платформу за день. 61 partial / 79 pending / 0 fully accepted (после ограниченных H2/A1; базовый инвентарь был 56/84); все visual/functional acceptance pending. 280 RU Light/Dark изображений проверены по manifest; их просмотрщик не реализация, перевод меню не перевод PDF. UZ/EN дизайн-оригиналы не подтверждены. Core booking/property management не входит в эти 140 services IDs.
+Это полный по-ID инвентарь существующих 140 services screens плюс отдельные платформенные сценарии, а не обещание закончить всю платформу за день. 67 partial / 73 pending / 0 fully accepted (кандидат 0.23; базовый инвентарь был 56/84); все visual/functional acceptance pending. 280 RU Light/Dark изображений проверены по manifest; их просмотрщик не реализация, перевод меню не перевод PDF. UZ/EN дизайн-оригиналы не подтверждены. Core booking/property management не входит в эти 140 services IDs.
 
 ## Проверенная база и границы
 
@@ -16,18 +16,18 @@
 
 | ID | Приоритет | Состояние | Критерий | Владелец | Миграция |
 |---|---|---|---|---|---|
-| M1 | P0 | Проверено в 0.21 / PR92 / af65312 | Освобождение lot-reserve при guest/staff cancel; auth/replay/rollback/races; runtime закрыт | core_integration | 0134 |
-| Q1 | P0 | Проверено в 0.21 / PR92 / af65312 | Read-only четыре секции CRM; независимые cursors, scope, актуальный минимальный detail | frontend_integration | нет |
-| H1 | P0 | Проверено в 0.21 / PR92 / af65312 | Durable block/unblock: intent до POST, current receipt, terminal absence, reload/cross-scope | booking_recovery_ui | 0135 |
-| M2 | P0 | Проверено в 0.21 / PR92 / af65312 | Освобождение/перенос lot-reserve при replacement; old/successor атомарность, без runtime activation | core_integration | 0136 |
-| M3 | P0 | Интегрировано в кандидат 0.22; финальный CI/Android ожидается | Выдача/потребление lot-reserve без двойного stock issue; завершить все terminal paths до runtime решения | core_integration | 0137 |
-| B2 | P1 | Интегрировано в кандидат 0.22; финальный CI/Android ожидается | Durable release hold и честное сообщение о доступности; повтор/истёкший/уже отменённый результат | booking_recovery_ui | нет |
-| V1 | P1 | Аудит 9ID завершён; исправления навигации/читаемости в работе | 8–12 существующих ID: route/state/proof, Light/Dark/RU/UZ/EN/mobile, без фиктивной полной приёмки | integration_qa | нет |
-| P1 | P1 | Изолированная реализация ограниченного тестового контракта; ещё не интегрировано | Отдельный partner scope контракт/deny матрица/assignment isolation; не staff role, реальный вход отдельно | dependency_review / market_media | 0140 зарезервирована |
-| H2 | P1 | Интегрировано в кандидат 0.22; финальный CI/Android ожидается | Read-only SH-GN-001/003 только после отдельного owner scope и минимального состава данных | dependency_review | 0138 |
-| A1 | P1 | Интегрировано в кандидат 0.22; финальный CI/Android ожидается | Версионированный локальный service draft + безопасный dry-run SA-GN-001/002/009; без публикации | market_media | нет |
-| S1 | P1 | Изолированная реализация ограниченного тестового контракта; ещё не интегрировано | Объяснимый существующий concierge deadline; общая утверждённая SLA матрица/рабочий календарь отдельно | booking_recovery_ui | 0139 зарезервирована |
-| PHOTO | P1 | 7 лицензированных иллюстраций проверены 0.21; точныеSKU/вода открыты | Проверить оригиналы/лицензии по каждому из 8 товаров; не подменять SKU общим стоковым фото | market_media | нет |
+| M1 | P0 | Проверено в0.21 / PR92 / af65312 | Освобождение lot-reserve при guest/staff cancel; auth/replay/rollback/races; runtime закрыт | core_integration | 0134 |
+| Q1 | P0 | Проверено в0.21 / PR92 / af65312 | Read-only четыре секции CRM; независимые cursors, scope, актуальный минимальный detail | frontend_integration | нет |
+| H1 | P0 | Проверено в0.21 / PR92 / af65312 | Durable block/unblock: intent до POST, current receipt, terminal absence, reload/cross-scope | booking_recovery_ui | 0135 |
+| M2 | P0 | Проверено в0.21 / PR92 / af65312 | Освобождение/перенос lot-reserve при replacement; old/successor атомарность, без runtime activation | core_integration | 0136 |
+| M3 | P0 | Интегрировано в кандидат0.22; финальный CI/Android ожидается | Выдача/потребление lot-reserve без двойного stock issue; завершить все terminal paths до runtime решения | core_integration | 0137 |
+| B2 | P1 | Интегрировано в кандидат0.22; финальный CI/Android ожидается | Durable release hold и честное сообщение о доступности; повтор/истёкший/уже отменённый результат | booking_recovery_ui | нет |
+| V1 | P1 | Кандидат 0.23; финальная интеграционная приёмка ожидается | 8–12 существующих ID: route/state/proof, Light/Dark/RU/UZ/EN/mobile, без фиктивной полной приёмки | integration_qa | нет |
+| P1 | P1 | Кандидат 0.23; финальная интеграционная приёмка ожидается | Отдельный partner scope контракт/deny матрица/assignment isolation; не staff role, реальный вход отдельно | dependency_review / market_media | 0140 зарезервирована |
+| H2 | P1 | Интегрировано в кандидат0.22; финальный CI/Android ожидается | Read-only SH-GN-001/003 только после отдельного owner scope и минимального состава данных | dependency_review | 0138 |
+| A1 | P1 | Интегрировано в кандидат0.22; финальный CI/Android ожидается | Версионированный локальный service draft + безопасный dry-run SA-GN-001/002/009; без публикации | market_media | нет |
+| S1 | P1 | Кандидат 0.23; финальная интеграционная приёмка ожидается | Объяснимый существующий concierge deadline; общая утверждённая SLA матрица/рабочий календарь отдельно | booking_recovery_ui | 0139 зарезервирована |
+| PHOTO | P1 | 7 лицензированных иллюстраций проверены0.21; точныеSKU/вода открыты | Проверить оригиналы/лицензии по каждому из 8 товаров; не подменять SKU общим стоковым фото | market_media | нет |
 
 ## Остальные существующие требования, не скрытые внешними gates
 
@@ -142,7 +142,7 @@ LocalCoreWorkspace/booking-recovery: recoveryScope, property timezone, unit/rate
 | SD-GN-006 | CRM / диспетчер | Лестница эскалации | pending | pending / pending | None |
 | SD-GN-007 | CRM / диспетчер | Услуги: показатели | pending | pending / pending | None |
 | SD-GN-008 | CRM / диспетчер | Финансы CL-1042 | partial | pending / pending | docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity; docs/design/CANVA_140_BLOCK_11_MARKET_ADJUSTMENTS.md (operational credits and inspected stock returns; no provider refund) |
-| SD-GN-009 | CRM / диспетчер | Партнёры и назначения | pending | pending / pending | None |
+| SD-GN-009 | CRM / диспетчер | Партнёры и назначения | partial | pending / pending | docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding |
 | SS-CL-001 | Персонал | Номера на смену | partial | pending / pending | docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity |
 | SS-CL-002 | Персонал | Уборка #235 | partial | pending / pending | docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity |
 | SS-CL-003 | Персонал | Проверка #235 | partial | pending / pending | docs/SERVICE_CLEANING_WEB.md; partial workflow, not full screen parity |
@@ -173,12 +173,12 @@ LocalCoreWorkspace/booking-recovery: recoveryScope, property timezone, unit/rate
 | SP-EX-002 | Партнёр | Участники экскурсии | pending | pending / pending | None |
 | SP-TK-001 | Партнёр | Заявка на выписку | pending | pending / pending | None |
 | SP-TK-002 | Партнёр | Выписка и изменения | pending | pending / pending | None |
-| SP-GN-001 | Партнёр | Входящие заказы | pending | pending / pending | None |
-| SP-GN-002 | Партнёр | Принять заказ | pending | pending / pending | None |
+| SP-GN-001 | Партнёр | Входящие заказы | partial | pending / pending | docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding |
+| SP-GN-002 | Партнёр | Принять заказ | partial | pending / pending | docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding |
 | SP-GN-003 | Партнёр | Исполнение заказа | pending | pending / pending | None |
 | SP-GN-004 | Партнёр | Акты и выплаты | pending | pending / pending | None |
 | SP-GN-005 | Партнёр | Календарь партнёра | pending | pending / pending | None |
-| SP-GN-006 | Партнёр | Портал партнёра | pending | pending / pending | None |
+| SP-GN-006 | Партнёр | Портал партнёра | partial | pending / pending | docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding |
 | SH-GN-001 | Хост | Услуги объекта | partial | pending / pending | docs/OWNER_SERVICES_H2_20261025.md; authenticated local read-only active catalog/current orders, no commissions/income or public Core |
 | SH-GN-002 | Хост | Цена и комиссия | pending | pending / pending | None |
 | SH-GN-003 | Хост | Заказы гостей | partial | pending / pending | docs/OWNER_SERVICES_H2_20261025.md; authenticated local read-only active catalog/current orders, no commissions/income or public Core |
@@ -188,11 +188,11 @@ LocalCoreWorkspace/booking-recovery: recoveryScope, property timezone, unit/rate
 | SA-GN-003 | Администратор | Правила цены | pending | pending / pending | None |
 | SA-GN-004 | Администратор | Доступность услуги | pending | pending / pending | None |
 | SA-GN-005 | Администратор | Способ исполнения | pending | pending / pending | None |
-| SA-GN-006 | Администратор | Сроки по этапам | pending | pending / pending | None |
+| SA-GN-006 | Администратор | Сроки по этапам | partial | pending / pending | docs/SLA_POLICY_DRAFT_20261025.md; versioned draft and calendar simulation only, no activation/escalation or changed order deadlines |
 | SA-GN-007 | Администратор | Кому направить заказ? | pending | pending / pending | None |
 | SA-GN-008 | Администратор | Уведомления | pending | pending / pending | None |
 | SA-GN-009 | Администратор | Предпросмотр услуги | partial | pending / pending | src/features/service-builder/README.md; local versioned draft and dry-run only, no publication/price/upload/routing/Core catalog |
-| SA-GN-010 | Администратор | Матрица SLA | pending | pending / pending | None |
+| SA-GN-010 | Администратор | Матрица SLA | partial | pending / pending | docs/SLA_POLICY_DRAFT_20261025.md; versioned draft and calendar simulation only, no activation/escalation or changed order deadlines |
 | SA-GN-011 | Администратор | Шаблоны сообщений | pending | pending / pending | None |
 | SA-GN-012 | Администратор | Правила объекта | pending | pending / pending | None |
 | SA-GN-013 | Администратор | Справочники и права | pending | pending / pending | None |
@@ -208,3 +208,13 @@ LocalCoreWorkspace/booking-recovery: recoveryScope, property timezone, unit/rate
 Следующая конечная волна: V1 прямой вход в маркет/корзину и читаемая очередь; S1 сохранённые черновики SLA и объяснимый расчёт рабочего календаря без активации; P1 отдельное синтетическое предложение concierge партнёру и accept/reject без исполнения услуги. Новые направления не добавлены.
 
 Canva supplement IDs от родителя: CG-BK-008 quote/hold expiry; CG-BK-010 неизвестный результат и тот же ключ; CG-BK-017 offline/corrupt store; CH-OP-006 конфликт дат и block/unblock recovery; CS-FO-004 запись успешна, refresh неуспешен; CA-CR-006 scope объекта; CA-CR-009 read-after-write recovery; CA-CR-012 read-only четыре услуги. Это mapping макетов, не доказательства готовности. Номер брони VW и request key REQ раздельны. UZ/EN дизайн-драфты родителя не означают принятые языковые макеты; pending Canva approval не блокирует engineering.
+
+## Кандидат 0.23: границы последней выбранной волны
+
+V1: отдельные маршруты каталога/корзины/истории, Back/Forward, сохранение ledger, отсутствие demo IDB в live-режиме; читаемые статусы Q1. P1: отдельная синтетическая partner identity/session/grant и предложение concierge; accept/reject меняет только назначение, не исполнение услуги. S1: сохраняемые версии черновика и симуляция рабочего календаря; действующие deadlines, уведомления и эскалации не активируются. Все три пакета должны пройти окончательные CI/Android до приёмки.
+
+Независимая QA воспроизвела поздний исходный P1-запрос после временного409. Контракт исправлен: recoveryOnly создаёт постоянный not_applied fence, applied/not_applied receipt привязан к commandKey; клиент не очищает журнал по одному409. Тесты отдельно проверяют неверный receipt и границы revision.
+
+S1/P1 повышают только шесть ID до partial: SA-GN-006/010, SD-GN-009, SP-GN-001/002/006. Число полностью принятых экранов остаётся нулём; 73 отсутствующих/незавершённых workflow не скрываются утверждением о готовности платформы. Подключение настоящих партнёров, runtime SLA, физическая доставка, onboarding и выплаты не входят в этот тестовый контракт.
+
+Дизайн-поток завершил 33 набора / 1104 страницы. Отдельный mapping и предоставленные ссылки: `docs/CANVA_CORE_MAPPING_20261025.md`. Это не принятие 184 экранов в коде.

@@ -1,5 +1,6 @@
 'use strict';
 const durable=require('./demo-market-storage-browser-helper.cjs');
+const views=require('./market-view-browser-helper.cjs');
 // Upgrade and atomic replacement proof against the actual built UI, without Core/network writes.
 const assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),path=require('node:path');
 const {chromium}=require('playwright');
@@ -24,7 +25,7 @@ const server=http.createServer((req,res)=>{
    await page.addInitScript(l=>localStorage.setItem('views.guest.locale',l),locale);
    page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/*',route=>{const r=route.request(),u=new URL(r.url());if(u.origin!==origin){requests.push(r.url());return route.abort();}return route.continue();});
-   await page.goto(origin+'/?api=demo');await page.getByRole('button',{name:/V Market/}).first().click();await durable.ready(page);
+   await page.goto(origin+'/?api=demo');await page.getByTestId('guest-market-shortcut').click();await durable.ready(page);
    const shop=page.getByTestId('guest-market'),t=k=>messages[k]?.[locale]||k;
    for(const theme of ['light','dark']){
     if(await page.locator('[data-theme-toggle]').getAttribute('aria-pressed')!==String(theme==='dark'))await page.locator('[data-theme-toggle]').click();
@@ -37,9 +38,9 @@ const server=http.createServer((req,res)=>{
     await page.screenshot({path:'/tmp/views-market-photos-'+locale+'-'+theme+'.png',fullPage:true});
    }
    await shop.locator('.marketPhoto summary').first().click();assert.ok(await shop.locator('.marketPhoto a').first().isVisible());
-   await shop.getByRole('button',{name:t('Add to list')+': '+t('Green tea'),exact:true}).click();await durable.ready(page);assert.equal(await shop.getByTestId('market-count').innerText(),'1');
-   await page.route('**/*.webp',route=>route.abort());await page.reload();await page.getByRole('button',{name:/V Market/}).first().click();await durable.ready(page);
-   await page.waitForFunction(()=>document.querySelectorAll('.marketPhoto img').length===0);assert.equal(await shop.getByText(t('Photo unavailable'),{exact:true}).count(),8);assert.equal(await shop.getByTestId('market-count').innerText(),'1');
+   await shop.getByRole('button',{name:t('Add to list')+': '+t('Green tea'),exact:true}).click();await durable.ready(page);assert.equal(await views.readIn(page,'basket',()=>shop.getByTestId('market-count').innerText()),'1');
+   await page.route('**/*.webp',route=>route.abort());await page.reload();await views.view(page,'catalogue');await durable.ready(page);
+   await page.waitForFunction(()=>document.querySelectorAll('.marketPhoto img').length===0);assert.equal(await shop.getByText(t('Photo unavailable'),{exact:true}).count(),8);assert.equal(await views.readIn(page,'basket',()=>shop.getByTestId('market-count').innerText()),'1');
    checks.push(locale+': light/dark 360/390/1440; seven photos, attribution, missing/error fallback, cart reload');await context.close();
   }
   assert.deepEqual(errors,[]);assert.deepEqual(requests,[]);console.log(JSON.stringify({result:'pass',checks,externalRequests:requests.length}));

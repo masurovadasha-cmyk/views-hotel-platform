@@ -4,8 +4,8 @@
   "timezone": "Asia/Tashkent",
   "screenCounts": {
     "total": 140,
-    "partial": 61,
-    "pending": 79,
+    "partial": 67,
+    "pending": 73,
     "fullyAccepted": 0
   },
   "workPackages": [
@@ -60,7 +60,7 @@
     {
       "id": "V1",
       "priority": "P1",
-      "status": "Аудит9ID завершён; исправления навигации/читаемости в работе",
+      "status": "Кандидат 0.23; финальная интеграционная приёмка ожидается",
       "acceptance": "8–12 существующих ID: route/state/proof, Light/Dark/RU/UZ/EN/mobile, без фиктивной полной приёмки",
       "owner": "integration_qa",
       "migration": "нет"
@@ -68,7 +68,7 @@
     {
       "id": "P1",
       "priority": "P1",
-      "status": "Изолированная реализация ограниченного тестового контракта; ещё не интегрировано",
+      "status": "Кандидат 0.23; финальная интеграционная приёмка ожидается",
       "acceptance": "Отдельный partner scope контракт/deny матрица/assignment isolation; не staff role, реальный вход отдельно",
       "owner": "dependency_review / market_media",
       "migration": "0140 зарезервирована"
@@ -92,7 +92,7 @@
     {
       "id": "S1",
       "priority": "P1",
-      "status": "Изолированная реализация ограниченного тестового контракта; ещё не интегрировано",
+      "status": "Кандидат 0.23; финальная интеграционная приёмка ожидается",
       "acceptance": "Объяснимый существующий concierge deadline; общая утверждённая SLA матрица/рабочий календарь отдельно",
       "owner": "booking_recovery_ui",
       "migration": "0139 зарезервирована"
@@ -1472,11 +1472,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "dispatcher",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding"
     },
     {
       "id": "SS-CL-001",
@@ -1973,11 +1973,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "partner",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding"
     },
     {
       "id": "SP-GN-002",
@@ -1989,11 +1989,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "partner",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding"
     },
     {
       "id": "SP-GN-003",
@@ -2053,11 +2053,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "partner",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding"
     },
     {
       "id": "SH-GN-001",
@@ -2213,11 +2213,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "admin",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/SLA_POLICY_DRAFT_20261025.md; versioned draft and calendar simulation only, no activation/escalation or changed order deadlines"
     },
     {
       "id": "SA-GN-007",
@@ -2277,11 +2277,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "admin",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/SLA_POLICY_DRAFT_20261025.md; versioned draft and calendar simulation only, no activation/escalation or changed order deadlines"
     },
     {
       "id": "SA-GN-011",

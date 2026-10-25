@@ -1,3 +1,5 @@
+import {SlaPolicyModule} from './sla-policy/sla-policy.module';
+import {PartnerModule} from './partner/partner.module';
 import {ServiceOrderModule} from './service-orders/service-order.module';
 import {SupplyModule} from './supply/supply.module';
 import {FolioModule} from './folios/folio.module';
@@ -30,7 +32,7 @@ import {ProviderEgressModule} from "./security/egress/provider-egress.module";
 
 @Module({
   imports:[
-    ServiceOrderModule,SupplyModule,FolioModule,GuestIdentityModule,DatabaseModule,InventoryModule,RatesModule,BookingModule,
+    SlaPolicyModule,PartnerModule,ServiceOrderModule,SupplyModule,FolioModule,GuestIdentityModule,DatabaseModule,InventoryModule,RatesModule,BookingModule,
     PaymentsModule,ComplianceModule,AnalyticsModule,MarketplaceModule,
     ProviderEgressModule,StaffAuthModule,OwnerModule,HousekeepingModule
   ],

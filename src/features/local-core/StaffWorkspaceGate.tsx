@@ -1,3 +1,7 @@
+import {StaffCoordinationWorkspace} from '../coordination-entry/StaffCoordinationWorkspace';
+import {allowDraftNavigation} from '../service-builder/navigation';
+import {translate as partnerText} from '../partner-assignments/messages';
+import {translator as slaTranslator} from '../sla-policy/locale';
 import {OwnerServicesWorkspace} from '../owner-services/OwnerServicesWorkspace';
 import {ownerServicesText} from '../owner-services/locale';
 import {OperationsQueue} from '../operations-queue/OperationsQueue';
@@ -42,6 +46,7 @@ export function StaffWorkspaceGate(){
  const [session,setSession]=useState<Session>({authenticated:false}),[loading,setLoading]=useState(true),[mode,setMode]=useState<'login'|'activate'|'reset'>('login');
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[repeat,setRepeat]=useState(''),[token,setToken]=useState('');
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const [coordination,setCoordination]=useState<'dispatch'|'sla'|null>(null),[coordinationPending,setCoordinationPending]=useState(false);
  const [conciergePending,setConciergePending]=useState(false);
  const [marketPending,setMarketPending]=useState(false);
  const [laundryPending,setLaundryPending]=useState(false);
@@ -65,7 +70,7 @@ export function StaffWorkspaceGate(){
   finally{setPassword('');setRepeat('');setBusy(false);}
  }
  async function logout(all:boolean){
-  if(conciergePending||laundryPending||marketPending)return;
+  if(conciergePending||laundryPending||marketPending||coordinationPending||!allowDraftNavigation())return;
   setBusy(true);setError('');try{await authCall('logout',{all},session.csrf);setSession({authenticated:false});setChange(false);setAssurance(false);setCurrent('');setNext('');setChangeNotice('');setNotice(all?'Все ваши сессии завершены.':'Вы вышли из системы.');}
   catch(e){setError(e instanceof Error?e.message:'Не удалось завершить сессию.');}finally{setBusy(false);}
  }
@@ -97,11 +102,12 @@ export function StaffWorkspaceGate(){
  if(session.authenticated&&session.identity&&session.csrf&&!staffRoleMatches(requested,session.identity.role))return <main className="localWorkspace staffRoleMismatch">
   <h1>{roleText(locale,'A different employee role is signed in.')}</h1><p>{roleText(locale,'This address does not grant access. Continue to your assigned workspace or sign out to use another account.')}</p>
   {actualRole&&<a href={staffEntryUrl(actualRole,true)}>{roleText(locale,'Open my workspace')}</a>}
-  <button disabled={busy||conciergePending||laundryPending||marketPending} onClick={()=>void logout(false)}>{t('Выйти')}</button>{error&&<p role="alert">{t(error)}</p>}
+  <button disabled={busy||conciergePending||laundryPending||marketPending||coordinationPending} onClick={()=>void logout(false)}>{t('Выйти')}</button>{error&&<p role="alert">{t(error)}</p>}
  </main>;
  if(session.authenticated&&session.identity&&session.csrf)return <>
   {actualRole&&<div className="localWorkspace"><StaffRoleHeading role={actualRole} locale={locale}/></div>}
   <nav className="localWorkspace localNavigation" aria-label={t("Разделы рабочей области")}>
+   {session.identity.permissions.includes('reservation.manage')&&<><button data-testid="staff-open-dispatch" onClick={()=>{if(allowDraftNavigation())setCoordination('dispatch');}}>{partnerText(locale,'Partner dispatch')}</button><button data-testid="staff-open-sla" onClick={()=>{if(allowDraftNavigation())setCoordination('sla');}}>{slaTranslator(locale)('title')}</button></>}
    {owner&&<a href="#staff-owner-services">{ownerServicesText(locale,'title')}</a>}{queueAllowed&&<a href="#staff-service-queue">{queueText(locale,'title')}</a>}
    {folios&&<a href="#staff-folios">{folioWorkspaceTitle(locale)}</a>}
    {sections.includes('supplies')&&actualRole&&<a href="#staff-supplies">{roleText(locale,actualRole==='procurement'?'Purchasing':'Warehouse')}</a>}
@@ -111,8 +117,8 @@ export function StaffWorkspaceGate(){
   <section id="staff-account" tabIndex={-1} className="localWorkspace staffAccount" aria-label={t("Учётная запись сотрудника")}>
    <div><strong>{session.identity.displayName||session.identity.email}</strong><small>{session.identity.email} · {session.identity.role==='front_desk'?t("Ресепшен"):session.identity.role}</small>
    <small>{t("Сессия PostgreSQL ·")}{' '}{session.identity.emailVerified?t("Email подтверждён"):t("Локальная проверка приглашения, не подтверждение email")}</small></div>
-   <div className="staffAccountActions"><button disabled={busy||conciergePending||laundryPending||marketPending} onClick={()=>{setChange(v=>!v);setCurrent('');setNext('');setAssurance(false);setChangeNotice('');setError('');}}>{t("Изменить пароль")}</button>
-    <button disabled={busy||conciergePending||laundryPending||marketPending} onClick={()=>void logout(true)}>{t("Завершить все сессии")}</button><button disabled={busy||conciergePending||laundryPending||marketPending} onClick={()=>void logout(false)}>{t("Выйти")}</button></div>
+   <div className="staffAccountActions"><button disabled={busy||conciergePending||laundryPending||marketPending||coordinationPending} onClick={()=>{if(!allowDraftNavigation())return;setChange(v=>!v);setCurrent('');setNext('');setAssurance(false);setChangeNotice('');setError('');}}>{t("Изменить пароль")}</button>
+    <button disabled={busy||conciergePending||laundryPending||marketPending||coordinationPending} onClick={()=>void logout(true)}>{t("Завершить все сессии")}</button><button disabled={busy||conciergePending||laundryPending||marketPending||coordinationPending} onClick={()=>void logout(false)}>{t("Выйти")}</button></div>
    {error&&<p className="localError" role="alert">{t(error)}</p>}
    {change&&<div className="staffPasswordChange">
     {changeNotice&&<p role="status">{t(changeNotice)}</p>}
@@ -122,6 +128,7 @@ export function StaffWorkspaceGate(){
     <label>{t("Новый пароль")}<input aria-label={t("Новый пароль")} type="password" required minLength={15} maxLength={128} autoComplete="new-password" value={next} onChange={e=>setNext(e.target.value)}/></label>
     <button className="primary" disabled={busy||assurance}>{t("Сохранить новый пароль")}</button></fieldset></form></div>}
   </section>
+  {coordination&&session.identity.permissions.includes('reservation.manage')&&<StaffCoordinationWorkspace key={session.csrf+coordination} csrf={session.csrf} kind={coordination} onPending={setCoordinationPending}/>}
   {queueAllowed&&<OperationsQueue csrf={session.csrf}/>}
   {session.identity.permissions.some(p=>['reservation.manage','housekeeping.work'].includes(p))&&<StaffCleaning csrf={session.csrf} manager={session.identity.permissions.includes('reservation.manage')}/>}
   {(reception||actualRole==='concierge')&&session.identity.permissions.some(p=>['reservation.manage','concierge.work'].includes(p))&&<StaffConcierge csrf={session.csrf} manager={session.identity.permissions.includes('reservation.manage')} onPending={setConciergePending}/>}

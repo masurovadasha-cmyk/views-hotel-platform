@@ -1,0 +1,8 @@
+PASS assignment revision zero
+PASS dispatch revision zero
+PASS decision command revision zero
+PASS absence receipt for another command
+PASS absence receipt with assignment payload
+PASS applied receipt for another command
+PASS missing outcome receipt
+{"source":"/workspace/views-roadmap-wave3-ui","failures":[],"realNetwork":false,"realCredentials":false}

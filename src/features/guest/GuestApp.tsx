@@ -1,3 +1,4 @@
+import {readGuestRoute,guestRouteUrl,marketText,type GuestTab,type MarketView,type GuestRoute} from './market-navigation';
 import {StayDateRange} from "../calendar/StayDateRange";
 import {GuestServiceCatalogue} from './GuestServiceCatalogue';
 import {findGuestService,guestRequestCategory} from './service-catalog';
@@ -22,9 +23,9 @@ import type {Apartment} from "../../domain/types";
 import {api} from "../../api/client";
 import type {LiveBooking} from "../../api/types";
 
-type Tab="explore"|"bookings"|"services"|"messages"|"profile";
+type Tab=GuestTab;
 type FlowScreen="apartment"|"booking"|"guest-data"|"payment"|"secure-processing"|"payment-declined"|"booking-confirmed"|"booking-details"|"cancellation-refund";
-const tabLabels:Record<Tab,string>={explore:'Explore',bookings:'Bookings',services:'Services',messages:'Messages',profile:'Profile'};
+const tabLabels:Record<Tab,string>={explore:'Explore',bookings:'Bookings',services:'Services',messages:'Messages',profile:'Profile',market:'V Market'};
 const flowLabels:Record<FlowScreen,string>={apartment:'Apartment',booking:'Booking','guest-data':'Guest data',payment:'Payment','secure-processing':'Secure payment','payment-declined':'Payment declined','booking-confirmed':'Confirmation screen preview','booking-details':'Booking details','cancellation-refund':'Cancellation & refund'};
 function bookingStatus(status:string){return ({confirmed:'Confirmed',checked_in:'Checked in',checked_out:'Checked out',cancelled:'Cancelled',hold:'Temporary hold',pending:'Pending',no_show:'No-show'} as Record<string,string>)[status]||'Unknown status';}
 
@@ -40,7 +41,16 @@ export function GuestApp({live=false}:{live?:boolean}){
   const {t,locale}=useGuestLocale();
   const [bookingDetails,setBookingDetails]=useState<LiveBooking|null>(null);
   const [bookingsError,setBookingsError]=useState(false),[bookingsLoading,setBookingsLoading]=useState(false);
-  const [tab,setTab]=useState<Tab>("explore");
+  const [route,setRoute]=useState<GuestRoute>(()=>readGuestRoute(location.search,live));
+  const tab=route.tab;
+  function navigateGuest(next:GuestRoute){
+    setRoute(next);
+    if(!live){const url=guestRouteUrl(location.href,next);if(url.href!==location.href)history.pushState(null,'',url);}
+  }
+  const setTab=(next:Tab)=>navigateGuest({tab:next,marketView:'catalogue'});
+  const openMarket=(marketView:MarketView='catalogue')=>navigateGuest({tab:'market',marketView});
+  useEffect(()=>{if(live)return;const back=()=>setRoute(readGuestRoute(location.search));window.addEventListener('popstate',back);return()=>window.removeEventListener('popstate',back);},[live]);
+  useEffect(()=>{if(tab==='market')document.getElementById('guest-market-page')?.scrollIntoView({block:'start'});},[tab,route.marketView]);
   const [[checkIn,checkOut],setStayDates]=useState<DemoStay>(()=>{
     if(live)return ['',''];
     try{return loadDemoStay(sessionStorage);}catch{return ['',''];}
@@ -93,6 +103,8 @@ export function GuestApp({live=false}:{live?:boolean}){
 
   return <main className="guestShell canvaGuest">
     {!live&&<p className="notice" role="status">{t("Demo catalog. No booking, payment, service request or message is sent.")}</p>}
+    {!live&&tab!=='market'&&<nav className="guestMarketShortcuts" aria-label={marketText(locale,'Market shortcuts')}><button data-testid="guest-market-shortcut" onClick={()=>openMarket()}>{t('V Market')}</button><button data-testid="guest-basket-shortcut" onClick={()=>openMarket('basket')}>{marketText(locale,'Basket')}</button><button data-testid="guest-market-history-shortcut" onClick={()=>openMarket('history')}>{marketText(locale,'Demo order history')}</button></nav>}
+    {!live&&tab==='market'&&<section id="guest-market-page" className="guestMarketPage"><GuestMarket view={route.marketView} onNavigate={openMarket}/></section>}
     {tab==="explore"&&<>
       <section className="hero guestExploreHero"><div className="guestHeroCopy"><span>{t("PEOPLE · PLACES · POSSIBILITIES")}</span><h1>{t("Your next stay,")}<br/><em>{t("beautifully considered.")}</em></h1><p>{t("Discover curated apartments. A quieter place to arrive, unwind and feel at home.")}</p><div className="guestHeroFacts"><span><Armchair size={16}/>{t('Thoughtful spaces')}</span><span><ShieldCheck size={16}/>{t('Clear booking details')}</span></div></div><div className="guestHeroImage"><img src={apartments[1].image} alt={t('Views | Luxury Apartment with Panoramic | Views')}/><div><span>VIEWS · {t('Tashkent')}</span><strong>{t('A different view of the city.')}</strong><button onClick={()=>open(apartments[1])} aria-label={t('Explore panoramic apartment')}><ArrowUpRight size={22}/></button></div></div></section>
 
@@ -124,7 +136,7 @@ export function GuestApp({live=false}:{live?:boolean}){
         </article>)}</div>
       </section>}
 
-      <section className="servicesSection"><div className="sectionHead"><div><small>{t("ONE ECOSYSTEM")}</small><h2>{t("Everything around your stay")}</h2></div></div><GuestServiceCatalogue onSelect={id=>{setServiceCategory(id);setServiceMessage("");setTab("services");}}/></section>
+      <section className="servicesSection"><div className="sectionHead"><div><small>{t("ONE ECOSYSTEM")}</small><h2>{t("Everything around your stay")}</h2></div></div><GuestServiceCatalogue onSelect={id=>{setServiceCategory(id);setServiceMessage("");if(id==='minimart'&&!live)openMarket();else setTab("services");}}/></section>
     </>}
 
     {tab==="bookings"&&<section className="contentPage">
@@ -135,10 +147,10 @@ export function GuestApp({live=false}:{live?:boolean}){
 
     {tab==="services"&&<section className="contentPage">
       <div className="sectionHead"><div><small>{t("VIEWS SERVICES")}</small><h2>{t("Everything for your stay")}</h2></div></div>
-      <GuestServiceCatalogue large selected={serviceCategory} onSelect={id=>{setServiceCategory(id);setServiceMessage("");}}/>
+      <GuestServiceCatalogue large selected={serviceCategory} onSelect={id=>{setServiceCategory(id);setServiceMessage("");if(id==='minimart'&&!live)openMarket();}}/>
       {guestRequestCategory(serviceCategory)===null&&<p className="notice" role="status">{t("This service is not connected yet. Booking, payment and sending requests are unavailable.")}</p>}
-      {serviceCategory==="minimart"&&<GuestMarket/>}
-      {live&&guestRequestCategory(serviceCategory)!==null?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();const category=guestRequestCategory(serviceCategory);if(category===null)return;setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category,title:(findGuestService(serviceCategory)?.name??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch{setServiceMessage("Request not confirmed. Check with staff before submitting again.")}}}>
+      {live&&serviceCategory==="minimart"&&<p className="notice">{t("This service is not connected yet. Booking, payment and sending requests are unavailable.")}</p>}
+      {live&&serviceCategory!=="minimart"&&guestRequestCategory(serviceCategory)!==null?<form className="liveServiceForm" onSubmit={async e=>{e.preventDefault();const category=guestRequestCategory(serviceCategory);if(category===null)return;setServiceMessage("");try{await api.createGuestServiceOrder({reservationId:serviceBookingId,category,title:(findGuestService(serviceCategory)?.name??"Service")+" request",details:serviceDetails},crypto.randomUUID());setServiceDetails("");setServiceMessage("Request created and routed to VIEWS staff.")}catch{setServiceMessage("Request not confirmed. Check with staff before submitting again.")}}}>
         <label>{t("Booking")}<select value={serviceBookingId} onChange={e=>setServiceBookingId(e.target.value)}>{liveBookings.map(b=><option key={b.id} value={b.id}>{b.confirmation_code} · {b.property_name}</option>)}</select></label>
         <label>{t("Details")}<textarea value={serviceDetails} onChange={e=>setServiceDetails(e.target.value)} placeholder={t("Tell us what you need…")}/></label>
         <button className="primary" disabled={!serviceBookingId||serviceDetails.trim().length<2}>{t("Send request")}</button>{serviceMessage&&<div className="notice">{t(serviceMessage)}</div>}

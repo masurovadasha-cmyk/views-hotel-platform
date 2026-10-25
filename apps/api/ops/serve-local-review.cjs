@@ -1,16 +1,19 @@
 'use strict';
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const {createLocalGateway}=require('./local-core-gateway.cjs');
+const {createPartnerGateway}=require('./partner-gateway.cjs');
 const ROOT=path.resolve(__dirname,'../../../dist');
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.ico':'image/x-icon'};
 function createReviewServer(options){
  const gateway=createLocalGateway(options);
+ const partnerGateway=options?.configuration?.internalKey?createPartnerGateway({origin:'http://127.0.0.1:4173',coreOrigin:'http://127.0.0.1:3001',csrfKey:options.configuration.internalKey}):null;
  const server=http.createServer(async(req,res)=>{
   res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');
   res.setHeader('X-Frame-Options','DENY');res.setHeader('Cross-Origin-Resource-Policy','same-origin');
   res.setHeader('Content-Security-Policy',"default-src 'self'; img-src 'self' https: data:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
   if(!['127.0.0.1:4173','localhost:4173'].includes(req.headers.host)){res.writeHead(403);res.end();return;}
   if(!req.url?.startsWith('/')||req.url.startsWith('//')){res.writeHead(400);res.end();return;}
+  if(req.url.startsWith('/partner-api')){if(partnerGateway){await partnerGateway(req,res);return;}res.writeHead(404,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'PARTNER_PILOT_DISABLED'}));return;}
   if(await gateway(req,res))return;
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);res.end();return;}
   let relative;try{relative=decodeURIComponent(new URL(req.url,'http://127.0.0.1:4173').pathname);}catch{res.writeHead(400);res.end();return;}

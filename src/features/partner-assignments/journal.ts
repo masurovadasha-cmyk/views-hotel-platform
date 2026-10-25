@@ -1,0 +1,6 @@
+import {decideJournal,type Journal,type JournalOp} from './model';
+export const journalDatabase='views-partner-intents',journalStore='commands';
+export async function transactJournal(factory:IDBFactory,scope:string,op:JournalOp):Promise<Journal>{
+ const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=factory.open(journalDatabase,1);let expired=false;const timer=setTimeout(()=>{expired=true;reject(Error('journal'));},5000);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(journalStore))r.result.createObjectStore(journalStore);};r.onerror=()=>{clearTimeout(timer);reject(Error('journal'));};r.onsuccess=()=>{clearTimeout(timer);if(expired)r.result.close();else resolve(r.result);};});
+ return new Promise((resolve,reject)=>{let result:Journal|undefined,failure:unknown;const tx=db.transaction(journalStore,op.kind==='read'?'readonly':'readwrite'),store=tx.objectStore(journalStore),r=store.get(scope);tx.oncomplete=()=>{db.close();result?resolve(result):reject(Error('journal'));};tx.onabort=()=>{db.close();reject(failure??Error('journal'));};tx.onerror=()=>{};r.onsuccess=()=>{try{result=decideJournal(r.result,scope,op);if(op.kind!=='read')store.put(result,scope);}catch(e){failure=e instanceof Error&&e.message==='changed'?e:Error('journal');tx.abort();}};});
+}

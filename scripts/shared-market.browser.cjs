@@ -1,5 +1,6 @@
 'use strict';
 const durable=require('./demo-market-storage-browser-helper.cjs');
+const views=require('./market-view-browser-helper.cjs');
 // Shared guest/staff demo ledger proof. Static artifact only; network writes forbidden.
 const assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),path=require('node:path');
 const {chromium}=require('playwright');
@@ -35,10 +36,10 @@ const server=http.createServer((req,res)=>{
    await page.route('**/*',route=>{const r=route.request(),u=new URL(r.url());if(u.origin!==origin||r.method()!=='GET'||/^\/(api|local-api|guest-api)\//.test(u.pathname)){requests.push(r.method()+' '+u.pathname);return route.abort();}return route.continue();});
    const tr=(catalog,k)=>catalog[k]?.[locale]||k,t=k=>tr(messages,k),gt=k=>tr(guest,k),st=k=>tr(staff,k);
    const shop=page.getByTestId('guest-market'),queue=page.getByTestId('demo-market-queue');
-   const button=k=>shop.getByRole('button',{name:t(k),exact:true}),row=id=>queue.locator('[data-demo-staff-order="'+id+'"]');
+   const button=k=>views.button(page,k,t),row=id=>queue.locator('[data-demo-staff-order="'+id+'"]');
    const state=()=>durable.state(page);
    const raw=()=>durable.record(page).then(r=>r.raw);
-   async function guestMarket(){await page.getByRole('button',{name:/V Market/}).first().click();await durable.ready(page);await shop.waitFor();await durable.ready(page);}
+   async function guestMarket(){if(await shop.count())await views.view(page,'catalogue');else await page.getByTestId('guest-market-shortcut').click();await durable.ready(page);await shop.waitFor();await durable.ready(page);}
    async function open(){await page.goto(origin+'/?api=demo');await guestMarket();}
    async function seed(value){await durable.seed(page,value);await open();}
    async function staffQueue(){await page.getByRole('button',{name:gt('Staff CRM'),exact:true}).click();await durable.ready(page);await page.getByTestId('demo-market-nav').click();await durable.ready(page);await queue.waitFor();}

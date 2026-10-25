@@ -112,7 +112,7 @@ async function database() {
     await client.query(fs.readFileSync(path.join(REPO, 'infra/postgres/init/001_extensions.sql'), 'utf8'));
     const migrations=readMigrations(path.join(REPO,'db/migrations'),path.join(REPO,'db/migrations.sha256'));
     const applied=await applyMigrations(client,migrations);
-    await client.query('GRANT CONNECT ON DATABASE views_local TO views_app; GRANT USAGE ON SCHEMA public,app TO views_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO views_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO views_app; GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app; REVOKE INSERT,UPDATE,DELETE ON provider_egress_attempts,provider_egress_reconciliation_queue,views_local_migrations FROM views_app');
+    await client.query('GRANT CONNECT ON DATABASE views_local TO views_app; GRANT USAGE ON SCHEMA public,app TO views_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO views_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO views_app; GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app TO views_app; REVOKE INSERT,UPDATE,DELETE ON provider_egress_attempts,provider_egress_reconciliation_queue,views_local_migrations FROM views_app; REVOKE UPDATE,DELETE ON sla_policy_draft_versions,sla_policy_draft_commands FROM views_app');
     console.log(JSON.stringify({ databaseReady: true, migrations: migrations.length, newMigrations: applied }));
   } catch (error) { await client.query('ROLLBACK').catch(() => {}); throw error; }
   finally { await client.end(); }

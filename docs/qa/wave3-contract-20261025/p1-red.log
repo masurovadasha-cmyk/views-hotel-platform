@@ -1,0 +1,2 @@
+{"finding":"P1_409_NOT_PERMANENT","firstAttempt":"PARTNER_ALREADY_ASSIGNED","interveningAction":"reject incumbent","lateSameKeyStatus":"offered","lateSameKeyReplay":false,"sourceRevision":1}
+SLA_DISPOSABLE_FAILED UNSAFE: cleared 409 intent later creates assignment with exact same command
