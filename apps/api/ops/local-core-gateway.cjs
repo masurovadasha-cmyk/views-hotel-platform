@@ -81,10 +81,12 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    const u=new URL(req.url,'http://127.0.0.1:4173');
    const calendarRoute=/^\/local-api\/owner-inventory\/[a-f0-9-]{36}\/calendar$/i.test(u.pathname);
    const ratesRoute=/^\/local-api\/owner-inventory\/[a-f0-9-]{36}\/rates(?:\/[a-f0-9-]{36})?$/i.test(u.pathname);
+   const ownerServicesRoute=/^\/local-api\/owner-services\/[a-f0-9-]{36}$/i.test(u.pathname);
+   const ownerServicesSearch=ownerServicesRoute&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['kind','after','limit'].includes(k)&&u.searchParams.getAll(k).length===1);
    const rateDetail=ratesRoute&&!u.pathname.endsWith('/rates');
    const catalogSearch=u.pathname==='/local-api/inventory-search'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['from','to','guests','city','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
    const refundSearch=u.pathname==='/local-api/refund-reconciliation'&&req.method==='GET'&&[...u.searchParams.keys()].every(k=>['status','cursor'].includes(k)&&u.searchParams.getAll(k).length===1);
-   const validSearch=require('./service-order-gateway.cjs').validSearch(u,req.method)||require('./supply-gateway.cjs').validSearch(u,req.method)||require('./folio-gateway.cjs').validSearch(u,req.method)||refundSearch||catalogSearch||((calendarRoute||rateDetail)?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1);
+   const validSearch=ownerServicesSearch||require('./service-order-gateway.cjs').validSearch(u,req.method)||require('./supply-gateway.cjs').validSearch(u,req.method)||require('./folio-gateway.cjs').validSearch(u,req.method)||refundSearch||catalogSearch||((calendarRoute||rateDetail)?req.method==='GET'&&[...u.searchParams.keys()].every(k=>k==='from'||k==='to')&&u.searchParams.getAll('from').length===1&&u.searchParams.getAll('to').length===1:u.pathname==='/local-api/reception'&&[...u.searchParams.keys()].every(k=>k==='day')&&u.searchParams.getAll('day').length===1);
    if(u.pathname+u.search!==req.url||u.hash||(u.search&&!validSearch))fail(400,'INVALID_ROUTE');
    const route=u.pathname,token=tokenFrom(req);
    if(req.method==='GET'&&route==='/local-api/session'){
@@ -128,6 +130,12 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
    if(await require('./service-order-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,propertyId:config.fixture.propertyId}))return true;
    if(await require('./supply-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,exactKeys}))return true;
    if(await require('./folio-gateway.cjs').handle({u,req,res,identity,token,core,json,fail,readJson,exactKeys}))return true;
+   if(ownerServicesRoute){
+    if(process.env.NODE_ENV!=='test'||process.env.VIEWS_LOCAL_REHEARSAL!=='true'||process.env.VIEWS_OWNER_SERVICES_ENABLED!=='true')fail(404,'OWNER_SERVICES_DISABLED');
+    if(req.method!=='GET')fail(405,'METHOD_DENIED');
+    if(!['owner','manager'].includes(identity.role)||!identity.permissions.includes('property.manage'))fail(403,'OWNER_SERVICES_FORBIDDEN');
+    json(res,200,await core(route.replace('/local-api/','/v1/')+u.search,'GET',undefined,undefined,token,identity));return true;
+   }
    if(route==='/local-api/owner-inventory'||/^\/local-api\/owner-inventory\/[a-f0-9-]{36}(?:\/(?:calendar|rates(?:\/[a-f0-9-]{36})?))?$/i.test(route)){
     if(process.env[ratesRoute?'VIEWS_OWNER_RATES_ENABLED':calendarRoute?'VIEWS_OWNER_CALENDAR_ENABLED':'VIEWS_OWNER_INVENTORY_DRAFT_ENABLED']!=='true')fail(404,ratesRoute?'OWNER_RATES_DISABLED':calendarRoute?'OWNER_CALENDAR_DISABLED':'OWNER_INVENTORY_DISABLED');
     if(!['owner','manager'].includes(identity.role)||!identity.permissions.includes('property.manage'))fail(403,'OWNER_INVENTORY_FORBIDDEN');
@@ -192,6 +200,13 @@ function createLocalGateway({configuration,fetchImpl=globalThis.fetch}={}){
     // Only Core may recover it; cache miss must never authorize a new hold.
     const value=await core('/v1/bookings/holds','POST',{quoteId:body.quoteId,ttlSeconds:900,propertyId:config.fixture.propertyId,...(body.recoveryOnly===true||!s.quotes.has(body.quoteId)?{recoveryOnly:true}:{})},key,token,identity);
     if(!UUID.test(value.reservationId||''))fail(502,'CORE_RESPONSE_INVALID');s.reservations.add(value.reservationId);json(res,200,value);return true;
+   }
+   if(route==='/local-api/release'){
+    exactKeys(body,body&&Object.hasOwn(body,'recoveryOnly')?['reservationId','recoveryOnly']:['reservationId']);
+    if(body.recoveryOnly!==undefined&&body.recoveryOnly!==true)fail(400,'INVALID_RECOVERY_MODE');
+    if(!UUID.test(body.reservationId||''))fail(400,'INVALID_RESERVATION_ID');
+    const result=await core('/v1/bookings/'+body.reservationId+'/release','POST',{propertyId:config.fixture.propertyId,...(body.recoveryOnly===true||!s.reservations.has(body.reservationId)?{recoveryOnly:true}:{})},key,token,identity);
+    json(res,200,result);return true;
    }
    exactKeys(body,route==='/local-api/guest'?['reservationId','guest']:route==='/local-api/document-view'?['reservationId','documentId']:route==='/local-api/document-review'?['reservationId','documentId','decision','reviewToken']:['reservationId']);if(!UUID.test(body.reservationId||'')||!s.reservations.has(body.reservationId))fail(403,'RESERVATION_OUTSIDE_WORKSPACE');
    json(res,200,await core('/v1/bookings/'+body.reservationId+(route==='/local-api/release'?'/release':'/stay/'+route.split('/').pop()),'POST',route==='/local-api/guest'?body.guest:route==='/local-api/document-view'?{documentId:body.documentId}:route==='/local-api/document-review'?{documentId:body.documentId,decision:body.decision,reviewToken:body.reviewToken}:{},key,token,identity));return true;
