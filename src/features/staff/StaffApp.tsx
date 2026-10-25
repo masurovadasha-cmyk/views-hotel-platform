@@ -1,3 +1,4 @@
+import {allowDraftNavigation} from '../service-builder/navigation';
 import {ServiceBuilder} from '../service-builder/ServiceBuilder';
 import {DemoMarketQueue} from './DemoMarketQueue';
 import {demoMarketAccess} from './demo-market-policy';
@@ -106,9 +107,9 @@ export function StaffApp({role,onRoleChange,allowRoleSwitch=true,live=false}:{ro
   };
 
   return <div className="staffLayout canvaStaff">
-    <aside className="sidebar"><div className="sideBrand">VIEWS <small>{t("OPERATIONS")}</small></div><nav aria-label={t("Staff sections")}>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} data-testid={id==='demo-market'?'demo-market-nav':undefined} aria-label={t(labels[id]??id)} onClick={()=>setActive(id)}><Icon size={17}/><span>{t(String(labels[id]??id))}</span></button>})}</nav></aside>
+    <aside className="sidebar"><div className="sideBrand">VIEWS <small>{t("OPERATIONS")}</small></div><nav aria-label={t("Staff sections")}>{nav.map(id=>{const Icon=iconFor(id);return <button className={current===id?"active":""} key={id} data-testid={id==='demo-market'?'demo-market-nav':undefined} aria-label={t(labels[id]??id)} onClick={()=>{if(id===current||allowDraftNavigation())setActive(id);}}><Icon size={17}/><span>{t(String(labels[id]??id))}</span></button>})}</nav></aside>
     <main className="staffMain">
-      <header className="staffHead" data-testid="staff-header"><div><small>{t("VIEWS OPERATIONS")}</small><h1>{t(String(labels[current]??current))}</h1></div>{allowRoleSwitch?<select aria-label={t("Demo staff role")} value={role} onChange={e=>{const next=e.target.value as HospitalityRole;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{t(String(r.replace(/_/g," ")))}</option>)}</select>:<span className="roleLock">{t(String(role.replace(/_/g," ")))}</span>}</header>
+      <header className="staffHead" data-testid="staff-header"><div><small>{t("VIEWS OPERATIONS")}</small><h1>{t(String(labels[current]??current))}</h1></div>{allowRoleSwitch?<select aria-label={t("Demo staff role")} value={role} onChange={e=>{const next=e.target.value as HospitalityRole;if(next!==role&&!allowDraftNavigation())return;onRoleChange(next);setActive(roleNavigation[next][0])}}>{roles.map(r=><option key={r} value={r}>{t(String(r.replace(/_/g," ")))}</option>)}</select>:<span className="roleLock">{t(String(role.replace(/_/g," ")))}</span>}</header>
       <div className={"staffMode "+(live?"live":"demo")} role="note"><span/>{live?t("Connected workspace"):t("Demo workspace · sample tasks are not saved; demo market history is saved on this device")}</div>
       {liveError&&<div className="notice" role="alert">{t(String(liveError))}<button onClick={()=>void loadLiveOrders()}>{t("Refresh")}</button></div>}
       {!live&&<DemoStayCalendar locale={locale} checkIn={calendarRange[0]} checkOut={calendarRange[1]} onChange={(a,b)=>setCalendarRange([a,b])}/>}

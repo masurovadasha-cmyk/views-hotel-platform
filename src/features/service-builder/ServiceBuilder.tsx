@@ -1,4 +1,5 @@
-import {useEffect,useState} from 'react';
+import {registerDraftNavigationGuard} from './navigation';
+import {useEffect,useRef,useState} from 'react';
 import {blankLabels,draftIssues,dryRun,emptyDraft,fieldTypes,locales,type Answers,type Draft,type Labels,type Locale} from './model';
 import {transact} from './store';
 import {translate,issueMessage} from './messages';
@@ -7,9 +8,11 @@ export function ServiceBuilder({locale}:{locale:Locale}){
  const t=(s:string)=>translate(locale,s);
  const [open,setOpen]=useState(false),[step,setStep]=useState(0),[draft,setDraft]=useState<Draft>(emptyDraft),[saved,setSaved]=useState<Draft>(emptyDraft),[revision,setRevision]=useState(0),[busy,setBusy]=useState(false),[loaded,setLoaded]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[confirm,setConfirm]=useState<'close'|'reload'|null>(null),[answers,setAnswers]=useState<Answers>({}),[result,setResult]=useState<ReturnType<typeof dryRun>|null>(null);
  const dirty=JSON.stringify(draft)!==JSON.stringify(saved),blocked=busy||!loaded||!!error;
+ const navigation=useRef<()=>boolean>(()=>true);navigation.current=()=>!open||(!busy&&(!dirty||window.confirm(t('Discard unsaved changes?'))));
+ useEffect(()=>registerDraftNavigationGuard(()=>navigation.current()),[]);
  async function load(){setBusy(true);try{const r=await transact(indexedDB);setDraft(r.draft);setSaved(r.draft);setRevision(r.revision);setLoaded(true);setError('');setNotice('');setAnswers({});setResult(null);}catch{setError('storage');}finally{setBusy(false);}}
  useEffect(()=>{if(open)void load();},[open]);
- useEffect(()=>{if(!open||!dirty)return;const before=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',before);return()=>window.removeEventListener('beforeunload',before);},[open,dirty]);
+ useEffect(()=>{if(!open||(!dirty&&!busy))return;const before=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',before);return()=>window.removeEventListener('beforeunload',before);},[open,dirty,busy]);
  function edit(next:Draft){setDraft(next);setNotice('');setResult(null);setAnswers({});}
  async function save(){if(blocked)return;setBusy(true);try{const r=await transact(indexedDB,revision,draft);setSaved(r.draft);setDraft(r.draft);setRevision(r.revision);setNotice('Saved locally');setError('');}catch(e){setError(e instanceof Error&&e.message==='changed'?'changed':'storage');}finally{setBusy(false);}}
  function labelInputs(value:Labels,onChange:(next:Labels)=>void,prefix:string){return <div className="builderLanguages">{locales.map(l=><label key={l}>{t(prefix)} {l.toUpperCase()}<input maxLength={100} value={value[l]} onChange={e=>onChange({...value,[l]:e.target.value})}/></label>)}</div>;}
