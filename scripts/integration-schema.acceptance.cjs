@@ -17,12 +17,12 @@ function uniqueNumbers(names){
 }
 test('canonical Core history has unique numeric migration IDs and verified checksums',()=>{
  const entries=readMigrations(path.join(root,'db/migrations'),path.join(root,'db/migrations.sha256'));
- assert.ok(entries.length>=132,'Published 0.19 history must not be discarded');
+ assert.ok(entries.length>=133,'Published 0.20 history must not be discarded');
  assert.equal(uniqueNumbers(entries.map(x=>x.name)).size,entries.length);
- const baseline=entries.slice(0,132).map(x=>`${x.sha256}  ${x.name}\n`).join('');
- // Snapshot of migrations 1–132 recorded at published 0.19 / f75d817.
+ const baseline=entries.slice(0,133).map(x=>`${x.sha256}  ${x.name}\n`).join('');
+ // Snapshot of migrations 1–133 recorded at published 0.20 / 20decdf.
  // New fixes append migrations; rewriting an existing manifest alongside SQL is rejected.
- assert.equal(createHash('sha256').update(baseline).digest('hex'),'90a929ec43f7881469746c854000b35a7a1e0148fe65a379148e3769640b6605','MIGRATION_BASELINE_REWRITTEN');
+ assert.equal(createHash('sha256').update(baseline).digest('hex'),'5ff54e58e065242ec7035842daac94d12ea63e8cdd51393a3ce0a3318dc43a7f','MIGRATION_BASELINE_REWRITTEN');
 });
 test('different filenames cannot reuse one numeric migration ID',()=>{
  assert.throws(()=>uniqueNumbers(['0008_guest_booking_access.sql','0008_guest_stays.sql']),/MIGRATION_NUMBER_COLLISION/);
