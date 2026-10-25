@@ -1,6 +1,6 @@
 {
-  "version": "0.22.0-integration-demo",
-  "androidVersionCode": 2200001,
+  "version": "0.22.1-integration-demo",
+  "androidVersionCode": 2200002,
   "androidApplicationId": "uz.views.preview",
   "androidLabel": "VIEWS Integration Demo",
   "mode": "static-demo",
