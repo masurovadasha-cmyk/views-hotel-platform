@@ -1,7 +1,8 @@
 import {describe,it,expect} from 'vitest';
-import {calendarCommand,calendarWindow} from './owner-calendar.input';
+import {calendarCommand,calendarWindow,calendarRequest} from './owner-calendar.input';
 const input={action:'block',unitId:'00000000-0000-0000-0000-000000000004',kind:'maintenance',start:'2027-01-01T14:00+05:00',end:'2027-01-02T12:00+05:00'};
 describe('owner calendar input',()=>{
+ it('allows recovery only as an explicit true transport flag outside the immutable command',()=>{expect(calendarRequest({...input,recoveryOnly:true})).toEqual({input,recoveryOnly:true});for(const value of [false,null,'true',1])expect(()=>calendarRequest({...input,recoveryOnly:value})).toThrow();});
  it('accepts explicit Tashkent local minutes and bounded windows',()=>{
   expect(calendarCommand(input)).toEqual(input);expect(calendarWindow('2028-02-29','2028-03-01').start).toBe('2028-02-29T00:00+05:00');
  });
