@@ -3,7 +3,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
 const dist=path.resolve(process.argv[2]||'dist'),origin='http://127.0.0.1:4173',id='11111111-1111-4111-8111-111111111111',grant='22222222-2222-4222-8222-222222222222';
 const scope={organizationId:id,userId:id,membershipId:id,propertyId:id};
 const dto={assignmentId:id,kind:'concierge',status:'offered',revision:1,termsVersion:1,requestedFor:'2027-01-01T00:00:00Z',expiresAt:'2027-01-02T00:00:00Z',synthetic:true};
-(async()=>{const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const results=[];
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.VIEWS_BROWSER_EXECUTABLE||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),args:['--no-sandbox']});const results=[];
 try{for(const locale of ['en','ru','uz']){
  const context=await browser.newContext({viewport:{width:390,height:900}}),page=await context.newPage(),errors=[],posts=[],calls=[],receipts=new Map();let sessionGrant=grant,listUnauthorized=false,auth=true,malformed=false,lose=true,conflict=false,applied=0,staff=true,slaLost=true,slaSaved=null;
  await context.addInitScript(l=>{localStorage.setItem('views.staff.locale',l);localStorage.setItem('views.guest.locale',l);},locale);page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());

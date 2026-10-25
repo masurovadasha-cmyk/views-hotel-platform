@@ -97,12 +97,22 @@ jobs:
           node scripts/use-cleaning-pending-browser.cjs
           node scripts/owner-calendar-recovery.browser.cjs
           node scripts/service-queue.browser.cjs
+      - name: Verify isolated coordination and live market boundaries
+        run: |
+          node scripts/partner-contract-negative.qa.cjs
+          node scripts/sla-contract-negative.qa.cjs
+          node scripts/coordination-routes.browser.cjs
+          node scripts/market-live-boundary.browser.cjs
+          node scripts/queue-presentation.browser.cjs
+          node scripts/sla-policy.browser.cjs
+          node src/features/partner-assignments/browser.cjs
       - name: Verify durable shared guest staff and host demo state
         run: |
           npm run build:review
           node scripts/shared-market.browser.cjs
           node scripts/durable-market.browser.cjs
           node scripts/market-photos.browser.cjs
+          node scripts/market-routes.browser.cjs
       - name: Verify local service draft persistence and navigation
         run: |
           node src/features/service-builder/browser.cjs
