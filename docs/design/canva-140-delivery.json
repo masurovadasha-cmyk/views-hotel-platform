@@ -1368,11 +1368,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "dispatcher",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding"
     },
     {
       "id": "SS-CL-001",
@@ -1869,11 +1869,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "partner",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding"
     },
     {
       "id": "SP-GN-002",
@@ -1885,11 +1885,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "partner",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding"
     },
     {
       "id": "SP-GN-003",
@@ -1949,11 +1949,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "partner",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/PARTNER_FOUNDATION_P1_20261025.md; synthetic concierge offer/accept/reject only, separate partner session/scope, no fulfilment or real onboarding"
     },
     {
       "id": "SH-GN-001",
@@ -2109,11 +2109,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "admin",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/SLA_POLICY_DRAFT_20261025.md; versioned draft and calendar simulation only, no activation/escalation or changed order deadlines"
     },
     {
       "id": "SA-GN-007",
@@ -2173,11 +2173,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "admin",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/SLA_POLICY_DRAFT_20261025.md; versioned draft and calendar simulation only, no activation/escalation or changed order deadlines"
     },
     {
       "id": "SA-GN-011",
