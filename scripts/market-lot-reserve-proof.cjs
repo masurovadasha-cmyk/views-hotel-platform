@@ -66,6 +66,7 @@ module.exports=async function lotReserveProof(db,peer){
  await require('./market-lot-command-proof.cjs')(db,peer,{org,property,user,member,item,service,orders,version,guest,stay});
  await require('./market-lot-cancel-proof.cjs')(db,peer,{org,property,user,member,item,service,orders,version,guest,stay});
  await db.query("UPDATE market_orders SET stage='cancelled' WHERE order_id=ANY($1::uuid[])",[orders]);
+ await require('./market-lot-replacement-proof.cjs')(db,peer,{org,property,user,member,item,service,orders,version,guest,stay});
  await db.query("SELECT set_config('app.organization_id','',false),set_config('app.user_id','',false),set_config('app.membership_id','',false)");
  console.log('Lot reserve schema: race, stale/unknown rejection, stock rollback, release rollback, no reactivation and runtime isolation PASS; runtime activation disabled.');
 };
