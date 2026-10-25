@@ -1,0 +1,4 @@
+FAIL assignment revision zero
+FAIL dispatch revision zero
+FAIL decision command revision zero
+{"source":"/workspace/views-roadmap-wave3-ui","failures":["assignment revision zero","dispatch revision zero","decision command revision zero"],"realNetwork":false,"realCredentials":false}

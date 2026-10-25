@@ -1,0 +1,1 @@
+{"result":"pass","source":"/workspace/views-roadmap-wave3-ui","checks":["wrong-command rejected","wrong-current-payload rejected","later-current accepted","canonical-window-order accepted"],"network":false}
