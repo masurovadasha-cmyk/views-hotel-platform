@@ -30,7 +30,7 @@ function Workspace({propertyId,staffCsrf,onUnresolvedChange}:Props){
  const change=(next:Policy)=>{if(locked||mutating.current)return;dirty.current=true;setForm(next);setSimulation(null);setNotice('');};
  const select=(kind:Policy['serviceKind'],stage:Policy['milestone'])=>{if(locked||mutating.current||dirty.current&&!window.confirm(t('discard')))return;apply(rows.find(v=>v.config.serviceKind===kind&&v.config.milestone===stage)||null,{...form,serviceKind:kind,milestone:stage});};
  async function refresh(){if(mutating.current)return;setBusy(true);setError('');try{await load();}catch{setRows([]);setScope(null);setSimulation(null);setError('error');}finally{if(alive.current)setBusy(false);}}
- async function save(){if(busy||storage||!scope||mutating.current)return;let body;try{body={propertyId,expectedRevision:revision,policy:parsePolicy(form)};}catch{setError('invalid');return;}
+ async function save(policy:Policy=form){if(busy||storage||!scope||mutating.current)return;let body;try{body={propertyId,expectedRevision:revision,policy:parsePolicy(policy)};}catch{setError('invalid');return;}
   const desired=pending||{version:1 as const,scope,key:crypto.randomUUID(),body},recovering=!!pending;mutating.current=true;setBusy(true);setError('');setNotice('');setSimulation(null);let attempt:Intent;
   try{attempt=await claimIntent(desired);if(!alive.current)return;setPending(attempt);setForm(attempt.body.policy);setRevision(attempt.body.expectedRevision);if(attempt.key!==desired.key){mutating.current=false;setBusy(false);return;}}
   catch{setStorage(true);mutating.current=false;setBusy(false);return;}finally{if(!alive.current)mutating.current=false;}
@@ -45,15 +45,15 @@ function Workspace({propertyId,staffCsrf,onUnresolvedChange}:Props){
   {storage&&<p role="alert" data-testid="sla-policy-storage-error">{t('storage')}</p>}
   <button disabled={busy} onClick={()=>void refresh()}>{t('refresh')}</button>
   {pending&&<div data-testid="sla-policy-recovery"><p>{t('pending')} {t(pending.body.policy.serviceKind)} · {t(pending.body.policy.milestone)}</p><button data-testid="sla-policy-retry" disabled={busy||storage||!scope} onClick={()=>void save()}>{t('retry')}</button></div>}
-  <form onSubmit={e=>{e.preventDefault();void save();}}><fieldset disabled={locked}>
+  <form onSubmit={e=>{e.preventDefault();const data=new FormData(e.currentTarget);void save({...form,windows:form.windows.map((w,i)=>({...w,startMinute:minute(String(data.get('windowStart-'+i))),endMinute:minute(String(data.get('windowEnd-'+i)))}))});}}><fieldset disabled={locked}>
    <label>{t('service')}<select value={form.serviceKind} onChange={e=>select(e.target.value as Policy['serviceKind'],form.milestone)}>{kinds.map(k=><option key={k} value={k}>{t(k)}</option>)}</select></label>
    <label>{t('milestone')}<select value={form.milestone} onChange={e=>select(form.serviceKind,e.target.value as Policy['milestone'])}>{stages.map(k=><option key={k} value={k}>{t(k)}</option>)}</select></label>
    <label>{t('timezone')}<select value={form.timezone} onChange={e=>change({...form,timezone:e.target.value as Policy['timezone']})}>{zones.map(z=><option key={z}>{z}</option>)}</select></label>
    <label>{t('minutes')}<input type="number" min="1" max="1440" required value={form.targetMinutes} onChange={e=>change({...form,targetMinutes:Number(e.target.value)})}/></label>
    {form.windows.map((w,i)=><div className="slaWindow" key={epoch+':'+i}>
     <label>{t('day')}<select value={w.day} onChange={e=>change({...form,windows:form.windows.map((v,n)=>n===i?{...v,day:Number(e.target.value)}:v)})}>{weekdays[locale].map((day,n)=><option key={n} value={n+1}>{day}</option>)}</select></label>
-    <label>{t('start')}<input required key={'a'+clock(w.startMinute)} defaultValue={clock(w.startMinute)} onChange={()=>{dirty.current=true;setSimulation(null);}} pattern="([01][0-9]|2[0-3]):[0-5][0-9]" onBlur={e=>{if(Number.isFinite(minute(e.target.value)))change({...form,windows:form.windows.map((v,n)=>n===i?{...v,startMinute:minute(e.target.value)}:v)});}}/></label>
-    <label>{t('end')}<input required key={'b'+clock(w.endMinute)} defaultValue={clock(w.endMinute)} onChange={()=>{dirty.current=true;setSimulation(null);}} pattern="(([01][0-9]|2[0-3]):[0-5][0-9]|24:00)" onBlur={e=>{if(Number.isFinite(minute(e.target.value)))change({...form,windows:form.windows.map((v,n)=>n===i?{...v,endMinute:minute(e.target.value)}:v)});}}/></label>
+    <label>{t('start')}<input required name={'windowStart-'+i} key={'a'+clock(w.startMinute)} defaultValue={clock(w.startMinute)} onChange={()=>{dirty.current=true;setSimulation(null);}} pattern="([01][0-9]|2[0-3]):[0-5][0-9]" onBlur={e=>{if(Number.isFinite(minute(e.target.value)))change({...form,windows:form.windows.map((v,n)=>n===i?{...v,startMinute:minute(e.target.value)}:v)});}}/></label>
+    <label>{t('end')}<input required name={'windowEnd-'+i} key={'b'+clock(w.endMinute)} defaultValue={clock(w.endMinute)} onChange={()=>{dirty.current=true;setSimulation(null);}} pattern="(([01][0-9]|2[0-3]):[0-5][0-9]|24:00)" onBlur={e=>{if(Number.isFinite(minute(e.target.value)))change({...form,windows:form.windows.map((v,n)=>n===i?{...v,endMinute:minute(e.target.value)}:v)});}}/></label>
     <button type="button" onClick={()=>change({...form,windows:form.windows.filter((_,n)=>n!==i)})}>{t('remove')}</button>
    </div>)}
    <button type="button" disabled={form.windows.length>=14} onClick={()=>change({...form,windows:[...form.windows,{day:6,startMinute:540,endMinute:1020}]})}>{t('add')}</button>
