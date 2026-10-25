@@ -1,0 +1,163 @@
+[
+  {
+    "productId": "sample-tea",
+    "file": "tea.webp",
+    "title": "Canister with bags of green tea.jpg",
+    "author": "Editor at Large",
+    "source": "https://commons.wikimedia.org/wiki/File:Canister_with_bags_of_green_tea.jpg",
+    "license": "CC BY-SA 2.5",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5/",
+    "derivativeLicense": "CC BY-SA 2.5",
+    "changes": "EXIF orientation applied, resized to fit 640 × 640 without cropping, converted to WebP; metadata removed. No content replacement.",
+    "originalSha256": "b74e76f5444c98eba4dca7b472963b4c165059317fce7b7b7208b1f55020ed50",
+    "sha256": "eb9f95f3d8e83fae4eb3dca2ab17a63ff0bbd1307b5704e9bb72a26f1c4ef367",
+    "originalDimensions": [
+      2736,
+      3648
+    ],
+    "dimensions": [
+      480,
+      640
+    ],
+    "verifiedOn": "2026-10-25",
+    "exactSupplierSku": false
+  },
+  {
+    "productId": "sample-coffee",
+    "file": "coffee.webp",
+    "title": "Coarsely grounded coffee beans in white bowl.png",
+    "author": "Alorin",
+    "source": "https://commons.wikimedia.org/wiki/File:Coarsely_grounded_coffee_beans_in_white_bowl.png",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "derivativeLicense": "CC BY 4.0",
+    "changes": "EXIF orientation applied, resized to fit 640 × 640 without cropping, converted to WebP; metadata removed. No content replacement.",
+    "originalSha256": "4002f7380cf4cad97509376c13eb7c53c88887724a6d2fb9468039a40a2d0338",
+    "sha256": "80088e3d2ba19d140867b39d904a08b9f713af4aa2098dd4dd31d65fd292437d",
+    "originalDimensions": [
+      3167,
+      3167
+    ],
+    "dimensions": [
+      640,
+      640
+    ],
+    "verifiedOn": "2026-10-25",
+    "exactSupplierSku": false
+  },
+  {
+    "productId": "sample-oats",
+    "file": "oats.webp",
+    "title": "Rolled oats 2.jpg",
+    "author": "Yonygg",
+    "source": "https://commons.wikimedia.org/wiki/File:Rolled_oats_2.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "derivativeLicense": "CC BY-SA 4.0",
+    "changes": "EXIF orientation applied, resized to fit 640 × 640 without cropping, converted to WebP; metadata removed. No content replacement.",
+    "originalSha256": "2748db79e6707f4f7a24c819868451206ed118f06a90ae31e240ee75b6509213",
+    "sha256": "83272a1a75cff3a1d8facda4717d1a24a046741f50ce3dd0e71a40b26af4c203",
+    "originalDimensions": [
+      3264,
+      2448
+    ],
+    "dimensions": [
+      640,
+      480
+    ],
+    "verifiedOn": "2026-10-25",
+    "exactSupplierSku": false
+  },
+  {
+    "productId": "sample-fruit",
+    "file": "fruit.webp",
+    "title": "A basket of fruits.jpg",
+    "author": "Suyash Dwivedi",
+    "source": "https://commons.wikimedia.org/wiki/File:A_basket_of_fruits.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "derivativeLicense": "CC BY-SA 4.0",
+    "changes": "EXIF orientation applied, resized to fit 640 × 640 without cropping, converted to WebP; metadata removed. No content replacement.",
+    "originalSha256": "db9df524a9670ed7f88226892972e9c6a5cfbad5f41e1f720d069e88ab924d73",
+    "sha256": "a2ad06a5ae5aa1fb561d06c84074084c8353b22f1c47112077f9eb79f63153aa",
+    "originalDimensions": [
+      2959,
+      2959
+    ],
+    "dimensions": [
+      640,
+      640
+    ],
+    "verifiedOn": "2026-10-25",
+    "exactSupplierSku": false
+  },
+  {
+    "productId": "sample-nuts",
+    "file": "nuts.webp",
+    "title": "Fancy raw mixed nuts macro.jpg",
+    "author": "Sage Ross",
+    "source": "https://commons.wikimedia.org/wiki/File:Fancy_raw_mixed_nuts_macro.jpg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "derivativeLicense": "CC BY-SA 3.0",
+    "changes": "EXIF orientation applied, resized to fit 640 × 640 without cropping, converted to WebP; metadata removed. No content replacement.",
+    "originalSha256": "a3f08c758d2fde605e6e522a05d4fa58bcadc13d6d5485c5843c4f382e81ffc3",
+    "sha256": "0403b0d44f0892c7c0c865cf75c1506256b13d2a37d539e0501ba5c7de0f4765",
+    "originalDimensions": [
+      3500,
+      2332
+    ],
+    "dimensions": [
+      640,
+      426
+    ],
+    "verifiedOn": "2026-10-25",
+    "exactSupplierSku": false
+  },
+  {
+    "productId": "sample-toothbrush",
+    "file": "toothbrush.webp",
+    "title": "A Toothbrush.JPG",
+    "author": "Dwight Burdette",
+    "source": "https://commons.wikimedia.org/wiki/File:A_Toothbrush.JPG",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "derivativeLicense": "CC BY 3.0",
+    "changes": "EXIF orientation applied, resized to fit 640 × 640 without cropping, converted to WebP; metadata removed. No content replacement.",
+    "originalSha256": "e81335afc035d67c48bc39e9b8bb0a33b25ba30ab0559f6741eabafc7d5dfb9c",
+    "sha256": "eec7ee472f3329d725649622edd133b0561a9b86c39e97f99b6b5495537b84b1",
+    "originalDimensions": [
+      4723,
+      1100
+    ],
+    "dimensions": [
+      640,
+      149
+    ],
+    "verifiedOn": "2026-10-25",
+    "exactSupplierSku": false
+  },
+  {
+    "productId": "sample-tissues",
+    "file": "tissues.webp",
+    "title": "A tissue box.jpg",
+    "author": "Captain MarcusL",
+    "source": "https://commons.wikimedia.org/wiki/File:A_tissue_box.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "derivativeLicense": "CC BY-SA 4.0",
+    "changes": "EXIF orientation applied, resized to fit 640 × 640 without cropping, converted to WebP; metadata removed. No content replacement.",
+    "originalSha256": "4c6a15cf451bb0d06edb15861bdff8cee0d1e51bd39e71a53d8731adfe01d173",
+    "sha256": "49b90920c025601c9caa463dcc885d5b2fc1b9e7b01036f64b8a4c669d23fdac",
+    "originalDimensions": [
+      3264,
+      2448
+    ],
+    "dimensions": [
+      640,
+      480
+    ],
+    "verifiedOn": "2026-10-25",
+    "exactSupplierSku": false
+  }
+]
