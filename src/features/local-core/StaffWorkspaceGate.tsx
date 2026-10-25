@@ -1,3 +1,5 @@
+import {OperationsQueue} from '../operations-queue/OperationsQueue';
+import {queueText} from '../operations-queue/locale';
 import {StaffConcierge} from '../concierge/StaffConcierge';
 import {StaffMarketCredits} from '../market-core/StaffMarketCredits';
 import {StaffMarket} from '../market-core/StaffMarket';
@@ -87,6 +89,7 @@ export function StaffWorkspaceGate(){
  }
  const requested=requestedStaffRole(),actualRole=parseStaffRole(session.identity?.role);
  const sections=session.identity?staffSections(session.identity.role,session.identity.permissions):[];
+ const queueAllowed=!!session.identity?.permissions.some(p=>['reservation.manage','housekeeping.work','stock.manage','concierge.work'].includes(p));
  const owner=sections.includes('inventory'),cleaner=sections.includes('housekeeping'),reception=sections.includes('reception'),folios=sections.includes('folios'),refunds=sections.includes('refunds');
  if(loading)return <main className="localWorkspace"><p role="status">{t("Проверка сессии сотрудника…")}</p></main>;
  if(session.authenticated&&session.identity&&session.csrf&&!staffRoleMatches(requested,session.identity.role))return <main className="localWorkspace staffRoleMismatch">
@@ -97,6 +100,7 @@ export function StaffWorkspaceGate(){
  if(session.authenticated&&session.identity&&session.csrf)return <>
   {actualRole&&<div className="localWorkspace"><StaffRoleHeading role={actualRole} locale={locale}/></div>}
   <nav className="localWorkspace localNavigation" aria-label={t("Разделы рабочей области")}>
+   {queueAllowed&&<a href="#staff-service-queue">{queueText(locale,'title')}</a>}
    {folios&&<a href="#staff-folios">{folioWorkspaceTitle(locale)}</a>}
    {sections.includes('supplies')&&actualRole&&<a href="#staff-supplies">{roleText(locale,actualRole==='procurement'?'Purchasing':'Warehouse')}</a>}
    {refunds&&<a href="#staff-refunds">{t('Сверка возвратов')}</a>}
@@ -116,6 +120,7 @@ export function StaffWorkspaceGate(){
     <label>{t("Новый пароль")}<input aria-label={t("Новый пароль")} type="password" required minLength={15} maxLength={128} autoComplete="new-password" value={next} onChange={e=>setNext(e.target.value)}/></label>
     <button className="primary" disabled={busy||assurance}>{t("Сохранить новый пароль")}</button></fieldset></form></div>}
   </section>
+  {queueAllowed&&<OperationsQueue csrf={session.csrf}/>}
   {session.identity.permissions.some(p=>['reservation.manage','housekeeping.work'].includes(p))&&<StaffCleaning csrf={session.csrf} manager={session.identity.permissions.includes('reservation.manage')}/>}
   {(reception||actualRole==='concierge')&&session.identity.permissions.some(p=>['reservation.manage','concierge.work'].includes(p))&&<StaffConcierge csrf={session.csrf} manager={session.identity.permissions.includes('reservation.manage')} onPending={setConciergePending}/>}
   {reception&&<StaffLaundry csrf={session.csrf} onPending={setLaundryPending}/>}
