@@ -398,5 +398,41 @@
   "Resized and converted to WebP. The photo retains its original license.": {
     "ru": "Размер уменьшен, формат изменён на WebP. Исходная лицензия фото сохранена.",
     "uz": "Oʻlcham kichraytirilib, WebP formatiga oʻtkazilgan. Suratning asl litsenziyasi saqlangan."
+  },
+  "Market shortcuts": {
+    "ru": "Быстрый доступ к маркету",
+    "uz": "Marketga tez kirish"
+  },
+  "Market sections": {
+    "ru": "Разделы маркета",
+    "uz": "Market bo‘limlari"
+  },
+  "Catalogue": {
+    "ru": "Каталог",
+    "uz": "Katalog"
+  },
+  "Basket": {
+    "ru": "Корзина",
+    "uz": "Savat"
+  },
+  "Orders": {
+    "ru": "Заказы",
+    "uz": "Buyurtmalar"
+  },
+  "Review pending": {
+    "ru": "Ожидает подтверждения",
+    "uz": "Tasdiqlash kutilmoqda"
+  },
+  "Local demo · no payment or delivery. Prices not set · UZS.": {
+    "ru": "Локальное демо · без оплаты и доставки. Цены не заданы · UZS.",
+    "uz": "Mahalliy demo · to‘lov va yetkazib berish yo‘q. Narxlar belgilanmagan · UZS."
+  },
+  "Demo conditions and storage": {
+    "ru": "Условия демо и хранение",
+    "uz": "Demo shartlari va saqlash"
+  },
+  "Saved on this device": {
+    "ru": "Сохранено на этом устройстве",
+    "uz": "Shu qurilmada saqlanadi"
   }
 }

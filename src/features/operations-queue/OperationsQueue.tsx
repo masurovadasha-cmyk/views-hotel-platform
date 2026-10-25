@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {useStaffLocale} from '../local-core/StaffLocale';
 import {appendSection,parseQueue,type Kind,type Row,type Section} from './model';
-import {queueText,stageText,type QueueLabel} from './locale';
+import {queueText,stageText,shortQueueId,type QueueLabel} from './locale';
 import './queue.css';
 export function OperationsQueue({csrf}:{csrf:string}){
  const {locale}=useStaffLocale(),t=(key:QueueLabel)=>queueText(locale,key);
@@ -40,13 +40,13 @@ export function OperationsQueue({csrf}:{csrf:string}){
    <div className="operationsQueueSections">{sections.map(section=><section key={section.kind} data-testid={'queue-'+section.kind} className="localPanel"><h3>{t(section.kind)}</h3>
     {section.status!=='available'?<p>{t(section.status)}</p>:<>
      {!section.items.length&&<p>{t('empty')}</p>}
-     {section.items.map(row=><button className="queueOrder" key={row.id} data-testid={'queue-item-'+row.kind+'-'+row.id} disabled={busy||!online} onClick={()=>setSelected(row)}><strong>{row.unitCode??'—'}</strong><span>{stageText(locale,row.stage)} · <code>{row.stage}</code></span><code>{row.id}</code></button>)}
+     {section.items.map(row=><button className="queueOrder" key={row.id} data-testid={'queue-item-'+row.kind+'-'+row.id} disabled={busy||!online} onClick={()=>setSelected(row)}><strong>{row.unitCode??'—'}</strong><span>{stageText(locale,row.stage)}</span><small>{t('fragment')}: {shortQueueId(row.id)}</small></button>)}
      {section.nextCursor&&<button data-testid={'queue-more-'+section.kind} disabled={busy||!online} onClick={()=>void load(section.kind,section.nextCursor!)}>{t('more')}</button>}
     </>}
    </section>)}</div>
    {selected&&<section data-testid="queue-detail" className="localPanel" aria-label={t('summary')}><h3>{t('summary')}</h3><p>{t('snapshot')}</p><dl>
-    <dt>{t('id')}</dt><dd>{selected.id}</dd><dt>{t('unit')}</dt><dd>{selected.unitCode??'—'}</dd><dt>{t('stage')}</dt><dd>{stageText(locale,selected.stage)} · {selected.stage}</dd><dt>{t('revision')}</dt><dd>{selected.revision}</dd>
-   </dl>{selected.sla?<><p>{t('deadline')}: <time dateTime={selected.sla.responseDueAt}>{new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(selected.sla.responseDueAt))} UTC</time> · {stageText(locale,selected.sla.state)}</p><p>{t('slaNote')}</p></>:<p>{t('noSla')}</p>}
+    <dt>{t('fragment')}</dt><dd>{shortQueueId(selected.id)}</dd><dt>{t('unit')}</dt><dd>{selected.unitCode??'—'}</dd><dt>{t('stage')}</dt><dd>{stageText(locale,selected.stage)}</dd><dt>{t('revision')}</dt><dd>{selected.revision}</dd>
+   </dl><details data-testid="queue-technical-details"><summary>{t('fullId')}</summary><code>{selected.id}</code><p>{t('sourceStage')}: <code>{selected.stage}</code></p></details>{selected.sla?<><p>{t('deadline')}: <time dateTime={selected.sla.responseDueAt}>{new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(selected.sla.responseDueAt))} UTC</time> · {stageText(locale,selected.sla.state)}</p><p>{t('slaNote')}</p></>:<p>{t('noSla')}</p>}
    <button data-testid="queue-close-detail" onClick={()=>setSelected(null)}>{t('dismiss')}</button></section>}
   </>}
  </section>;
