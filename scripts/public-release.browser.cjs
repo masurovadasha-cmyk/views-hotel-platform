@@ -1,4 +1,5 @@
 'use strict';
+const durable=require('./demo-market-storage-browser-helper.cjs');
 // Verify current public assets with curl's normal TLS validation, then render those
 // downloaded responses in Chromium. No browser TLS bypass, credentials or API writes.
 const assert=require('node:assert/strict'),fs=require('node:fs');
@@ -55,12 +56,14 @@ function download(url){
   await page.goto(target.origin+prefix+'?api=demo',{waitUntil:'networkidle'});
   await page.locator('.guestNav').getByRole('button',{name:'Services',exact:true}).click();
   await page.locator('.serviceGrid.large').getByRole('button',{name:/V Market/}).click();
-  const market=page.getByTestId('guest-market');await market.waitFor();
+  const market=page.getByTestId('guest-market');await market.waitFor();await durable.ready(page);
   await market.getByRole('button',{name:'Add to list: Still water',exact:true}).click();
-  await market.getByRole('button',{name:'Review list',exact:true}).click();await page.getByTestId('market-review').waitFor();
+  await durable.ready(page);await market.getByTestId('market-nav-basket').click();await durable.ready(page);assert.equal(await market.getAttribute('data-view'),'basket');
+  await market.getByRole('button',{name:'Review demo order',exact:true}).click();await durable.ready(page);await page.getByTestId('market-review').waitFor();
+  assert.equal((await durable.state(page)).orders.length,0);
   assert.equal(await page.getByTestId('market-count').innerText(),'1');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'MARKET_MOBILE_OVERFLOW');
-  checks.push('public_v_market_catalogue_and_unsent_shopping_list');
+  checks.push('public_v_market_catalogue_basket_and_unconfirmed_local_review');
   assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
   console.log(JSON.stringify({result:'pass',proof:'public_release_assets_browser',url:target.origin+prefix,sourceCommit:expectedSource,version:expectedVersion,checks,downloadedResources:cache.size,tlsVerification:'curl_default_no_bypass',browserNetwork:'intercepted_to_verified_public_downloads',realEmailSent:false,publicCoreEnabled:false}));
  }finally{await browser.close();}

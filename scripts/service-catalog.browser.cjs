@@ -7,6 +7,7 @@ const origin='https://catalog.invalid',root=path.resolve('dist');
  const browser=await chromium.launch({headless:true,...(fs.existsSync('/usr/bin/chromium')?{executablePath:'/usr/bin/chromium'}:{})});
  const page=await browser.newPage(),writes=[],errors=[],unexpected=[];let layouts=0;
  page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>{window.qaDatabaseOpens=[];const open=IDBFactory.prototype.open;IDBFactory.prototype.open=function(name,...args){window.qaDatabaseOpens.push(name);return open.call(this,name,...args);};});
  await page.route('**/*',route=>{
   const u=new URL(route.request().url());if(u.origin!==origin){unexpected.push(u.origin);return route.abort();}
   if(u.pathname==='/api/session')return route.fulfill({json:{authenticated:true,session:{mode:'guest',userId:'synthetic'}}});
@@ -25,8 +26,8 @@ const origin='https://catalog.invalid',root=path.resolve('dist');
    await page.locator('.guestLanguage select').selectOption(locale);
    for(const dark of [false,true]){
     if(await page.locator('[data-theme-toggle]').getAttribute('aria-pressed')!==String(dark))await page.locator('[data-theme-toggle]').click();
-    for(const id of ['transfer','excursions','tickets']){
-     await page.locator('[data-service="'+id+'"]').click();assert.equal(await page.locator('.liveServiceForm').count(),0);assert.equal(await page.getByTestId('guest-service-preview-form').count(),0);
+    for(const id of ['transfer','excursions','tickets','minimart']){
+     await page.locator('[data-service="'+id+'"]').click();assert.equal(await page.locator('.liveServiceForm').count(),0);assert.equal(await page.getByTestId('guest-service-preview-form').count(),0);assert.equal(await page.getByTestId('guest-market').count(),0);assert.equal(await page.getByTestId('guest-market-shortcut').count(),0);
      const key='This service is not connected yet. Booking, payment and sending requests are unavailable.';
      await page.getByText(locale==='en'?key:translations[key][locale],{exact:true}).waitFor();
      for(const width of [360,768,1440]){await page.setViewportSize({width,height:1000});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));layouts++;}
@@ -34,12 +35,13 @@ const origin='https://catalog.invalid',root=path.resolve('dist');
    }
   }
   assert.equal(writes.length,0);
-  for(const id of ['cleaning','laundry','minimart','concierge','rent_car','restaurant','bar','spa']){
+  // These are UI request-body fixtures, not proof of backend category acceptance.
+  for(const id of ['cleaning','laundry','concierge','rent_car','restaurant','bar','spa']){
    await page.locator('[data-service="'+id+'"]').click();await page.locator('.liveServiceForm textarea').fill('Synthetic request only');await page.locator('.liveServiceForm button.primary').click();
    await page.getByText('Request created and routed to VIEWS staff.',{exact:true}).waitFor();assert.equal(writes.at(-1).category,id);assert.equal(writes.at(-1).reservationId,'booking-fixture');
   }
-  assert.equal(writes.length,8);assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
+  assert.equal(writes.length,7);assert.deepEqual(writes.map(w=>w.category),['cleaning','laundry','concierge','rent_car','restaurant','bar','spa']);assert.deepEqual(await page.evaluate(()=>window.qaDatabaseOpens),[]);assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
   await page.setViewportSize({width:390,height:1000});await page.locator('[data-service="transfer"]').click();await page.screenshot({path:'/tmp/views-catalog-dark.png',fullPage:true});
-  console.log(JSON.stringify({result:'pass',layouts,primaryDirections:8,preservedLegacyCategories:8,newServiceWrites:0,fixtureWrites:writes.length,externalRequests:0,pageErrors:0}));
+  console.log(JSON.stringify({result:'pass',layouts,primaryDirections:8,renderedLegacyRequestForms:7,disconnectedDirections:4,backendCategoryAcceptanceVerified:false,newServiceWrites:0,fixtureWrites:writes.length,externalRequests:0,pageErrors:0}));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
