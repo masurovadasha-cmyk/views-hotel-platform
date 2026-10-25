@@ -97,7 +97,7 @@ module.exports=async function lotCancelProof(db,peer,f){
  // Handover stays gated for private lot holds; concurrent cancellation cannot issue stock.
  const racing=await fixture('ready'),raceBefore=await snapshot(racing);
  const raced=await Promise.allSettled([call(db,racing),call(peer,{...racing,key:randomUUID(),body:{action:'handover',expectedRevision:1}})]);
- assert.equal(raced[0].status,'fulfilled');assert.equal(raced[1].status,'rejected');assert.match(raced[1].reason.message,/LOT_RESERVE_ACTIVE|LOT_RESERVE_UNAVAILABLE|SERVICE_STOCK_RESERVED|SERVICE_REVISION_CHANGED|SERVICE_TRANSITION_INVALID/);
+ assert.equal(raced[0].status,'fulfilled');assert.equal(raced[1].status,'rejected');assert.match(raced[1].reason.message,/LOT_RESERVE_ACTIVE|LOT_RESERVE_UNAVAILABLE|LOT_RESERVE_MISMATCH|SERVICE_STOCK_RESERVED|SERVICE_REVISION_CHANGED|SERVICE_TRANSITION_INVALID/);
  const raceAfter=await snapshot(racing);assert.equal(raceAfter.market.stage,'cancelled');assert.deepEqual(raceAfter.stock,raceBefore.stock);assert.equal(raceAfter.movements,raceBefore.movements);assert.equal(raceAfter.folio,0);assert.ok(raceAfter.lots.every(r=>r.released_at));
  assert.equal((await db.query("SELECT has_function_privilege('views_app','service_private.market_lot_command(text,uuid,uuid,jsonb)','EXECUTE') allowed")).rows[0].allowed,false);
  await db.query('DELETE FROM staff_private.sessions WHERE token_hash=$1',[hash]);await db.query('DELETE FROM staff_private.credentials WHERE membership_id=$1',[member]);

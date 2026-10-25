@@ -1,3 +1,5 @@
+import {OwnerServicesWorkspace} from '../owner-services/OwnerServicesWorkspace';
+import {ownerServicesText} from '../owner-services/locale';
 import {OperationsQueue} from '../operations-queue/OperationsQueue';
 import {queueText} from '../operations-queue/locale';
 import {StaffConcierge} from '../concierge/StaffConcierge';
@@ -100,7 +102,7 @@ export function StaffWorkspaceGate(){
  if(session.authenticated&&session.identity&&session.csrf)return <>
   {actualRole&&<div className="localWorkspace"><StaffRoleHeading role={actualRole} locale={locale}/></div>}
   <nav className="localWorkspace localNavigation" aria-label={t("Разделы рабочей области")}>
-   {queueAllowed&&<a href="#staff-service-queue">{queueText(locale,'title')}</a>}
+   {owner&&<a href="#staff-owner-services">{ownerServicesText(locale,'title')}</a>}{queueAllowed&&<a href="#staff-service-queue">{queueText(locale,'title')}</a>}
    {folios&&<a href="#staff-folios">{folioWorkspaceTitle(locale)}</a>}
    {sections.includes('supplies')&&actualRole&&<a href="#staff-supplies">{roleText(locale,actualRole==='procurement'?'Purchasing':'Warehouse')}</a>}
    {refunds&&<a href="#staff-refunds">{t('Сверка возвратов')}</a>}
@@ -132,6 +134,7 @@ export function StaffWorkspaceGate(){
   {folios&&<div id="staff-folios" tabIndex={-1}><FolioWorkspace staffCsrf={session.csrf} canManage={session.identity.permissions.includes('reservation.manage')}/></div>}
   {refunds&&<div id="staff-refunds" tabIndex={-1}><RefundReconciliationWorkspace staffCsrf={session.csrf} canReview={session.identity.permissions.includes('finance.manage')}/></div>}
   {cleaner&&<div id="staff-housekeeping" tabIndex={-1}><HousekeepingWorkspace staffCsrf={session.csrf}/></div>}
+  {owner&&<OwnerServicesWorkspace key={session.csrf} staffCsrf={session.csrf}/>}
   {owner&&<div id="staff-owner" tabIndex={-1}><OwnerInventoryWorkspace staffCsrf={session.csrf}/></div>}
   {reception&&<><div id="staff-reception" tabIndex={-1}><ReceptionWorkspace staffCsrf={session.csrf}/></div>
   <div id="staff-booking" tabIndex={-1}><LocalCoreWorkspace staffCsrf={session.csrf}/></div></>}

@@ -1965,11 +1965,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "host",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/OWNER_SERVICES_H2_20261025.md; authenticated local read-only active catalog/current orders, no commissions/income or public Core"
     },
     {
       "id": "SH-GN-002",
@@ -1997,11 +1997,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "host",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "docs/OWNER_SERVICES_H2_20261025.md; authenticated local read-only active catalog/current orders, no commissions/income or public Core"
     },
     {
       "id": "SH-GN-004",
@@ -2029,11 +2029,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "admin",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "src/features/service-builder/README.md; local versioned draft and dry-run only, no publication/price/upload/routing/Core catalog"
     },
     {
       "id": "SA-GN-002",
@@ -2045,11 +2045,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "admin",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "src/features/service-builder/README.md; local versioned draft and dry-run only, no publication/price/upload/routing/Core catalog"
     },
     {
       "id": "SA-GN-003",
@@ -2157,11 +2157,11 @@
       },
       "runtimeParity": "not_verified",
       "area": "admin",
-      "implementation": "pending",
+      "implementation": "partial",
       "visualAcceptance": "pending",
       "functionalAcceptance": "pending",
       "publicCoreEnabled": false,
-      "evidence": null
+      "evidence": "src/features/service-builder/README.md; local versioned draft and dry-run only, no publication/price/upload/routing/Core catalog"
     },
     {
       "id": "SA-GN-010",

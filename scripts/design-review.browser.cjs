@@ -4,7 +4,7 @@ const android=process.argv.includes('--android'),directory=path.resolve(android?
 (async()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(directory,'design-140/manifest.json')));assert.equal(manifest.kind,'design-reference-not-runtime');assert.equal(manifest.assets.length,280);
  for(const item of manifest.assets){const bytes=fs.readFileSync(path.join(directory,'design-140',item.file));assert.equal(createHash('sha256').update(bytes).digest('hex'),item.sha256);}
- const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium',args:['--no-sandbox']});
+ const browser=await chromium.launch({headless:true,executablePath:process.env.VIEWS_BROWSER_EXECUTABLE||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),args:['--no-sandbox']});
  try{
   const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{localStorage.setItem('views.guest.locale','en');if(location.hostname==='design.views.invalid')delete String.prototype.replaceAll;});
@@ -19,7 +19,7 @@ const android=process.argv.includes('--android'),directory=path.resolve(android?
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    }
   }
-  await main.getByLabel('Audience',{exact:true}).selectOption('');await main.getByLabel('Implementation',{exact:true}).selectOption('pending');assert.equal(await main.locator('nav button').count(),84);
+  await main.getByLabel('Audience',{exact:true}).selectOption('');await main.getByLabel('Implementation',{exact:true}).selectOption('pending');assert.equal(await main.locator('nav button').count(),79); // Five newly partial H2/A1 IDs; full acceptance remains pending.
   await main.getByLabel('Find by name or screen ID',{exact:true}).fill('no-such-screen');await main.getByText('No matching screens',{exact:true}).waitFor();
   await main.getByLabel('Find by name or screen ID',{exact:true}).fill('');await main.getByLabel('Implementation',{exact:true}).selectOption('');
   for(const lang of ['ru','uz','en']){await page.locator('.guestLanguage select').selectOption(lang);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);}

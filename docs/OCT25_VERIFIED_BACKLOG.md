@@ -2,32 +2,32 @@
 
 База после fresh fetch: PR #91, `20decdfff77b2fb59e73496e6e374d1e42e7638b`, четыре CI success. Все открытые PR проверены: новая конкурирующая работа после #91 не обнаружена. Canonical repository только masurovadasha-cmyk/views-hotel-platform. Дедлайн запроса: 26 октября Asia/Tashkent (UTC+05), точный час не указан.
 
-Это полный по-ID инвентарь существующих 140 services screens плюс отдельные платформенные сценарии, а не обещание закончить всю платформу за день. 56 partial / 84 pending / 0 fully accepted; все visual/functional acceptance pending. 280 RU Light/Dark изображений проверены по manifest; их просмотрщик не реализация, перевод меню не перевод PDF. UZ/EN дизайн-оригиналы не подтверждены. Core booking/property management не входит в эти 140 services IDs.
+Это полный по-ID инвентарь существующих 140 services screens плюс отдельные платформенные сценарии, а не обещание закончить всю платформу за день. 61 partial / 79 pending / 0 fully accepted (после ограниченных H2/A1; базовый инвентарь был 56/84); все visual/functional acceptance pending. 280 RU Light/Dark изображений проверены по manifest; их просмотрщик не реализация, перевод меню не перевод PDF. UZ/EN дизайн-оригиналы не подтверждены. Core booking/property management не входит в эти 140 services IDs.
 
 ## Проверенная база и границы
 
-Реализованы и ранее проверены: общий date-range picker; scoped quote/hold/recovery; локальный reception/inventory/owner calendar; guest trips/link/cancel; четыре Core service workflows (cleaning/laundry/market/concierge), guest list/exact details; supply/folio/refund reconciliation; demo market create/replace/cancel/complete с durable IndexedDB и общей guest/staff очередью. Полная Canva-приёмка этим не закрыта. Public web/APK — static-demo, публичный Core/email/payment отключены. 0.20 Android install/reinstall/restart доказан отдельно; потерянные0.19 sessionStorage данные не восстановлены.
+Реализованы и ранее проверены: общий date-range picker; scoped quote/hold/recovery; локальный reception/inventory/owner calendar; guest trips/link/cancel; четыре Core service workflows (cleaning/laundry/market/concierge), guest list/exact details; supply/folio/refund reconciliation; demo market create/replace/cancel/complete с durable IndexedDB и общей guest/staff очередью. Полная Canva-приёмка этим не закрыта. Public web/APK — static-demo, публичный Core/email/payment отключены. 0.20 Android install/reinstall/restart доказан отдельно; потерянные 0.19 sessionStorage данные не восстановлены.
 
-Старые CURRENT_DELIVERY_STATUS/VIEWS_NEXT_DELIVERY_GATES описывают исторические0.15/0.7 releases; актуальный release baseline —0.20. Старые противоречивые market/D1 схемы не объединяются вслепую. Миграции1–133 immutable.
+Старые CURRENT_DELIVERY_STATUS/VIEWS_NEXT_DELIVERY_GATES описывают исторические 0.15/0.7 releases; актуальный release baseline —0.20. Старые противоречивые market/D1 схемы не объединяются вслепую. Миграции 1–133 immutable.
 
 ## Конечная рабочая очередь к дедлайну
 
-Реалистичный первый выпуск: M1+Q1+H1+QA и один проверенный web/APK. Далее продолжаем готовые M2/M3/B2 и ограниченные H2/A1/P1 по зависимостям; каждая строка закрывается только своими доказательствами. Нет обоснования обещать реализацию84 отсутствующих экранов или production к26октября. Недоступные реальные интеграции остаются явно открытыми; доступные контракты/код продолжаются. Новые направления сверх этого backlog не добавляются.
+Реалистичный первый выпуск: M1+Q1+H1+QA и один проверенный web/APK. Далее продолжаем готовые M2/M3/B2 и ограниченные H2/A1/P1 по зависимостям; каждая строка закрывается только своими доказательствами. Нет обоснования обещать реализацию 84 отсутствующих экранов или production к 26 октября. Недоступные реальные интеграции остаются явно открытыми; доступные контракты/код продолжаются. Новые направления сверх этого backlog не добавляются.
 
 | ID | Приоритет | Состояние | Критерий | Владелец | Миграция |
 |---|---|---|---|---|---|
-| M1 | P0 | В работе | Освобождение lot-reserve при guest/staff cancel; auth/replay/rollback/races; runtime закрыт | core_integration | 0134 |
-| Q1 | P0 | В работе | Read-only четыре секции CRM; независимые cursors, scope, актуальный минимальный detail | frontend_integration | нет |
-| H1 | P0 | В работе | Durable block/unblock: intent до POST, current receipt, terminal absence, reload/cross-scope | booking_recovery_ui | 0135 |
-| M2 | P0 | После M1 | Освобождение/перенос lot-reserve при replacement; old/successor атомарность, без runtime activation | core_integration | после0135 |
-| M3 | P0 | После M2 | Выдача/потребление lot-reserve без двойного stock issue; завершить все terminal paths до runtime решения | core_integration | последовательно |
-| B2 | P1 | После H1 | Durable release hold и честное сообщение о доступности; повтор/истёкший/уже отменённый результат | booking_recovery_ui | по необходимости |
-| V1 | P1 | В работе QA | 8–12 существующих ID: route/state/proof, Light/Dark/RU/UZ/EN/mobile, без фиктивной полной приёмки | integration_qa | нет |
-| P1 | P1 | После волны1 | Отдельный partner scope контракт/deny матрица/assignment isolation; не staff role, реальный вход отдельно | не назначен | не выделена |
-| H2 | P1 | После Q1 | Read-only SH-GN-001/003 только после отдельного owner scope и минимального состава данных | не назначен | не выделена |
-| A1 | P1 | После волны1 | Версионированный локальный service draft + безопасный dry-run SA-GN-001/002/009; без публикации | не назначен | не выделена |
-| S1 | P1 | Часть Q1 / дальше | Объяснимый существующий concierge deadline; общая утверждённая SLA матрица/рабочий календарь отдельно | не назначен | не выделена |
-| PHOTO | P1 | Инвентаризация | Проверить оригиналы/лицензии по каждому из8товаров; не подменять SKU общим стоковым фото | market_media | нет |
+| M1 | P0 | Проверено в 0.21 / PR92 / af65312 | Освобождение lot-reserve при guest/staff cancel; auth/replay/rollback/races; runtime закрыт | core_integration | 0134 |
+| Q1 | P0 | Проверено в 0.21 / PR92 / af65312 | Read-only четыре секции CRM; независимые cursors, scope, актуальный минимальный detail | frontend_integration | нет |
+| H1 | P0 | Проверено в 0.21 / PR92 / af65312 | Durable block/unblock: intent до POST, current receipt, terminal absence, reload/cross-scope | booking_recovery_ui | 0135 |
+| M2 | P0 | Проверено в 0.21 / PR92 / af65312 | Освобождение/перенос lot-reserve при replacement; old/successor атомарность, без runtime activation | core_integration | 0136 |
+| M3 | P0 | Интегрировано в кандидат 0.22; финальный CI/Android ожидается | Выдача/потребление lot-reserve без двойного stock issue; завершить все terminal paths до runtime решения | core_integration | 0137 |
+| B2 | P1 | Интегрировано в кандидат 0.22; финальный CI/Android ожидается | Durable release hold и честное сообщение о доступности; повтор/истёкший/уже отменённый результат | booking_recovery_ui | нет |
+| V1 | P1 | Аудит 9ID завершён; исправления навигации/читаемости в работе | 8–12 существующих ID: route/state/proof, Light/Dark/RU/UZ/EN/mobile, без фиктивной полной приёмки | integration_qa | нет |
+| P1 | P1 | Изолированная реализация ограниченного тестового контракта; ещё не интегрировано | Отдельный partner scope контракт/deny матрица/assignment isolation; не staff role, реальный вход отдельно | dependency_review / market_media | 0140 зарезервирована |
+| H2 | P1 | Интегрировано в кандидат 0.22; финальный CI/Android ожидается | Read-only SH-GN-001/003 только после отдельного owner scope и минимального состава данных | dependency_review | 0138 |
+| A1 | P1 | Интегрировано в кандидат 0.22; финальный CI/Android ожидается | Версионированный локальный service draft + безопасный dry-run SA-GN-001/002/009; без публикации | market_media | нет |
+| S1 | P1 | Изолированная реализация ограниченного тестового контракта; ещё не интегрировано | Объяснимый существующий concierge deadline; общая утверждённая SLA матрица/рабочий календарь отдельно | booking_recovery_ui | 0139 зарезервирована |
+| PHOTO | P1 | 7 лицензированных иллюстраций проверены 0.21; точныеSKU/вода открыты | Проверить оригиналы/лицензии по каждому из 8 товаров; не подменять SKU общим стоковым фото | market_media | нет |
 
 ## Остальные существующие требования, не скрытые внешними gates
 
@@ -40,7 +40,7 @@
 
 ## Внешние решения и ограничения
 
-Нужны отдельные согласования/доступы для живого Core/БД/хостинга, реальных цен и фонда, платежей/фискализации, SMTP/SMS, E-mehmon/документов, партнёрских договоров/выплат/депозитов, release signing/физической проверки. Реальные каталожные фото требуют подтверждённых исходников/лицензий и соответствия SKU. Новые ключи, доступ, платные ресурсы, живые данные, production merge и внешние отправки запрещены текущим scope. Свежий аудит25октября: body-parser/multer/nodemailer и узко ограниченный ExpoCLI zod обновлены с compatibility proofs. Advisory braces отозван, obsolete exception удалён — это не package fix. Node-forge остаётся активным неисправленным tooling риском с прежним исключением до2026-11-15.
+Нужны отдельные согласования/доступы для живого Core/БД/хостинга, реальных цен и фонда, платежей/фискализации, SMTP/SMS, E-mehmon/документов, партнёрских договоров/выплат/депозитов, release signing/физической проверки. Реальные каталожные фото требуют подтверждённых исходников/лицензий и соответствия SKU. Новые ключи, доступ, платные ресурсы, живые данные, production merge и внешние отправки запрещены текущим scope. Свежий аудит 25 октября: body-parser/multer/nodemailer и узко ограниченный ExpoCLI zod обновлены с compatibility proofs. Advisory braces отозван, obsolete exception удалён — это не package fix. Node-forge остаётся активным неисправленным tooling риском с прежним исключением до 2026-11-15.
 
 ## Контракт для Canva supplement
 
@@ -48,13 +48,13 @@ LocalCoreWorkspace/booking-recovery: recoveryScope, property timezone, unit/rate
 
 Каждому нужны loading/empty/offline/error; stale revision/conflict; unknown outcome/retry; revoked scope; storage corrupt/blocked; success+refresh failure; Back/Cancel/reload. RU/UZ/EN, UZS, Light/Dark/mobile. SH-GN-001–004 — услуги/комиссии/заказы/доход, не property/booking management. Старый Guest9pages/AED не канонический booking flow.
 
-## Кандидат первой волны0.21
+## Кандидат первой волны 0.21
 
-Интегрированы M1/M2/Q1/H1, независимые browser proofs и семь offline лицензированных иллюстративных фото. Миграции0134–0136 добавлены,1–133 immutable. Full aggregate/Core/CI/Android ещё должны пройти на итоговом SHA; никакие140-ID статусы этим не повышаются. Публичный Core по-прежнему отключён; CRM/owner сценарии проверяются на disposable Core и normal-build браузере, не выдаются за подключённую функцию публичного APK. Точные фото SKU/воды остаются открытыми.
+Интегрированы M1/M2/Q1/H1, независимые browser proofs и семь offline лицензированных иллюстративных фото. Миграции 0134–0136 добавлены,1–133 immutable. Full aggregate/Core/CI/Android ещё должны пройти на итоговом SHA; никакие 140-ID статусы этим не повышаются. Публичный Core по-прежнему отключён; CRM/owner сценарии проверяются на disposable Core и normal-build браузере, не выдаются за подключённую функцию публичного APK. Точные фото SKU/воды остаются открытыми.
 
 ## Все 140 ID: исходный статус, существующее доказательство
 
-Статусы сохраняются до per-ID приёмки. `partial` означает существующие reusable функции, не готовность экрана. Source: docs/design/canva-140-delivery.json; подробные зависимости каждого ID: CANVA_140_PARALLEL_QUEUE.md. Часть исторических evidence не включает последние расширения0.16–0.20; они перечислены выше отдельно.
+Статусы сохраняются до per-ID приёмки. `partial` означает существующие reusable функции, не готовность экрана. Source: docs/design/canva-140-delivery.json; подробные зависимости каждого ID: CANVA_140_PARALLEL_QUEUE.md. Часть исторических evidence не включает последние расширения 0.16–0.20; они перечислены выше отдельно.
 
 | ID | Роль | Название | Реализация | Visual / functional | Источник доказательства |
 |---|---|---|---|---|---|
@@ -179,22 +179,32 @@ LocalCoreWorkspace/booking-recovery: recoveryScope, property timezone, unit/rate
 | SP-GN-004 | Партнёр | Акты и выплаты | pending | pending / pending | None |
 | SP-GN-005 | Партнёр | Календарь партнёра | pending | pending / pending | None |
 | SP-GN-006 | Партнёр | Портал партнёра | pending | pending / pending | None |
-| SH-GN-001 | Хост | Услуги объекта | pending | pending / pending | None |
+| SH-GN-001 | Хост | Услуги объекта | partial | pending / pending | docs/OWNER_SERVICES_H2_20261025.md; authenticated local read-only active catalog/current orders, no commissions/income or public Core |
 | SH-GN-002 | Хост | Цена и комиссия | pending | pending / pending | None |
-| SH-GN-003 | Хост | Заказы гостей | pending | pending / pending | None |
+| SH-GN-003 | Хост | Заказы гостей | partial | pending / pending | docs/OWNER_SERVICES_H2_20261025.md; authenticated local read-only active catalog/current orders, no commissions/income or public Core |
 | SH-GN-004 | Хост | Доход от услуг | pending | pending / pending | None |
-| SA-GN-001 | Администратор | Название услуги | pending | pending / pending | None |
-| SA-GN-002 | Администратор | Поля формы | pending | pending / pending | None |
+| SA-GN-001 | Администратор | Название услуги | partial | pending / pending | src/features/service-builder/README.md; local versioned draft and dry-run only, no publication/price/upload/routing/Core catalog |
+| SA-GN-002 | Администратор | Поля формы | partial | pending / pending | src/features/service-builder/README.md; local versioned draft and dry-run only, no publication/price/upload/routing/Core catalog |
 | SA-GN-003 | Администратор | Правила цены | pending | pending / pending | None |
 | SA-GN-004 | Администратор | Доступность услуги | pending | pending / pending | None |
 | SA-GN-005 | Администратор | Способ исполнения | pending | pending / pending | None |
 | SA-GN-006 | Администратор | Сроки по этапам | pending | pending / pending | None |
 | SA-GN-007 | Администратор | Кому направить заказ? | pending | pending / pending | None |
 | SA-GN-008 | Администратор | Уведомления | pending | pending / pending | None |
-| SA-GN-009 | Администратор | Предпросмотр услуги | pending | pending / pending | None |
+| SA-GN-009 | Администратор | Предпросмотр услуги | partial | pending / pending | src/features/service-builder/README.md; local versioned draft and dry-run only, no publication/price/upload/routing/Core catalog |
 | SA-GN-010 | Администратор | Матрица SLA | pending | pending / pending | None |
 | SA-GN-011 | Администратор | Шаблоны сообщений | pending | pending / pending | None |
 | SA-GN-012 | Администратор | Правила объекта | pending | pending / pending | None |
 | SA-GN-013 | Администратор | Справочники и права | pending | pending / pending | None |
 | SA-GN-014 | Администратор | Партнёры и зарплата | pending | pending / pending | None |
 | SA-GN-015 | Администратор | Журнал интеграций | pending | pending / pending | None |
+
+## Обновление после 0.21 и кандидат 0.22
+
+0.21 проверена на af653127d781d452aee7c98477eaa9dcb04891d7, PR92, все четыре проверки success, Android update/restart/reserve/cancel PASS. Library libfile_d0cab2e927808191bb7573804f4e7ea5. Фото семи товаров — лицензированные иллюстрации, не доказательство точного SKU; вода без фото.
+
+Кандидат 0.22 включает M3/B2/H2/A1; финальные CI/Android ещё должны завершиться. Пять ID H2/A1 повышены только до partial на основании новых ограниченных рабочих сценариев; visual/functional acceptance всех 140 остаётся pending. Аудит девяти ID и 28 скриншотов: docs/NINE_SCREEN_VISUAL_AUDIT_20261025.md.
+
+Следующая конечная волна: V1 прямой вход в маркет/корзину и читаемая очередь; S1 сохранённые черновики SLA и объяснимый расчёт рабочего календаря без активации; P1 отдельное синтетическое предложение concierge партнёру и accept/reject без исполнения услуги. Новые направления не добавлены.
+
+Canva supplement IDs от родителя: CG-BK-008 quote/hold expiry; CG-BK-010 неизвестный результат и тот же ключ; CG-BK-017 offline/corrupt store; CH-OP-006 конфликт дат и block/unblock recovery; CS-FO-004 запись успешна, refresh неуспешен; CA-CR-006 scope объекта; CA-CR-009 read-after-write recovery; CA-CR-012 read-only четыре услуги. Это mapping макетов, не доказательства готовности. Номер брони VW и request key REQ раздельны. UZ/EN дизайн-драфты родителя не означают принятые языковые макеты; pending Canva approval не блокирует engineering.

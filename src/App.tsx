@@ -1,3 +1,4 @@
+import {allowDraftNavigation} from './features/service-builder/navigation';
 import {DesignReview} from './features/design-review/DesignReview';
 import {designText} from './features/design-review/locale';
 import {GuestEmailEntry} from './features/guest-auth/GuestEmailEntry';
@@ -74,12 +75,12 @@ function Application({guestLink}:{guestLink:GuestEmailLinkState}){
       <div className="brand" lang="en"><span className="vmark">V</span><div><strong>VIEWS</strong><small>HOTEL & APARTMENTS</small></div><i/><p>One Ecosystem<br/>A Better Experience</p></div>
       <div className="cities" lang="en">TASHKENT · SAMARKAND · BUKHARA · KHIVA · AND BEYOND</div>
       <div className="topActions">
-        {runtime==='static-demo'&&!designOpen&&<button onClick={()=>setDesignOpen(true)}>{designText(guestLocale,'title')}</button>}
+        {runtime==='static-demo'&&!designOpen&&<button onClick={()=>{if(allowDraftNavigation())setDesignOpen(true);}}>{designText(guestLocale,'title')}</button>}
         <span className="runtimeBadge">{staffMode?t(runtimeLabel(runtime)):guestT(runtimeLabel(runtime))}</span>
         {staffMode?<StaffLanguageSelector/>:<GuestLanguageSelector/>}
-        {!live&&runtime!=="local-core"&&runtime!=="guest-core"&&!accessOpen&&<button onClick={()=>{setRolePreviewOpen(false);setAccessOpen(true);}}>VIEWS · {guestT('Sign in')}</button>}
+        {!live&&runtime!=="local-core"&&runtime!=="guest-core"&&!accessOpen&&<button onClick={()=>{if(!allowDraftNavigation())return;setRolePreviewOpen(false);setAccessOpen(true);}}>VIEWS · {guestT('Sign in')}</button>}
         <button data-theme-toggle aria-pressed={dark} onClick={()=>setDark(v=>!v)}>{staffMode?t(dark?'Светлая тема':'Тёмная тема'):guestT(dark?'Light':'Dark')}</button>
-        {!live&&runtime!=="local-core"&&runtime!=="guest-core"&&!accessOpen&&!selectedStaffRole&&<button onClick={()=>setDemoMode(demoMode==="guest"?"staff":"guest")}>{demoMode==='guest'?guestT('Staff CRM'):t('Гостевое приложение')}</button>}
+        {!live&&runtime!=="local-core"&&runtime!=="guest-core"&&!accessOpen&&!selectedStaffRole&&<button onClick={()=>{if(allowDraftNavigation())setDemoMode(demoMode==="guest"?"staff":"guest");}}>{demoMode==='guest'?guestT('Staff CRM'):t('Гостевое приложение')}</button>}
         {live&&session&&<button onClick={async()=>{await api.logout();setSession(null)}}>{staffMode?t('Выйти'):guestT('Sign out')}</button>}
       </div>
     </header>

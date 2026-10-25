@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, "staging/**", "stage7/**"]
     paths:
+      # Every release candidate must carry exact-SHA Core evidence.
+      - "release.config.json"
       - "apps/api/**"
       - "db/**"
       - "docker-compose.core-tunnel.yml"
@@ -12,6 +14,8 @@ on:
   pull_request:
     branches: [main, "staging/master-reference-v1"]
     paths:
+      # Every release candidate must carry exact-SHA Core evidence.
+      - "release.config.json"
       - "apps/api/**"
       - "db/**"
       - "docker-compose.core-tunnel.yml"

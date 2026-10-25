@@ -31,6 +31,7 @@ public final class MainActivity extends Activity {
   private static final String HOME="https://"+HOST+PREFIX;
   private WebView web;
   private LinearLayout root;
+  private final NativeBackGate backGate=new NativeBackGate();
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
@@ -122,6 +123,7 @@ public final class MainActivity extends Activity {
   }
   private void showRecovery(WebView failed){
     if(failed!=web)return;
+    backGate.invalidate();
     root.removeView(failed);
     web=null;
     failed.destroy();
@@ -158,8 +160,19 @@ public final class MainActivity extends Activity {
     if(path.endsWith(".woff"))return "font/woff";
     return "application/octet-stream";
   }
-  @Override public void onBackPressed(){if(web!=null&&web.canGoBack())web.goBack();else super.onBackPressed();}
+  @Override public void onBackPressed(){
+    final WebView current=web;
+    if(current==null){super.onBackPressed();return;}
+    final long request=backGate.begin();
+    if(request==0)return; // One pending native confirmation at a time.
+    try{
+      current.evaluateJavascript(NativeBackGate.SCRIPT,value->{
+        if(!backGate.complete(request,value)||web!=current||isFinishing()||isDestroyed())return;
+        if(current.canGoBack())current.goBack();else finish();
+      });
+    }catch(RuntimeException error){backGate.invalidate();} // Keep the screen on evaluation failure.
+  }
   @Override protected void onPause(){if(web!=null)web.onPause();super.onPause();}
   @Override protected void onResume(){super.onResume();if(web!=null)web.onResume();}
-  @Override protected void onDestroy(){if(web!=null)web.destroy();super.onDestroy();}
+  @Override protected void onDestroy(){backGate.invalidate();if(web!=null)web.destroy();super.onDestroy();}
 }

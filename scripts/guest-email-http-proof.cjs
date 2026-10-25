@@ -55,6 +55,7 @@ module.exports=async function guestEmailHttpProof({admin,runtimeUrl}){
   const staff=await fetch(origin+'/v1/staff-auth/session',{headers:{Authorization:'Bearer '+verified.body.token}});
   assert.ok([401,404].includes(staff.status));checks.push('single_use_guest_session_no_staff_membership_or_session');
   await require('./operations-queue-http-proof.cjs')({admin,coreOrigin:origin,internalKey});
+  await require('./wave2-core-http-proof.cjs')({admin,coreOrigin:origin,internalKey});
   await require('./laundry-http-proof.cjs')({admin,rpc,session:verified.body,coreOrigin:origin,internalKey});
   assert.equal((await rpc('logout',{},verified.body.token)).status,200);
   assert.equal((await rpc('session',undefined,verified.body.token)).status,401);
