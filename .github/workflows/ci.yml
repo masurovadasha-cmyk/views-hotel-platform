@@ -117,5 +117,7 @@ jobs:
         run: |
           node src/features/service-builder/browser.cjs
           node src/features/service-builder/pricing.browser.cjs
+          node src/features/service-builder/availability.browser.cjs
           node src/features/service-builder/navigation.browser.cjs
           node scripts/design-review.browser.cjs
+

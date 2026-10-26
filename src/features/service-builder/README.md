@@ -62,3 +62,51 @@ Prepared source and tests are not execution evidence. Before acceptance run root
 and API required gates, the existing browser chain plus pricing proof, and native
 compatibility checks. No new APK, public release or live price activation follows
 from this local patch artifact.
+
+
+## SA-GN-004 candidate: unpublished weekly hours
+
+The demo-only builder now permits explicitly entered weekly windows and a single
+synthetic local date/time check. Output says **inside/outside configured draft
+hours**, never that a service is available. It is not capacity, a slot, a booking,
+a lead-time policy, a deadline, or an order promise. No Core requests, activation,
+publication, holidays, notifications, payments or operational calendars change.
+
+No timezone, day or business hours are prefilled. A configured rule requires
+1–14 non-overlapping same-day windows, ISO weekday 1–7, whole local minutes,
+start-inclusive/end-exclusive. Adjacent windows are allowed; overnight windows
+must be explicitly represented as separate day rows. `24:00` is an end boundary
+only. Zero windows is incomplete, not a claim of closure. Removing configuration
+means not configured, not always open. Supported zones match S1: UTC,
+Asia/Tashkent, Europe/Berlin, America/New_York. Sample input is strictly
+`YYYY-MM-DDTHH:MM`, years 2000–2099. Real date validation rejects normalization,
+seconds, suffixes and offsets. Nonexistent/ambiguous local sample times and that
+day's window boundaries fail closed. The pure resolver is adapted from S1; no
+SLA API, permission, default hours or runtime simulation is imported. Missing
+Intl capabilities produce an explicit device/timezone error.
+
+The synthetic sample and result are transient, never saved and never an order.
+Changing configuration/sample or explicitly reloading clears the prior result.
+Configuration participates in existing dirty/navigation/cancel guards. Invalid
+configuration disables saving without reporting a storage failure.
+
+Formats 1/2 remain byte-compatible on read and no-op save. An explicit
+availability edit saves format3, with both `pricing` and `availability` keys;
+legacy1 adds `pricing:null`, which means unconfigured, not a free service.
+Existing prices remain unchanged. Availability is null or
+`{kind:'weekly',timezone,windows:[{day,startMinute,endMinute}]}`. Format3 never
+downgrades; old clients reject it rather than silently discard the new field.
+No IndexedDB database-version or SQL migration is made. Existing CAS,
+transaction-commit success, corrupt-record preservation and quota handling stay.
+
+Additional candidate gates (must execute on the final integrated source):
+
+- `npx vitest run src/features/service-builder/model.test.ts src/features/service-builder/pricing.test.ts src/features/service-builder/availability.test.ts`
+- `npm run build:review`
+- `node src/features/service-builder/availability.browser.cjs`
+- existing builder, pricing and navigation browser proofs, root/API aggregate
+  gates and native compatibility checks remain required.
+
+SA-GN-004 acceptance and registry status are not promoted by prepared code or
+synthetic unit checks. Browser/Android and full visual acceptance require their
+own evidence. No public release or live availability activation follows.
