@@ -62,3 +62,25 @@ describe('local service draft contract',()=>{
   expect(draftIssues(emptyDraft())).toEqual(['names','fields']);const d=valid();d.fields[0].labels=blankLabels();expect(draftIssues(d)).toEqual(['labels']);
  });
 });
+
+
+describe('availability draft record compatibility',()=>{
+ const availability={kind:'weekly' as const,timezone:'UTC',windows:[{day:1,startMinute:540,endMinute:1020}]};
+ it('retains legacy records and pricing, upgrades only explicit availability, never downgrades',()=>{
+  for(const format of [1,2] as const){const draft:Draft=format===1?valid():{...valid(),pricing:{kind:'unit',currency:'UZS',unitMinor:'125'}},legacy={format,revision:7,draft},bytes=JSON.stringify(legacy);
+   expect(decide(legacy,undefined)).toEqual(legacy);expect(decide(legacy,7,draft)).toEqual(legacy);
+   const saved=decide(legacy,7,{...draft,availability});expect(saved.format).toBe(3);expect(saved.revision).toBe(8);expect(saved.draft.pricing).toEqual(draft.pricing??null);expect(saved.draft.availability).toEqual(availability);expect(JSON.stringify(legacy)).toBe(bytes);
+   expect(decide(saved,8,saved.draft)).toEqual(saved);expect(()=>decide(saved,7,saved.draft)).toThrow('changed');
+   const edited=decide(saved,8,{...saved.draft,code:'EDITED'});expect(edited.format).toBe(3);expect(edited.draft.availability).toEqual(availability);
+   const removed=decide(saved,8,{...saved.draft,availability:null});expect(removed.format).toBe(3);expect(removed.draft.availability).toBeNull();
+   const loaded=parseRecord(saved);loaded.draft.availability!.windows[0].day=2;expect(saved.draft.availability!.windows[0].day).toBe(1);
+   expect(()=>parseRecord({...saved,format:2})).toThrow('invalid');expect(()=>parseRecord({...saved,format:99})).toThrow('invalid');
+  }
+ });
+ it('rejects malformed availability and inconsistent format3 without mutating saved data',()=>{
+  const legacy={format:1,revision:1,draft:valid()},before=JSON.stringify(legacy);
+  expect(()=>decide(legacy,1,{...valid(),availability:{...availability,windows:[]}})).toThrow('invalid');expect(JSON.stringify(legacy)).toBe(before);
+  expect(()=>parseRecord({format:3,revision:2,draft:{...valid(),availability}})).toThrow('invalid');
+  const removed=decide(legacy,1,{...valid(),availability:null});expect(removed.format).toBe(3);expect(removed.draft.pricing).toBeNull();
+ });
+});

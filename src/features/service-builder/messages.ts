@@ -1,5 +1,36 @@
 import type {Locale} from './model';
 const messages:Record<string,[string,string]>={
+ "Unpublished weekly hours":["Неопубликованные часы по дням недели", "Nashr qilinmagan haftalik soatlar"],
+ "Calendar check only, not service availability, capacity, a booking or an order promise. No publication or activation.":["Только проверка календаря, не доступность услуги, вместимость, бронирование или обещание заказа. Без публикации и активации.", "Faqat taqvim tekshiruvi: xizmat mavjudligi, sigʻim, band qilish yoki buyurtma vaʼdasi emas. Nashr va faollashtirish yoʻq."],
+ "Draft hours mode":["Режим часов черновика", "Qoralama soatlar rejimi"],
+ "No draft hours configured.":["Часы черновика не настроены.", "Qoralama soatlar sozlanmagan."],
+ "Weekly draft hours":["Часы черновика по дням недели", "Haftalik qoralama soatlar"],
+ "Draft timezone":["Часовой пояс черновика", "Qoralama vaqt mintaqasi"],
+ "Choose a timezone":["Выберите часовой пояс", "Vaqt mintaqasini tanlang"],
+ "Each window stays within one day. Start is included; end is excluded. 24:00 is an end boundary only. No default business hours.":["Каждый интервал в пределах одного дня. Начало включено, конец исключён. 24:00 — только конец интервала. Рабочие часы по умолчанию не заданы.", "Har bir oraliq bitta kun ichida. Boshlanish kiradi, tugash kirmaydi. 24:00 faqat tugash chegarasi. Ish soatlari oldindan belgilanmagan."],
+ "Weekday":["День недели", "Hafta kuni"],
+ "Choose a weekday":["Выберите день недели", "Hafta kunini tanlang"],
+ "Monday":["Понедельник", "Dushanba"],
+ "Tuesday":["Вторник", "Seshanba"],
+ "Wednesday":["Среда", "Chorshanba"],
+ "Thursday":["Четверг", "Payshanba"],
+ "Friday":["Пятница", "Juma"],
+ "Saturday":["Суббота", "Shanba"],
+ "Sunday":["Воскресенье", "Yakshanba"],
+ "Window start":["Начало интервала", "Oraliq boshlanishi"],
+ "Window end":["Конец интервала", "Oraliq tugashi"],
+ "Remove window":["Удалить интервал", "Oraliqni oʻchirish"],
+ "Add window":["Добавить интервал", "Oraliq qoʻshish"],
+ "Complete the timezone and 1–14 non-overlapping same-day windows.":["Укажите часовой пояс и 1–14 непересекающихся интервалов в пределах одного дня.", "Vaqt mintaqasini va bir kun ichidagi 1–14 ta kesishmaydigan oraliqni kiriting."],
+ "Synthetic local date and time":["Пробная местная дата и время", "Sinov mahalliy sana va vaqti"],
+ "Check unpublished hours":["Проверить неопубликованные часы", "Nashr qilinmagan soatlarni tekshirish"],
+ "Inside configured draft hours":["Внутри настроенных часов черновика", "Sozlangan qoralama soatlar ichida"],
+ "Outside configured draft hours":["Вне настроенных часов черновика", "Sozlangan qoralama soatlardan tashqarida"],
+ "Enter a real local date and time: YYYY-MM-DDTHH:MM, years 2000–2099.":["Введите существующую местную дату и время: YYYY-MM-DDTHH:MM, годы 2000–2099.", "Haqiqiy mahalliy sana va vaqtni kiriting: YYYY-MM-DDTHH:MM, 2000–2099-yillar."],
+ "This local time or window boundary occurs twice. Choose an unambiguous time.":["Местное время или граница интервала встречается дважды. Выберите однозначное время.", "Bu mahalliy vaqt yoki oraliq chegarasi ikki marta uchraydi. Bir maʼnoli vaqtni tanlang."],
+ "This local time or window boundary does not exist. Choose another time.":["Местного времени или границы интервала не существует. Выберите другое время.", "Bu mahalliy vaqt yoki oraliq chegarasi mavjud emas. Boshqa vaqtni tanlang."],
+ "This device cannot safely resolve the selected timezone.":["Устройство не может надёжно определить выбранный часовой пояс.", "Qurilma tanlangan vaqt mintaqasini ishonchli aniqlay olmaydi."],
+
  "Draft price arithmetic":["Пробный расчёт цены", "Qoralama narx hisobi"],
  "Simulation only, not an approved price or quote. No taxes, discounts, commissions, payments or publication.":["Только симуляция, не утверждённая цена или предложение. Без налогов, скидок, комиссий, платежей и публикации.", "Faqat simulyatsiya, tasdiqlangan narx yoki taklif emas. Soliq, chegirma, komissiya, toʻlov va nashr yoʻq."],
  "Draft price mode":["Режим пробной цены", "Qoralama narx rejimi"],
@@ -44,3 +75,4 @@ const messages:Record<string,[string,string]>={
 export const translate=(locale:Locale,key:string)=>locale==='en'?key:messages[key]?.[locale==='ru'?0:1]??key;
 export const issueMessage:Record<string,string>={names:'Complete service code and all three names.',fields:'Add at least one field.',labels:'Complete field labels in all three languages.',options:'Choices need two to six distinct options in all three languages.'};
 export {messages};
+
