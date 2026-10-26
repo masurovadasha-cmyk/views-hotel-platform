@@ -1,6 +1,6 @@
 # A1: local service draft (SA-GN-001 / 002 / 009, partial)
 
-Reference: the bundled `public/design-140/SA-GN-001-light.webp`, `SA-GN-002-light.webp`, and `SA-GN-009-light.webp` were inspected before implementation. This slice implements service names/code/category, bounded form fields and a guest-form dry run. It deliberately does not implement the reference's publish button, price, routing/SLA, attachment upload, staff checklist or changes to real orders. Those reference IDs remain **partial**, not fully delivered.
+Reference: the bundled `public/design-140/SA-GN-001-light.webp`, `SA-GN-002-light.webp`, and `SA-GN-009-light.webp` were inspected before implementation. This slice implements service names/code/category, bounded form fields and a guest-form dry run. It deliberately does not implement the reference's publish button, operational pricing, routing/SLA, attachment upload, staff checklist or changes to real orders. Those reference IDs remain **partial**, not fully delivered.
 
 The entry is in the existing demo Admin panel, never the live Admin panel. A selected demo role is a presentation choice, not authorization. The draft is not a duplicate Core catalog or a write contract to it. No network, auth, order, fee, payment, delivery or notification operation exists here.
 
@@ -24,3 +24,41 @@ From repository root:
 - `node src/features/service-builder/navigation.browser.cjs`
 
 Browser tests use isolated synthetic storage and serve the actual build on loopback, with external/API requests blocked. They cover empty/required fields; text/choice/date/consent; duplicate save; Back; Cancel keep/discard; reload; RU/UZ/EN, both themes, 390/1440 widths; stale tabs; unknown record version; and aborted writes. The navigation proof additionally rejects section/role/guest/access/design departure, cancels an actual cross-document browser Back, and confirms that accepted departure retains the last saved revision. Output and screenshots are local evidence. Integration CI, Android upgrade/restart, design parity and Core permission/catalog contracts require the parent release checks and future slices.
+
+
+## SA-GN-003 conservative follow-on: unapproved price simulation (candidate)
+
+This candidate adds only a manually entered UZS unit amount multiplied by an
+integer sample quantity. It is not approved pricing, a quote, service availability,
+an order or payment. Taxes, discounts, commissions, duration and fixed-fee rules
+are intentionally not inferred. SA-GN-003 visual/functional acceptance remains
+pending; no registry status is promoted by this patch.
+
+Amount is a canonical decimal string in minor units (100 = 1 UZS), matching
+`formatStaffMoney` in `../local-core/staff-locale.ts`. Multiplication uses BigInt.
+Amount/total maximum is 9223372036854775807; sample quantity is 1–50, matching
+the technical safeguards in `../market-core/model.ts`, not establishing a new
+business or availability rule. Zero is allowed as an explicitly entered sample,
+not a statement that a service is free. No rounding is performed. Quantity and
+calculation results are transient, never saved into the draft.
+
+Legacy format-1 drafts read unchanged without writing. An unchanged save retains
+the same record format and revision (the existing store still puts that record). An explicit pricing edit saves format 2 with `draft.pricing` set to null or
+`{kind:'unit',currency:'UZS',unitMinor:string}`. This is a record format change,
+not an IndexedDB database-version change. Format 2 never downgrades to format 1;
+old clients reject it instead of dropping the new field. Unknown/malformed
+records remain blocked. Existing CAS and transaction-commit success semantics
+are retained. Invalid pricing blocks save without reporting a storage failure.
+Changing the rule or quantity invalidates the previous simulated total.
+
+Additional candidate checks:
+
+- `npx vitest run src/features/service-builder/model.test.ts src/features/service-builder/pricing.test.ts`
+- `npm run build:review`
+- `node src/features/service-builder/pricing.browser.cjs`
+- existing `browser.cjs` and `navigation.browser.cjs` remain required
+
+Prepared source and tests are not execution evidence. Before acceptance run root
+and API required gates, the existing browser chain plus pricing proof, and native
+compatibility checks. No new APK, public release or live price activation follows
+from this local patch artifact.
