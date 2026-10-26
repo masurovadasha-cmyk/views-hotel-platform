@@ -33,7 +33,7 @@ describe('unpublished availability calendar',()=>{
   expect(availabilityZones.length).toBe(4);
  });
  it('fails closed when Intl cannot guarantee timezone conversion',()=>{
-  const original=Intl.DateTimeFormat;try{vi.spyOn(Intl,'DateTimeFormat').mockImplementation(function(){throw Error('unsupported');} as typeof Intl.DateTimeFormat);expect(()=>checkAvailability(rule(),'2026-10-26T09:00')).toThrow('timezone');}finally{vi.restoreAllMocks();}
+  const original=Intl.DateTimeFormat;try{vi.spyOn(Intl,'DateTimeFormat').mockImplementation(function(){throw Error('unsupported');} as unknown as typeof Intl.DateTimeFormat);expect(()=>checkAvailability(rule(),'2026-10-26T09:00')).toThrow('timezone');}finally{vi.restoreAllMocks();}
   expect(Intl.DateTimeFormat).toBe(original);
  });
  it('rejects ignored timezone/hourCycle and missing formatToParts',()=>{
