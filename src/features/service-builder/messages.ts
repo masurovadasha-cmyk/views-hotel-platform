@@ -1,9 +1,20 @@
 import type {Locale} from './model';
 const messages:Record<string,[string,string]>={
+ "Draft price arithmetic":["Пробный расчёт цены", "Qoralama narx hisobi"],
+ "Simulation only, not an approved price or quote. No taxes, discounts, commissions, payments or publication.":["Только симуляция, не утверждённая цена или предложение. Без налогов, скидок, комиссий, платежей и публикации.", "Faqat simulyatsiya, tasdiqlangan narx yoki taklif emas. Soliq, chegirma, komissiya, toʻlov va nashr yoʻq."],
+ "Draft price mode":["Режим пробной цены", "Qoralama narx rejimi"],
+ "Unit amount × sample quantity":["Сумма за единицу × пробное количество", "Birlik summasi × sinov miqdori"],
+ "Unit amount in minor units":["Сумма за единицу в минимальных денежных единицах", "Birlik summasi eng kichik pul birliklarida"],
+ "100 minor units = 1 UZS. Sample quantity: 1–50. These are simulation limits, not service availability.":["100 минимальных денежных единиц = 1 UZS. Пробное количество: 1–50. Это пределы симуляции, не доступность услуги.", "100 eng kichik pul birligi = 1 UZS. Sinov miqdori: 1–50. Bu simulyatsiya chegaralari, xizmat mavjudligi emas."],
+ "Sample quantity":["Пробное количество", "Sinov miqdori"],
+ "Enter canonical whole numbers within the simulation limits; the total must fit a signed 64-bit integer.":["Введите целые числа без пробелов и ведущих нулей в пределах симуляции; итог должен помещаться в знаковое 64-битное целое число.", "Simulyatsiya chegaralarida boʻshliqsiz va oldingi nollarsiz butun sonlarni kiriting; jami ishorali 64-bitli butun songa sigʻishi kerak."],
+ "Calculate unpublished sample":["Рассчитать неопубликованный пример", "Nashr qilinmagan namunani hisoblash"],
+ "Unapproved simulated total":["Неутверждённый пробный итог", "Tasdiqlanmagan sinov jami"],
+ "minor units":["минимальных денежных единиц", "eng kichik pul birliklari"],
  'No saved draft':['Сохранённого черновика пока нет','Hali saqlangan qoralama yoʻq'],
  'Local service draft':['Локальный черновик услуги','Mahalliy xizmat qoralamasi'],
  'Open service draft':['Открыть черновик услуги','Xizmat qoralamasini ochish'],
- 'Local draft only. Not connected to the Core catalog. No publication, orders, prices or payments. Selecting a demo admin role is not authorization.':['Только локальный черновик, не связан с каталогом Core. Нет публикации, заказов, цен и платежей. Выбор демороли администратора не является авторизацией.','Faqat mahalliy qoralama, Core katalogiga ulanmagan. Nashr, buyurtma, narx va toʻlovlar yoʻq. Demo administrator rolini tanlash avtorizatsiya emas.'],
+ 'Local draft only. Not connected to the Core catalog. No publication, orders or payments. Prices are unpublished arithmetic samples only. Selecting a demo admin role is not authorization.':['Только локальный черновик, не связан с каталогом Core. Нет публикации, заказов и платежей. Цены — только неопубликованные пробные расчёты. Выбор демороли администратора не является авторизацией.','Faqat mahalliy qoralama, Core katalogiga ulanmagan. Nashr, buyurtma va toʻlovlar yoʻq. Narxlar faqat nashr qilinmagan sinov hisoblaridir. Demo administrator rolini tanlash avtorizatsiya emas.'],
  'Name and category':['Название и категория','Nom va toifa'],'Form fields':['Поля формы','Shakl maydonlari'],'Preview and dry run':['Предпросмотр и пробная проверка','Koʻrib chiqish va sinov'],
  'Service name':['Название услуги','Xizmat nomi'],'Code':['Код','Kod'],'Category':['Категория','Toifa'],
  'cleaning':['Уборка','Tozalash'],'concierge':['Консьерж','Konsyerj'],'maintenance':['Обслуживание','Texnik xizmat'],
@@ -28,7 +39,7 @@ const messages:Record<string,[string,string]>={
  'Invalid draft. Check bounded fields before saving.':['Некорректный черновик. Проверьте ограничения полей.','Qoralama yaroqsiz. Maydon cheklovlarini tekshiring.'],
  'Unpublished draft':['Неопубликованный черновик','Nashr qilinmagan qoralama'],'Guest form preview':['Предпросмотр гостевой формы','Mehmon shaklini koʻrib chiqish'],
  'No price configured · UZS':['Цена не настроена · UZS','Narx sozlanmagan · UZS'],
- 'Attachments, pricing, routing and publication are not available in this local draft.':['Вложения, цены, маршрутизация и публикация недоступны в локальном черновике.','Bu mahalliy qoralamada fayllar, narxlar, yoʻnaltirish va nashr mavjud emas.']
+ 'Attachments, operational pricing, routing and publication are not available in this local draft.':['Вложения, действующие цены, маршрутизация и публикация недоступны в локальном черновике.','Bu mahalliy qoralamada fayllar, amaldagi narxlar, yoʻnaltirish va nashr mavjud emas.']
 };
 export const translate=(locale:Locale,key:string)=>locale==='en'?key:messages[key]?.[locale==='ru'?0:1]??key;
 export const issueMessage:Record<string,string>={names:'Complete service code and all three names.',fields:'Add at least one field.',labels:'Complete field labels in all three languages.',options:'Choices need two to six distinct options in all three languages.'};

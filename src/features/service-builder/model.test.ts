@@ -3,6 +3,26 @@ import {emptyDraft,blankLabels,decide,validateDraft,parseRecord,draftIssues,dryR
 const names={ru:'Уборка',uz:'Tozalash',en:'Cleaning'};
 const valid=():Draft=>({code:'DEMO-1',names,category:'cleaning',fields:[{id:'field-1',labels:names,type:'text',required:true,options:[]}]});
 describe('local service draft contract',()=>{
+ it('reads legacy format1 without rewriting and upgrades only an intentional pricing edit',()=>{
+  const legacy={format:1 as const,revision:7,draft:valid()},bytes=JSON.stringify(legacy);
+  expect(decide(legacy,undefined)).toEqual(legacy);expect(decide(legacy,7,valid())).toEqual(legacy);
+  const priced:Draft={...valid(),pricing:{kind:'unit',currency:'UZS',unitMinor:'125'}};
+  const saved=decide(legacy,7,priced);expect(saved).toEqual({format:2,revision:8,draft:priced});
+  expect(JSON.stringify(legacy)).toBe(bytes);expect(decide(saved,8,priced)).toEqual(saved);
+  expect(()=>decide(saved,7,valid())).toThrow('changed');
+  expect(decide(saved,8,valid())).toEqual({format:2,revision:9,draft:{...valid(),pricing:null}});
+  expect(parseRecord(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
+  expect(()=>parseRecord({...saved,format:1})).toThrow('invalid');
+  expect(()=>parseRecord({...legacy,format:2})).toThrow('invalid');
+  expect(()=>parseRecord({...saved,format:3})).toThrow('invalid');
+  const loaded=parseRecord(saved);if(loaded.draft.pricing)loaded.draft.pricing.unitMinor='999';
+  expect(saved.draft.pricing?.unitMinor).toBe('125');
+ });
+ it('rejects malformed pricing before any save and preserves stored state',()=>{
+  const legacy={format:1,revision:1,draft:valid()},bytes=JSON.stringify(legacy);
+  for(const pricing of [{kind:'unit',currency:'UZS',unitMinor:''},{kind:'unit',currency:'UZS',unitMinor:'01'},{kind:'fixed',currency:'UZS',unitMinor:'125'}])expect(()=>decide(legacy,1,{...valid(),pricing} as Draft)).toThrow('invalid');
+  expect(JSON.stringify(legacy)).toBe(bytes);
+ });
  it('deep-copies nested choices and saves/reloads/dry-runs without structuredClone',()=>{
   vi.stubGlobal('structuredClone',undefined);
   try{
