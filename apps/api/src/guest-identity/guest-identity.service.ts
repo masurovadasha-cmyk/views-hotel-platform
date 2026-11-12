@@ -19,6 +19,7 @@ export class GuestIdentityService{
  async requestCode(phone:unknown,locale:unknown,networkKey:string){
   const secret=this.enabled(),delivery=this.sms.delivery();
   if(typeof phone!=='string'||!/^\+[1-9][0-9]{7,14}$/.test(phone)||!['ru','uz','en'].includes(String(locale)))throw new BadRequestException('INVALID_GUEST_IDENTITY');
+  try{delivery.validateRecipient?.(phone);}catch{throw new BadRequestException('INVALID_GUEST_IDENTITY');}
   await this.limits.consume('guest_identity.sms.network',this.network(networkKey),20,3600);
   const phoneKey=createHmac('sha256',Buffer.from(secret,'hex')).update('phone:'+phone).digest('hex');
   await this.limits.consume('guest_identity.sms.phone',phoneKey,5,3600);

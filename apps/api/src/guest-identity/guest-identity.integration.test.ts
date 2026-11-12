@@ -18,6 +18,15 @@ beforeAll(async()=>expect((await db.query("SELECT shobj_description((SELECT oid 
 beforeEach(()=>{vi.stubEnv('NODE_ENV','test');vi.stubEnv('VIEWS_LOCAL_REHEARSAL','true');vi.stubEnv('VIEWS_GUEST_SMS_PILOT_ENABLED','true');vi.stubEnv('VIEWS_GUEST_SMS_OTP_KEY','ab'.repeat(32));});
 afterEach(()=>vi.unstubAllEnvs());afterAll(()=>db.onModuleDestroy());
 describe.sequential('separate guest SMS identity (synthetic adapter only)',()=>{
+ it('rejects an adapter recipient before database writes or rate-limit consumption',async()=>{
+  const registry=new GuestSmsRegistry(),send=vi.fn(),limits=new SecurityRateLimitService(db);
+  registry.register({validateRecipient:()=>{throw Error('synthetic only');},send});
+  const query=vi.spyOn(db,'query'),consume=vi.spyOn(limits,'consume');
+  try{
+   await expect(new GuestIdentityService(db,registry,limits).requestCode('+998901234567','ru',network())).rejects.toThrow('INVALID_GUEST_IDENTITY');
+   expect(query).not.toHaveBeenCalled();expect(consume).not.toHaveBeenCalled();expect(send).not.toHaveBeenCalled();
+  }finally{query.mockRestore();consume.mockRestore();}
+ });
  it('creates a guest account, authenticates, revokes a session and grants no employee membership',async()=>{
   const {auth,messages}=setup(),challenge=await auth.requestCode(phone(),'uz',network());
   expect(Object.keys(challenge).sort()).toEqual(['challengeId','expiresInSeconds','resendAfterSeconds']);

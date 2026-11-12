@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-12 — Восстановление demo SMS после смены среды
+- Среда содержала8123228; создан worktree /workspace/views-demo-20261112, ветка demo/recover-sms-20261112 от043f164.
+- Неопубликованный6d8e619 отсутствует; SMS-срез воспроизведён по описанию, остальные утраченные изменения не заявляются готовыми.
+- Критерии: disposable DB/явный флаг; только synthetic recipients до записи; OTP локально; одноразовость/отзыв; прежний default runtime.
+- Console adapter восстановлен; node:test файл назван acceptance.cjs, чтобы Vitest не пытался запускать чужой формат.
+- Frozen pnpm10.18.3 install PASS; root/API typecheck/build PASS; web983/91 PASS, SMS Core9 PASS, adapter3 PASS, mail15 PASS, network187 PASS.
+- HTTP smoke с --demo-sms и без него PASS: request→verify→session→logout, повтор кода отклонён.
+- Миграции не менялись;131/725 из прежнего отчёта не являются проверкой этой ветки. Полный Core в этом срезе не запускался.
+- Инструкция: DEMO_SMS.md. UI/SMS booking bridge/test payment ещё не готовы; public web/APK не менялись.
+- Далее: восстановить неопубликованный market authorization отдельно, затем добавить безопасное чтение своих броней для SMS identity.
+
 ## 2026-10-19 — Срез44: претензия V Market из общей карточки
 - GuestMarketReport: описание3–1000, явная отправка для handed_over/completed без open issue; checkout допустим.
 - Проверяются ID/revision, неизменные стадия/деньги, точный текст открытой претензии без прежнего ответа.
