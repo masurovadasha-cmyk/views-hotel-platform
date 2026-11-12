@@ -1,6 +1,6 @@
 import {Injectable,ServiceUnavailableException} from '@nestjs/common';
 export type GuestSmsMessage={phone:string;code:string;locale:'ru'|'uz'|'en';expiresInSeconds:300;idempotencyKey:string};
-export interface GuestSmsDeliveryPort{send(message:GuestSmsMessage):Promise<void>;}
+export interface GuestSmsDeliveryPort{validateRecipient?(phone:string):void;send(message:GuestSmsMessage):Promise<void>;}
 /** Empty by default. Concrete adapters must use the existing egress boundary;
  * registering a fixture in tests does not connect an SMS operator. */
 @Injectable()
