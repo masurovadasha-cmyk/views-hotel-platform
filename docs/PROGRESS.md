@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-13 — SMS: чтение своих поездок
+- База02d8477/PR97; ветка demo/sms-trips-20261113, новый read-only срез без UI и платежей.
+- GET sms/trips и sms/trips/:id: профиль принадлежит аккаунту; совпадение телефона/email, чужой ID и staff context доступа не дают.
+- SQL0131 повторно проверяет SMS-сессию; joined organization и минимальная проекция,20 записей/страница.
+- RED: отсутствовал service; GREEN:49 guest identity/trips тестов, из них7 SMS trips; допроверено совпадение телефона.
+- Web983/91 PASS; root/API typecheck/build PASS; network189/mail15 PASS; generated client --check PASS.
+- Migration proof131, upgrade46→131/85 новых: checksum/replay/rollback/schema equivalence PASS.
+- HTTP smoke PASS: SMS session→пустой список, email endpoint401, logout→SMS trips401.
+- OpenAPI1.1.0: второй сервер SMS с прежними схемами; DECISIONS.md и SMS_TRIPS.md описывают ограничения.
+- Полный Core и browser happy path не запускались; UI/создание брони/test payment ещё нужны.
+- Постоянная БД, public web/APK не менялись; утраченная market authorization отдельно остаётся незавершённой.
+- Далее: безопасное создание брони гостем с принадлежностью SMS identity и тестовый платёжный провайдер.
+
 ## 2026-11-12 — Восстановление demo SMS после смены среды
 - Среда содержала8123228; создан worktree /workspace/views-demo-20261112, ветка demo/recover-sms-20261112 от043f164.
 - Неопубликованный6d8e619 отсутствует; SMS-срез воспроизведён по описанию, остальные утраченные изменения не заявляются готовыми.

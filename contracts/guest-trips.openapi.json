@@ -2,9 +2,9 @@
   "openapi": "3.0.3",
   "info": {
     "title": "VIEWS guest trips pilot",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
-  "servers": [{"url": "/v1/guest-identity/email"}],
+  "servers": [{"url": "/v1/guest-identity/email", "description": "Email session; existing ownership and invitation rules"}, {"url": "/v1/guest-identity/sms", "description": "SMS session; explicit guest profile ownership only"}],
   "security": [{"guestSession": []}],
   "paths": {
     "/trips": {
