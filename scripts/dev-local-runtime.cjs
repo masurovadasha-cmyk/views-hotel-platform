@@ -30,10 +30,13 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
    const challenge=await requested.json();assert.equal(challenge.code,undefined);assert.equal(entries.length,1);
    const payload={challengeId:challenge.challengeId,code:entries[0].code};
    const verified=await call('verify',payload);assert.equal(verified.status,201);const session=await verified.json();
+   const trips=await call('sms/trips',null,session.token);assert.equal(trips.status,200);assert.deepEqual(await trips.json(),{items:[],nextCursor:null});
+   assert.equal((await call('email/trips',null,session.token)).status,401);
    assert.equal(session.role,'guest');assert.equal((await call('verify',payload)).status,401);
    assert.equal((await call('session',null,session.token)).status,200);
    assert.equal((await call('logout',{},session.token)).status,201);
    assert.equal((await call('session',null,session.token)).status,401);
+   assert.equal((await call('sms/trips',null,session.token)).status,401);
    console.log(JSON.stringify({demoSmsSmoke:true,syntheticOnly:true,oneTimeCode:true,logoutRevoked:true}));
   }
   web=await require('./fixtures/guest-email-web.cjs')(coreOrigin);
