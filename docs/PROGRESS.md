@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-13 — Персональный quote для SMS-гостя
+- Ветка demo/sms-quote-offers-20261113 от0267381; guest hold разделён на безопасную принадлежность расчёта и последующее создание брони.
+- SQL0132: приватная привязка quote/profile/user, staff scope после lock, неизменяемый получатель, одно audit при повторе.
+- Staff POST guest-offer и SMS GET quotes/:id; expiry/unlink/logout/foreign denied; bigint строки, private snapshots скрыты.
+- RED отсутствовал service; GREEN54 guest identity tests, из них5 новых. Fixture исправлен: изолированный тариф второй организации.
+- Web983/91, root/API typecheck/build, network191/mail15 и HTTP smoke PASS; OpenAPI JSON валиден.
+- Migration132/upgrade46→132/86 новых: replay/checksum/rollback/schema equivalence PASS.
+- OpenAPI и инструкция GUEST_QUOTE_OFFERS.md; default-off, только локальное демо. Налоговые ставки/платёжный код не менялись.
+- Этот срез не создаёт бронь и не блокирует даты; UI/автоматическая guest quote/test payment ещё нужны.
+- Не запускались полный Core и браузерный сценарий. Persistent DB/public web/APK не менялись.
+- Следующий срез: атомарный hold по принадлежащему гостю расчёту с EXCLUDE, идемпотентностью и повторной проверкой сессии.
+
 ## 2026-11-13 — SMS: чтение своих поездок
 - База02d8477/PR97; ветка demo/sms-trips-20261113, новый read-only срез без UI и платежей.
 - GET sms/trips и sms/trips/:id: профиль принадлежит аккаунту; совпадение телефона/email, чужой ID и staff context доступа не дают.

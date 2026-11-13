@@ -10,7 +10,7 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
   VIEWS_GUEST_EMAIL_PILOT_ENABLED:'true',VIEWS_GUEST_TRIPS_PILOT_ENABLED:'true',
   VIEWS_GUEST_EMAIL_TOKEN_KEY:randomBytes(32).toString('hex'),TRUSTED_PROXY_MODE:'direct'});
  const demoSms=process.argv.includes('--demo-sms'),entries=[];
- if(demoSms)Object.assign(process.env,{VIEWS_DEMO_SMS:'true',VIEWS_GUEST_SMS_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_OTP_KEY:randomBytes(32).toString('hex')});
+ if(demoSms)Object.assign(process.env,{VIEWS_DEMO_SMS:'true',VIEWS_GUEST_QUOTES_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_OTP_KEY:randomBytes(32).toString('hex')});
  let app,web;
  try{
   apiRequire('reflect-metadata');
@@ -32,6 +32,7 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
    const verified=await call('verify',payload);assert.equal(verified.status,201);const session=await verified.json();
    const trips=await call('sms/trips',null,session.token);assert.equal(trips.status,200);assert.deepEqual(await trips.json(),{items:[],nextCursor:null});
    assert.equal((await call('email/trips',null,session.token)).status,401);
+   assert.equal((await call('sms/quotes/00000000-0000-4000-8000-000000000001',null,session.token)).status,404);
    assert.equal(session.role,'guest');assert.equal((await call('verify',payload)).status,401);
    assert.equal((await call('session',null,session.token)).status,200);
    assert.equal((await call('logout',{},session.token)).status,201);

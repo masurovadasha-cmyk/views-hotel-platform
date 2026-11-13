@@ -1,0 +1,20 @@
+{
+ "openapi":"3.0.3",
+ "info":{"title":"VIEWS local guest quote offers","version":"1.0.0"},
+ "paths":{
+  "/v1/quotes/{id}/guest-offer":{"post":{
+   "security":[{"staffSession":[]}],
+   "parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string","format":"uuid"}}],
+   "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","additionalProperties":false,"required":["guestProfileId"],"properties":{"guestProfileId":{"type":"string","format":"uuid"}}}}}},
+   "responses":{"201":{"description":"Assigned or idempotent existing assignment; validity unchanged"},"400":{"description":"Invalid input"},"401":{"description":"Invalid staff session"},"403":{"description":"Scope denied"},"404":{"description":"Disabled or expired/unavailable quote"},"409":{"description":"Quote already assigned to a different owner"}}
+  }},
+  "/v1/guest-identity/sms/quotes/{id}":{"get":{
+   "security":[{"smsSession":[]}],
+   "parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string","format":"uuid"}}],
+   "responses":{"200":{"description":"Owned unexpired quote; minor amounts are strings","content":{"application/json":{"schema":{"type":"object","required":["quoteId","expiresAt","checkInAt","checkOutAt","currency","totalMinor","lines"],"properties":{
+    "quoteId":{"type":"string","format":"uuid"},"expiresAt":{"type":"string","format":"date-time"},"checkInAt":{"type":"string","format":"date-time"},"checkOutAt":{"type":"string","format":"date-time"},"currency":{"type":"string"},"totalMinor":{"type":"string","pattern":"^[0-9]+$"},"lines":{"type":"array","items":{"type":"object","required":["code","label","amountMinor","currency"],"properties":{"code":{"type":"string"},"label":{"type":"object","additionalProperties":{"type":"string"}},"amountMinor":{"type":"string","pattern":"^-?[0-9]+$"},"currency":{"type":"string"}}}}
+   }}}}},"400":{"description":"Invalid input"},"401":{"description":"Invalid SMS session"},"404":{"description":"Disabled, foreign, expired or unavailable quote"}}
+  }}
+ },
+ "components":{"securitySchemes":{"staffSession":{"type":"apiKey","in":"header","name":"x-views-staff-session"},"smsSession":{"type":"http","scheme":"bearer"}}}
+}

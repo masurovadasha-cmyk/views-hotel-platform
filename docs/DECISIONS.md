@@ -354,3 +354,8 @@ SQL0126 изолирует report_issue: command lock → проживание �
 - Только явный guest_profiles.user_id, не совпадение телефона/email и не email invitation. Гость не получает actor/tenant privileges.
 - Новая0131 в доступной ветке после0130. Утраченная неопубликованная market0131 при восстановлении получает следующий свободный номер; applied checksum не переписываются.
 - UI/создание/оплата — следующие срезы; этот контракт не объявляется полным booking bridge.
+
+## 2026-11-13 — Персональный quote перед guest hold
+- Staff QuoteService/BookingHoldService требуют reservation permissions. Подставлять сотрудника для гостя нельзя; полный guest booking разбит на offers, hold и оплату.
+- Offers связывают существующий неизменяемый quote с явным профилем и снимком user_id. Staff session/scope проверяются после quote lock; повтор разрешён только тому же получателю без продления срока.
+- Отдельный default-off local API/OpenAPI; суммы и строки из Core, без новых налоговых констант. UI и автоматическая guest quote генерация ещё не выполнены.
