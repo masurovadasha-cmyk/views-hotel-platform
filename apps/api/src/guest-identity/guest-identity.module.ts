@@ -1,3 +1,5 @@
+import {GuestQuoteService} from './guest-quote.service';
+import {GuestQuoteController} from './guest-quote.controller';
 import {GuestSmsTripsService} from './guest-sms-trips.service';
 import {GuestSmsTripsController} from './guest-sms-trips.controller';
 import {PaymentsModule} from '../payments/payments.module';
@@ -16,5 +18,5 @@ import {SecurityRateLimitService} from '../security/rate-limit.service';
 import {GuestEmailController} from './guest-email.controller';
 import {GuestEmailService} from './guest-email.service';
 import {GuestEmailRegistry} from './guest-email.registry';
-@Module({imports:[StaffAuthModule,PaymentsModule],controllers:[GuestSmsTripsController,GuestCancellationController,StaffGuestLinkController,GuestReservationLinkController,GuestIdentityController,GuestEmailController,GuestTripsController],providers:[GuestSmsTripsService,GuestCancellationService,GuestReservationLinkService,GuestTripsService,GuestIdentityService,GuestSmsRegistry,SecurityRateLimitService,GuestEmailService,GuestEmailRegistry],exports:[GuestIdentityService,GuestSmsRegistry,GuestEmailService,GuestEmailRegistry]})
+@Module({imports:[StaffAuthModule,PaymentsModule],controllers:[GuestQuoteController,GuestSmsTripsController,GuestCancellationController,StaffGuestLinkController,GuestReservationLinkController,GuestIdentityController,GuestEmailController,GuestTripsController],providers:[GuestQuoteService,GuestSmsTripsService,GuestCancellationService,GuestReservationLinkService,GuestTripsService,GuestIdentityService,GuestSmsRegistry,SecurityRateLimitService,GuestEmailService,GuestEmailRegistry],exports:[GuestIdentityService,GuestSmsRegistry,GuestEmailService,GuestEmailRegistry]})
 export class GuestIdentityModule{}
