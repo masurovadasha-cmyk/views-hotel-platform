@@ -1,5 +1,18 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-14 — SMS hold: параллельные части объединены
+- Ветка demo/sms-booking-hold-20261113, базаa900d3a. SQL/API/тесты объединены без staff impersonation.
+- POST sms/holds создаёт принадлежащий гостю hold, строки цены, inventory, state event, audit/outbox атомарно.
+- Private command account+UUID; replay без продления; TTL600 серверный; клиентские actor/ttl запрещены.
+- Core guest identity65 PASS; после добавления ожидания блокировки hold8 PASS (включая fresh/cached logout).
+- Гонка6 запросов/3 unit:3 успеха; конкурентный same-key:1 бронь/event/audit/outbox.
+- Root/API typecheck/build и web983/91 PASS; network/mail gate PASS.
+- Migration133, upgrade46→133/87 новых: checksum/replay/rollback/schema equivalence PASS.
+- HTTP smoke PASS: synthetic hold→replay→SMS trips, клиентский TTL400. OpenAPI/запуск: GUEST_SMS_HOLD.md.
+- Полный Core и браузерный happy path не запускались; UI/test payment/автоматический quote/expiry scheduler остаются.
+- Постоянная БД, внешние провайдеры, public web/APK не менялись.
+- Далее: тестовая оплата с безопасным переходом hold→confirmed и подключение демо-очереди истечения hold.
+
 ## 2026-11-13 — Персональный quote для SMS-гостя
 - Ветка demo/sms-quote-offers-20261113 от0267381; guest hold разделён на безопасную принадлежность расчёта и последующее создание брони.
 - SQL0132: приватная привязка quote/profile/user, staff scope после lock, неизменяемый получатель, одно audit при повторе.

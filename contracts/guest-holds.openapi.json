@@ -1,0 +1,19 @@
+{
+ "openapi":"3.0.3",
+ "info":{"title":"VIEWS local SMS guest holds","version":"1.0.0"},
+ "paths":{"/v1/guest-identity/sms/holds":{"post":{
+  "operationId":"createGuestHold","security":[{"smsSession":[]}],
+  "parameters":[{"name":"Idempotency-Key","in":"header","required":true,"schema":{"type":"string","format":"uuid"}}],
+  "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","additionalProperties":false,"required":["quoteId"],"properties":{"quoteId":{"type":"string","format":"uuid"}}}}}},
+  "responses":{
+   "201":{"description":"New or replayed hold; server fixes lifetime to 600 seconds, replay does not extend it","content":{"application/json":{"schema":{"$ref":"#/components/schemas/GuestHold"}}}},
+   "400":{"description":"Invalid body or UUID"},"401":{"description":"Missing or revoked SMS session"},"404":{"description":"Pilot disabled or quote unavailable"},"409":{"description":"Dates unavailable, expired hold/quote or conflicting idempotency key"}
+  }
+ }}},
+ "components":{
+  "securitySchemes":{"smsSession":{"type":"http","scheme":"bearer"}},
+  "schemas":{"GuestHold":{"type":"object","additionalProperties":false,"required":["reservationId","confirmationCode","status","holdExpiresAt","totalMinor","currency","idempotentReplay"],"properties":{
+   "reservationId":{"type":"string","format":"uuid"},"confirmationCode":{"type":"string"},"status":{"type":"string","enum":["hold"]},"holdExpiresAt":{"type":"string","format":"date-time"},"totalMinor":{"type":"string","pattern":"^[0-9]+$"},"currency":{"type":"string"},"idempotentReplay":{"type":"boolean"}
+  }}}
+ }
+}
