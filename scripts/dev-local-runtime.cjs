@@ -11,7 +11,7 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
   VIEWS_GUEST_EMAIL_TOKEN_KEY:randomBytes(32).toString('hex'),TRUSTED_PROXY_MODE:'direct'});
  const demoSms=process.argv.includes('--demo-sms'),entries=[];
  if(demoSms)Object.assign(process.env,{VIEWS_DEMO_SMS:'true',VIEWS_GUEST_HOLDS_PILOT_ENABLED:'true',VIEWS_GUEST_QUOTES_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_OTP_KEY:randomBytes(32).toString('hex')});
- let app,web;
+ let app,web,expiry;
  try{
   apiRequire('reflect-metadata');
   app=await apiRequire('@nestjs/core').NestFactory.create(apiRequire('./dist/app.module').AppModule,{logger:false,cors:false});
@@ -33,7 +33,7 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
    const trips=await call('sms/trips',null,session.token);assert.equal(trips.status,200);assert.deepEqual(await trips.json(),{items:[],nextCursor:null});
    assert.equal((await call('email/trips',null,session.token)).status,401);
    assert.equal((await call('sms/quotes/00000000-0000-4000-8000-000000000001',null,session.token)).status,404);
-   await require('./guest-hold-smoke.cjs')({db:app.get(apiRequire('./dist/database/database.service').DatabaseService),origin:coreOrigin,session});
+   await require('./guest-hold-smoke.cjs')({db:app.get(apiRequire('./dist/database/database.service').DatabaseService),origin:coreOrigin,session,expire:(org,limit)=>app.get(apiRequire('./dist/booking/booking-lifecycle.service').BookingLifecycleService).expireTenantBatch(org,limit)});
    assert.equal(session.role,'guest');assert.equal((await call('verify',payload)).status,401);
    assert.equal((await call('session',null,session.token)).status,200);
    assert.equal((await call('logout',{},session.token)).status,201);
@@ -50,6 +50,11 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
   assert.equal(denied.status,401);
   console.log(JSON.stringify({sandboxReady:true,corePort:new URL(coreOrigin).port,webPort:new URL(web.origin).port,
    mode:'guest-core',disposable:true,externalDelivery:false,authenticatedTripsDenied:true}));
+  if(demoSms&&!smoke){
+   const db=app.get(apiRequire('./dist/database/database.service').DatabaseService);
+   const lifecycle=app.get(apiRequire('./dist/booking/booking-lifecycle.service').BookingLifecycleService);
+   expiry=await require('./demo-hold-expiry.cjs')({db,expire:(org,limit)=>lifecycle.expireTenantBatch(org,limit)});
+  }
   if(!smoke)while(!stopping())await new Promise(resolve=>setTimeout(resolve,200));
- }finally{if(web)await web.close();if(app)await app.close();}
+ }finally{if(expiry)await expiry.stop();if(web)await web.close();if(app)await app.close();}
 };

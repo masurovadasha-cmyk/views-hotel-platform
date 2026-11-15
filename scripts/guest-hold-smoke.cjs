@@ -2,7 +2,7 @@
 // Synthetic fixtures only. Called inside the marked disposable --demo-sms smoke.
 const assert=require('node:assert/strict');
 const {randomUUID,randomBytes,createHash}=require('node:crypto');
-module.exports=async function({db,origin,session}){
+module.exports=async function({db,origin,session,expire}){
  const marker=await db.query("SELECT shobj_description(oid,'pg_database') marker FROM pg_database WHERE datname=current_database()");
  assert.equal(marker.rows[0]?.marker,'VIEWS_DISPOSABLE_CORE_TEST');
  const org='10000000-0000-4000-8000-000000000001',property='10000000-0000-4000-8000-000000000002';
@@ -29,5 +29,19 @@ module.exports=async function({db,origin,session}){
  const replay=await post({quoteId:quote});assert.equal(replay.status,201);assert.deepEqual(await replay.json(),{...hold,idempotentReplay:true});
  const trips=await fetch(origin+'/v1/guest-identity/sms/trips',{headers,signal:AbortSignal.timeout(5000)});
  assert.equal(trips.status,200);assert.ok((await trips.json()).items.some(x=>x.id===hold.reservationId&&x.status==='hold'));
+ await db.withOrganization(org,c=>c.query("UPDATE reservations SET hold_expires_at=now()-interval '1 second' WHERE id=$1",[hold.reservationId]));
+ const worker=await require('./demo-hold-expiry.cjs')({db,expire,intervalMs:10});
+ try{
+  let cancelled=false;
+  for(let i=0;i<100&&!cancelled;i++){
+   const detail=await fetch(origin+'/v1/guest-identity/sms/trips/'+hold.reservationId,{headers,signal:AbortSignal.timeout(5000)});
+   assert.equal(detail.status,200);cancelled=(await detail.json()).trip.status==='cancelled';
+   if(!cancelled)await new Promise(resolve=>setTimeout(resolve,20));
+  }
+  assert.ok(cancelled,'expiry scheduler did not cancel the expired hold');
+  assert.equal((await post({quoteId:quote})).status,409);
+  headers['Idempotency-Key']=randomUUID();assert.equal((await post({quoteId:quote})).status,201);
+ }finally{await worker.stop();}
+ console.log(JSON.stringify({guestHoldExpiryHttpSmoke:true,cancelled:true,datesReusable:true}));
  console.log(JSON.stringify({guestHoldHttpSmoke:true,ownedTrip:true,replayStable:true,clientTtlDenied:true}));
 };

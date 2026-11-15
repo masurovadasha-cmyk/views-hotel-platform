@@ -1,3 +1,4 @@
+import {BookingLifecycleService} from '../booking/booking-lifecycle.service';
 import {afterAll,afterEach,beforeAll,beforeEach,describe,expect,it,vi} from 'vitest';
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {DatabaseService} from '../database/database.service';
@@ -117,4 +118,23 @@ it('rejects logout while waiting for quote lock on fresh and cached requests',as
   expect(await pending).toEqual({code:'28000'});
   expect((await query("SELECT count(*)::int n FROM reservations WHERE quote_snapshot->>'quoteId'=$1",[id])).rows[0].n).toBe(cached?1:0);
  }
+});
+
+it('concurrent expiry frees only expired holds once and allows dates to be booked again',async()=>{
+ const a=await account(),inventory=unit(),firstQuote=await quote(a.profile,inventory),nextQuote=await quote(a.profile,inventory);
+ const expired=await holds.create(a.token,firstQuote,randomUUID()),active=await holds.create(a.token,await quote(a.profile),randomUUID());
+ const confirmed=await holds.create(a.token,await quote(a.profile),randomUUID());
+ await db.withOrganization(org,async c=>{
+  await c.query("UPDATE reservations SET hold_expires_at=now()-interval '1 second' WHERE id=$1",[expired.reservationId]);
+  await c.query("UPDATE reservations SET status='confirmed',hold_expires_at=NULL WHERE id=$1",[confirmed.reservationId]);
+  await c.query("UPDATE inventory_periods SET kind='reservation',expires_at=NULL WHERE reservation_id=$1",[confirmed.reservationId]);
+ });
+ const lifecycle=new BookingLifecycleService(db);
+ await Promise.all([lifecycle.expireTenantBatch(org),lifecycle.expireTenantBatch(org)]);
+ expect((await trips.detail(a.token,expired.reservationId)).trip.status).toBe('cancelled');
+ expect((await trips.detail(a.token,active.reservationId)).trip.status).toBe('hold');
+ expect((await trips.detail(a.token,confirmed.reservationId)).trip.status).toBe('confirmed');
+ expect((await query('SELECT count(*)::int n FROM inventory_periods WHERE reservation_id=$1',[expired.reservationId])).rows[0].n).toBe(0);
+ for(const sql of ["SELECT count(*)::int n FROM booking_state_events WHERE reservation_id=$1 AND event_type='booking.hold_expired'","SELECT count(*)::int n FROM outbox_events WHERE aggregate_id=$1 AND event_type='booking.hold_expired'"])expect((await query(sql,[expired.reservationId])).rows[0].n).toBe(1);
+ expect((await holds.create(a.token,nextQuote,randomUUID())).status).toBe('hold');
 });

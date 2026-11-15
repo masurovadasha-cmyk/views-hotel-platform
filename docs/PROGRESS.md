@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-15 — Автоматическое истечение hold в демо
+- Ветка demo/local-hold-expiry-20261115 отb04fe77; подключён существующий expireTenantBatch, без миграций и новых прав.
+- Worker только в --dev-local --demo-sms и marked disposable DB; две seed организации,100 записей/пачку, последовательные проходы с паузой1с.
+- Stop ждёт активный проход; ошибки логируются безопасным кодом и повторяются; production/default runtime не активируют worker.
+- RED helper отсутствовал; GREEN3 acceptance scheduler tests;9 PostgreSQL hold tests (concurrent expiry, active/confirmed сохранены, даты повторно заняты).
+- HTTP smoke: expired→cancelled через API, старый ключ409, новый hold201; часы synthetic fixture сдвинуты,10минут не ждали.
+- Root/API typecheck/build, web983/91, network193/mail15 PASS. Миграции прежние133, новая upgrade-проверка не нужна.
+- Запуск и ограничения: DEMO_HOLD_EXPIRY.md; сроки при DB errors/backlog не гарантируются.
+- Confirmed fixture не доказательство платежей; full Core и browser happy path не запускались.
+- Public web/APK, постоянная БД и внешние платежи не менялись. Далее: тестовый платёж и late-payment/expiry race.
+
 ## 2026-11-14 — SMS hold: параллельные части объединены
 - Ветка demo/sms-booking-hold-20261113, базаa900d3a. SQL/API/тесты объединены без staff impersonation.
 - POST sms/holds создаёт принадлежащий гостю hold, строки цены, inventory, state event, audit/outbox атомарно.
