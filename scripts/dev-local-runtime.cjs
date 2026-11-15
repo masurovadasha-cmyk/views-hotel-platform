@@ -10,7 +10,7 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
   VIEWS_GUEST_EMAIL_PILOT_ENABLED:'true',VIEWS_GUEST_TRIPS_PILOT_ENABLED:'true',
   VIEWS_GUEST_EMAIL_TOKEN_KEY:randomBytes(32).toString('hex'),TRUSTED_PROXY_MODE:'direct'});
  const demoSms=process.argv.includes('--demo-sms'),entries=[];
- if(demoSms)Object.assign(process.env,{VIEWS_DEMO_SMS:'true',VIEWS_GUEST_HOLDS_PILOT_ENABLED:'true',VIEWS_GUEST_QUOTES_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_OTP_KEY:randomBytes(32).toString('hex')});
+ if(demoSms)Object.assign(process.env,{VIEWS_DEMO_SMS:'true',VIEWS_DEMO_PAYMENTS_ENABLED:'true',VIEWS_GUEST_HOLDS_PILOT_ENABLED:'true',VIEWS_GUEST_QUOTES_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_OTP_KEY:randomBytes(32).toString('hex')});
  let app,web,expiry;
  try{
   apiRequire('reflect-metadata');

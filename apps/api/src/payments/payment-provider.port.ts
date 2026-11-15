@@ -1,4 +1,4 @@
-export type SupportedPaymentProvider="payme"|"click"|"uzum"|"octo"|"multicard"|"stripe";
+export type SupportedPaymentProvider="demo"|"payme"|"click"|"uzum"|"octo"|"multicard"|"stripe";
 
 export type HostedCheckoutRequest={
   organizationId:string;

@@ -1,3 +1,8 @@
+import {GuestDemoPaymentService} from './guest-demo-payment.service';
+import {LedgerService} from '../payments/ledger.service';
+import {PaymentRecoveryService} from '../payments/payment-recovery.service';
+import {PaymentProviderRegistry} from '../payments/payment-provider.registry';
+import {PaymentWebhookService} from '../payments/payment-webhook.service';
 import {BookingLifecycleService} from '../booking/booking-lifecycle.service';
 import {afterAll,afterEach,beforeAll,beforeEach,describe,expect,it,vi} from 'vitest';
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
@@ -137,4 +142,49 @@ it('concurrent expiry frees only expired holds once and allows dates to be booke
  expect((await query('SELECT count(*)::int n FROM inventory_periods WHERE reservation_id=$1',[expired.reservationId])).rows[0].n).toBe(0);
  for(const sql of ["SELECT count(*)::int n FROM booking_state_events WHERE reservation_id=$1 AND event_type='booking.hold_expired'","SELECT count(*)::int n FROM outbox_events WHERE aggregate_id=$1 AND event_type='booking.hold_expired'"])expect((await query(sql,[expired.reservationId])).rows[0].n).toBe(1);
  expect((await holds.create(a.token,nextQuote,randomUUID())).status).toBe('hold');
+});
+
+const demoLedger=new LedgerService(),demoPayments=new GuestDemoPaymentService(db,auth,new PaymentWebhookService(db,new PaymentProviderRegistry(),demoLedger,new PaymentRecoveryService(db,demoLedger)));
+it('demo payment confirms once with balanced double entry under concurrent clicks',async()=>{
+ vi.stubEnv('VIEWS_DEMO_PAYMENTS_ENABLED','true');
+ const a=await account(),h=await holds.create(a.token,await quote(a.profile),randomUUID());
+ const results=await Promise.all(Array.from({length:4},()=>demoPayments.pay(a.token,h.reservationId)));
+ expect(results.every(x=>x.simulation&&x.paymentStatus==='captured'&&x.bookingStatus==='confirmed')).toBe(true);
+ expect(new Set(results.map(x=>x.paymentIntentId)).size).toBe(1);
+ expect((await trips.detail(a.token,h.reservationId)).trip.status).toBe('confirmed');
+ const id=results[0].paymentIntentId;
+ expect((await query("SELECT count(*)::int n FROM provider_transactions WHERE payment_intent_id=$1 AND kind='capture'",[id])).rows[0].n).toBe(1);
+ const ledger=(await query("SELECT count(*)::int n,coalesce(sum(CASE WHEN e.side='debit' THEN e.amount_minor ELSE -e.amount_minor END),0)::text balance FROM ledger_entries e JOIN ledger_journals j ON j.id=e.journal_id WHERE j.reference_id=$1",[id])).rows[0];
+ expect(ledger).toEqual({n:2,balance:'0'});
+ expect((await query('SELECT kind FROM inventory_periods WHERE reservation_id=$1',[h.reservationId])).rows[0].kind).toBe('reservation');
+ await auth.logout(a.token);await expect(demoPayments.pay(a.token,h.reservationId)).rejects.toMatchObject({status:401});
+});
+it('demo payment rejects foreign/revoked callers and defaults off',async()=>{
+ const a=await account(),b=await account(),h=await holds.create(a.token,await quote(a.profile),randomUUID());
+ await expect(demoPayments.pay(a.token,h.reservationId)).rejects.toThrow('DEMO_PAYMENTS_DISABLED');
+ vi.stubEnv('VIEWS_DEMO_PAYMENTS_ENABLED','true');
+ await expect(demoPayments.pay(b.token,h.reservationId)).rejects.toMatchObject({status:404});
+ await auth.logout(a.token);await expect(demoPayments.pay(a.token,h.reservationId)).rejects.toMatchObject({status:401});
+ expect((await query('SELECT count(*)::int n FROM payment_intents WHERE reservation_id=$1',[h.reservationId])).rows[0].n).toBe(0);
+});
+it('expired hold competing with demo payment never charges or confirms',async()=>{
+ vi.stubEnv('VIEWS_DEMO_PAYMENTS_ENABLED','true');
+ const a=await account(),h=await holds.create(a.token,await quote(a.profile),randomUUID());
+ await query("UPDATE reservations SET hold_expires_at=now()-interval '1 second' WHERE id=$1",[h.reservationId]);
+ const results=await Promise.allSettled([demoPayments.pay(a.token,h.reservationId),new BookingLifecycleService(db).expireTenantBatch(org)]);
+ expect(results[0].status).toBe('rejected');expect(results[1].status).toBe('fulfilled');
+ expect((await trips.detail(a.token,h.reservationId)).trip.status).toBe('cancelled');
+ expect((await query('SELECT count(*)::int n FROM payment_intents WHERE reservation_id=$1',[h.reservationId])).rows[0].n).toBe(0);
+});
+it('demo payment rolls back intent, capture and confirmation on an internal failure',async()=>{
+ vi.stubEnv('VIEWS_DEMO_PAYMENTS_ENABLED','true');
+ const a=await account(),h=await holds.create(a.token,await quote(a.profile),randomUUID());
+ const processor=new PaymentWebhookService(db,new PaymentProviderRegistry(),demoLedger,new PaymentRecoveryService(db,demoLedger));
+ const original=processor.processVerifiedInTransaction.bind(processor);
+ vi.spyOn(processor,'processVerifiedInTransaction').mockImplementationOnce(async(...args)=>{await original(...args);throw Error('SYNTHETIC_AFTER_CAPTURE_FAILURE');});
+ const failing=new GuestDemoPaymentService(db,auth,processor);
+ await expect(failing.pay(a.token,h.reservationId)).rejects.toThrow('SYNTHETIC_AFTER_CAPTURE_FAILURE');
+ expect((await trips.detail(a.token,h.reservationId)).trip.status).toBe('hold');
+ expect((await query('SELECT count(*)::int n FROM payment_intents WHERE reservation_id=$1',[h.reservationId])).rows[0].n).toBe(0);
+ expect((await demoPayments.pay(a.token,h.reservationId)).bookingStatus).toBe('confirmed');
 });

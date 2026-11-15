@@ -40,7 +40,11 @@ module.exports=async function({db,origin,session,expire}){
   }
   assert.ok(cancelled,'expiry scheduler did not cancel the expired hold');
   assert.equal((await post({quoteId:quote})).status,409);
-  headers['Idempotency-Key']=randomUUID();assert.equal((await post({quoteId:quote})).status,201);
+  headers['Idempotency-Key']=randomUUID();const next=await post({quoteId:quote});assert.equal(next.status,201);const nextHold=await next.json();
+  const pay=()=>fetch(origin+'/v1/guest-identity/sms/demo-payment',{method:'POST',headers,body:JSON.stringify({reservationId:nextHold.reservationId}),signal:AbortSignal.timeout(5000)});
+  const paid=await pay();assert.equal(paid.status,201);const receipt=await paid.json();assert.equal(receipt.simulation,true);assert.equal(receipt.paymentStatus,'captured');assert.equal(receipt.bookingStatus,'confirmed');
+  const repeated=await pay();assert.equal(repeated.status,201);assert.deepEqual(await repeated.json(),receipt);
+  console.log(JSON.stringify({demoPaymentHttpSmoke:true,confirmed:true,replayStable:true}));
  }finally{await worker.stop();}
  console.log(JSON.stringify({guestHoldExpiryHttpSmoke:true,cancelled:true,datesReusable:true}));
  console.log(JSON.stringify({guestHoldHttpSmoke:true,ownedTrip:true,replayStable:true,clientTtlDenied:true}));
