@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-15 — Тестовая оплата SMS hold
+- Ветка demo/guest-test-payment-20261115 отc2a1385; SQL0134 и локальный demo API, без карт/внешнего провайдера.
+- Владение через SMS+private hold command; marker disposable DB; full amount из Core; один intent/event на бронь.
+- Existing processor/ledger: hold→confirmed, две сбалансированные записи; повтор не списывает дважды, ошибка после capture откатывает транзакцию.
+- Guest/payment79 tests PASS; отдельно2 controller tests; после проверки logout повторно13 hold/payment tests.
+- Root/API typecheck/build, web983/91, network195/mail15 PASS; OpenAPI JSON проверен.
+- Migration134/upgrade46→134/88 новых PASS: checksum/replay/rollback/schema equivalence.
+- HTTP smoke PASS: simulation capture→confirmed→тот же receipt; expiry/rebooking сохранены.
+- Запуск/риски: DEMO_PAYMENT.md. UI, внешние callback и demo refund пока отсутствуют; refund_pending не фактический возврат.
+- Full Core/browser demo не запускались; public web/APK/постоянная БД не менялись.
+- Далее: экран оплаты/поездок для SMS и обработка demo refund_pending/late-payment.
+
 ## 2026-11-15 — Автоматическое истечение hold в демо
 - Ветка demo/local-hold-expiry-20261115 отb04fe77; подключён существующий expireTenantBatch, без миграций и новых прав.
 - Worker только в --dev-local --demo-sms и marked disposable DB; две seed организации,100 записей/пачку, последовательные проходы с паузой1с.

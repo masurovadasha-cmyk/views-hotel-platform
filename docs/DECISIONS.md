@@ -371,3 +371,9 @@ SQL0126 изолирует report_issue: command lock → проживание �
 - Только NODE_ENV=test, local rehearsal, demo SMS и маркер disposable DB. Ограничен двумя организациями существующего seed,100 записей за организацию за проход, пауза1с между проходами.
 - Остановка дожидается текущего прохода до закрытия Nest/БД. Ошибки логируются фиксированным кодом, повтор на следующем проходе.
 - При большом backlog/ошибках задержка больше1с; это не production SLA. Реальная payment/expiry гонка остаётся частью будущего тестового платёжного среза.
+
+## 2026-11-15 — Локальный payment simulator
+- Provider demo отделён от Payme/Click; реальный адаптер/HTTP webhook не регистрируется. Симулятор вызывает существующий verified payment processor внутри транзакции подготовки intent.
+- Только disposable DB + local/test flags; одна полная оплата на reservationId, сумма из Core. Указание клиентом amount/provider/actor отклоняется.
+- Повтор использует стабильный event/transaction ID и время intent; ledger и подтверждение атомарны. Existing non-demo payment блокирует симуляцию.
+- Демо refund/внешний callback/UI пока не реализованы; refund_pending не обозначает фактический возврат.

@@ -1,0 +1,9 @@
+{
+ "openapi":"3.0.3","info":{"title":"VIEWS disposable demo payment simulator","version":"1.0.0"},
+ "paths":{"/v1/guest-identity/sms/demo-payment":{"post":{
+  "description":"LOCAL TEST ONLY. Full amount is read from the owned reservation. Reservation ID is the stable payment idempotency scope. No real provider or card data.",
+  "security":[{"smsSession":[]}],
+  "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","additionalProperties":false,"required":["reservationId"],"properties":{"reservationId":{"type":"string","format":"uuid"}}}}}},
+  "responses":{"201":{"description":"Simulated payment receipt (same receipt on retry)","content":{"application/json":{"schema":{"type":"object","required":["simulation","paymentIntentId","reservationId","amountMinor","currency","paymentStatus","bookingStatus"],"properties":{"simulation":{"type":"boolean","enum":[true]},"paymentIntentId":{"type":"string","format":"uuid"},"reservationId":{"type":"string","format":"uuid"},"amountMinor":{"type":"string","pattern":"^[0-9]+$"},"currency":{"type":"string"},"paymentStatus":{"type":"string"},"bookingStatus":{"type":"string"}}}}}},"400":{"description":"Invalid body"},"401":{"description":"Invalid guest session"},"404":{"description":"Disabled, unmarked database or foreign booking"},"409":{"description":"Expired hold or incompatible existing payment"}}
+ }}},"components":{"securitySchemes":{"smsSession":{"type":"http","scheme":"bearer"}}}
+}
