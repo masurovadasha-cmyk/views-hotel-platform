@@ -1,5 +1,14 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-16 — Preview0.16 опубликован; APK ожидает подписи
+- Web source08e4b65, Pages workflow43843881103 build/deploy PASS; публичная версия0.16.0-preview проверена по release.json.
+- Root983 tests PASS; public browser proof PASS (directions/roles/V Market/reference viewer, без подключённых API).
+- Android code1600001: clean source08e4b65, compiled manifest+291 assets PASS; browser4viewport PASS.
+- APK unsigned8913824bytes; подпись/установка не выполнены: прежний keystore отсутствует, новый не создавался.
+- Владельцу задан вопрос о восстановлении прежнего ключа через secure environment storage, без секретов в чате.
+- Release/evidence/ссылки: RELEASE_0_16_PREVIEW.md. Cloudflare не обновлялся, SMS/holds/payment остаются локальными.
+- Далее: восстановить signing key для APK; продолжить guest payment UI/возвраты отдельно от static публикации.
+
 ## 2026-11-16 — Подготовка публичного preview0.16
 - По запросу владельца готовятся web/APK из1121ae1 плюс версия0.16.0-preview/code1600001.
 - Публичный static-demo не подключает локальные SMS/hold/payment API; это обновление интерфейса, не production Core.
