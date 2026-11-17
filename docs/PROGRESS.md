@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-17 — Истечение персонального предложения в UI
+- Ветка demo/quote-expiry-ui-20261117 от9f1e8cd; проверен dirty source этого среза.
+- Приёмка: секундный таймер цены, блокировка первого hold на expiry, same-key retry после expiry, безопасная смена до отправки.
+- deadline.ts +5 тестов границ; QuoteHoldForm обновляет таймер и объясняет неизвестный результат.
+- npm test:990 tests/93files PASS; npm run build (typecheck включён) PASS; gateway/mail16 PASS; network195 PASS.
+- Disposable browser→Core→PG PASS: quote/countdown, hold lost reply/replay, payment, ledger, logout/изоляция; overflow390px PASS.
+- Миграции/API/зависимости не менялись; public web/APK не публиковались.
+- Аудит: существующие search/quote требуют staff actor; не открыты гостю через служебные права.
+- Ограничения: таймер цены, не оплаты; клиентские часы ориентировочные; восстановление ключа после reload отсутствует.
+- Далее: отдельный гостевой search/quote контракт, tenant-policy и тесты доступа; затем UI поиска.
+
 ## 2026-11-17 — Создание hold через гостевой экран
 - Ветка demo/guest-hold-form-20261117 от5760d61; проверен dirty source этого среза.
 - QuoteHoldForm: ввод персонального quote ID, даты/строки/итог Core, создание hold, срок оплаты и поездки.
