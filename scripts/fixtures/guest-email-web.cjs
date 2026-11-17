@@ -5,9 +5,10 @@ const {randomBytes}=require('node:crypto');
 const {createGuestEmailGateway}=require('../../apps/api/ops/guest-email-gateway.cjs');
 module.exports=async function startGuestWeb(coreOrigin){
  const root=path.resolve(__dirname,'../../dist');await fs.access(path.join(root,'index.html'));
- let gateway;
+ let gateway;const sms=require('./guest-sms-gateway.cjs')(coreOrigin);
  const server=http.createServer(async(req,res)=>{
   try{
+   if(await sms(req,res))return;
    if(await gateway(req,res))return;
    if(req.method!=='GET'){res.writeHead(405);res.end();return;}
    const url=new URL(req.url,'http://fixture.invalid');

@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-17 — Локальный гостевой экран оплаты
+- Ветка demo/sms-payment-screen-20261117 от2724f3d; entry=sms-demo: SMS login, свои поездки/пагинация, demo pay/retry/logout.
+- Токен в памяти вкладки; custom-header/Origin/allowlist loopback proxy, ограниченные тела/ответы, без actor headers.
+- UI RU, точные minor суммы UZS/USD/EUR, блокировка повторного нажатия, offline/lost reply/retry.
+- Root build/typecheck +985 tests/92files PASS; gateway acceptance PASS; network195/mail15 PASS.
+- Browser mock Core+real proxy PASS: login/trips/offline/lost reply/payment confirmation/no persistent token;390px screenshot просмотрен.
+- Real Core HTTP smoke PASS (hold/expiry/payment и401 через proxy), не единый UI→DB сценарий.
+- Review build PASS; SMS API route отсутствует в JS review bundle. Public web/APK не обновлялись.
+- Запуск/границы: SMS_PAYMENT_SCREEN.md. Нет новой миграции, Next integration, UZ/EN и поиска/создания брони в UI.
+- Далее: живой сквозной browser→Core сценарий с synthetic seed и форма guest quote/hold; demo refunds отдельно.
+
 ## 2026-11-16 — Preview0.16 опубликован; APK ожидает подписи
 - Web source08e4b65, Pages workflow43843881103 build/deploy PASS; публичная версия0.16.0-preview проверена по release.json.
 - Root983 tests PASS; public browser proof PASS (directions/roles/V Market/reference viewer, без подключённых API).
