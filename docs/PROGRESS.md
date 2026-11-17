@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-17 — Создание hold через гостевой экран
+- Ветка demo/guest-hold-form-20261117 от5760d61; проверен dirty source этого среза.
+- QuoteHoldForm: ввод персонального quote ID, даты/строки/итог Core, создание hold, срок оплаты и поездки.
+- Приёмка: доступ только к выданной цене, ключ hold в proxy, повтор после потери ответа возвращает ту же бронь, оплата мышкой.
+- Proxy allowlist расширен только quotes/holds; Idempotency-Key валидируется и передаётся только для hold.
+- Typecheck/build PASS;985 tests/92files PASS; gateway acceptance PASS; network195/mail15 PASS.
+- Реальный browser→Core→disposable PG PASS: hold через UI, idempotentReplay=true после потери ответа, оплата, один capture, баланс ledger, logout/изоляция.
+- Screenshot390px просмотрен; overflow assertion PASS. Исправлено устаревшее ожидание теста всех enabled кнопок.
+- Схема/контракт без изменений; зависимости не добавлены; public web/APK не публиковались.
+- Ограничения: quote выдаёт сотрудник/фикстура, нет поиска/выбора дат, ISO-даты и срок без обратного отсчёта; ключ до reload.
+- Далее: поиск/самостоятельный расчёт по датам и таймер; demo refund отдельным срезом.
+
 ## 2026-11-17 — Реальный browser→Core→PostgreSQL payment smoke
 - Ветка demo/sms-payment-e2e-20261117 от06da29d; контракт и миграции без изменений.
 - Приёмка: SMS-вход в браузере, потеря ответа после commit, безопасный повтор, баланс ledger, отзыв сессии, запрет чужой оплаты.

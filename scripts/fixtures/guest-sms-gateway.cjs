@@ -11,7 +11,7 @@ module.exports=function(coreOrigin){
    reply(403,{message:'ORIGIN_REJECTED'});return true;
   }
   const route=req.url.slice('/sms-demo-api/'.length);
-  if(!((req.method==='GET'&&/^sms\/trips(?:\?cursor=[A-Za-z0-9_-]{1,300})?$/.test(route))||(req.method==='POST'&&['sms','verify','logout','sms/demo-payment'].includes(route)))){reply(404,{message:'ROUTE_NOT_FOUND'});return true;}
+  if(!((req.method==='GET'&&(/^(?:sms\/trips(?:\?cursor=[A-Za-z0-9_-]{1,300})?|sms\/quotes\/[a-f0-9-]{36})$/i.test(route)))||(req.method==='POST'&&['sms','verify','logout','sms/demo-payment','sms/holds'].includes(route)))){reply(404,{message:'ROUTE_NOT_FOUND'});return true;}
   if(inFlight>=8){reply(503,{message:'DEMO_BUSY'});return true;}
   inFlight++;
   try{
@@ -23,7 +23,9 @@ module.exports=function(coreOrigin){
    }
    const auth=req.headers.authorization;
    if(auth!==undefined&&!/^Bearer vgs_[A-Za-z0-9_-]{43}$/.test(auth))throw Error('BODY_INVALID');
-   const upstream=await fetch(coreOrigin+'/v1/guest-identity/'+route,{method:req.method,headers:{'Content-Type':'application/json',...(auth?{Authorization:auth}:{})},body,redirect:'error',signal:AbortSignal.timeout(10000)});
+   const key=req.headers['idempotency-key'];
+   if(route==='sms/holds'&&(typeof key!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(key)))throw Error('BODY_INVALID');
+   const upstream=await fetch(coreOrigin+'/v1/guest-identity/'+route,{method:req.method,headers:{'Content-Type':'application/json',...(auth?{Authorization:auth}:{}),...(route==='sms/holds'?{'Idempotency-Key':key}:{})},body,redirect:'error',signal:AbortSignal.timeout(10000)});
    const chunks=[];let size=0;for await(const chunk of upstream.body){size+=chunk.length;if(size>131072)throw Error('UPSTREAM_INVALID');chunks.push(chunk);}
    const result=JSON.parse(Buffer.concat(chunks).toString('utf8'));
    reply(upstream.status,upstream.ok?result:{message:typeof result.message==='string'&&/^[A-Z_]+$/.test(result.message)?result.message:'DEMO_REQUEST_FAILED'});

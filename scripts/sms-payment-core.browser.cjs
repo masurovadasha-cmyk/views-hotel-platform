@@ -20,9 +20,20 @@ module.exports=async function({db,coreOrigin,webOrigin,entries}){
   }
   const session=await login('+998000000002');
   const fixture=await require('./guest-hold-smoke.cjs')({db,origin:coreOrigin,session,fixtureOnly:true});
-  const held=await fetch(coreOrigin+'/v1/guest-identity/sms/holds',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.token,'Idempotency-Key':randomUUID()},body:JSON.stringify({quoteId:fixture.quoteId})});
-  assert.equal(held.status,201);const hold=await held.json();
-  await page.getByRole('button',{name:'Обновить поездки',exact:true}).click();await page.getByRole('heading',{name:hold.confirmationCode,exact:true}).waitFor();
+  await page.getByLabel('ID предложения',{exact:true}).fill(fixture.quoteId);
+  await page.getByRole('button',{name:'Показать цену',exact:true}).click();
+  await page.getByText('Итого: 100,00 UZS',{exact:true}).waitFor();
+  let holdRequests=0;const keys=[];
+  await page.route('**/sms-demo-api/sms/holds',async route=>{
+   keys.push(route.request().headers()['idempotency-key']);holdRequests++;
+   if(holdRequests===1){const r=await route.fetch();assert.equal(r.status(),201);await route.abort('failed');}else await route.continue();
+  });
+  const book=page.getByRole('button',{name:'Забронировать / проверить повторно',exact:true});
+  await book.click();await page.getByText('Failed to fetch',{exact:true}).waitFor();
+  const heldResponse=page.waitForResponse(r=>r.url().endsWith('/sms-demo-api/sms/holds'));
+  await book.click();const held=await heldResponse;assert.equal(held.status(),201);const hold=await held.json();
+  assert.equal(hold.idempotentReplay,true);assert.equal(keys.length,2);assert.equal(keys[0],keys[1]);
+  await page.getByRole('heading',{name:hold.confirmationCode,exact:true}).waitFor();
   await page.context().setOffline(true);await page.getByRole('button',{name:'Тестовая оплата — без списания',exact:true}).click();
   await page.getByText('Нет сети. Повторите запрос после подключения.',{exact:true}).waitFor();await page.context().setOffline(false);
   let lose=true;
@@ -30,7 +41,7 @@ module.exports=async function({db,coreOrigin,webOrigin,entries}){
    captures++;if(lose){lose=false;const response=await route.fetch();assert.equal(response.status(),201);await route.abort('failed');}else await route.continue();
   });
   await page.getByRole('button',{name:'Тестовая оплата — без списания',exact:true}).click();
-  const retry=page.getByRole('button',{name:'Повторить проверку оплаты',exact:true});await retry.waitFor();await page.waitForFunction(()=>!document.querySelector('button:disabled'));
+  const retry=page.getByRole('button',{name:'Повторить проверку оплаты',exact:true});await retry.waitFor();
   const paymentResponse=page.waitForResponse(r=>r.url().endsWith('/sms-demo-api/sms/demo-payment'));
   await retry.click();const response=await paymentResponse;assert.equal(response.status(),201);const receipt=await response.json();
   await page.getByText('Тестовая оплата подтверждена. Реальные деньги не списывались.',{exact:true}).waitFor();assert.equal(captures,2);
@@ -48,6 +59,6 @@ module.exports=async function({db,coreOrigin,webOrigin,entries}){
   const denied=await fetch(coreOrigin+'/v1/guest-identity/sms/trips',{headers:{Authorization:'Bearer '+session.token}});assert.equal(denied.status,401);
   const other=await login('+998000000003');await page.getByText('Поездок пока нет. Для демо нужна бронь, привязанная к этому гостю.',{exact:true}).waitFor();
   const foreign=await fetch(coreOrigin+'/v1/guest-identity/sms/demo-payment',{method:'POST',headers:{Authorization:'Bearer '+other.token,'Content-Type':'application/json'},body:JSON.stringify({reservationId:hold.reservationId})});assert.equal(foreign.status,404);
-  assert.deepEqual(errors,[]);console.log(JSON.stringify({result:'pass',realCore:true,realPostgres:true,browserSmsLogin:true,holdCreatedViaApi:true,mousePayment:true,lostReplyRetry:true,oneCapture:true,balancedLedger:true,logoutRevoked:true,foreignGuestDenied:true}));
+  assert.deepEqual(errors,[]);console.log(JSON.stringify({result:'pass',realCore:true,realPostgres:true,browserSmsLogin:true,holdCreatedViaBrowser:true,mousePayment:true,lostReplyRetry:true,oneCapture:true,balancedLedger:true,logoutRevoked:true,foreignGuestDenied:true}));
  }finally{await browser.close();}
 };

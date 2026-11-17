@@ -1,4 +1,5 @@
 import './sms-demo.css';
+import {QuoteHoldForm} from './QuoteHoldForm';
 import {demoMoney} from './money';
 import {useRef,useState} from 'react';
 type Trip={id:string;confirmationCode:string;status:string;totalMinor:string;currency:string};
@@ -6,8 +7,8 @@ export function SmsPaymentDemo(){
  const [phone,setPhone]=useState('+998000000001'),[code,setCode]=useState(''),[challenge,setChallenge]=useState('');
  const [token,setToken]=useState(''),[trips,setTrips]=useState<Trip[]>([]),[cursor,setCursor]=useState<string|null>(null);
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[retry,setRetry]=useState<string|null>(null);const running=useRef(false);
- async function api(route:string,body?:unknown,session=token){
-  const response=await fetch('/sms-demo-api/'+route,{method:body===undefined?'GET':'POST',credentials:'omit',headers:{'X-Views-Sms-Demo':'1','Content-Type':'application/json',...(session?{Authorization:'Bearer '+session}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(12000)});
+ async function api(route:string,body?:unknown,session=token,key?:string){
+  const response=await fetch('/sms-demo-api/'+route,{method:body===undefined?'GET':'POST',credentials:'omit',headers:{'X-Views-Sms-Demo':'1','Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{}),...(session?{Authorization:'Bearer '+session}:{})},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(12000)});
   const result=await response.json();if(!response.ok)throw Error(result.message||'DEMO_REQUEST_FAILED');return result;
  }
  async function run(work:()=>Promise<void>){
@@ -34,6 +35,7 @@ export function SmsPaymentDemo(){
    {challenge&&<label>Код <input aria-label="Код" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={e=>setCode(e.target.value)} disabled={busy}/></label>}
    <button disabled={busy}>{challenge?'Войти':'Получить код'}</button>
   </form>:<>
+   <QuoteHoldForm api={api} busy={busy} run={run} reload={()=>load()}/>
    <h2>Мои поездки</h2><button disabled={busy} onClick={()=>void run(()=>load())}>Обновить поездки</button>
    <button disabled={busy} onClick={()=>void run(async()=>{await api('logout',{});setToken('');setTrips([]);setChallenge('');setRetry(null);})}>Выйти</button>
    {!trips.length&&<p>Поездок пока нет. Для демо нужна бронь, привязанная к этому гостю.</p>}
