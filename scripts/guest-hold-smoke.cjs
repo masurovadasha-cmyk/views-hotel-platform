@@ -20,7 +20,7 @@ module.exports=async function({db,origin,session,expire,fixtureOnly=false}){
  assert.equal((await db.query('SELECT app.staff_auth_start($1,1,$2) ok',['73100000-0000-4000-8000-000000000001',staffHash])).rows[0].ok,true);
  try{await db.query('SELECT app.issue_guest_quote($1,$2,$3)',[staffHash,quote,profile]);}
  finally{await db.query('SELECT app.staff_auth_logout($1)',[staffHash]);}
- if(fixtureOnly)return {quoteId:quote,organizationId:org};
+ if(fixtureOnly)return {quoteId:quote,organizationId:org,unitId:unit,ratePlanId:rate};
  const endpoint=origin+'/v1/guest-identity/sms/holds';
  const headers={'Content-Type':'application/json',Authorization:'Bearer '+session.token,'Idempotency-Key':key};
  const post=body=>fetch(endpoint,{method:'POST',headers,body:JSON.stringify(body),signal:AbortSignal.timeout(5000)});

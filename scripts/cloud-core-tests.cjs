@@ -73,6 +73,7 @@ const run = args => {
     await admin.query(fs.readFileSync(path.join(REPO, 'apps/api/db/tests/stage-b4.supply-auth.sql'), 'utf8'));
     console.log('Supply staff invitation, mail, assurance and restricted role proofs PASS (rolled back).');
     await seed('supply-auth.synthetic.sql',fs.readFileSync(path.join(REPO, 'apps/api/db/seeds/supply-auth.synthetic.sql'), 'utf8'));
+    if(dev&&process.argv.includes('--smoke'))await admin.query("INSERT INTO guest_identity_private.catalog_properties(property_id) VALUES('10000000-0000-4000-8000-000000000002')");
     const seedHistory=(await admin.query('SELECT * FROM seed_private.applied ORDER BY name')).rows;
     for(const block of seedBlocks)assert.equal(await applySyntheticSeed(admin,block.name,block.sql),false);
     assert.deepEqual((await admin.query('SELECT * FROM seed_private.applied ORDER BY name')).rows,seedHistory);

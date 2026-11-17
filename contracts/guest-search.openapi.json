@@ -1,0 +1,75 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Local guest catalog search",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/guest-identity/sms/search": {
+      "get": {
+        "description": "Local demo only. Explicitly published properties; base nightly prices exclude charges. Does not reserve inventory. At most 50 results; truncated indicates narrower filters are needed.",
+        "security": [
+          {
+            "guestBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guests",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "items, truncated, priceKind=base_nightly_excludes_charges, requiresQuote=true"
+          },
+          "400": {
+            "description": "Invalid filters"
+          },
+          "401": {
+            "description": "Invalid SMS session"
+          },
+          "404": {
+            "description": "Local feature disabled"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "guestBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
