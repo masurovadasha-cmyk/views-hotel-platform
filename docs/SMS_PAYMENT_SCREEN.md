@@ -23,7 +23,14 @@ offline не отправляет оплату, lost reply повторяет т
 `node scripts/sms-payment-screen.browser.cjs`
 `node scripts/cloud-core-tests.cjs --dev-local --smoke --demo-sms`
 
-Браузерный тест использует mock Core и настоящий proxy; отдельно HTTP smoke
-проверяет реальный Core/БД. Это НЕ единый сквозной UI→PostgreSQL тест. Скриншот390px
-просмотрен. UI пока RU; Next shell, UZ/EN, полный поиск/бронь и late refund ещё нужны.
+Полный локальный browser→gateway→Core→PostgreSQL тест:
+`node scripts/cloud-core-tests.cjs --dev-local --smoke --demo-sms --browser-smoke`
+Требует Chromium `/usr/bin/chromium` и собранные web/API. Использует только
+маркированную одноразовую БД. SMS-вход, оплата и выход выполняются браузером;
+quote и hold создаются фикстурой через API — это ещё не полный путь бронирования мышкой.
+Проверяет offline, потерю ответа после commit, повтор без второго capture,
+баланс проводок, подтверждённую занятость, отзыв сессии и запрет чужой оплаты.
+Проверяется отсутствие горизонтального переполнения при390px.
+Отдельный `sms-payment-screen.browser.cjs` сохраняет mock Core для быстрых UI-проверок.
+UI пока RU; Next shell, UZ/EN, полный поиск/бронь и late refund ещё нужны.
 Миграции/платёжная логика не менялись. APK подпись и public web не обновлялись.

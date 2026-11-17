@@ -2,7 +2,7 @@
 // Synthetic fixtures only. Called inside the marked disposable --demo-sms smoke.
 const assert=require('node:assert/strict');
 const {randomUUID,randomBytes,createHash}=require('node:crypto');
-module.exports=async function({db,origin,session,expire}){
+module.exports=async function({db,origin,session,expire,fixtureOnly=false}){
  const marker=await db.query("SELECT shobj_description(oid,'pg_database') marker FROM pg_database WHERE datname=current_database()");
  assert.equal(marker.rows[0]?.marker,'VIEWS_DISPOSABLE_CORE_TEST');
  const org='10000000-0000-4000-8000-000000000001',property='10000000-0000-4000-8000-000000000002';
@@ -20,6 +20,7 @@ module.exports=async function({db,origin,session,expire}){
  assert.equal((await db.query('SELECT app.staff_auth_start($1,1,$2) ok',['73100000-0000-4000-8000-000000000001',staffHash])).rows[0].ok,true);
  try{await db.query('SELECT app.issue_guest_quote($1,$2,$3)',[staffHash,quote,profile]);}
  finally{await db.query('SELECT app.staff_auth_logout($1)',[staffHash]);}
+ if(fixtureOnly)return {quoteId:quote,organizationId:org};
  const endpoint=origin+'/v1/guest-identity/sms/holds';
  const headers={'Content-Type':'application/json',Authorization:'Bearer '+session.token,'Idempotency-Key':key};
  const post=body=>fetch(endpoint,{method:'POST',headers,body:JSON.stringify(body),signal:AbortSignal.timeout(5000)});
