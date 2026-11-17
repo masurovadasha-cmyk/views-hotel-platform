@@ -42,6 +42,7 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
    console.log(JSON.stringify({demoSmsSmoke:true,syntheticOnly:true,oneTimeCode:true,logoutRevoked:true}));
   }
   web=await require('./fixtures/guest-email-web.cjs')(coreOrigin);
+  if(demoSms){const smsDenied=await fetch(web.origin+'/sms-demo-api/sms/trips',{headers:{'X-Views-Sms-Demo':'1'}});assert.equal(smsDenied.status,401);}
   const html=await fetch(web.origin,{signal:AbortSignal.timeout(5000)});
   assert.equal(html.status,200);assert.ok((await html.text()).includes('<div id="root">'));
   const session=await fetch(web.origin+'/guest-api/session',{headers:{'X-Views-Guest-Pilot':'1'},signal:AbortSignal.timeout(5000)});

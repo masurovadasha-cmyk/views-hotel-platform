@@ -377,3 +377,8 @@ SQL0126 изолирует report_issue: command lock → проживание �
 - Только disposable DB + local/test flags; одна полная оплата на reservationId, сумма из Core. Указание клиентом amount/provider/actor отклоняется.
 - Повтор использует стабильный event/transaction ID и время intent; ledger и подтверждение атомарны. Existing non-demo payment блокирует симуляцию.
 - Демо refund/внешний callback/UI пока не реализованы; refund_pending не обозначает фактический возврат.
+
+## 2026-11-17 — Локальный экран оплаты
+- Расширяем текущий React pilot, не переносим в Next в этом малом срезе. Отдельный entry=sms-demo только127.0.0.1/non-review.
+- SMS bearer в памяти вкладки, без persistent storage; локальный прокси с allowlist/Origin/custom header/лимитами, без передачи staff actor. После reload нужен новый вход.
+- UI пока RU и заранее созданные guest holds; поиск/quote/hold form и интеграция Next остаются отдельно. Тесты mock browser и real HTTP разделены явно.

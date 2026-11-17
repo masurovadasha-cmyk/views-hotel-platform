@@ -1,0 +1,9 @@
+.sms-demo{max-width:680px;margin:auto;padding:24px;min-height:100vh}
+.sms-demo h1{border-bottom:2px solid #b89b5e;padding-bottom:16px}
+.sms-demo button{min-height:44px;padding:10px 16px;margin:4px 8px 4px 0;border:1px solid #a38950;border-radius:10px;background:#d6bb7e;color:#17150f;font:inherit;cursor:pointer}
+.sms-demo button:disabled{opacity:.55;cursor:wait}
+.sms-demo button:focus-visible,.sms-demo input:focus-visible{outline:3px solid #437cb4;outline-offset:3px}
+.sms-demo label{display:block;margin:12px 0}
+.sms-demo input{display:block;width:100%;min-height:44px;margin-top:6px;padding:10px;border:1px solid #8b8171;border-radius:8px;font:inherit;background:transparent;color:inherit}
+.sms-demo article{padding:16px;border:1px solid #a38950;border-radius:12px;margin-top:16px}
+.sms-demo [role=status]{min-height:48px;overflow-wrap:anywhere}
