@@ -23,6 +23,8 @@ module.exports=async function({db,coreOrigin,webOrigin,entries}){
   await page.getByLabel('ID предложения',{exact:true}).fill(fixture.quoteId);
   await page.getByRole('button',{name:'Показать цену',exact:true}).click();
   await page.getByText('Итого: 100,00 UZS',{exact:true}).waitFor();
+  await page.getByText(/^Цена действует ещё /).waitFor();
+  await page.getByRole('button',{name:'Другое предложение',exact:true}).waitFor();
   let holdRequests=0;const keys=[];
   await page.route('**/sms-demo-api/sms/holds',async route=>{
    keys.push(route.request().headers()['idempotency-key']);holdRequests++;
