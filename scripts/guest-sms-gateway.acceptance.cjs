@@ -17,6 +17,10 @@ test('SMS gateway requires origin/header/gates and only proxies allowed routes',
   assert.equal((await send('sms/trips',{...headers,'X-User-Id':'forged'})).status,200);assert.equal(seen['x-user-id'],undefined);
   assert.equal((await send('sms/demo-payment',{'X-Views-Sms-Demo':'1','Content-Type':'application/json'},{reservationId:'id'})).status,403);
   assert.equal((await send('sms/demo-payment',headers,{reservationId:'id'})).status,200);
+  const key='11111111-1111-4111-8111-111111111111';
+  assert.equal((await send('sms/quotes/'+key,headers)).status,200);
+  assert.equal((await send('sms/holds',{...headers,'Idempotency-Key':'invalid'},{quoteId:key})).status,400);
+  assert.equal((await send('sms/holds',{...headers,'Idempotency-Key':key},{quoteId:key})).status,200);assert.equal(seen['idempotency-key'],key);
   const before=calls;process.env.VIEWS_DEMO_SMS='false';assert.equal((await send('sms/trips',headers)).status,404);assert.equal(calls,before);
  }finally{await close(web);await close(upstream);for(const key of ['NODE_ENV','VIEWS_LOCAL_REHEARSAL','VIEWS_DEMO_SMS']){if(saved[key]===undefined)delete process.env[key];else process.env[key]=saved[key];}}
 });
