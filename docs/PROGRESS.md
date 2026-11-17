@@ -1,5 +1,17 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-17 — Реальный browser→Core→PostgreSQL payment smoke
+- Ветка demo/sms-payment-e2e-20261117 от06da29d; контракт и миграции без изменений.
+- Приёмка: SMS-вход в браузере, потеря ответа после commit, безопасный повтор, баланс ledger, отзыв сессии, запрет чужой оплаты.
+- Новый scripts/sms-payment-core.browser.cjs подключён флагом --browser-smoke к локальному smoke.
+- Quote/hold создаёт API-фикстура; оплата/вход/выход идут через настоящий UI и gateway, без mock Core.
+- Исправлен перенос длинного номера брони; добавлена проверка отсутствия overflow390px.
+- Web/API build PASS;985 web tests/92files PASS; gateway1/mail15/network195 PASS.
+- Real Core + disposable PG smoke/browser PASS: один capture, ledger debit-credit=0, inventory reservation, чужая оплата404, logout401.
+- Запуск и ограничения: SMS_PAYMENT_SCREEN.md; screenshot /tmp/views-sms-payment-core.png.
+- Public web/APK не обновлялись; прежний Android signing key пока отсутствует.
+- Далее: гостевая форма quote/hold, затем demo refund; весь поиск/бронирование мышкой ещё не завершён.
+
 ## 2026-11-17 — Локальный гостевой экран оплаты
 - Ветка demo/sms-payment-screen-20261117 от2724f3d; entry=sms-demo: SMS login, свои поездки/пагинация, demo pay/retry/logout.
 - Токен в памяти вкладки; custom-header/Origin/allowlist loopback proxy, ограниченные тела/ответы, без actor headers.

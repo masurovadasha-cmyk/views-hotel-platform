@@ -9,7 +9,8 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
  Object.assign(process.env,{DATABASE_URL:runtimeUrl,NODE_ENV:'test',VIEWS_LOCAL_REHEARSAL:'true',
   VIEWS_GUEST_EMAIL_PILOT_ENABLED:'true',VIEWS_GUEST_TRIPS_PILOT_ENABLED:'true',
   VIEWS_GUEST_EMAIL_TOKEN_KEY:randomBytes(32).toString('hex'),TRUSTED_PROXY_MODE:'direct'});
- const demoSms=process.argv.includes('--demo-sms'),entries=[];
+ const demoSms=process.argv.includes('--demo-sms'),browserSmoke=process.argv.includes('--browser-smoke'),entries=[];
+ if(browserSmoke&&(!demoSms||!smoke))throw Error('BROWSER_SMOKE_REQUIRES_DEMO_SMS_AND_SMOKE');
  if(demoSms)Object.assign(process.env,{VIEWS_DEMO_SMS:'true',VIEWS_DEMO_PAYMENTS_ENABLED:'true',VIEWS_GUEST_HOLDS_PILOT_ENABLED:'true',VIEWS_GUEST_QUOTES_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_PILOT_ENABLED:'true',VIEWS_GUEST_SMS_OTP_KEY:randomBytes(32).toString('hex')});
  let app,web,expiry;
  try{
@@ -43,6 +44,7 @@ module.exports=async function({runtimeUrl,smoke,stopping}){
   }
   web=await require('./fixtures/guest-email-web.cjs')(coreOrigin);
   if(demoSms){const smsDenied=await fetch(web.origin+'/sms-demo-api/sms/trips',{headers:{'X-Views-Sms-Demo':'1'}});assert.equal(smsDenied.status,401);}
+  if(browserSmoke)await require('./sms-payment-core.browser.cjs')({db:app.get(apiRequire('./dist/database/database.service').DatabaseService),coreOrigin,webOrigin:web.origin,entries});
   const html=await fetch(web.origin,{signal:AbortSignal.timeout(5000)});
   assert.equal(html.status,200);assert.ok((await html.text()).includes('<div id="root">'));
   const session=await fetch(web.origin+'/guest-api/session',{headers:{'X-Views-Guest-Pilot':'1'},signal:AbortSignal.timeout(5000)});

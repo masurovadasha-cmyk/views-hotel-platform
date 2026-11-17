@@ -382,3 +382,7 @@ SQL0126 изолирует report_issue: command lock → проживание �
 - Расширяем текущий React pilot, не переносим в Next в этом малом срезе. Отдельный entry=sms-demo только127.0.0.1/non-review.
 - SMS bearer в памяти вкладки, без persistent storage; локальный прокси с allowlist/Origin/custom header/лимитами, без передачи staff actor. После reload нужен новый вход.
 - UI пока RU и заранее созданные guest holds; поиск/quote/hold form и интеграция Next остаются отдельно. Тесты mock browser и real HTTP разделены явно.
+
+## 2026-11-17 — Сквозная проверка локальной оплаты
+- Browser smoke запускается только вместе с --smoke --demo-sms на маркированной disposable DB; внешних SMS/платежей нет.
+- Подготовку quote/hold переиспользуем из HTTP-фикстуры; браузер проверяет реальный вход/оплату/выход, но не имитирует отсутствующую форму бронирования.
