@@ -20,6 +20,7 @@ module.exports=async function({db,coreOrigin,webOrigin,entries}){
   }
   const session=await login('+998000000002');
   const fixture=await require('./guest-hold-smoke.cjs')({db,origin:coreOrigin,session,fixtureOnly:true});
+  await require('./guest-search-smoke.cjs')({db,coreOrigin,session,fixture});
   await page.getByLabel('ID предложения',{exact:true}).fill(fixture.quoteId);
   await page.getByRole('button',{name:'Показать цену',exact:true}).click();
   await page.getByText('Итого: 100,00 UZS',{exact:true}).waitFor();

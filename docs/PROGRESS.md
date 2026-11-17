@@ -1,5 +1,16 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-17 — Гостевой API каталога с явной публикацией
+- Ветка demo/guest-search-api-20261117 от39f98de; проверен dirty source этого среза.
+- Миграция0135 + checksum: private opt-in объектов, RLS, SECURITY DEFINER search с проверкой SMS-сессии.
+- GET /v1/guest-identity/sms/search: from/to/guests/city, максимум50 строк, truncated, только базовая цена без сборов.
+- Приёмка:401 без сессии,400 лишние поля/даты, скрытые объекты не видны, вместимость и ремонт исключают юнит; без staff actor.
+- API build/typecheck PASS;3 controller tests PASS; web typecheck/990 tests PASS; network196/mail15 PASS.
+- Disposable PG + browser smoke PASS: guestSearchSmoke publication/capacity/blockedDates и прежний hold/payment/ledger/logout сценарий.
+- Контракт contracts/guest-search.openapi.json; запуск описан в GUEST_SEARCH_API.md. Производственные данные не изменялись.
+- Не готово: UI поиска, самостоятельная quote, управление публикацией/аудит, курсорная пагинация; public web/APK без изменений.
+- Далее: гостевой расчёт цены с отдельной политикой доступа; затем связать поиск с выбором и hold в UI.
+
 ## 2026-11-17 — Истечение персонального предложения в UI
 - Ветка demo/quote-expiry-ui-20261117 от9f1e8cd; проверен dirty source этого среза.
 - Приёмка: секундный таймер цены, блокировка первого hold на expiry, same-key retry после expiry, безопасная смена до отправки.
