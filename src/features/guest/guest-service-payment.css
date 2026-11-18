@@ -1,0 +1,10 @@
+.servicePaymentPreview{max-width:560px;margin:24px auto;color:var(--fg)}
+.servicePaymentPreview h3{font-family:Inter,sans-serif;font-size:28px;font-weight:500}
+.servicePaymentPreview fieldset{border:0;padding:0;margin:24px 0;display:grid;gap:12px;min-width:0}
+.servicePaymentPreview legend{font-size:14px;margin-bottom:12px}
+.servicePaymentPreview .servicePaymentOption{display:flex;align-items:flex-start;gap:14px;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--card);cursor:pointer}
+.servicePaymentOption input{width:20px;height:20px;flex:0 0 20px;margin:2px 0;accent-color:var(--gold)}
+.servicePaymentOption span{display:grid;gap:8px;min-width:0;overflow-wrap:anywhere}
+.servicePaymentOption strong{font-size:18px;font-weight:500}.servicePaymentOption small{color:var(--muted);font-size:14px}
+.servicePaymentOption:focus-within{outline:2px solid var(--gold);outline-offset:3px}
+.servicePaymentPreview>button{min-height:44px;margin-bottom:12px}.servicePaymentPreview>p{font-size:14px;line-height:1.5}

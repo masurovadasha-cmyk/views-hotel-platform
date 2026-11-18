@@ -1,5 +1,15 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-18 — Canva SG-GN-004, выбор оплаты услуги
+- Ветка design/canva-payment-choice-20261118 отce5c082; проверен dirty source.
+- Источник: сохранённые Light/Dark страницы4/59; онлайн-папка Canva не проверялась.
+- GuestServicePaymentPreview подключён из черновика услуги;4 radio метода,3 языка,2 темы, возврат без потери деталей.
+- Явный preview-only: нет выдуманной суммы/карты, нет запроса или списания; подтверждение disabled.
+- build:review/typecheck PASS; browser18 layouts PASS,0 requests/errors;990 tests PASS.
+- SG-GN-004 pending→partial; всего57 partial/83 pending,0 fully accepted. Evidence: CANVA_140_PAYMENT_CHOICE.md.
+- Миграций/зависимостей нет; публичный веб/APK не публиковались.
+- Далее: продолжать экранные блоки; подключение методов оплаты требует серверной суммы/eligibility и отдельной проверки.
+
 ## 2026-11-17 — Гостевой API каталога с явной публикацией
 - Ветка demo/guest-search-api-20261117 от39f98de; проверен dirty source этого среза.
 - Миграция0135 + checksum: private opt-in объектов, RLS, SECURITY DEFINER search с проверкой SMS-сессии.

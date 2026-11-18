@@ -1122,5 +1122,49 @@
   "V Market": {
     "ru": "V Market",
     "uz": "V Market"
+  },
+  "How would you like to pay?": {
+    "ru": "Как оплатить?",
+    "uz": "Qanday toʻlaysiz?"
+  },
+  "Charge to room": {
+    "ru": "В счёт номера",
+    "uz": "Xona hisobiga"
+  },
+  "Requires eligibility for this booking.": {
+    "ru": "Доступность зависит от условий брони.",
+    "uz": "Mavjudligi bron shartlariga bogʻliq."
+  },
+  "No saved card is connected.": {
+    "ru": "Сохранённая карта не подключена.",
+    "uz": "Saqlangan karta ulanmagan."
+  },
+  "Provider connection required.": {
+    "ru": "Требуется подключение провайдера.",
+    "uz": "Provayder ulanishi kerak."
+  },
+  "Payment layout preview. No payment method is connected and no charge will be made.": {
+    "ru": "Предпросмотр экрана. Способы оплаты не подключены, списания не будет.",
+    "uz": "Ekran namoyishi. Toʻlov usullari ulanmagan, pul yechilmaydi."
+  },
+  "Payment method preview": {
+    "ru": "Предпросмотр способов оплаты",
+    "uz": "Toʻlov usullari namoyishi"
+  },
+  "The final amount and available methods must come from your booking before confirmation.": {
+    "ru": "Перед подтверждением сумма и доступные способы должны быть получены из вашей брони.",
+    "uz": "Tasdiqlashdan oldin yakuniy summa va mavjud usullar broningizdan olinishi kerak."
+  },
+  "Payment unavailable": {
+    "ru": "Оплата недоступна",
+    "uz": "Toʻlov mavjud emas"
+  },
+  "Back to request": {
+    "ru": "Вернуться к заявке",
+    "uz": "Soʻrovga qaytish"
+  },
+  "Preview payment options": {
+    "ru": "Посмотреть способы оплаты",
+    "uz": "Toʻlov usullarini koʻrish"
   }
 }

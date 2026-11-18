@@ -1,3 +1,4 @@
+import {GuestServicePaymentPreview} from './GuestServicePaymentPreview';
 import {useEffect,useState} from 'react';
 import {ClipboardCheck} from 'lucide-react';
 import {useGuestLocale} from './GuestLocale';
@@ -5,7 +6,10 @@ import {validGuestServiceDraft} from './guest-experience';
 export function GuestServicePreview({service}:{service:string}){
  const {t}=useGuestLocale(),[details,setDetails]=useState(''),[date,setDate]=useState(''),[time,setTime]=useState(''),[preview,setPreview]=useState(false);
  useEffect(()=>setPreview(false),[service]);
+ const [payment,setPayment]=useState(false);
+ useEffect(()=>setPayment(false),[service]);
  const valid=validGuestServiceDraft({details,date,time});
+ if(payment)return <GuestServicePaymentPreview onBack={()=>setPayment(false)}/>;
  return <section className="guestServiceComposer"><div className="guestServiceIntro"><small>{t('SERVICE REQUEST')}</small><h3>{t(service)}</h3><p>{t('Quick help, right where you stay.')}</p></div>
   <p className="notice">{t('Preview the request here. Sending and linking to an active booking require a connected guest account.')}</p>
   <form data-testid="guest-service-preview-form" onSubmit={event=>{event.preventDefault();if(valid)setPreview(true);}}>
@@ -14,5 +18,6 @@ export function GuestServicePreview({service}:{service:string}){
    <button className="primary" disabled={!valid} type="submit">{t('Preview request')}</button>
   </form>
   {preview&&<div className="guestServiceReceipt" data-testid="guest-service-preview" role="status"><ClipboardCheck aria-hidden="true"/><div><h4>{t('Request preview — not sent')}</h4><b>{t(service)}</b><p>{details.trim()}</p>{(date||time)&&<p>{date} {time}</p>}<small>{t('This draft stays on this screen only. No service order or message has been created.')}</small></div></div>}
+  {preview&&<button type="button" onClick={()=>setPayment(true)}>{t('Preview payment options')}</button>}
  </section>;
 }
