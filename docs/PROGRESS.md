@@ -1,5 +1,14 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-18 — Canva SG-GN-012, уведомления
+- Ветка design/canva-notifications-20261118 отdafa143; проверен dirty source.
+- GuestNotificationPreview в гостевых сообщениях:3 события, выбор, связанный пример заказа, пустое состояние и закрытие.
+- Только подписанные примеры из сохранённых Light/Dark; live-вход скрыт, нет API/push/реальных заказов.
+- build:review/typecheck PASS;990 tests PASS; browser18 layouts PASS, selection/empty/0 requests/errors; network/mail PASS.
+- Реестр59 partial/81 pending,0 fully accepted; evidence CANVA_140_NOTIFICATIONS.md.
+- Миграций/зависимостей нет; публичные веб/APK без обновления, онлайн Canva не проверялась.
+- Далее: следующий незавершённый экран; живая лента требует отдельного гостевого API и проверки доступа.
+
 ## 2026-11-18 — Canva SG-GN-003, пакет «Прилёт»
 - Ветка design/canva-arrival-package-20261118 от7300e5f; проверен dirty source.
 - Сохранённые Light/Dark страницы3/58: состав пакета, демонстрационный итог395000UZS, переход в SG-GN-004 и возврат.
