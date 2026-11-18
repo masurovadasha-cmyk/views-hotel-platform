@@ -1166,5 +1166,29 @@
   "Preview payment options": {
     "ru": "Посмотреть способы оплаты",
     "uz": "Toʻlov usullarini koʻrish"
+  },
+  "Preview arrival package": {
+    "ru": "Посмотреть пакет «Прилёт»",
+    "uz": "«Yetib kelish» paketini koʻrish"
+  },
+  "Arrival package": {
+    "ru": "Пакет «Прилёт»",
+    "uz": "«Yetib kelish» paketi"
+  },
+  "Transfer from TAS": {
+    "ru": "Трансфер из TAS",
+    "uz": "TAS dan transfer"
+  },
+  "Groceries on arrival": {
+    "ru": "Продукты к приезду",
+    "uz": "Kelish vaqtiga oziq-ovqat"
+  },
+  "Design example only. These prices are not a quote; services are not ordered.": {
+    "ru": "Пример из макета. Эти цены не являются предложением; услуги не заказываются.",
+    "uz": "Faqat dizayn namunasi. Bu narxlar taklif emas; xizmatlar buyurtma qilinmaydi."
+  },
+  "Close package preview": {
+    "ru": "Закрыть просмотр пакета",
+    "uz": "Paket namoyishini yopish"
   }
 }

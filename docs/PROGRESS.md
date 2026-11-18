@@ -1,5 +1,15 @@
 # VIEWS — текущая точка продолжения
 
+## 2026-11-18 — Canva SG-GN-003, пакет «Прилёт»
+- Ветка design/canva-arrival-package-20261118 от7300e5f; проверен dirty source.
+- Сохранённые Light/Dark страницы3/58: состав пакета, демонстрационный итог395000UZS, переход в SG-GN-004 и возврат.
+- Критерии: явно подписанные demo-цены,3 языка/2 темы, верный итог, переход/закрытие,0 API-запросов.
+- build:review/typecheck PASS;990 tests PASS; два browser scripts по18 layouts PASS; network/mail PASS.
+- SG-GN-003 pending→partial; всего58 partial/82 pending,0 fully accepted. Документ: CANVA_140_ARRIVAL_PACKAGE.md.
+- Live-вход скрыт; ни заказа, ни оплаты, ни бронирования трансфера; схема и зависимости без изменений.
+- Публичный веб/APK не публиковались; онлайн Canva не проверялась.
+- Далее: продолжать оставшиеся экраны; реальные пакеты требуют Core quote/availability и исполнителей.
+
 ## 2026-11-18 — Canva SG-GN-004, выбор оплаты услуги
 - Ветка design/canva-payment-choice-20261118 отce5c082; проверен dirty source.
 - Источник: сохранённые Light/Dark страницы4/59; онлайн-папка Canva не проверялась.
