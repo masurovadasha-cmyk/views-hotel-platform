@@ -1190,5 +1190,57 @@
   "Close package preview": {
     "ru": "Закрыть просмотр пакета",
     "uz": "Paket namoyishini yopish"
+  },
+  "Preview notifications": {
+    "ru": "Посмотреть уведомления",
+    "uz": "Bildirishnomalarni koʻrish"
+  },
+  "Design examples only. These are not updates about your orders.": {
+    "ru": "Примеры из макета. Это не уведомления о ваших заказах.",
+    "uz": "Dizayn namunalari. Bular buyurtmalaringiz haqidagi bildirishnomalar emas."
+  },
+  "Show empty state": {
+    "ru": "Показать пустое состояние",
+    "uz": "Boʻsh holatni koʻrsatish"
+  },
+  "No notifications yet": {
+    "ru": "Уведомлений пока нет",
+    "uz": "Hozircha bildirishnomalar yoʻq"
+  },
+  "Active orders": {
+    "ru": "Активные заказы",
+    "uz": "Faol buyurtmalar"
+  },
+  "Example task deadline": {
+    "ru": "Пример срока задачи",
+    "uz": "Vazifa muddati namunasi"
+  },
+  "Select a notification": {
+    "ru": "Выберите уведомление",
+    "uz": "Bildirishnomani tanlang"
+  },
+  "Cleaning has started": {
+    "ru": "Уборка началась",
+    "uz": "Tozalash boshlandi"
+  },
+  "Malika is assigned": {
+    "ru": "Назначена Малика",
+    "uz": "Malika tayinlandi"
+  },
+  "Laundry pickup scheduled": {
+    "ru": "Запланирован забор вещей",
+    "uz": "Kiyimlarni olib ketish rejalashtirilgan"
+  },
+  "Preview related order": {
+    "ru": "Посмотреть пример заказа",
+    "uz": "Buyurtma namunasini koʻrish"
+  },
+  "This example has no live order. No request has been sent.": {
+    "ru": "У примера нет реального заказа. Запрос не отправлялся.",
+    "uz": "Bu namunaga haqiqiy buyurtma bogʻlanmagan. Soʻrov yuborilmadi."
+  },
+  "Close notifications preview": {
+    "ru": "Закрыть просмотр уведомлений",
+    "uz": "Bildirishnomalar namoyishini yopish"
   }
 }

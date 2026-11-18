@@ -1,3 +1,4 @@
+import {GuestNotificationPreview} from './GuestNotificationPreview';
 import {GuestArrivalPackage} from './GuestArrivalPackage';
 import {GuestServiceCatalogue} from './GuestServiceCatalogue';
 import {findGuestService,guestRequestCategory} from './service-catalog';
@@ -143,6 +144,7 @@ export function GuestApp({live=false}:{live?:boolean}){
     </section>}
 
     {tab==="messages"&&<section className="contentPage">
+      {!live&&<GuestNotificationPreview/>}
       <div className="sectionHead"><div><small>{t("CONCIERGE")}</small><h2>{t("Messages & requests")}</h2></div></div>
       <p className="notice">{t("Example conversation. No messages are sent.")}</p><div className="chatShell"><header><span className="conciergeDot"><ConciergeBell/></span><div><b>{t("VIEWS Concierge")}</b><small>{t("Online when staff/AI connector is available")}</small></div></header><div className="chatBody"><div className="bubble">{t("Hello. How can VIEWS help with your stay?")}</div><div className="bubble guest">{t("I need an airport transfer at 14:00.")}</div><div className="bubble">{t("Your request will be routed as a tracked Service Order.")}</div></div><footer><input aria-label={t("Message concierge")} placeholder={t("Messaging is not connected")} disabled/><button aria-label={t("Send message")} disabled><Send size={16}/></button></footer></div>
     </section>}
