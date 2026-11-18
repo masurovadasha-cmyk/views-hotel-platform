@@ -1,3 +1,4 @@
+import {GuestArrivalPackage} from './GuestArrivalPackage';
 import {GuestServiceCatalogue} from './GuestServiceCatalogue';
 import {findGuestService,guestRequestCategory} from './service-catalog';
 import {GuestDialog} from './GuestDialog';
@@ -130,6 +131,7 @@ export function GuestApp({live=false}:{live?:boolean}){
 
     {tab==="services"&&<section className="contentPage">
       <div className="sectionHead"><div><small>{t("VIEWS SERVICES")}</small><h2>{t("Everything for your stay")}</h2></div></div>
+      {!live&&<GuestArrivalPackage/>}
       <GuestServiceCatalogue large selected={serviceCategory} onSelect={id=>{setServiceCategory(id);setServiceMessage("");}}/>
       {guestRequestCategory(serviceCategory)===null&&<p className="notice" role="status">{t("This service is not connected yet. Booking, payment and sending requests are unavailable.")}</p>}
       {serviceCategory==="minimart"&&<GuestMarket cart={marketCart} onChange={setMarketCart}/>}

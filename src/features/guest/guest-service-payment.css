@@ -8,3 +8,4 @@
 .servicePaymentOption strong{font-size:18px;font-weight:500}.servicePaymentOption small{color:var(--muted);font-size:14px}
 .servicePaymentOption:focus-within{outline:2px solid var(--gold);outline-offset:3px}
 .servicePaymentPreview>button{min-height:44px;margin-bottom:12px}.servicePaymentPreview>p{font-size:14px;line-height:1.5}
+.arrivalPackageLines{display:grid;gap:12px;margin:24px 0}.arrivalPackageLines>div{padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--card)}.arrivalPackageLines dt{color:var(--muted);font-size:16px}.arrivalPackageLines dd{margin:8px 0 0;font-size:22px}
