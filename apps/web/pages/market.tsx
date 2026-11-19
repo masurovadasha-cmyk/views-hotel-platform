@@ -1,9 +1,24 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { demoCartTotal, validateVMarketCatalog, reviewedProductImage, type VMarketCatalogRow } from '../lib/vmarketCatalogAdapter';
 
 type CatalogFile = { products?: VMarketCatalogRow[] } | VMarketCatalogRow[];
 export default function VMarketPreview() {
   const [products, setProducts] = useState<VMarketCatalogRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let active = true;
+    fetch('/vmarket/catalog.json').then(async response => {
+      if (!response.ok) throw new Error('Каталог недоступен');
+      const data: CatalogFile = await response.json();
+      const rows = Array.isArray(data) ? data : data.products;
+      if (!Array.isArray(rows) || rows.length !== 195) throw new Error('Неполный каталог');
+      const issues = validateVMarketCatalog(rows);
+      if (issues.length) throw new Error(issues.slice(0, 5).join('; '));
+      if (active) setProducts(rows);
+    }).catch(e => { if (active) setError(e instanceof Error ? e.message : 'Ошибка загрузки'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
   const [cart, setCart] = useState<Record<string, number>>({});
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
@@ -32,6 +47,7 @@ export default function VMarketPreview() {
     <h1>VIEWS · V Market</h1>
     <p>Демо-каталог. Заказы не отправляются, реальные остатки не изменяются, оплата не производится.</p>
     <label>Загрузить проверенный каталог JSON: <input type="file" accept=".json,application/json" onChange={e => void load(e.target.files?.[0])}/></label>
+    {loading && <p role="status">Загрузка каталога…</p>}
     {error && <p role="alert" style={{ color: '#a22' }}>{error}</p>}
     <p>Товаров: {products.length} · В корзине: {lines.reduce((n,l)=>n+l.quantity,0)} · Сумма: {total < 0 ? 'Ошибка количества' : total.toLocaleString('ru-RU') + ' UZS'}</p>
     <input aria-label="Поиск товаров" placeholder="Поиск товаров" value={query} onChange={e=>setQuery(e.target.value)} style={{ padding: 12, width: '100%', boxSizing: 'border-box' }}/>
