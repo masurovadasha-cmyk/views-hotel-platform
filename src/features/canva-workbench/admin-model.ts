@@ -1,0 +1,27 @@
+export type AdminField={key:string;label:string;initial:string;type?:'number'|'time'|'date'|'textarea';options?:string[];required?:boolean;min?:number;max?:number};
+export const adminTitles=['Название услуги','Поля формы','Правила цены','Доступность услуги','Способ исполнения','Сроки по этапам','Кому направить заказ?','Уведомления','Предпросмотр услуги','Матрица SLA','Шаблоны сообщений','Правила объекта','Справочники и права','Партнёры и зарплата','Журнал интеграций'];
+const field=(key:string,label:string,initial:string,extra:Partial<AdminField>={}):AdminField=>({key,label,initial,...extra});
+export const adminFields:Record<number,AdminField[]>={
+ 1:[field('nameRu','Название RU','Стандартная уборка',{required:true}),field('nameUz','Название UZ','Standart tozalash',{required:true}),field('nameEn','Название EN','Standard cleaning',{required:true}),field('code','Код','CL-STANDARD',{required:true}),field('category','Категория','Клининг',{options:['Клининг','Прачечная','Консьерж']})],
+ 2:[field('cleaningField','Тип уборки','Обязательное',{options:['Обязательное','Необязательное','Скрыто']}),field('dateField','Дата','Обязательное',{options:['Обязательное','Необязательное']}),field('accessField','Доступ в номер','Нет по умолчанию',{options:['Нет по умолчанию','Требовать согласие']}),field('wishField','Пожелание','Необязательное',{options:['Необязательное','Обязательное','Скрыто']}),field('photoField','Фото','Отключено в демо',{options:['Отключено в демо']})],
+ 3:[field('priceModel','Модель','Фиксированная',{options:['Фиксированная','За единицу']}),field('price','Демо-цена, UZS','120000',{type:'number',min:0,max:100000000,required:true}),field('surcharge','Доплаты','Только после согласия',{options:['Только после согласия']}),field('tax','Налог','Не настроен — проверить',{required:true}),field('version','Версия черновика','v3',{required:true})],
+ 4:[field('property','Объект','NRG U-Tower',{required:true}),field('date','Дата','2026-11-18',{type:'date',required:true}),field('opens','Начало работы','09:00',{type:'time',required:true}),field('closes','Конец работы','18:00',{type:'time',required:true}),field('duration','Длительность, мин','40',{type:'number',min:1,max:1440,required:true}),field('resources','Сотрудников','1',{type:'number',min:1,max:100,required:true}),field('buffer','Буфер, мин','10',{type:'number',min:0,max:1440,required:true})],
+ 5:[field('execution','Исполнитель','Свои силы',{options:['Свои силы','Партнёр','Агрегатор API','Партнёрская ссылка']}),field('executionNote','Условие подтверждения','Ручное назначение диспетчером',{required:true})],
+ 6:[field('response','Ответ гостю, мин','5',{type:'number',min:1,max:1440,required:true}),field('accept','Принятие задания, мин','3',{type:'number',min:1,max:1440,required:true}),field('completion','Завершение','По обещанному времени',{options:['По обещанному времени']}),field('pause','Причина паузы','Ждём гостя',{options:['Ждём гостя','Нет доступа']}),field('warning','Предупреждение, % срока','70',{type:'number',min:1,max:99,required:true})],
+ 7:[field('routeProperty','Объект','NRG U-Tower',{required:true}),field('skill','Навык','Стандартная уборка',{required:true}),field('shift','Смена','Активная',{options:['Активная']}),field('assignment','Выбор','Диспетчер вручную',{options:['Диспетчер вручную','Свободный сотрудник — симуляция']}),field('fallback','Резерв','Старший смены',{required:true})],
+ 8:[field('events','События','Принят, назначен, задержка',{required:true}),field('channel','Канал','Push — не подключён',{options:['Push — не подключён','SMS — не подключён','Email — не подключён']}),field('languages','Языки','RU / UZ / EN',{required:true}),field('variables','Переменные','{time}, {order}',{required:true})],
+ 11:[field('templateRu','RU','Закончим к {time}. Далее — проверка.',{type:'textarea',required:true}),field('templateUz','UZ','{time} gacha yakunlaymiz.',{type:'textarea',required:true}),field('templateEn','EN','We will finish by {time}.',{type:'textarea',required:true}),field('templateChannel','Канал','Push — не подключён',{options:['Push — не подключён','SMS — не подключён']})],
+ 12:[field('overrideProperty','Объект','NRG U-Tower',{required:true}),field('overridePrice','Локальная демо-цена UZS (пусто = наследовать)','',{type:'number',min:0,max:100000000}),field('overrideFrom','Начало действия','2026-11-18',{type:'date',required:true}),field('overrideTo','Конец действия','',{type:'date'})]
+};
+export const initialAdminValues=()=>Object.fromEntries(Object.values(adminFields).flat().map(f=>[f.key,f.initial]));
+export function validateAdminStep(step:number,values:Record<string,string>):string|null{
+ for(const f of adminFields[step]??[]){const v=values[f.key]??'';
+  if(f.required&&!v.trim())return 'Заполните поле: '+f.label;
+  if(f.type==='number'&&v!==''&&(!/^\d+$/.test(v)||!Number.isSafeInteger(Number(v))||Number(v)<(f.min??0)||Number(v)>(f.max??Number.MAX_SAFE_INTEGER)))return 'Проверьте число: '+f.label;
+ }
+ if(step===1&&!/^[A-Z][A-Z0-9-]{2,40}$/.test(values.code))return 'Код: 3–41 символ, A–Z, цифры и дефис.';
+ if(step===4&&values.opens>=values.closes)return 'Конец рабочего окна должен быть позже начала.';
+ if(step===12&&values.overrideTo&&values.overrideTo<values.overrideFrom)return 'Конец действия раньше начала.';
+ if(step===11&&['templateRu','templateUz','templateEn'].some(k=>/\{(?!time\}|order\})[^}]*\}/.test(values[k])))return 'Разрешены только переменные {time} и {order}.';
+ return null;
+}
