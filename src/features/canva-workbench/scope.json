@@ -1,0 +1,488 @@
+[
+  {
+    "id": "SG-GN-011",
+    "title": "Для вашего путешествия",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-CL-007",
+    "title": "Вызвать техника",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-MK-003",
+    "title": "Доставка продуктов",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TX-001",
+    "title": "Куда поедем?",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TX-002",
+    "title": "Выберите автомобиль",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TX-003",
+    "title": "Водитель едет к вам",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TX-004",
+    "title": "Поездка завершена",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-CR-001",
+    "title": "Авто для ваших планов",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-CR-002",
+    "title": "Leapmotor C01",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-CR-003",
+    "title": "Данные водителя",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-CR-004",
+    "title": "Оплата и залог",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-CR-005",
+    "title": "Договор аренды",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-CR-006",
+    "title": "Осмотр перед выдачей",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-CR-007",
+    "title": "Продлить аренду",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-CR-008",
+    "title": "Возврат автомобиля",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-EX-001",
+    "title": "Откройте Ташкент",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-EX-002",
+    "title": "Старый Ташкент",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-EX-003",
+    "title": "Дата и участники",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-EX-004",
+    "title": "Ваш ваучер",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TK-001",
+    "title": "Авиа и ж/д билеты",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TK-002",
+    "title": "Ташкент → Самарканд",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TK-003",
+    "title": "Условия билета",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TK-004",
+    "title": "Пассажир",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TK-005",
+    "title": "Проверка цены",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TK-006",
+    "title": "Электронный билет",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SG-TK-007",
+    "title": "Оформление у партнёра",
+    "role": "Гость",
+    "area": "guest"
+  },
+  {
+    "id": "SD-CL-002",
+    "title": "График горничных",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-CL-004",
+    "title": "Ремонт и обслуживание",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-TX-001",
+    "title": "Карта транспорта",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-TX-002",
+    "title": "Ручной трансфер",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-CR-001",
+    "title": "Календарь автопарка",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-CR-002",
+    "title": "Выдачи и возвраты",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-EX-001",
+    "title": "Экскурсии и гиды",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-EX-002",
+    "title": "Как продаём экскурсию?",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-TK-001",
+    "title": "Билетная очередь",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-TK-002",
+    "title": "Изменение билета",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-GN-002",
+    "title": "Карта заказов",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-GN-003",
+    "title": "Нарушения SLA",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-GN-006",
+    "title": "Лестница эскалации",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-GN-007",
+    "title": "Услуги: показатели",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SD-GN-009",
+    "title": "Партнёры и назначения",
+    "role": "CRM / диспетчер",
+    "area": "dispatcher"
+  },
+  {
+    "id": "SS-CL-004",
+    "title": "Кондиционер #235",
+    "role": "Персонал",
+    "area": "staff"
+  },
+  {
+    "id": "SS-GN-007",
+    "title": "Сообщить о проблеме",
+    "role": "Персонал",
+    "area": "staff"
+  },
+  {
+    "id": "SS-GN-008",
+    "title": "Моя смена",
+    "role": "Персонал",
+    "area": "staff"
+  },
+  {
+    "id": "SS-GN-009",
+    "title": "Показатели и бонусы",
+    "role": "Персонал",
+    "area": "staff"
+  },
+  {
+    "id": "SS-GN-010",
+    "title": "Уведомления",
+    "role": "Персонал",
+    "area": "staff"
+  },
+  {
+    "id": "SP-MK-001",
+    "title": "Доставка в #235",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-TX-001",
+    "title": "Новый трансфер",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-TX-002",
+    "title": "Трансфер TX-809",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-CR-001",
+    "title": "Проверка водителя",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-CR-002",
+    "title": "Выдача CR-601",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-CR-003",
+    "title": "Приём автомобиля",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-EX-001",
+    "title": "Мои группы",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-EX-002",
+    "title": "Участники экскурсии",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-TK-001",
+    "title": "Заявка на выписку",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-TK-002",
+    "title": "Выписка и изменения",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-GN-001",
+    "title": "Входящие заказы",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-GN-002",
+    "title": "Принять заказ",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-GN-003",
+    "title": "Исполнение заказа",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-GN-004",
+    "title": "Акты и выплаты",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-GN-005",
+    "title": "Календарь партнёра",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SP-GN-006",
+    "title": "Портал партнёра",
+    "role": "Партнёр",
+    "area": "partner"
+  },
+  {
+    "id": "SH-GN-001",
+    "title": "Услуги объекта",
+    "role": "Хост",
+    "area": "host"
+  },
+  {
+    "id": "SH-GN-002",
+    "title": "Цена и комиссия",
+    "role": "Хост",
+    "area": "host"
+  },
+  {
+    "id": "SH-GN-003",
+    "title": "Заказы гостей",
+    "role": "Хост",
+    "area": "host"
+  },
+  {
+    "id": "SH-GN-004",
+    "title": "Доход от услуг",
+    "role": "Хост",
+    "area": "host"
+  },
+  {
+    "id": "SA-GN-001",
+    "title": "Название услуги",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-002",
+    "title": "Поля формы",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-003",
+    "title": "Правила цены",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-004",
+    "title": "Доступность услуги",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-005",
+    "title": "Способ исполнения",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-006",
+    "title": "Сроки по этапам",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-007",
+    "title": "Кому направить заказ?",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-008",
+    "title": "Уведомления",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-009",
+    "title": "Предпросмотр услуги",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-010",
+    "title": "Матрица SLA",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-011",
+    "title": "Шаблоны сообщений",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-012",
+    "title": "Правила объекта",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-013",
+    "title": "Справочники и права",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-014",
+    "title": "Партнёры и зарплата",
+    "role": "Администратор",
+    "area": "admin"
+  },
+  {
+    "id": "SA-GN-015",
+    "title": "Журнал интеграций",
+    "role": "Администратор",
+    "area": "admin"
+  }
+]
