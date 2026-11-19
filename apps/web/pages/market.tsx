@@ -33,15 +33,18 @@ export default function VMarketPreview() {
       if (file.size > 5_000_000) throw new Error('Файл слишком большой');
       const data: CatalogFile = JSON.parse(await file.text());
       const rows = Array.isArray(data) ? data : data.products;
-      if (!Array.isArray(rows) || rows.length === 0) throw new Error('В файле нет товаров');
+      if (!Array.isArray(rows) || rows.length !== 195) throw new Error('Ожидается полный каталог из 195 товаров');
       const issues = validateVMarketCatalog(rows);
       if (issues.length) throw new Error(issues.slice(0, 5).join('; '));
+      if (rows.reduce((sum, p) => sum + p.stock, 0) !== 3697) throw new Error('Остатки не совпадают с подтверждённым каталогом');
       setProducts(rows); setCart({}); setOrdered(false); setError('');
     } catch (e) { setError(e instanceof Error ? e.message : 'Ошибка каталога'); }
   }
   function add(id: string, delta: number) {
     setOrdered(false);
-    setCart(prev => ({ ...prev, [id]: Math.max(0, (prev[id] || 0) + delta) }));
+    const product = products.find(p => p.id === id);
+    if (!product) return;
+    setCart(prev => ({ ...prev, [id]: Math.min(product.stock, Math.max(0, (prev[id] || 0) + delta)) }));
   }
   return <main style={{ maxWidth: 1080, margin: 'auto', padding: 24, fontFamily: 'Arial,sans-serif', color: '#1A1D24' }}>
     <h1>VIEWS · V Market</h1>
