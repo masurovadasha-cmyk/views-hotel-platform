@@ -37,17 +37,16 @@ Existing `npm run ...` commands remain supported. See [workspace setup](docs/M0A
 Build command: `npm run build`, output: `dist`.
 Pages Functions expose `/api/health` and `/api/readiness`.
 
-## Codex cloud / Linux: connected development workspace
+## Local development
 
-The Stage 7.25 source lives on `stage7/staff-auth-pilot-v1`; the current `main`
-contains only the initial README. Use the existing checkout of this source or
-its cloud-setup descendant. Cloud tasks are already isolated: do not create a
-Git worktree unless explicitly requested.
-
-See [the Linux cloud runbook](docs/CLOUD_LOCAL_DEVELOPMENT.md) for the real
-PostgreSQL + Core + staff booking workspace, installation, login, checks and
-restart instructions. `npm run dev` by itself runs the interface only.
+The current main line includes the VIEWS source and the V Market catalog
+preview. `npm run dev` starts the web interface only. The connected staff/Core
+rehearsal additionally requires PostgreSQL and Docker; see [the Linux cloud
+runbook](docs/CLOUD_LOCAL_DEVELOPMENT.md) for its setup, login and restart
+instructions. Keep that synthetic rehearsal loopback-only.
 
 ## Staging preview
 
-Preview deployments are built from `staging/master-reference-v1` with GitHub Actions. Production `main` remains unchanged until approval.
+Preview deployments are built from `staging/master-reference-v1` with GitHub
+Actions. Merging source into `main` does not by itself publish the staging
+preview or activate production services.
