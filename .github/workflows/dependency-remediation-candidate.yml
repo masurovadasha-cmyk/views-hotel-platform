@@ -1,0 +1,42 @@
+name: Dependency remediation candidate
+on:
+  workflow_dispatch:
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Save original audit report
+        run: pnpm audit --prod --audit-level high --json > /tmp/views-audit-before.json || true
+      - name: Generate dependency remediation candidate
+        run: |
+          pnpm audit --fix || true
+          pnpm install --lockfile-only --no-frozen-lockfile
+          git diff -- package.json apps/api/package.json apps/web/package.json apps/mobile/package.json pnpm-lock.yaml > /tmp/views-dependency-candidate.patch
+      - name: Check candidate against frozen lockfile
+        run: pnpm install --frozen-lockfile
+      - name: Audit candidate without bypassing security gate
+        run: node scripts/pnpm-audit-gate.cjs
+      - name: Run V Market catalog acceptance
+        if: always()
+        run: node scripts/vmarket-catalog.acceptance.cjs
+      - name: Upload candidate patch and audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: views-dependency-remediation-candidate
+          path: |
+            /tmp/views-dependency-candidate.patch
+            /tmp/views-audit-before.json
+          if-no-files-found: warn
+          retention-days: 7
